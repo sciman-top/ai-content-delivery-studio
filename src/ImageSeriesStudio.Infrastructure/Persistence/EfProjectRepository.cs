@@ -46,6 +46,14 @@ public sealed class EfProjectRepository : IProjectRepository
 
     private async Task TrackNewChildrenAsync(ImageProject project, CancellationToken cancellationToken)
     {
+        foreach (var profile in project.ProviderProfiles)
+        {
+            if (!await _dbContext.ProviderProfiles.AnyAsync(existing => existing.Id == profile.Id, cancellationToken))
+            {
+                _dbContext.Entry(profile).State = EntityState.Added;
+            }
+        }
+
         foreach (var series in project.Series)
         {
             if (!await _dbContext.Series.AnyAsync(existing => existing.Id == series.Id, cancellationToken))
@@ -64,7 +72,7 @@ public sealed class EfProjectRepository : IProjectRepository
                 {
                     if (!await _dbContext.PromptVersions.AnyAsync(existing => existing.Id == prompt.Id, cancellationToken))
                     {
-                        _dbContext.Entry(prompt).State = EntityState.Added;
+                        _dbContext.PromptVersions.Add(prompt);
                     }
                 }
             }

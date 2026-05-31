@@ -318,7 +318,7 @@ Expected: a project can be created, saved, and loaded from a temporary SQLite da
   - Add localized series and item table in the Plan tab.
   - Gate: service tests plus `dotnet build`.
 
-- [ ] **Task 7C.3: Prompt version editor**
+- [x] **Task 7C.3: Prompt version editor**
   - Add prompt version creation and history display.
   - Keep provider/model fields provider-neutral.
   - Gate: prompt service tests plus `dotnet build`.

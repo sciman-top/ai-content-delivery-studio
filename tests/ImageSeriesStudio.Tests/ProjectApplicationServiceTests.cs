@@ -1,4 +1,5 @@
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -132,6 +133,71 @@ public sealed class ProjectApplicationServiceTests
             Assert.Equal(series.Id, loadedSeries.Id);
             Assert.Equal(item.Id, loadedItem.Id);
             Assert.Equal("Cover image", loadedItem.Title);
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ProjectApplicationService_AddsPromptVersionWithDefaultFakeProfile()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-prompts.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(new EfProjectRepository(new AppDbContext(options)));
+            var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Prompt demo", timestamp, CancellationToken.None);
+            var series = await service.AddSeriesAsync(
+                project.Id,
+                "Article images",
+                "Two illustrations",
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+            var item = await service.AddItemAsync(
+                project.Id,
+                series.Id,
+                "Opening image",
+                "A bright workbench scene",
+                timestamp.AddMinutes(2),
+                CancellationToken.None);
+
+            var prompt = await service.AddPromptVersionAsync(
+                project.Id,
+                item.Id,
+                "Create a clean editorial image set.",
+                new GenerationSettings(1024, 1024, "standard", "png", 11),
+                providerProfileId: null,
+                timestamp.AddMinutes(3),
+                CancellationToken.None);
+
+            var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var loadedItem = loaded!.Series.Single().Items.Single();
+            var loadedPrompt = Assert.Single(loadedItem.PromptVersions);
+            var loadedProfile = Assert.Single(loaded.ProviderProfiles);
+
+            Assert.Equal(prompt.Id, loadedPrompt.Id);
+            Assert.Equal(1, loadedPrompt.VersionNumber);
+            Assert.Equal("Create a clean editorial image set.", loadedPrompt.PromptText);
+            Assert.Equal(1024, loadedPrompt.Settings.Width);
+            Assert.Equal(ProviderKind.Fake, loadedProfile.Kind);
+            Assert.Equal(loadedProfile.Id, loadedPrompt.ProviderProfileId);
         }
         finally
         {

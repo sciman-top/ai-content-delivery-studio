@@ -48,14 +48,32 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _planStatusColumn = string.Empty;
     private string _noPlanRowsText = string.Empty;
     private string _noItemsInSeriesText = string.Empty;
+    private string _promptEditorTitle = string.Empty;
+    private string _selectedItemTitle = string.Empty;
+    private string _promptTextLabel = string.Empty;
+    private string _defaultGenerationSettingsText = string.Empty;
+    private string _createPromptVersionText = string.Empty;
+    private string _promptHistoryTitle = string.Empty;
+    private string _promptVersionColumn = string.Empty;
+    private string _promptItemColumn = string.Empty;
+    private string _promptTextColumn = string.Empty;
+    private string _promptSettingsColumn = string.Empty;
+    private string _promptCreatedColumn = string.Empty;
+    private string _noPromptRowsText = string.Empty;
+    private string _noItemSelectedForPromptText = string.Empty;
+    private string _selectedSeriesItemTitleText = string.Empty;
     private string _newSeriesTitle = string.Empty;
     private string _newSeriesDescription = string.Empty;
     private string _newItemTitle = string.Empty;
     private string _newItemBrief = string.Empty;
+    private string _newPromptText = string.Empty;
     private IReadOnlyList<SeriesSummaryViewModel> _series = [];
     private IReadOnlyList<SeriesItemViewModel> _seriesItems = [];
     private IReadOnlyList<PlanRowViewModel> _planRows = [];
+    private IReadOnlyList<PromptVersionViewModel> _promptVersions = [];
+    private IReadOnlyList<PromptRowViewModel> _promptRows = [];
     private SeriesSummaryViewModel? _selectedSeries;
+    private SeriesItemViewModel? _selectedSeriesItem;
 
     public MainWindowViewModel(
         LocalizationService localizationService,
@@ -302,6 +320,90 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _noItemsInSeriesText, value);
     }
 
+    public string PromptEditorTitle
+    {
+        get => _promptEditorTitle;
+        private set => SetProperty(ref _promptEditorTitle, value);
+    }
+
+    public string SelectedItemTitle
+    {
+        get => _selectedItemTitle;
+        private set => SetProperty(ref _selectedItemTitle, value);
+    }
+
+    public string PromptTextLabel
+    {
+        get => _promptTextLabel;
+        private set => SetProperty(ref _promptTextLabel, value);
+    }
+
+    public string DefaultGenerationSettingsText
+    {
+        get => _defaultGenerationSettingsText;
+        private set => SetProperty(ref _defaultGenerationSettingsText, value);
+    }
+
+    public string CreatePromptVersionText
+    {
+        get => _createPromptVersionText;
+        private set => SetProperty(ref _createPromptVersionText, value);
+    }
+
+    public string PromptHistoryTitle
+    {
+        get => _promptHistoryTitle;
+        private set => SetProperty(ref _promptHistoryTitle, value);
+    }
+
+    public string PromptVersionColumn
+    {
+        get => _promptVersionColumn;
+        private set => SetProperty(ref _promptVersionColumn, value);
+    }
+
+    public string PromptItemColumn
+    {
+        get => _promptItemColumn;
+        private set => SetProperty(ref _promptItemColumn, value);
+    }
+
+    public string PromptTextColumn
+    {
+        get => _promptTextColumn;
+        private set => SetProperty(ref _promptTextColumn, value);
+    }
+
+    public string PromptSettingsColumn
+    {
+        get => _promptSettingsColumn;
+        private set => SetProperty(ref _promptSettingsColumn, value);
+    }
+
+    public string PromptCreatedColumn
+    {
+        get => _promptCreatedColumn;
+        private set => SetProperty(ref _promptCreatedColumn, value);
+    }
+
+    public string NoPromptRowsText
+    {
+        get => _noPromptRowsText;
+        private set => SetProperty(ref _noPromptRowsText, value);
+    }
+
+    public string NoItemSelectedForPromptText
+    {
+        get => _noItemSelectedForPromptText;
+        private set => SetProperty(ref _noItemSelectedForPromptText, value);
+    }
+
+    public string SelectedSeriesItemTitleText
+    {
+        get => _selectedSeriesItemTitleText;
+        private set => SetProperty(ref _selectedSeriesItemTitleText, value);
+    }
+
     public string NewSeriesTitle
     {
         get => _newSeriesTitle;
@@ -338,6 +440,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
         set => SetProperty(ref _newItemBrief, value);
     }
 
+    public string NewPromptText
+    {
+        get => _newPromptText;
+        set
+        {
+            if (SetProperty(ref _newPromptText, value))
+            {
+                CreatePromptVersionCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
     public IReadOnlyList<SeriesSummaryViewModel> Series
     {
         get => _series;
@@ -355,6 +469,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             }
 
             SeriesItems = value?.Items ?? [];
+            SelectedSeriesItem = SeriesItems.FirstOrDefault();
             AddItemCommand.NotifyCanExecuteChanged();
         }
     }
@@ -363,6 +478,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _seriesItems;
         private set => SetProperty(ref _seriesItems, value);
+    }
+
+    public SeriesItemViewModel? SelectedSeriesItem
+    {
+        get => _selectedSeriesItem;
+        set
+        {
+            if (!SetProperty(ref _selectedSeriesItem, value))
+            {
+                return;
+            }
+
+            PromptVersions = value?.PromptVersions ?? [];
+            SelectedSeriesItemTitleText = value?.Title ?? NoItemSelectedForPromptText;
+            CreatePromptVersionCommand.NotifyCanExecuteChanged();
+        }
     }
 
     public IReadOnlyList<PlanRowViewModel> PlanRows
@@ -378,6 +509,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     public bool HasPlanRows => PlanRows.Count > 0;
+
+    public IReadOnlyList<PromptVersionViewModel> PromptVersions
+    {
+        get => _promptVersions;
+        private set => SetProperty(ref _promptVersions, value);
+    }
+
+    public IReadOnlyList<PromptRowViewModel> PromptRows
+    {
+        get => _promptRows;
+        private set
+        {
+            if (SetProperty(ref _promptRows, value))
+            {
+                OnPropertyChanged(nameof(HasPromptRows));
+            }
+        }
+    }
+
+    public bool HasPromptRows => PromptRows.Count > 0;
 
     public LanguageOptionViewModel? SelectedLanguageOption
     {
@@ -426,6 +577,19 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PlanStatusColumn = Text(LocalizationKey.PlanStatusColumn);
         NoPlanRowsText = Text(LocalizationKey.NoPlanRows);
         NoItemsInSeriesText = Text(LocalizationKey.NoItemsInSeries);
+        PromptEditorTitle = Text(LocalizationKey.PromptEditor);
+        SelectedItemTitle = Text(LocalizationKey.SelectedItem);
+        PromptTextLabel = Text(LocalizationKey.PromptText);
+        DefaultGenerationSettingsText = Text(LocalizationKey.DefaultGenerationSettings);
+        CreatePromptVersionText = Text(LocalizationKey.CreatePromptVersion);
+        PromptHistoryTitle = Text(LocalizationKey.PromptHistory);
+        PromptVersionColumn = Text(LocalizationKey.PromptVersionColumn);
+        PromptItemColumn = Text(LocalizationKey.PromptItemColumn);
+        PromptTextColumn = Text(LocalizationKey.PromptTextColumn);
+        PromptSettingsColumn = Text(LocalizationKey.PromptSettingsColumn);
+        PromptCreatedColumn = Text(LocalizationKey.PromptCreatedColumn);
+        NoPromptRowsText = Text(LocalizationKey.NoPromptRows);
+        NoItemSelectedForPromptText = Text(LocalizationKey.NoItemSelectedForPrompt);
         CurrentProjectSummary = SelectedProject is null
             ? Text(LocalizationKey.NoProjectLoaded)
             : $"{SelectedProject.Name} ({SelectedProject.UpdatedAt.LocalDateTime:g})";
@@ -460,7 +624,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         _selectedLanguageOption = LanguageOptions.First(option => option.Preference == previousPreference);
         OnPropertyChanged(nameof(SelectedLanguageOption));
+        SelectedSeriesItemTitleText = SelectedSeriesItem?.Title ?? NoItemSelectedForPromptText;
         RebuildPlanRows();
+        RebuildPromptRows();
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateProject))]
@@ -524,7 +690,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        await _projectService.AddItemAsync(
+        var item = await _projectService.AddItemAsync(
             SelectedProject.Id,
             SelectedSeries.Id,
             NewItemTitle.Trim(),
@@ -534,7 +700,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         NewItemTitle = string.Empty;
         NewItemBrief = string.Empty;
-        await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id);
+        await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id, item.Id);
     }
 
     private bool CanAddItem()
@@ -544,7 +710,40 @@ public sealed partial class MainWindowViewModel : ObservableObject
             && !string.IsNullOrWhiteSpace(NewItemTitle);
     }
 
-    private async Task LoadPlanAsync(Guid projectId, Guid? selectedSeriesId = null)
+    [RelayCommand(CanExecute = nameof(CanCreatePromptVersion))]
+    private async Task CreatePromptVersionAsync()
+    {
+        if (SelectedProject is null || SelectedSeries is null || SelectedSeriesItem is null)
+        {
+            return;
+        }
+
+        await _projectService.AddPromptVersionAsync(
+            SelectedProject.Id,
+            SelectedSeriesItem.Id,
+            NewPromptText.Trim(),
+            CreateDefaultGenerationSettings(),
+            providerProfileId: null,
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        NewPromptText = string.Empty;
+        await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id, SelectedSeriesItem.Id);
+    }
+
+    private bool CanCreatePromptVersion()
+    {
+        return SelectedProject is not null
+            && SelectedSeriesItem is not null
+            && !string.IsNullOrWhiteSpace(NewPromptText);
+    }
+
+    private static GenerationSettings CreateDefaultGenerationSettings()
+    {
+        return new GenerationSettings(1024, 1024, "standard", "png");
+    }
+
+    private async Task LoadPlanAsync(Guid projectId, Guid? selectedSeriesId = null, Guid? selectedItemId = null)
     {
         var project = await _projectService.LoadProjectAsync(projectId, CancellationToken.None);
         if (project is null)
@@ -558,14 +757,33 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 series.Id,
                 series.Title,
                 series.Items
-                    .Select(item => new SeriesItemViewModel(item.Id, item.Title, item.Brief, item.Status))
+                    .Select(item => new SeriesItemViewModel(
+                        item.Id,
+                        item.Title,
+                        item.Brief,
+                        item.Status,
+                        item.PromptVersions
+                            .OrderByDescending(prompt => prompt.VersionNumber)
+                            .Select(prompt => new PromptVersionViewModel(
+                                prompt.Id,
+                                prompt.VersionNumber,
+                                prompt.PromptText,
+                                FormatGenerationSettings(prompt.Settings),
+                                prompt.CreatedAt))
+                            .ToArray()))
                     .ToArray()))
             .ToArray();
         RebuildPlanRows();
+        RebuildPromptRows();
 
         SelectedSeries = selectedSeriesId is null
             ? Series.FirstOrDefault()
             : Series.FirstOrDefault(series => series.Id == selectedSeriesId);
+        if (selectedItemId is not null)
+        {
+            SelectedSeriesItem = SelectedSeries?.Items.FirstOrDefault(item => item.Id == selectedItemId) ?? SelectedSeriesItem;
+        }
+
         CreateSeriesCommand.NotifyCanExecuteChanged();
     }
 
@@ -574,9 +792,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         Series = [];
         SelectedSeries = null;
         SeriesItems = [];
+        SelectedSeriesItem = null;
         RebuildPlanRows();
+        RebuildPromptRows();
         CreateSeriesCommand.NotifyCanExecuteChanged();
         AddItemCommand.NotifyCanExecuteChanged();
+        CreatePromptVersionCommand.NotifyCanExecuteChanged();
         return Task.CompletedTask;
     }
 
@@ -593,6 +814,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
             .ToArray();
     }
 
+    private void RebuildPromptRows()
+    {
+        PromptRows = Series
+            .SelectMany(series => series.Items.SelectMany(item => item.PromptVersions.Select(prompt => new PromptRowViewModel(
+                item.Title,
+                $"v{prompt.VersionNumber}",
+                prompt.PromptText,
+                prompt.SettingsSummary,
+                prompt.CreatedAt.LocalDateTime.ToString("g")))))
+            .ToArray();
+    }
+
+    private static string FormatGenerationSettings(GenerationSettings settings)
+    {
+        return $"{settings.Width}x{settings.Height} {settings.Quality} {settings.OutputFormat}";
+    }
+
     private string Text(LocalizationKey key)
     {
         return _localizationService.GetText(key);
@@ -602,6 +840,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, string EmptyState)
 {
     public bool IsPlan => Kind is WorkbenchTabKind.Plan;
+
+    public bool IsPrompts => Kind is WorkbenchTabKind.Prompts;
 }
 
 public enum WorkbenchTabKind
@@ -621,6 +861,25 @@ public sealed record ProjectSummaryViewModel(Guid Id, string Name, DateTimeOffse
 
 public sealed record SeriesSummaryViewModel(Guid Id, string Title, IReadOnlyList<SeriesItemViewModel> Items);
 
-public sealed record SeriesItemViewModel(Guid Id, string Title, string Brief, SeriesItemStatus Status);
+public sealed record SeriesItemViewModel(
+    Guid Id,
+    string Title,
+    string Brief,
+    SeriesItemStatus Status,
+    IReadOnlyList<PromptVersionViewModel> PromptVersions);
 
 public sealed record PlanRowViewModel(string SeriesTitle, string ItemTitle, string Brief, string StatusText);
+
+public sealed record PromptVersionViewModel(
+    Guid Id,
+    int VersionNumber,
+    string PromptText,
+    string SettingsSummary,
+    DateTimeOffset CreatedAt);
+
+public sealed record PromptRowViewModel(
+    string ItemTitle,
+    string Version,
+    string PromptText,
+    string SettingsSummary,
+    string CreatedAt);
