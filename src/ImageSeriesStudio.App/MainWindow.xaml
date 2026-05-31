@@ -24,21 +24,32 @@
 
         <Border Grid.Row="0" Grid.ColumnSpan="3" Background="#20242B" Padding="16,0">
             <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LanguageLabel}"
+                               Foreground="#B8C7D9"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0" />
+                    <ComboBox ItemsSource="{Binding LanguageOptions}"
+                              SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
+                              DisplayMemberPath="DisplayName"
+                              MinWidth="112"
+                              Height="28"
+                              Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding ProviderMode}"
+                               Foreground="#B8C7D9"
+                               VerticalAlignment="Center" />
+                </StackPanel>
                 <TextBlock Text="{Binding AppTitle}"
                            Foreground="#FFFFFF"
                            FontSize="16"
                            FontWeight="SemiBold"
-                           VerticalAlignment="Center" />
-                <TextBlock DockPanel.Dock="Right"
-                           Text="{Binding ProviderMode}"
-                           Foreground="#B8C7D9"
                            VerticalAlignment="Center" />
             </DockPanel>
         </Border>
 
         <Border Grid.Row="1" Grid.Column="0" Background="#FFFFFF" BorderBrush="#D9DEE8" BorderThickness="0,0,1,0">
             <DockPanel Margin="14">
-                <TextBlock DockPanel.Dock="Top" Text="Workspace" FontWeight="SemiBold" Margin="0,0,0,10" />
+                <TextBlock DockPanel.Dock="Top" Text="{Binding WorkspaceHeader}" FontWeight="SemiBold" Margin="0,0,0,10" />
                 <ListBox ItemsSource="{Binding NavigationItems}"
                          SelectedIndex="1"
                          BorderThickness="0"
@@ -72,14 +83,14 @@
 
         <Border Grid.Row="1" Grid.Column="2" Background="#FFFFFF" BorderBrush="#D9DEE8" BorderThickness="1,0,0,0">
             <StackPanel Margin="16">
-                <TextBlock Text="Inspector" FontWeight="SemiBold" Margin="0,0,0,12" />
+                <TextBlock Text="{Binding InspectorTitle}" FontWeight="SemiBold" Margin="0,0,0,12" />
                 <TextBlock Text="{Binding InspectorSummary}" TextWrapping="Wrap" Foreground="#4B5563" />
             </StackPanel>
         </Border>
 
         <Border Grid.Row="2" Grid.ColumnSpan="3" Background="#FFFFFF" BorderBrush="#D9DEE8" BorderThickness="0,1,0,0">
             <DockPanel Margin="16,12">
-                <TextBlock DockPanel.Dock="Top" Text="Activity" FontWeight="SemiBold" Margin="0,0,0,8" />
+                <TextBlock DockPanel.Dock="Top" Text="{Binding ActivityTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
                 <ItemsControl ItemsSource="{Binding ActivityItems}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>

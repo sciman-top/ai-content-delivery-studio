@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\ImageSeriesStudio.Core\ImageSeriesStudio.Core.csproj" />
     <ProjectReference Include="..\ImageSeriesStudio.Infrastructure\ImageSeriesStudio.Infrastructure.csproj" />
+    <ProjectReference Include="..\ImageSeriesStudio.Application\ImageSeriesStudio.Application.csproj" />
   </ItemGroup>
 
   <ItemGroup>

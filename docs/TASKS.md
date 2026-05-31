@@ -28,7 +28,12 @@
 - [x] Add Generic Host startup to WPF.
 - [x] Add MVVM Toolkit.
 - [x] Add workbench shell.
+- [x] Add application layer project.
+- [x] Add Chinese and English localization foundation.
+- [x] Add language selection to shell.
+- [x] Add project repository and application service foundation.
 - [ ] Add project creation and load/save.
+- [ ] Add Phase 2 detailed implementation plan.
 - [ ] Add series and item table.
 - [ ] Add prompt version editor.
 - [ ] Add queue panel.

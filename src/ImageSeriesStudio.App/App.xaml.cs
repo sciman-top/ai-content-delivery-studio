@@ -1,5 +1,6 @@
 using System.Windows;
 using ImageSeriesStudio.App.ViewModels;
+using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Infrastructure.Fakes;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,7 +8,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace ImageSeriesStudio.App;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private IHost? _host;
 
@@ -16,6 +17,7 @@ public partial class App : Application
         base.OnStartup(e);
 
         var builder = Host.CreateApplicationBuilder(e.Args);
+        builder.Services.AddSingleton<LocalizationService>();
         builder.Services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
         builder.Services.AddSingleton<IImageGenerationProvider, FakeImageGenerationProvider>();
         builder.Services.AddSingleton<IVisionReviewProvider, FakeVisionReviewProvider>();

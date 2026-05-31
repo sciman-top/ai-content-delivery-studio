@@ -238,6 +238,113 @@ dotnet build
 
 Expected: app builds and opens a basic workbench window.
 
+## Task 7A: Application Layer And Localization Foundation
+
+**Files:**
+
+- Create: `src/ImageSeriesStudio.Application/ImageSeriesStudio.Application.csproj`
+- Create: `src/ImageSeriesStudio.Application/Localization/LocalizationService.cs`
+- Modify: `src/ImageSeriesStudio.App/ViewModels/MainWindowViewModel.cs`
+- Modify: `src/ImageSeriesStudio.App/MainWindow.xaml`
+- Test: `tests/ImageSeriesStudio.Tests/LocalizationTests.cs`
+
+- [x] **Step 1: Add application layer project**
+
+Create `ImageSeriesStudio.Application`, reference `Core`, add it to the solution, and let the WPF app reference it.
+
+- [x] **Step 2: Add Chinese and English localization service**
+
+Support `System`, `Chinese`, and `English` preferences. Resolve `zh-CN` and `en-US` shell strings through stable keys.
+
+- [x] **Step 3: Add language selection to shell**
+
+Bind a language selector in the WPF top bar. Refresh visible shell labels when language changes.
+
+- [x] **Step 4: Gate**
+
+Run:
+
+```powershell
+dotnet build
+dotnet test --filter LocalizationTests
+```
+
+Expected: app builds and localization tests pass.
+
+## Task 7B: Project Application Service Foundation
+
+**Files:**
+
+- Create: `src/ImageSeriesStudio.Application/Projects/ProjectApplicationService.cs`
+- Create: `src/ImageSeriesStudio.Infrastructure/Persistence/EfProjectRepository.cs`
+- Test: `tests/ImageSeriesStudio.Tests/ProjectApplicationServiceTests.cs`
+
+- [x] **Step 1: Define project repository port and service**
+
+Add an application-layer service that can create and load projects without WPF.
+
+- [x] **Step 2: Implement SQLite repository adapter**
+
+Use `AppDbContext` to save and load `ImageProject` aggregates.
+
+- [x] **Step 3: Gate**
+
+Run:
+
+```powershell
+dotnet test --filter ProjectApplicationServiceTests
+```
+
+Expected: a project can be created, saved, and loaded from a temporary SQLite database outside the repository.
+
+## Task 7C: Phase 2 UI Implementation Plan
+
+**Goal:** Make the WPF shell complete the fake-provider workflow end-to-end before any real API integration.
+
+**Execution order:**
+
+- [ ] **Task 7C.1: Project create/load/save UI**
+  - Add localized project name input, create action, project list, and current project summary.
+  - Persist project records through `ProjectApplicationService`.
+  - Gate: `dotnet build`, `dotnet test`.
+
+- [ ] **Task 7C.2: Series and item editing**
+  - Add application service methods for adding series and items.
+  - Add editable table in the Plan tab.
+  - Gate: service tests plus `dotnet build`.
+
+- [ ] **Task 7C.3: Prompt version editor**
+  - Add prompt version creation and history display.
+  - Keep provider/model fields provider-neutral.
+  - Gate: prompt service tests plus `dotnet build`.
+
+- [ ] **Task 7C.4: Fake planning action**
+  - Run `FakeTextPlanningProvider` from the Brief/Plan path.
+  - Create draft series items from the returned plan.
+  - Gate: fake workflow test plus UI build.
+
+- [ ] **Task 7C.5: Queue panel**
+  - Bind `GenerationQueue` state to the Queue tab.
+  - Support cancellation and retry visibility.
+  - Gate: queue tests plus `dotnet build`.
+
+- [ ] **Task 7C.6: Candidate gallery**
+  - Show generated placeholder images from fake provider output.
+  - Prepare virtualization-friendly item model.
+  - Gate: fake provider tests plus `dotnet build`.
+
+- [ ] **Task 7C.7: Review panel**
+  - Bind rubric and `FakeVisionReviewProvider` result.
+  - Keep human approval as the final decision.
+  - Gate: review tests plus `dotnet build`.
+
+- [ ] **Task 7C.8: Delivery export panel**
+  - Call `DeliveryPackageWriter` from the Delivery tab.
+  - Export manifest, prompts, metadata, review report, and final image copies.
+  - Gate: delivery tests plus `dotnet build`.
+
+**Checkpoint after 7C:** The app can create a project, plan one image series with fakes, generate placeholder candidates, review, approve, and export a delivery package without network access or paid API calls.
+
 ## Task 8: OpenAI Providers
 
 **Files:**

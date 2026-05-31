@@ -21,6 +21,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\ImageSeriesStudio.Core\ImageSeriesStudio.Core.csproj" />
     <ProjectReference Include="..\..\src\ImageSeriesStudio.Infrastructure\ImageSeriesStudio.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\ImageSeriesStudio.Application\ImageSeriesStudio.Application.csproj" />
   </ItemGroup>
 
 </Project>

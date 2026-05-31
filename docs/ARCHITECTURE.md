@@ -12,8 +12,10 @@ Microsoft recommends WinUI for new modern Windows apps. For this product, WPF is
 ai-image-series-studio/
   src/
     ImageSeriesStudio.App/              WPF shell, views, view models
-    ImageSeriesStudio.Core/             domain model and application interfaces
+    ImageSeriesStudio.Application/      use cases, localization, workflow orchestration
+    ImageSeriesStudio.Core/             domain model and provider-neutral contracts
     ImageSeriesStudio.Infrastructure/   EF Core, filesystem, provider adapters
+  tests/
     ImageSeriesStudio.Tests/            unit and integration tests with fake providers
   docs/
     adr/
@@ -28,7 +30,7 @@ ai-image-series-studio/
 ```mermaid
 flowchart TB
     UI["WPF App: Views and ViewModels"]
-    APP["Application Services: planning, queue, review, delivery"]
+    APP["Application Services: planning, queue, review, delivery, localization"]
     CORE["Domain Core: project, series, item, prompt, task, candidate, review"]
     INFRA["Infrastructure: SQLite, filesystem, OpenAI, fake providers"]
     EXT["External APIs: text, image, vision"]
@@ -38,6 +40,17 @@ flowchart TB
     APP --> INFRA
     INFRA --> EXT
 ```
+
+## Localization
+
+The app supports two first-class languages:
+
+- Chinese: `zh-CN`
+- English: `en-US`
+
+Language preference is `System`, `Chinese`, or `English`. The application layer resolves the effective culture, exposes localized UI/report/prompt strings by stable keys, and keeps domain model identifiers, protocol fields, and provider error codes in English.
+
+User-visible WPF labels, validation messages, review summaries, delivery reports, prompt templates, and export descriptions must not be hard-coded in view models or infrastructure. New strings should be added through the localization catalog and covered by tests for both supported languages.
 
 ## Provider Boundaries
 
@@ -124,13 +137,16 @@ Provider integration adds:
 - OpenAI dry-run capability validation.
 - Opt-in smoke tests with real API calls.
 - Snapshot tests for delivery manifest format.
+- Localization tests for `zh-CN`, `en-US`, and system fallback.
 
 ## Best Engineering End State
 
 The best end state is a modular local desktop product:
 
+- Application use cases can be tested without WPF, SQLite, or network access.
 - WPF shell can be replaced without rewriting core logic.
 - Provider adapters can be swapped or added.
+- Chinese and English are selectable across UI, prompts, review reports, and delivery output.
 - Workflows are reproducible through stored prompt versions and metadata.
 - Every generated output is traceable to prompt, model, settings, references, review, and delivery version.
 - Review is a structured loop, not an informal comment.

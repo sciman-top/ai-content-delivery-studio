@@ -39,6 +39,8 @@ Goal: edit a project end-to-end using fake providers.
 
 Deliverables:
 
+- Localization foundation with selectable `zh-CN` / `en-US`.
+- Application layer for use-case orchestration outside WPF.
 - Workbench shell with Brief, Plan, Prompts, Queue, Gallery, Review, and Delivery tabs.
 - Project creation and save/load.
 - Series and item table editing.
@@ -50,6 +52,7 @@ Deliverables:
 Exit gate:
 
 - UI can complete the full loop with fake providers.
+- Language can be switched between Chinese and English for shell labels and user-facing workflow summaries.
 - No paid API call is required.
 
 ## Phase 3: OpenAI Provider Integration
@@ -131,3 +134,16 @@ Deliverables:
 - Performance pass for large galleries.
 - Structured logs and diagnostics bundle.
 - Documentation and sample projects.
+
+## Long-Term Best Engineering End State
+
+Goal: evolve from MVP workbench to a durable local production studio.
+
+Deliverables:
+
+- Clean application layer with command/query use cases and repository ports.
+- Versioned workflow templates, then optional workflow graph import/export.
+- Provider plugin boundary with capability discovery and contract tests.
+- Localized prompt templates, review reports, delivery manifests, and user guide.
+- Large-gallery virtualization, thumbnail cache, crash-safe queue recovery, backup/restore, and diagnostics bundle.
+- Packaged Windows release with accessibility and performance gates.
