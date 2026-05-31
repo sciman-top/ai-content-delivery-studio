@@ -1,0 +1,100 @@
+using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Infrastructure.Fakes;
+using ImageSeriesStudio.Infrastructure.OpenAI;
+
+namespace ImageSeriesStudio.Tests;
+
+public sealed class ProviderCapabilityValidatorTests
+{
+    [Fact]
+    public void ValidateTextPlanningProvider_AcceptsFakeAndOpenAiProviders()
+    {
+        using var httpClient = new HttpClient(new StaticHttpHandler());
+        var openAiProvider = new OpenAiTextPlanningProvider(
+            httpClient,
+            new OpenAiProviderOptions(),
+            new StaticSecretStore());
+
+        Assert.Empty(ProviderCapabilityValidator.ValidateTextPlanningProvider(new FakeTextPlanningProvider()));
+        Assert.Empty(ProviderCapabilityValidator.ValidateTextPlanningProvider(openAiProvider));
+    }
+
+    [Fact]
+    public void ValidateImageGenerationProvider_AcceptsFakeAndOpenAiProviders()
+    {
+        using var httpClient = new HttpClient(new StaticHttpHandler());
+        var openAiProvider = new OpenAiImageGenerationProvider(
+            httpClient,
+            new OpenAiProviderOptions(),
+            new StaticSecretStore());
+
+        Assert.Empty(ProviderCapabilityValidator.ValidateImageGenerationProvider(new FakeImageGenerationProvider()));
+        Assert.Empty(ProviderCapabilityValidator.ValidateImageGenerationProvider(openAiProvider));
+    }
+
+    [Fact]
+    public void ValidateVisionReviewProvider_AcceptsFakeAndOpenAiProviders()
+    {
+        using var httpClient = new HttpClient(new StaticHttpHandler());
+        var openAiProvider = new OpenAiVisionReviewProvider(
+            httpClient,
+            new OpenAiProviderOptions(),
+            new StaticSecretStore());
+
+        Assert.Empty(ProviderCapabilityValidator.ValidateVisionReviewProvider(new FakeVisionReviewProvider()));
+        Assert.Empty(ProviderCapabilityValidator.ValidateVisionReviewProvider(openAiProvider));
+    }
+
+    [Fact]
+    public void ValidateImageGenerationProvider_RejectsWrongCapabilityAndInvalidModels()
+    {
+        var provider = new InvalidImageGenerationProvider(
+            new ProviderCapabilities(
+                "",
+                " ",
+                ["gpt-image-2", "GPT-IMAGE-2", ""],
+                SupportsTextPlanning: true,
+                SupportsImageGeneration: false,
+                SupportsVisionReview: false,
+                SupportsImageEditing: false,
+                SupportsStreaming: false));
+
+        var errors = ProviderCapabilityValidator.ValidateImageGenerationProvider(provider);
+
+        Assert.Contains(errors, error => error.Contains("Provider id", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, error => error.Contains("display name", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, error => error.Contains("image generation", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, error => error.Contains("blank", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, error => error.Contains("unique", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private sealed class StaticSecretStore : IOpenAiSecretStore
+    {
+        public Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<string?>("test-key");
+        }
+    }
+
+    private sealed class StaticHttpHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        }
+    }
+
+    private sealed class InvalidImageGenerationProvider(IProviderCapabilities capabilities) : IImageGenerationProvider
+    {
+        public IProviderCapabilities Capabilities { get; } = capabilities;
+
+        public Task<ImageGenerationResult> GenerateImageAsync(
+            ImageGenerationRequest request,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+    }
+}

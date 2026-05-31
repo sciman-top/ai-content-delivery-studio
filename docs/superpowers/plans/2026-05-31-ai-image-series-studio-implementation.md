@@ -372,8 +372,9 @@ Do not expose OpenAI request objects outside infrastructure.
   - [x] Text planning adapter using Responses API request shape.
   - [x] Image generation adapter.
   - [x] Vision review adapter.
+  - [x] Provider capability validation.
 
-- [ ] **Step 2: Add contract tests using mocked HTTP**
+- [x] **Step 2: Add contract tests using mocked HTTP**
 
 Verify request shape, response parsing, metadata capture, and error mapping without real API calls.
 
