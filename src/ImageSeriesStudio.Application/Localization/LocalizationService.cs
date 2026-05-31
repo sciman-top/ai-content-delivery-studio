@@ -97,6 +97,13 @@ public sealed class LocalizationService
         [LocalizationKey.GalleryImageColumn] = "Candidate",
         [LocalizationKey.GalleryMetadataColumn] = "Metadata",
         [LocalizationKey.NoGalleryRows] = "Run fake generation to see candidate images here.",
+        [LocalizationKey.RunFakeReview] = "Run fake review",
+        [LocalizationKey.ReviewItemColumn] = "Item",
+        [LocalizationKey.ReviewDecisionColumn] = "Decision",
+        [LocalizationKey.ReviewScoreColumn] = "Score",
+        [LocalizationKey.ReviewCommentsColumn] = "Comments",
+        [LocalizationKey.ReviewFixColumn] = "Suggested fix",
+        [LocalizationKey.NoReviewRows] = "Run fake review to see structured results here.",
     };
 
     private static readonly IReadOnlyDictionary<LocalizationKey, string> Chinese = new Dictionary<LocalizationKey, string>
@@ -191,6 +198,13 @@ public sealed class LocalizationService
         [LocalizationKey.GalleryImageColumn] = "候选图",
         [LocalizationKey.GalleryMetadataColumn] = "元数据",
         [LocalizationKey.NoGalleryRows] = "运行假生成后，候选图将显示在这里。",
+        [LocalizationKey.RunFakeReview] = "运行假评审",
+        [LocalizationKey.ReviewItemColumn] = "条目",
+        [LocalizationKey.ReviewDecisionColumn] = "决策",
+        [LocalizationKey.ReviewScoreColumn] = "分数",
+        [LocalizationKey.ReviewCommentsColumn] = "评语",
+        [LocalizationKey.ReviewFixColumn] = "修复建议",
+        [LocalizationKey.NoReviewRows] = "运行假评审后，结构化结果将显示在这里。",
     };
 
     private readonly Func<CultureInfo> _currentCulture;
@@ -359,4 +373,11 @@ public enum LocalizationKey
     GalleryImageColumn,
     GalleryMetadataColumn,
     NoGalleryRows,
+    RunFakeReview,
+    ReviewItemColumn,
+    ReviewDecisionColumn,
+    ReviewScoreColumn,
+    ReviewCommentsColumn,
+    ReviewFixColumn,
+    NoReviewRows,
 }

@@ -56,6 +56,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _galleryImageColumn = string.Empty;
     private string _galleryMetadataColumn = string.Empty;
     private string _noGalleryRowsText = string.Empty;
+    private string _runFakeReviewText = string.Empty;
+    private string _reviewItemColumn = string.Empty;
+    private string _reviewDecisionColumn = string.Empty;
+    private string _reviewScoreColumn = string.Empty;
+    private string _reviewCommentsColumn = string.Empty;
+    private string _reviewFixColumn = string.Empty;
+    private string _noReviewRowsText = string.Empty;
     private string _planEditorTitle = string.Empty;
     private string _seriesTitleLabel = string.Empty;
     private string _seriesDescriptionLabel = string.Empty;
@@ -98,6 +105,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<PromptRowViewModel> _promptRows = [];
     private IReadOnlyList<QueueRowViewModel> _queueRows = [];
     private IReadOnlyList<GalleryRowViewModel> _galleryRows = [];
+    private IReadOnlyList<ReviewRowViewModel> _reviewRows = [];
     private SeriesSummaryViewModel? _selectedSeries;
     private SeriesItemViewModel? _selectedSeriesItem;
 
@@ -207,6 +215,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
             QueueRows = [];
             GalleryRows = [];
+            ReviewRows = [];
             RunFakePlanningCommand.NotifyCanExecuteChanged();
             RunFakeGenerationCommand.NotifyCanExecuteChanged();
             _ = value is null ? ClearPlanAsync() : LoadPlanAsync(value.Id);
@@ -403,6 +412,48 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _noGalleryRowsText;
         private set => SetProperty(ref _noGalleryRowsText, value);
+    }
+
+    public string RunFakeReviewText
+    {
+        get => _runFakeReviewText;
+        private set => SetProperty(ref _runFakeReviewText, value);
+    }
+
+    public string ReviewItemColumn
+    {
+        get => _reviewItemColumn;
+        private set => SetProperty(ref _reviewItemColumn, value);
+    }
+
+    public string ReviewDecisionColumn
+    {
+        get => _reviewDecisionColumn;
+        private set => SetProperty(ref _reviewDecisionColumn, value);
+    }
+
+    public string ReviewScoreColumn
+    {
+        get => _reviewScoreColumn;
+        private set => SetProperty(ref _reviewScoreColumn, value);
+    }
+
+    public string ReviewCommentsColumn
+    {
+        get => _reviewCommentsColumn;
+        private set => SetProperty(ref _reviewCommentsColumn, value);
+    }
+
+    public string ReviewFixColumn
+    {
+        get => _reviewFixColumn;
+        private set => SetProperty(ref _reviewFixColumn, value);
+    }
+
+    public string NoReviewRowsText
+    {
+        get => _noReviewRowsText;
+        private set => SetProperty(ref _noReviewRowsText, value);
     }
 
     public string PlanEditorTitle
@@ -734,11 +785,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _galleryRows, value))
             {
                 OnPropertyChanged(nameof(HasGalleryRows));
+                RunFakeReviewCommand.NotifyCanExecuteChanged();
             }
         }
     }
 
     public bool HasGalleryRows => GalleryRows.Count > 0;
+
+    public IReadOnlyList<ReviewRowViewModel> ReviewRows
+    {
+        get => _reviewRows;
+        private set
+        {
+            if (SetProperty(ref _reviewRows, value))
+            {
+                OnPropertyChanged(nameof(HasReviewRows));
+            }
+        }
+    }
+
+    public bool HasReviewRows => ReviewRows.Count > 0;
 
     public LanguageOptionViewModel? SelectedLanguageOption
     {
@@ -788,6 +854,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         GalleryImageColumn = Text(LocalizationKey.GalleryImageColumn);
         GalleryMetadataColumn = Text(LocalizationKey.GalleryMetadataColumn);
         NoGalleryRowsText = Text(LocalizationKey.NoGalleryRows);
+        RunFakeReviewText = Text(LocalizationKey.RunFakeReview);
+        ReviewItemColumn = Text(LocalizationKey.ReviewItemColumn);
+        ReviewDecisionColumn = Text(LocalizationKey.ReviewDecisionColumn);
+        ReviewScoreColumn = Text(LocalizationKey.ReviewScoreColumn);
+        ReviewCommentsColumn = Text(LocalizationKey.ReviewCommentsColumn);
+        ReviewFixColumn = Text(LocalizationKey.ReviewFixColumn);
+        NoReviewRowsText = Text(LocalizationKey.NoReviewRows);
         PlanEditorTitle = Text(LocalizationKey.PlanEditor);
         SeriesTitleLabel = Text(LocalizationKey.SeriesTitle);
         SeriesDescriptionLabel = Text(LocalizationKey.SeriesDescription);
@@ -948,6 +1021,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         QueueRows = BuildQueueRows(run);
         GalleryRows = BuildGalleryRows(run);
+        ReviewRows = [];
+        RunFakeReviewCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanRunFakeGeneration()
@@ -996,12 +1071,60 @@ public sealed partial class MainWindowViewModel : ObservableObject
             var itemTitle = task is null
                 ? image.CandidateImageId.ToString("N")
                 : itemTitles.GetValueOrDefault(task.SeriesItemId, task.SeriesItemId.ToString("N"));
+            var promptText = task is null ? string.Empty : FindPromptText(task.PromptVersionId);
 
             return new GalleryRowViewModel(
+                image.CandidateImageId,
                 itemTitle,
                 image.AssetPath,
-                image.MetadataPath);
+                image.MetadataPath,
+                promptText);
         }).ToArray();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunFakeReview))]
+    private async Task RunFakeReviewAsync()
+    {
+        if (SelectedProject is null)
+        {
+            return;
+        }
+
+        var reviews = await _projectService.RunVisionReviewAsync(
+            SelectedProject.Id,
+            GalleryRows
+                .Select(row => new ReviewCandidateInput(
+                    row.CandidateImageId,
+                    row.ItemTitle,
+                    row.AssetPath,
+                    row.PromptText))
+                .ToArray(),
+            CancellationToken.None);
+
+        ReviewRows = reviews.Zip(GalleryRows).Select(pair =>
+        {
+            var scoreText = string.Join(", ", pair.First.Scores.Select(score => $"{score.Key}:{score.Value}"));
+            return new ReviewRowViewModel(
+                pair.Second.ItemTitle,
+                pair.First.Decision.ToString(),
+                scoreText,
+                pair.First.Comments,
+                pair.First.SuggestedFix ?? string.Empty);
+        }).ToArray();
+    }
+
+    private bool CanRunFakeReview()
+    {
+        return SelectedProject is not null && GalleryRows.Count > 0;
+    }
+
+    private string FindPromptText(Guid promptVersionId)
+    {
+        return Series
+            .SelectMany(series => series.Items)
+            .SelectMany(item => item.PromptVersions)
+            .FirstOrDefault(prompt => prompt.Id == promptVersionId)
+            ?.PromptText ?? string.Empty;
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateSeries))]
@@ -1142,6 +1265,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedSeriesItem = null;
         QueueRows = [];
         GalleryRows = [];
+        ReviewRows = [];
         RebuildPlanRows();
         RebuildPromptRows();
         CreateSeriesCommand.NotifyCanExecuteChanged();
@@ -1195,6 +1319,8 @@ public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, 
     public bool IsQueue => Kind is WorkbenchTabKind.Queue;
 
     public bool IsGallery => Kind is WorkbenchTabKind.Gallery;
+
+    public bool IsReview => Kind is WorkbenchTabKind.Review;
 }
 
 public enum WorkbenchTabKind
@@ -1245,6 +1371,15 @@ public sealed record QueueRowViewModel(
     string ErrorMessage);
 
 public sealed record GalleryRowViewModel(
+    Guid CandidateImageId,
     string ItemTitle,
     string AssetPath,
-    string MetadataPath);
+    string MetadataPath,
+    string PromptText);
+
+public sealed record ReviewRowViewModel(
+    string ItemTitle,
+    string Decision,
+    string ScoreText,
+    string Comments,
+    string SuggestedFix);

@@ -41,7 +41,7 @@
 - [x] Add fake planning action.
 - [x] Add queue panel.
 - [x] Add candidate gallery.
-- [ ] Add review panel.
+- [x] Add review panel.
 - [ ] Add delivery export panel.
 
 ## Phase 3: OpenAI Integration

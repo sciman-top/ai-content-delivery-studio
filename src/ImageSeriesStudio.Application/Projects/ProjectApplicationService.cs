@@ -9,16 +9,17 @@ public sealed class ProjectApplicationService
     private readonly IProjectRepository _repository;
     private readonly ITextPlanningProvider? _textPlanningProvider;
     private readonly IImageGenerationProvider? _imageGenerationProvider;
+    private readonly IVisionReviewProvider? _visionReviewProvider;
 
     public ProjectApplicationService(IProjectRepository repository)
-        : this(repository, textPlanningProvider: null, imageGenerationProvider: null)
+        : this(repository, textPlanningProvider: null, imageGenerationProvider: null, visionReviewProvider: null)
     {
     }
 
     public ProjectApplicationService(
         IProjectRepository repository,
         ITextPlanningProvider? textPlanningProvider)
-        : this(repository, textPlanningProvider, imageGenerationProvider: null)
+        : this(repository, textPlanningProvider, imageGenerationProvider: null, visionReviewProvider: null)
     {
     }
 
@@ -26,10 +27,20 @@ public sealed class ProjectApplicationService
         IProjectRepository repository,
         ITextPlanningProvider? textPlanningProvider,
         IImageGenerationProvider? imageGenerationProvider)
+        : this(repository, textPlanningProvider, imageGenerationProvider, visionReviewProvider: null)
+    {
+    }
+
+    public ProjectApplicationService(
+        IProjectRepository repository,
+        ITextPlanningProvider? textPlanningProvider,
+        IImageGenerationProvider? imageGenerationProvider,
+        IVisionReviewProvider? visionReviewProvider)
     {
         _repository = repository;
         _textPlanningProvider = textPlanningProvider;
         _imageGenerationProvider = imageGenerationProvider;
+        _visionReviewProvider = visionReviewProvider;
     }
 
     public async Task<ImageProject> CreateProjectAsync(
@@ -157,6 +168,44 @@ public sealed class ProjectApplicationService
         return await queue.RunAsync(requests, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<VisionReviewResult>> RunVisionReviewAsync(
+        Guid projectId,
+        IReadOnlyList<ReviewCandidateInput> candidates,
+        CancellationToken cancellationToken)
+    {
+        if (_visionReviewProvider is null)
+        {
+            throw new InvalidOperationException("Vision review provider is not registered.");
+        }
+
+        if (!_visionReviewProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Real vision review requires explicit approval.");
+        }
+
+        var rubric = new ReviewRubric(
+            Guid.NewGuid(),
+            projectId,
+            "Default fake review",
+            [new ReviewRubricDimension("match", "Candidate should match the prompt and item brief.", 1)],
+            DateTimeOffset.UtcNow);
+
+        var results = new List<VisionReviewResult>();
+        foreach (var candidate in candidates)
+        {
+            var result = await _visionReviewProvider.ReviewAsync(
+                new VisionReviewRequest(
+                    candidate.CandidateImageId,
+                    candidate.AssetPath,
+                    rubric,
+                    candidate.PromptText),
+                cancellationToken);
+            results.Add(result);
+        }
+
+        return results;
+    }
+
     private static GenerationSettings CreateDefaultGenerationSettings()
     {
         return new GenerationSettings(1024, 1024, "standard", "png");
@@ -232,3 +281,9 @@ public sealed record ProjectSummary(
     string Name,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
+
+public sealed record ReviewCandidateInput(
+    Guid CandidateImageId,
+    string ItemTitle,
+    string AssetPath,
+    string PromptText);

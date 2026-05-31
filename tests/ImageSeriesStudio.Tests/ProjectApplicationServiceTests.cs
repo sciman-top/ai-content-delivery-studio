@@ -309,4 +309,55 @@ public sealed class ProjectApplicationServiceTests
             }
         }
     }
+
+    [Fact]
+    public async Task ProjectApplicationService_RunsVisionReviewWithFakeProvider()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-fake-review.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(
+                new EfProjectRepository(new AppDbContext(options)),
+                textPlanningProvider: null,
+                imageGenerationProvider: null,
+                visionReviewProvider: new FakeVisionReviewProvider(defaultPasses: true));
+            var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Fake review demo", timestamp, CancellationToken.None);
+
+            var reviews = await service.RunVisionReviewAsync(
+                project.Id,
+                [
+                    new ReviewCandidateInput(
+                        Guid.NewGuid(),
+                        "Opening image",
+                        Path.Combine(databaseDirectory, "candidate.png"),
+                        "A clean editorial candidate."),
+                ],
+                CancellationToken.None);
+
+            var review = Assert.Single(reviews);
+            Assert.Equal(ReviewDecision.Pass, review.Decision);
+            Assert.Empty(review.HardFailures);
+            Assert.Contains("match", review.Scores.Keys);
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
 }

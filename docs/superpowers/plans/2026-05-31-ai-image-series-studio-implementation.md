@@ -338,7 +338,7 @@ Expected: a project can be created, saved, and loaded from a temporary SQLite da
   - Prepare virtualization-friendly item model.
   - Gate: fake provider tests plus `dotnet build`.
 
-- [ ] **Task 7C.7: Review panel**
+- [x] **Task 7C.7: Review panel**
   - Bind rubric and `FakeVisionReviewProvider` result.
   - Keep human approval as the final decision.
   - Gate: review tests plus `dotnet build`.
