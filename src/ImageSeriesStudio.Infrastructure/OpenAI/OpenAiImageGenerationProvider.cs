@@ -1,0 +1,193 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using System.Text.Json;
+using ImageSeriesStudio.Core.Providers;
+
+namespace ImageSeriesStudio.Infrastructure.OpenAI;
+
+public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
+{
+    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        WriteIndented = true,
+    };
+
+    private readonly HttpClient _httpClient;
+    private readonly OpenAiProviderOptions _options;
+    private readonly IOpenAiSecretStore _secretStore;
+
+    public OpenAiImageGenerationProvider(
+        HttpClient httpClient,
+        OpenAiProviderOptions options,
+        IOpenAiSecretStore secretStore)
+    {
+        _httpClient = httpClient;
+        _options = options;
+        _secretStore = secretStore;
+
+        Capabilities = new ProviderCapabilities(
+            "openai-image",
+            "OpenAI Image Generation Provider",
+            [_options.ImageGenerationModel],
+            SupportsTextPlanning: false,
+            SupportsImageGeneration: true,
+            SupportsVisionReview: false,
+            SupportsImageEditing: false,
+            SupportsStreaming: false);
+    }
+
+    public IProviderCapabilities Capabilities { get; }
+
+    public async Task<ImageGenerationResult> GenerateImageAsync(
+        ImageGenerationRequest request,
+        CancellationToken cancellationToken)
+    {
+        await OpenAiProviderGuard.EnsureCanCallRealApiAsync(_options, _secretStore, cancellationToken);
+        var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
+            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
+
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(_options.BaseUri, "images/generations"));
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        httpRequest.Content = JsonContent.Create(CreatePayload(request), options: JsonOptions);
+
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                $"OpenAI image generation request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        var imageBase64 = ExtractImageBase64(document.RootElement);
+        var imageBytes = Convert.FromBase64String(imageBase64);
+        var generatedAt = DateTimeOffset.UtcNow;
+        var outputFormat = NormalizeOutputFormat(request.Settings.OutputFormat);
+
+        Directory.CreateDirectory(request.OutputDirectory);
+
+        var assetPath = Path.Combine(
+            request.OutputDirectory,
+            EnsureOutputFileName(request.OutputFileName, outputFormat, request.SeriesItemId, request.PromptVersionId));
+        var metadataPath = Path.ChangeExtension(assetPath, ".json");
+        var providerTraceId = ExtractTraceId(document.RootElement);
+
+        await File.WriteAllBytesAsync(assetPath, imageBytes, cancellationToken);
+        await File.WriteAllTextAsync(
+            metadataPath,
+            JsonSerializer.Serialize(
+                new
+                {
+                    providerId = Capabilities.ProviderId,
+                    model = _options.ImageGenerationModel,
+                    providerTraceId,
+                    seriesItemId = request.SeriesItemId,
+                    promptVersionId = request.PromptVersionId,
+                    promptText = request.PromptText,
+                    settings = new
+                    {
+                        size = BuildSize(request),
+                        quality = NormalizeQuality(request.Settings.Quality),
+                        outputFormat,
+                        seed = request.Settings.Seed,
+                    },
+                    generatedAt,
+                },
+                JsonOptions),
+            cancellationToken);
+
+        return new ImageGenerationResult(
+            Guid.NewGuid(),
+            assetPath,
+            metadataPath,
+            providerTraceId,
+            generatedAt);
+    }
+
+    private Dictionary<string, object?> CreatePayload(ImageGenerationRequest request)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["model"] = _options.ImageGenerationModel,
+            ["prompt"] = request.PromptText,
+            ["n"] = 1,
+            ["size"] = BuildSize(request),
+            ["quality"] = NormalizeQuality(request.Settings.Quality),
+            ["output_format"] = NormalizeOutputFormat(request.Settings.OutputFormat),
+        };
+    }
+
+    private static string BuildSize(ImageGenerationRequest request)
+    {
+        return request.Settings.Width > 0 && request.Settings.Height > 0
+            ? $"{request.Settings.Width}x{request.Settings.Height}"
+            : "auto";
+    }
+
+    private static string NormalizeQuality(string quality)
+    {
+        return quality.Trim().ToLowerInvariant() switch
+        {
+            "low" => "low",
+            "medium" => "medium",
+            "high" or "hd" => "high",
+            _ => "auto",
+        };
+    }
+
+    private static string NormalizeOutputFormat(string outputFormat)
+    {
+        return outputFormat.Trim().ToLowerInvariant() switch
+        {
+            "jpeg" or "jpg" => "jpeg",
+            "webp" => "webp",
+            _ => "png",
+        };
+    }
+
+    private static string EnsureOutputFileName(
+        string outputFileName,
+        string outputFormat,
+        Guid seriesItemId,
+        Guid promptVersionId)
+    {
+        var extension = outputFormat is "jpeg" ? ".jpg" : $".{outputFormat}";
+        var fileName = string.IsNullOrWhiteSpace(outputFileName)
+            ? $"{seriesItemId:N}-{promptVersionId:N}{extension}"
+            : Path.GetFileName(outputFileName);
+
+        return Path.GetExtension(fileName).Equals(extension, StringComparison.OrdinalIgnoreCase)
+            ? fileName
+            : Path.ChangeExtension(fileName, extension);
+    }
+
+    private static string ExtractImageBase64(JsonElement root)
+    {
+        if (root.TryGetProperty("data", out var dataElement)
+            && dataElement.ValueKind is JsonValueKind.Array)
+        {
+            foreach (var image in dataElement.EnumerateArray())
+            {
+                if (image.TryGetProperty("b64_json", out var base64Element)
+                    && base64Element.ValueKind is JsonValueKind.String)
+                {
+                    return base64Element.GetString()!;
+                }
+            }
+        }
+
+        throw new InvalidOperationException("OpenAI image generation response did not include base64 image data.");
+    }
+
+    private static string ExtractTraceId(JsonElement root)
+    {
+        if (root.TryGetProperty("id", out var idElement) && idElement.ValueKind is JsonValueKind.String)
+        {
+            return idElement.GetString()!;
+        }
+
+        return root.TryGetProperty("created", out var createdElement)
+            ? $"openai-image-{createdElement}"
+            : "openai-image-generate";
+    }
+}

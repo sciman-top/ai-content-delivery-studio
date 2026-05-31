@@ -49,7 +49,7 @@
 - [x] Add OpenAI provider configuration.
 - [x] Store secrets outside repo.
 - [x] Implement text planning provider.
-- [ ] Implement image generation provider.
+- [x] Implement image generation provider.
 - [ ] Implement vision review provider.
 - [ ] Add provider capability validation.
 - [ ] Add dry-run and opt-in real API smoke tests.

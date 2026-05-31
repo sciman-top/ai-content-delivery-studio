@@ -370,7 +370,7 @@ Keep real API calls disabled by default. Read secrets from an external secret so
 Do not expose OpenAI request objects outside infrastructure.
 
   - [x] Text planning adapter using Responses API request shape.
-  - [ ] Image generation adapter.
+  - [x] Image generation adapter.
   - [ ] Vision review adapter.
 
 - [ ] **Step 2: Add contract tests using mocked HTTP**
