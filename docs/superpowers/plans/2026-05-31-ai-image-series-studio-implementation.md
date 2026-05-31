@@ -303,14 +303,19 @@ Expected: a project can be created, saved, and loaded from a temporary SQLite da
 
 **Execution order:**
 
-- [ ] **Task 7C.1: Project create/load/save UI**
+- [x] **Task 7C.1: Project create/load/save UI**
   - Add localized project name input, create action, project list, and current project summary.
   - Persist project records through `ProjectApplicationService`.
   - Gate: `dotnet build`, `dotnet test`.
 
-- [ ] **Task 7C.2: Series and item editing**
+- [x] **Task 7C.1A: Series and item editor foundation**
   - Add application service methods for adding series and items.
-  - Add editable table in the Plan tab.
+  - Add localized right-panel controls for creating series and items.
+  - Gate: `dotnet build`, `dotnet test --filter ProjectApplicationServiceTests`.
+
+- [x] **Task 7C.2: Series and item editing**
+  - Add application service methods for adding series and items.
+  - Add localized series and item table in the Plan tab.
   - Gate: service tests plus `dotnet build`.
 
 - [ ] **Task 7C.3: Prompt version editor**

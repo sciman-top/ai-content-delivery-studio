@@ -75,7 +75,135 @@
                                    Text="{Binding EmptyState}"
                                    Foreground="#5E6978"
                                    Margin="0,14,0,0"
-                                   TextWrapping="Wrap" />
+                                   TextWrapping="Wrap">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPlan}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <Grid Grid.Row="1" Margin="0,16,0,0">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsPlan}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="40" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Background="#E9EDF3" BorderBrush="#D4DAE5" BorderThickness="1">
+                                <Grid Margin="12,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="2.1*" />
+                                        <ColumnDefinition Width="110" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding DataContext.PlanSeriesColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding DataContext.PlanItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Margin="10,0,0,0" />
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding DataContext.PlanBriefColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Margin="10,0,0,0" />
+                                    <TextBlock Grid.Column="3"
+                                               Text="{Binding DataContext.PlanStatusColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Margin="10,0,0,0" />
+                                </Grid>
+                            </Border>
+
+                            <TextBlock Grid.Row="1"
+                                       Text="{Binding DataContext.NoPlanRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                       Foreground="#5E6978"
+                                       Margin="0,14,0,0"
+                                       TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsPlan}" Value="True" />
+                                                    <Condition Binding="{Binding DataContext.HasPlanRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <Border Grid.Row="2" BorderBrush="#D4DAE5" BorderThickness="1,0,1,1">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.HasPlanRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding DataContext.PlanRows, RelativeSource={RelativeSource AncestorType=TabControl}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1.2*" />
+                                                            <ColumnDefinition Width="1.2*" />
+                                                            <ColumnDefinition Width="2.1*" />
+                                                            <ColumnDefinition Width="110" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0"
+                                                                   Text="{Binding SeriesTitle}"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   FontWeight="SemiBold" />
+                                                        <TextBlock Grid.Column="1"
+                                                                   Text="{Binding ItemTitle}"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="10,0,0,0" />
+                                                        <TextBlock Grid.Column="2"
+                                                                   Text="{Binding Brief}"
+                                                                   TextWrapping="Wrap"
+                                                                   Foreground="#4B5563"
+                                                                   Margin="10,0,0,0" />
+                                                        <TextBlock Grid.Column="3"
+                                                                   Text="{Binding StatusText}"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Foreground="#4B5563"
+                                                                   Margin="10,0,0,0" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                        </Grid>
                     </Grid>
                 </DataTemplate>
             </TabControl.ContentTemplate>
@@ -85,6 +213,57 @@
             <StackPanel Margin="16">
                 <TextBlock Text="{Binding InspectorTitle}" FontWeight="SemiBold" Margin="0,0,0,12" />
                 <TextBlock Text="{Binding InspectorSummary}" TextWrapping="Wrap" Foreground="#4B5563" />
+
+                <Separator Margin="0,18,0,14" />
+
+                <TextBlock Text="{Binding ProjectNameLabel}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <TextBox Text="{Binding NewProjectName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+                <Button Content="{Binding CreateProjectText}"
+                        Command="{Binding CreateProjectCommand}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,18" />
+
+                <TextBlock Text="{Binding CurrentProjectTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <TextBlock Text="{Binding CurrentProjectSummary}" TextWrapping="Wrap" Foreground="#4B5563" Margin="0,0,0,14" />
+
+                <TextBlock Text="{Binding AvailableProjectsTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <ListBox ItemsSource="{Binding Projects}"
+                         SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
+                         DisplayMemberPath="Name"
+                         MinHeight="120" />
+
+                <Separator Margin="0,18,0,14" />
+
+                <TextBlock Text="{Binding PlanEditorTitle}" FontWeight="SemiBold" Margin="0,0,0,10" />
+                <TextBlock Text="{Binding SeriesTitleLabel}" Margin="0,0,0,4" />
+                <TextBox Text="{Binding NewSeriesTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+                <TextBlock Text="{Binding SeriesDescriptionLabel}" Margin="0,0,0,4" />
+                <TextBox Text="{Binding NewSeriesDescription, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+                <Button Content="{Binding CreateSeriesText}"
+                        Command="{Binding CreateSeriesCommand}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,12" />
+
+                <TextBlock Text="{Binding AvailableSeriesTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <ListBox ItemsSource="{Binding Series}"
+                         SelectedItem="{Binding SelectedSeries, Mode=TwoWay}"
+                         DisplayMemberPath="Title"
+                         MinHeight="82"
+                         Margin="0,0,0,12" />
+
+                <TextBlock Text="{Binding ItemTitleLabel}" Margin="0,0,0,4" />
+                <TextBox Text="{Binding NewItemTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+                <TextBlock Text="{Binding ItemBriefLabel}" Margin="0,0,0,4" />
+                <TextBox Text="{Binding NewItemBrief, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+                <Button Content="{Binding AddItemText}"
+                        Command="{Binding AddItemCommand}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,12" />
+
+                <TextBlock Text="{Binding SeriesItemsTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <ListBox ItemsSource="{Binding SeriesItems}"
+                         DisplayMemberPath="Title"
+                         MinHeight="82" />
             </StackPanel>
         </Border>
 

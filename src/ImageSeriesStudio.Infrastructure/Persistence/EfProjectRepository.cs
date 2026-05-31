@@ -15,18 +15,22 @@ public sealed class EfProjectRepository : IProjectRepository
 
     public async Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
     {
-        var exists = await _dbContext.Projects
-            .AnyAsync(existing => existing.Id == project.Id, cancellationToken);
-
-        if (exists)
+        if (_dbContext.Entry(project).State is EntityState.Detached)
         {
-            _dbContext.Projects.Update(project);
-        }
-        else
-        {
-            _dbContext.Projects.Add(project);
+            var exists = await _dbContext.Projects
+                .AnyAsync(existing => existing.Id == project.Id, cancellationToken);
+
+            if (exists)
+            {
+                _dbContext.Projects.Update(project);
+            }
+            else
+            {
+                _dbContext.Projects.Add(project);
+            }
         }
 
+        await TrackNewChildrenAsync(project, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -38,6 +42,33 @@ public sealed class EfProjectRepository : IProjectRepository
             .ThenInclude(series => series.Items)
             .ThenInclude(item => item.PromptVersions)
             .SingleOrDefaultAsync(project => project.Id == projectId, cancellationToken);
+    }
+
+    private async Task TrackNewChildrenAsync(ImageProject project, CancellationToken cancellationToken)
+    {
+        foreach (var series in project.Series)
+        {
+            if (!await _dbContext.Series.AnyAsync(existing => existing.Id == series.Id, cancellationToken))
+            {
+                _dbContext.Entry(series).State = EntityState.Added;
+            }
+
+            foreach (var item in series.Items)
+            {
+                if (!await _dbContext.SeriesItems.AnyAsync(existing => existing.Id == item.Id, cancellationToken))
+                {
+                    _dbContext.Entry(item).State = EntityState.Added;
+                }
+
+                foreach (var prompt in item.PromptVersions)
+                {
+                    if (!await _dbContext.PromptVersions.AnyAsync(existing => existing.Id == prompt.Id, cancellationToken))
+                    {
+                        _dbContext.Entry(prompt).State = EntityState.Added;
+                    }
+                }
+            }
+        }
     }
 
     public async Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken)

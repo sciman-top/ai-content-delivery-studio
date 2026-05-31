@@ -1,4 +1,5 @@
 using System.Globalization;
+using ImageSeriesStudio.Core.Projects;
 
 namespace ImageSeriesStudio.Application.Localization;
 
@@ -36,6 +37,34 @@ public sealed class LocalizationService
         [LocalizationKey.LanguageSystem] = "System",
         [LocalizationKey.LanguageChinese] = "Chinese",
         [LocalizationKey.LanguageEnglish] = "English",
+        [LocalizationKey.ProjectName] = "Project name",
+        [LocalizationKey.NewProjectNamePlaceholder] = "Untitled image series",
+        [LocalizationKey.CreateProject] = "Create project",
+        [LocalizationKey.AvailableProjects] = "Available projects",
+        [LocalizationKey.CurrentProject] = "Current project",
+        [LocalizationKey.NoProjectLoaded] = "No project loaded.",
+        [LocalizationKey.PlanEditor] = "Plan editor",
+        [LocalizationKey.SeriesTitle] = "Series title",
+        [LocalizationKey.SeriesDescription] = "Series description",
+        [LocalizationKey.CreateSeries] = "Create series",
+        [LocalizationKey.AvailableSeries] = "Available series",
+        [LocalizationKey.ItemTitle] = "Item title",
+        [LocalizationKey.ItemBrief] = "Item brief",
+        [LocalizationKey.AddItem] = "Add item",
+        [LocalizationKey.SeriesItems] = "Series items",
+        [LocalizationKey.NoSeriesSelected] = "No series selected.",
+        [LocalizationKey.PlanSeriesColumn] = "Series",
+        [LocalizationKey.PlanItemColumn] = "Item",
+        [LocalizationKey.PlanBriefColumn] = "Brief",
+        [LocalizationKey.PlanStatusColumn] = "Status",
+        [LocalizationKey.NoPlanRows] = "Create a project, then add a series and items from the inspector.",
+        [LocalizationKey.NoItemsInSeries] = "No items in this series yet.",
+        [LocalizationKey.StatusDraft] = "Draft",
+        [LocalizationKey.StatusReady] = "Ready",
+        [LocalizationKey.StatusGenerating] = "Generating",
+        [LocalizationKey.StatusNeedsReview] = "Needs review",
+        [LocalizationKey.StatusApproved] = "Approved",
+        [LocalizationKey.StatusDelivered] = "Delivered",
     };
 
     private static readonly IReadOnlyDictionary<LocalizationKey, string> Chinese = new Dictionary<LocalizationKey, string>
@@ -70,6 +99,34 @@ public sealed class LocalizationService
         [LocalizationKey.LanguageSystem] = "跟随系统",
         [LocalizationKey.LanguageChinese] = "中文",
         [LocalizationKey.LanguageEnglish] = "英文",
+        [LocalizationKey.ProjectName] = "项目名称",
+        [LocalizationKey.NewProjectNamePlaceholder] = "未命名图像系列",
+        [LocalizationKey.CreateProject] = "创建项目",
+        [LocalizationKey.AvailableProjects] = "可用项目",
+        [LocalizationKey.CurrentProject] = "当前项目",
+        [LocalizationKey.NoProjectLoaded] = "尚未加载项目。",
+        [LocalizationKey.PlanEditor] = "计划编辑",
+        [LocalizationKey.SeriesTitle] = "系列标题",
+        [LocalizationKey.SeriesDescription] = "系列说明",
+        [LocalizationKey.CreateSeries] = "创建系列",
+        [LocalizationKey.AvailableSeries] = "可用系列",
+        [LocalizationKey.ItemTitle] = "条目标题",
+        [LocalizationKey.ItemBrief] = "条目简述",
+        [LocalizationKey.AddItem] = "添加条目",
+        [LocalizationKey.SeriesItems] = "系列条目",
+        [LocalizationKey.NoSeriesSelected] = "尚未选择系列。",
+        [LocalizationKey.PlanSeriesColumn] = "系列",
+        [LocalizationKey.PlanItemColumn] = "条目",
+        [LocalizationKey.PlanBriefColumn] = "简述",
+        [LocalizationKey.PlanStatusColumn] = "状态",
+        [LocalizationKey.NoPlanRows] = "先创建项目，再从检查器添加系列和条目。",
+        [LocalizationKey.NoItemsInSeries] = "该系列尚未添加条目。",
+        [LocalizationKey.StatusDraft] = "草稿",
+        [LocalizationKey.StatusReady] = "就绪",
+        [LocalizationKey.StatusGenerating] = "生成中",
+        [LocalizationKey.StatusNeedsReview] = "待评审",
+        [LocalizationKey.StatusApproved] = "已通过",
+        [LocalizationKey.StatusDelivered] = "已交付",
     };
 
     private readonly Func<CultureInfo> _currentCulture;
@@ -99,6 +156,20 @@ public sealed class LocalizationService
     {
         var catalog = CurrentLanguage is SupportedLanguage.Chinese ? Chinese : English;
         return catalog.TryGetValue(key, out var text) ? text : English[key];
+    }
+
+    public string GetSeriesItemStatusText(SeriesItemStatus status)
+    {
+        return status switch
+        {
+            SeriesItemStatus.Draft => GetText(LocalizationKey.StatusDraft),
+            SeriesItemStatus.Ready => GetText(LocalizationKey.StatusReady),
+            SeriesItemStatus.Generating => GetText(LocalizationKey.StatusGenerating),
+            SeriesItemStatus.NeedsReview => GetText(LocalizationKey.StatusNeedsReview),
+            SeriesItemStatus.Approved => GetText(LocalizationKey.StatusApproved),
+            SeriesItemStatus.Delivered => GetText(LocalizationKey.StatusDelivered),
+            _ => status.ToString(),
+        };
     }
 
     private SupportedLanguage ResolveLanguage(LanguagePreference preference)
@@ -164,4 +235,32 @@ public enum LocalizationKey
     LanguageSystem,
     LanguageChinese,
     LanguageEnglish,
+    ProjectName,
+    NewProjectNamePlaceholder,
+    CreateProject,
+    AvailableProjects,
+    CurrentProject,
+    NoProjectLoaded,
+    PlanEditor,
+    SeriesTitle,
+    SeriesDescription,
+    CreateSeries,
+    AvailableSeries,
+    ItemTitle,
+    ItemBrief,
+    AddItem,
+    SeriesItems,
+    NoSeriesSelected,
+    PlanSeriesColumn,
+    PlanItemColumn,
+    PlanBriefColumn,
+    PlanStatusColumn,
+    NoPlanRows,
+    NoItemsInSeries,
+    StatusDraft,
+    StatusReady,
+    StatusGenerating,
+    StatusNeedsReview,
+    StatusApproved,
+    StatusDelivered,
 }

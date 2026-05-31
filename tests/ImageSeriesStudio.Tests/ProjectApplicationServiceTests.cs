@@ -88,4 +88,57 @@ public sealed class ProjectApplicationServiceTests
             }
         }
     }
+
+    [Fact]
+    public async Task ProjectApplicationService_AddsSeriesAndItemsToProject()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-plan.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(new EfProjectRepository(new AppDbContext(options)));
+            var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Plan demo", timestamp, CancellationToken.None);
+
+            var series = await service.AddSeriesAsync(
+                project.Id,
+                "Poster series",
+                "A classroom poster set",
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+            var item = await service.AddItemAsync(
+                project.Id,
+                series.Id,
+                "Cover image",
+                "Opening classroom visual",
+                timestamp.AddMinutes(2),
+                CancellationToken.None);
+
+            var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var loadedSeries = Assert.Single(loaded!.Series);
+            var loadedItem = Assert.Single(loadedSeries.Items);
+
+            Assert.Equal(series.Id, loadedSeries.Id);
+            Assert.Equal(item.Id, loadedItem.Id);
+            Assert.Equal("Cover image", loadedItem.Title);
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
 }

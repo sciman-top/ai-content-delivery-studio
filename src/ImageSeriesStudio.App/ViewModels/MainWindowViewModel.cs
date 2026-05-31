@@ -1,11 +1,15 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using ImageSeriesStudio.Application.Localization;
+using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.Core.Projects;
 
 namespace ImageSeriesStudio.App.ViewModels;
 
 public sealed partial class MainWindowViewModel : ObservableObject
 {
     private readonly LocalizationService _localizationService;
+    private readonly ProjectApplicationService _projectService;
 
     private string _appTitle = string.Empty;
     private string _providerMode = string.Empty;
@@ -18,13 +22,51 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<WorkbenchTabViewModel> _workbenchTabs = [];
     private IReadOnlyList<string> _activityItems = [];
     private IReadOnlyList<LanguageOptionViewModel> _languageOptions = [];
+    private IReadOnlyList<ProjectSummaryViewModel> _projects = [];
     private LanguageOptionViewModel? _selectedLanguageOption;
+    private ProjectSummaryViewModel? _selectedProject;
+    private string _newProjectName = string.Empty;
+    private string _projectNameLabel = string.Empty;
+    private string _newProjectNamePlaceholder = string.Empty;
+    private string _createProjectText = string.Empty;
+    private string _availableProjectsTitle = string.Empty;
+    private string _currentProjectTitle = string.Empty;
+    private string _currentProjectSummary = string.Empty;
+    private string _planEditorTitle = string.Empty;
+    private string _seriesTitleLabel = string.Empty;
+    private string _seriesDescriptionLabel = string.Empty;
+    private string _createSeriesText = string.Empty;
+    private string _availableSeriesTitle = string.Empty;
+    private string _itemTitleLabel = string.Empty;
+    private string _itemBriefLabel = string.Empty;
+    private string _addItemText = string.Empty;
+    private string _seriesItemsTitle = string.Empty;
+    private string _noSeriesSelectedText = string.Empty;
+    private string _planSeriesColumn = string.Empty;
+    private string _planItemColumn = string.Empty;
+    private string _planBriefColumn = string.Empty;
+    private string _planStatusColumn = string.Empty;
+    private string _noPlanRowsText = string.Empty;
+    private string _noItemsInSeriesText = string.Empty;
+    private string _newSeriesTitle = string.Empty;
+    private string _newSeriesDescription = string.Empty;
+    private string _newItemTitle = string.Empty;
+    private string _newItemBrief = string.Empty;
+    private IReadOnlyList<SeriesSummaryViewModel> _series = [];
+    private IReadOnlyList<SeriesItemViewModel> _seriesItems = [];
+    private IReadOnlyList<PlanRowViewModel> _planRows = [];
+    private SeriesSummaryViewModel? _selectedSeries;
 
-    public MainWindowViewModel(LocalizationService localizationService)
+    public MainWindowViewModel(
+        LocalizationService localizationService,
+        ProjectApplicationService projectService)
     {
         _localizationService = localizationService;
+        _projectService = projectService;
         RefreshLocalizedText();
         SelectedLanguageOption = LanguageOptions.First(option => option.Preference == _localizationService.Preference);
+        NewProjectName = NewProjectNamePlaceholder;
+        _ = RefreshProjectsAsync();
     }
 
     public string AppTitle
@@ -93,6 +135,250 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _languageOptions, value);
     }
 
+    public IReadOnlyList<ProjectSummaryViewModel> Projects
+    {
+        get => _projects;
+        private set => SetProperty(ref _projects, value);
+    }
+
+    public ProjectSummaryViewModel? SelectedProject
+    {
+        get => _selectedProject;
+        set
+        {
+            if (!SetProperty(ref _selectedProject, value))
+            {
+                return;
+            }
+
+            CurrentProjectSummary = value is null
+                ? Text(LocalizationKey.NoProjectLoaded)
+                : $"{value.Name} ({value.UpdatedAt.LocalDateTime:g})";
+            _ = value is null ? ClearPlanAsync() : LoadPlanAsync(value.Id);
+        }
+    }
+
+    public string NewProjectName
+    {
+        get => _newProjectName;
+        set
+        {
+            if (SetProperty(ref _newProjectName, value))
+            {
+                CreateProjectCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string ProjectNameLabel
+    {
+        get => _projectNameLabel;
+        private set => SetProperty(ref _projectNameLabel, value);
+    }
+
+    public string NewProjectNamePlaceholder
+    {
+        get => _newProjectNamePlaceholder;
+        private set => SetProperty(ref _newProjectNamePlaceholder, value);
+    }
+
+    public string CreateProjectText
+    {
+        get => _createProjectText;
+        private set => SetProperty(ref _createProjectText, value);
+    }
+
+    public string AvailableProjectsTitle
+    {
+        get => _availableProjectsTitle;
+        private set => SetProperty(ref _availableProjectsTitle, value);
+    }
+
+    public string CurrentProjectTitle
+    {
+        get => _currentProjectTitle;
+        private set => SetProperty(ref _currentProjectTitle, value);
+    }
+
+    public string CurrentProjectSummary
+    {
+        get => _currentProjectSummary;
+        private set => SetProperty(ref _currentProjectSummary, value);
+    }
+
+    public string PlanEditorTitle
+    {
+        get => _planEditorTitle;
+        private set => SetProperty(ref _planEditorTitle, value);
+    }
+
+    public string SeriesTitleLabel
+    {
+        get => _seriesTitleLabel;
+        private set => SetProperty(ref _seriesTitleLabel, value);
+    }
+
+    public string SeriesDescriptionLabel
+    {
+        get => _seriesDescriptionLabel;
+        private set => SetProperty(ref _seriesDescriptionLabel, value);
+    }
+
+    public string CreateSeriesText
+    {
+        get => _createSeriesText;
+        private set => SetProperty(ref _createSeriesText, value);
+    }
+
+    public string AvailableSeriesTitle
+    {
+        get => _availableSeriesTitle;
+        private set => SetProperty(ref _availableSeriesTitle, value);
+    }
+
+    public string ItemTitleLabel
+    {
+        get => _itemTitleLabel;
+        private set => SetProperty(ref _itemTitleLabel, value);
+    }
+
+    public string ItemBriefLabel
+    {
+        get => _itemBriefLabel;
+        private set => SetProperty(ref _itemBriefLabel, value);
+    }
+
+    public string AddItemText
+    {
+        get => _addItemText;
+        private set => SetProperty(ref _addItemText, value);
+    }
+
+    public string SeriesItemsTitle
+    {
+        get => _seriesItemsTitle;
+        private set => SetProperty(ref _seriesItemsTitle, value);
+    }
+
+    public string NoSeriesSelectedText
+    {
+        get => _noSeriesSelectedText;
+        private set => SetProperty(ref _noSeriesSelectedText, value);
+    }
+
+    public string PlanSeriesColumn
+    {
+        get => _planSeriesColumn;
+        private set => SetProperty(ref _planSeriesColumn, value);
+    }
+
+    public string PlanItemColumn
+    {
+        get => _planItemColumn;
+        private set => SetProperty(ref _planItemColumn, value);
+    }
+
+    public string PlanBriefColumn
+    {
+        get => _planBriefColumn;
+        private set => SetProperty(ref _planBriefColumn, value);
+    }
+
+    public string PlanStatusColumn
+    {
+        get => _planStatusColumn;
+        private set => SetProperty(ref _planStatusColumn, value);
+    }
+
+    public string NoPlanRowsText
+    {
+        get => _noPlanRowsText;
+        private set => SetProperty(ref _noPlanRowsText, value);
+    }
+
+    public string NoItemsInSeriesText
+    {
+        get => _noItemsInSeriesText;
+        private set => SetProperty(ref _noItemsInSeriesText, value);
+    }
+
+    public string NewSeriesTitle
+    {
+        get => _newSeriesTitle;
+        set
+        {
+            if (SetProperty(ref _newSeriesTitle, value))
+            {
+                CreateSeriesCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string NewSeriesDescription
+    {
+        get => _newSeriesDescription;
+        set => SetProperty(ref _newSeriesDescription, value);
+    }
+
+    public string NewItemTitle
+    {
+        get => _newItemTitle;
+        set
+        {
+            if (SetProperty(ref _newItemTitle, value))
+            {
+                AddItemCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string NewItemBrief
+    {
+        get => _newItemBrief;
+        set => SetProperty(ref _newItemBrief, value);
+    }
+
+    public IReadOnlyList<SeriesSummaryViewModel> Series
+    {
+        get => _series;
+        private set => SetProperty(ref _series, value);
+    }
+
+    public SeriesSummaryViewModel? SelectedSeries
+    {
+        get => _selectedSeries;
+        set
+        {
+            if (!SetProperty(ref _selectedSeries, value))
+            {
+                return;
+            }
+
+            SeriesItems = value?.Items ?? [];
+            AddItemCommand.NotifyCanExecuteChanged();
+        }
+    }
+
+    public IReadOnlyList<SeriesItemViewModel> SeriesItems
+    {
+        get => _seriesItems;
+        private set => SetProperty(ref _seriesItems, value);
+    }
+
+    public IReadOnlyList<PlanRowViewModel> PlanRows
+    {
+        get => _planRows;
+        private set
+        {
+            if (SetProperty(ref _planRows, value))
+            {
+                OnPropertyChanged(nameof(HasPlanRows));
+            }
+        }
+    }
+
+    public bool HasPlanRows => PlanRows.Count > 0;
+
     public LanguageOptionViewModel? SelectedLanguageOption
     {
         get => _selectedLanguageOption;
@@ -119,6 +405,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ActivityTitle = Text(LocalizationKey.Activity);
         InspectorSummary = Text(LocalizationKey.NoItemSelected);
         LanguageLabel = Text(LocalizationKey.LanguageLabel);
+        ProjectNameLabel = Text(LocalizationKey.ProjectName);
+        NewProjectNamePlaceholder = Text(LocalizationKey.NewProjectNamePlaceholder);
+        CreateProjectText = Text(LocalizationKey.CreateProject);
+        AvailableProjectsTitle = Text(LocalizationKey.AvailableProjects);
+        CurrentProjectTitle = Text(LocalizationKey.CurrentProject);
+        PlanEditorTitle = Text(LocalizationKey.PlanEditor);
+        SeriesTitleLabel = Text(LocalizationKey.SeriesTitle);
+        SeriesDescriptionLabel = Text(LocalizationKey.SeriesDescription);
+        CreateSeriesText = Text(LocalizationKey.CreateSeries);
+        AvailableSeriesTitle = Text(LocalizationKey.AvailableSeries);
+        ItemTitleLabel = Text(LocalizationKey.ItemTitle);
+        ItemBriefLabel = Text(LocalizationKey.ItemBrief);
+        AddItemText = Text(LocalizationKey.AddItem);
+        SeriesItemsTitle = Text(LocalizationKey.SeriesItems);
+        NoSeriesSelectedText = Text(LocalizationKey.NoSeriesSelected);
+        PlanSeriesColumn = Text(LocalizationKey.PlanSeriesColumn);
+        PlanItemColumn = Text(LocalizationKey.PlanItemColumn);
+        PlanBriefColumn = Text(LocalizationKey.PlanBriefColumn);
+        PlanStatusColumn = Text(LocalizationKey.PlanStatusColumn);
+        NoPlanRowsText = Text(LocalizationKey.NoPlanRows);
+        NoItemsInSeriesText = Text(LocalizationKey.NoItemsInSeries);
+        CurrentProjectSummary = SelectedProject is null
+            ? Text(LocalizationKey.NoProjectLoaded)
+            : $"{SelectedProject.Name} ({SelectedProject.UpdatedAt.LocalDateTime:g})";
         NavigationItems =
         [
             Text(LocalizationKey.Workspaces),
@@ -127,13 +437,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ];
         WorkbenchTabs =
         [
-            new(Text(LocalizationKey.Brief), Text(LocalizationKey.BriefEmptyState)),
-            new(Text(LocalizationKey.Plan), Text(LocalizationKey.PlanEmptyState)),
-            new(Text(LocalizationKey.Prompts), Text(LocalizationKey.PromptsEmptyState)),
-            new(Text(LocalizationKey.Queue), Text(LocalizationKey.QueueEmptyState)),
-            new(Text(LocalizationKey.Gallery), Text(LocalizationKey.GalleryEmptyState)),
-            new(Text(LocalizationKey.Review), Text(LocalizationKey.ReviewEmptyState)),
-            new(Text(LocalizationKey.Delivery), Text(LocalizationKey.DeliveryEmptyState)),
+            new(WorkbenchTabKind.Brief, Text(LocalizationKey.Brief), Text(LocalizationKey.BriefEmptyState)),
+            new(WorkbenchTabKind.Plan, Text(LocalizationKey.Plan), Text(LocalizationKey.PlanEmptyState)),
+            new(WorkbenchTabKind.Prompts, Text(LocalizationKey.Prompts), Text(LocalizationKey.PromptsEmptyState)),
+            new(WorkbenchTabKind.Queue, Text(LocalizationKey.Queue), Text(LocalizationKey.QueueEmptyState)),
+            new(WorkbenchTabKind.Gallery, Text(LocalizationKey.Gallery), Text(LocalizationKey.GalleryEmptyState)),
+            new(WorkbenchTabKind.Review, Text(LocalizationKey.Review), Text(LocalizationKey.ReviewEmptyState)),
+            new(WorkbenchTabKind.Delivery, Text(LocalizationKey.Delivery), Text(LocalizationKey.DeliveryEmptyState)),
         ];
         ActivityItems =
         [
@@ -150,6 +460,137 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         _selectedLanguageOption = LanguageOptions.First(option => option.Preference == previousPreference);
         OnPropertyChanged(nameof(SelectedLanguageOption));
+        RebuildPlanRows();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanCreateProject))]
+    private async Task CreateProjectAsync()
+    {
+        var project = await _projectService.CreateProjectAsync(
+            NewProjectName.Trim(),
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        await RefreshProjectsAsync(project.Id);
+    }
+
+    private bool CanCreateProject()
+    {
+        return !string.IsNullOrWhiteSpace(NewProjectName);
+    }
+
+    private async Task RefreshProjectsAsync(Guid? selectedProjectId = null)
+    {
+        var projectSummaries = await _projectService.ListProjectsAsync(CancellationToken.None);
+        Projects = projectSummaries
+            .Select(project => new ProjectSummaryViewModel(project.Id, project.Name, project.UpdatedAt))
+            .ToArray();
+
+        SelectedProject = selectedProjectId is null
+            ? Projects.FirstOrDefault()
+            : Projects.FirstOrDefault(project => project.Id == selectedProjectId);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanCreateSeries))]
+    private async Task CreateSeriesAsync()
+    {
+        if (SelectedProject is null)
+        {
+            return;
+        }
+
+        await _projectService.AddSeriesAsync(
+            SelectedProject.Id,
+            NewSeriesTitle.Trim(),
+            NewSeriesDescription.Trim(),
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        NewSeriesTitle = string.Empty;
+        NewSeriesDescription = string.Empty;
+        await LoadPlanAsync(SelectedProject.Id);
+    }
+
+    private bool CanCreateSeries()
+    {
+        return SelectedProject is not null && !string.IsNullOrWhiteSpace(NewSeriesTitle);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanAddItem))]
+    private async Task AddItemAsync()
+    {
+        if (SelectedProject is null || SelectedSeries is null)
+        {
+            return;
+        }
+
+        await _projectService.AddItemAsync(
+            SelectedProject.Id,
+            SelectedSeries.Id,
+            NewItemTitle.Trim(),
+            NewItemBrief.Trim(),
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        NewItemTitle = string.Empty;
+        NewItemBrief = string.Empty;
+        await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id);
+    }
+
+    private bool CanAddItem()
+    {
+        return SelectedProject is not null
+            && SelectedSeries is not null
+            && !string.IsNullOrWhiteSpace(NewItemTitle);
+    }
+
+    private async Task LoadPlanAsync(Guid projectId, Guid? selectedSeriesId = null)
+    {
+        var project = await _projectService.LoadProjectAsync(projectId, CancellationToken.None);
+        if (project is null)
+        {
+            await ClearPlanAsync();
+            return;
+        }
+
+        Series = project.Series
+            .Select(series => new SeriesSummaryViewModel(
+                series.Id,
+                series.Title,
+                series.Items
+                    .Select(item => new SeriesItemViewModel(item.Id, item.Title, item.Brief, item.Status))
+                    .ToArray()))
+            .ToArray();
+        RebuildPlanRows();
+
+        SelectedSeries = selectedSeriesId is null
+            ? Series.FirstOrDefault()
+            : Series.FirstOrDefault(series => series.Id == selectedSeriesId);
+        CreateSeriesCommand.NotifyCanExecuteChanged();
+    }
+
+    private Task ClearPlanAsync()
+    {
+        Series = [];
+        SelectedSeries = null;
+        SeriesItems = [];
+        RebuildPlanRows();
+        CreateSeriesCommand.NotifyCanExecuteChanged();
+        AddItemCommand.NotifyCanExecuteChanged();
+        return Task.CompletedTask;
+    }
+
+    private void RebuildPlanRows()
+    {
+        PlanRows = Series
+            .SelectMany(series => series.Items.Count == 0
+                ? new[] { new PlanRowViewModel(series.Title, NoItemsInSeriesText, string.Empty, string.Empty) }
+                : series.Items.Select(item => new PlanRowViewModel(
+                    series.Title,
+                    item.Title,
+                    item.Brief,
+                    _localizationService.GetSeriesItemStatusText(item.Status))))
+            .ToArray();
     }
 
     private string Text(LocalizationKey key)
@@ -158,6 +599,28 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 }
 
-public sealed record WorkbenchTabViewModel(string Title, string EmptyState);
+public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, string EmptyState)
+{
+    public bool IsPlan => Kind is WorkbenchTabKind.Plan;
+}
+
+public enum WorkbenchTabKind
+{
+    Brief = 0,
+    Plan = 1,
+    Prompts = 2,
+    Queue = 3,
+    Gallery = 4,
+    Review = 5,
+    Delivery = 6,
+}
 
 public sealed record LanguageOptionViewModel(LanguagePreference Preference, string DisplayName);
+
+public sealed record ProjectSummaryViewModel(Guid Id, string Name, DateTimeOffset UpdatedAt);
+
+public sealed record SeriesSummaryViewModel(Guid Id, string Title, IReadOnlyList<SeriesItemViewModel> Items);
+
+public sealed record SeriesItemViewModel(Guid Id, string Title, string Brief, SeriesItemStatus Status);
+
+public sealed record PlanRowViewModel(string SeriesTitle, string ItemTitle, string Brief, string StatusText);

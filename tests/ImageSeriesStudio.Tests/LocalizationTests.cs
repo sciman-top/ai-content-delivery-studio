@@ -1,5 +1,6 @@
 using System.Globalization;
 using ImageSeriesStudio.Application.Localization;
+using ImageSeriesStudio.Core.Projects;
 
 namespace ImageSeriesStudio.Tests;
 
@@ -39,5 +40,33 @@ public sealed class LocalizationTests
 
         Assert.Equal(SupportedLanguage.English, service.CurrentLanguage);
         Assert.Equal("Workspace", service.GetText(LocalizationKey.Workspace));
+    }
+
+    [Fact]
+    public void LocalizationService_CoversAllKeysForBothLanguages()
+    {
+        var service = new LocalizationService();
+
+        foreach (var preference in new[] { LanguagePreference.Chinese, LanguagePreference.English })
+        {
+            service.SetLanguage(preference);
+
+            foreach (var key in Enum.GetValues<LocalizationKey>())
+            {
+                Assert.False(string.IsNullOrWhiteSpace(service.GetText(key)));
+            }
+        }
+    }
+
+    [Fact]
+    public void LocalizationService_ReturnsLocalizedSeriesItemStatusText()
+    {
+        var service = new LocalizationService();
+
+        service.SetLanguage(LanguagePreference.Chinese);
+        Assert.Equal("草稿", service.GetSeriesItemStatusText(SeriesItemStatus.Draft));
+
+        service.SetLanguage(LanguagePreference.English);
+        Assert.Equal("Needs review", service.GetSeriesItemStatusText(SeriesItemStatus.NeedsReview));
     }
 }

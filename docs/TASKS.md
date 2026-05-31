@@ -32,9 +32,11 @@
 - [x] Add Chinese and English localization foundation.
 - [x] Add language selection to shell.
 - [x] Add project repository and application service foundation.
-- [ ] Add project creation and load/save.
-- [ ] Add Phase 2 detailed implementation plan.
-- [ ] Add series and item table.
+- [x] Add project creation and load/save.
+- [x] Add Phase 2 detailed implementation plan.
+- [x] Add project create/list UI foundation.
+- [x] Add series and item editor foundation.
+- [x] Add series and item table.
 - [ ] Add prompt version editor.
 - [ ] Add queue panel.
 - [ ] Add candidate gallery.
