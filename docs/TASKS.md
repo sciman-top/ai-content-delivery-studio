@@ -42,7 +42,7 @@
 - [x] Add queue panel.
 - [x] Add candidate gallery.
 - [x] Add review panel.
-- [ ] Add delivery export panel.
+- [x] Add delivery export panel.
 
 ## Phase 3: OpenAI Integration
 

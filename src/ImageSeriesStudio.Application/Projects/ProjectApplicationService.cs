@@ -1,6 +1,7 @@
 using ImageSeriesStudio.Core.Generation;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Application.Delivery;
 
 namespace ImageSeriesStudio.Application.Projects;
 
@@ -10,16 +11,17 @@ public sealed class ProjectApplicationService
     private readonly ITextPlanningProvider? _textPlanningProvider;
     private readonly IImageGenerationProvider? _imageGenerationProvider;
     private readonly IVisionReviewProvider? _visionReviewProvider;
+    private readonly IDeliveryPackageWriter? _deliveryPackageWriter;
 
     public ProjectApplicationService(IProjectRepository repository)
-        : this(repository, textPlanningProvider: null, imageGenerationProvider: null, visionReviewProvider: null)
+        : this(repository, textPlanningProvider: null, imageGenerationProvider: null, visionReviewProvider: null, deliveryPackageWriter: null)
     {
     }
 
     public ProjectApplicationService(
         IProjectRepository repository,
         ITextPlanningProvider? textPlanningProvider)
-        : this(repository, textPlanningProvider, imageGenerationProvider: null, visionReviewProvider: null)
+        : this(repository, textPlanningProvider, imageGenerationProvider: null, visionReviewProvider: null, deliveryPackageWriter: null)
     {
     }
 
@@ -27,7 +29,7 @@ public sealed class ProjectApplicationService
         IProjectRepository repository,
         ITextPlanningProvider? textPlanningProvider,
         IImageGenerationProvider? imageGenerationProvider)
-        : this(repository, textPlanningProvider, imageGenerationProvider, visionReviewProvider: null)
+        : this(repository, textPlanningProvider, imageGenerationProvider, visionReviewProvider: null, deliveryPackageWriter: null)
     {
     }
 
@@ -36,11 +38,22 @@ public sealed class ProjectApplicationService
         ITextPlanningProvider? textPlanningProvider,
         IImageGenerationProvider? imageGenerationProvider,
         IVisionReviewProvider? visionReviewProvider)
+        : this(repository, textPlanningProvider, imageGenerationProvider, visionReviewProvider, deliveryPackageWriter: null)
+    {
+    }
+
+    public ProjectApplicationService(
+        IProjectRepository repository,
+        ITextPlanningProvider? textPlanningProvider,
+        IImageGenerationProvider? imageGenerationProvider,
+        IVisionReviewProvider? visionReviewProvider,
+        IDeliveryPackageWriter? deliveryPackageWriter)
     {
         _repository = repository;
         _textPlanningProvider = textPlanningProvider;
         _imageGenerationProvider = imageGenerationProvider;
         _visionReviewProvider = visionReviewProvider;
+        _deliveryPackageWriter = deliveryPackageWriter;
     }
 
     public async Task<ImageProject> CreateProjectAsync(
@@ -204,6 +217,18 @@ public sealed class ProjectApplicationService
         }
 
         return results;
+    }
+
+    public async Task<DeliveryExportResult> ExportDeliveryPackageAsync(
+        DeliveryExportRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (_deliveryPackageWriter is null)
+        {
+            throw new InvalidOperationException("Delivery package writer is not registered.");
+        }
+
+        return await _deliveryPackageWriter.WriteAsync(request, cancellationToken);
     }
 
     private static GenerationSettings CreateDefaultGenerationSettings()

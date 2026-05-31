@@ -1,6 +1,7 @@
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Generation;
@@ -63,6 +64,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _reviewCommentsColumn = string.Empty;
     private string _reviewFixColumn = string.Empty;
     private string _noReviewRowsText = string.Empty;
+    private string _exportDeliveryText = string.Empty;
+    private string _deliveryPackageColumn = string.Empty;
+    private string _deliveryManifestColumn = string.Empty;
+    private string _deliveryReportColumn = string.Empty;
+    private string _deliveryFinalImagesColumn = string.Empty;
+    private string _noDeliveryRowsText = string.Empty;
     private string _planEditorTitle = string.Empty;
     private string _seriesTitleLabel = string.Empty;
     private string _seriesDescriptionLabel = string.Empty;
@@ -106,6 +113,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<QueueRowViewModel> _queueRows = [];
     private IReadOnlyList<GalleryRowViewModel> _galleryRows = [];
     private IReadOnlyList<ReviewRowViewModel> _reviewRows = [];
+    private IReadOnlyList<DeliveryRowViewModel> _deliveryRows = [];
     private SeriesSummaryViewModel? _selectedSeries;
     private SeriesItemViewModel? _selectedSeriesItem;
 
@@ -216,6 +224,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             QueueRows = [];
             GalleryRows = [];
             ReviewRows = [];
+            DeliveryRows = [];
             RunFakePlanningCommand.NotifyCanExecuteChanged();
             RunFakeGenerationCommand.NotifyCanExecuteChanged();
             _ = value is null ? ClearPlanAsync() : LoadPlanAsync(value.Id);
@@ -454,6 +463,42 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _noReviewRowsText;
         private set => SetProperty(ref _noReviewRowsText, value);
+    }
+
+    public string ExportDeliveryText
+    {
+        get => _exportDeliveryText;
+        private set => SetProperty(ref _exportDeliveryText, value);
+    }
+
+    public string DeliveryPackageColumn
+    {
+        get => _deliveryPackageColumn;
+        private set => SetProperty(ref _deliveryPackageColumn, value);
+    }
+
+    public string DeliveryManifestColumn
+    {
+        get => _deliveryManifestColumn;
+        private set => SetProperty(ref _deliveryManifestColumn, value);
+    }
+
+    public string DeliveryReportColumn
+    {
+        get => _deliveryReportColumn;
+        private set => SetProperty(ref _deliveryReportColumn, value);
+    }
+
+    public string DeliveryFinalImagesColumn
+    {
+        get => _deliveryFinalImagesColumn;
+        private set => SetProperty(ref _deliveryFinalImagesColumn, value);
+    }
+
+    public string NoDeliveryRowsText
+    {
+        get => _noDeliveryRowsText;
+        private set => SetProperty(ref _noDeliveryRowsText, value);
     }
 
     public string PlanEditorTitle
@@ -800,11 +845,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _reviewRows, value))
             {
                 OnPropertyChanged(nameof(HasReviewRows));
+                ExportDeliveryCommand.NotifyCanExecuteChanged();
             }
         }
     }
 
     public bool HasReviewRows => ReviewRows.Count > 0;
+
+    public IReadOnlyList<DeliveryRowViewModel> DeliveryRows
+    {
+        get => _deliveryRows;
+        private set
+        {
+            if (SetProperty(ref _deliveryRows, value))
+            {
+                OnPropertyChanged(nameof(HasDeliveryRows));
+            }
+        }
+    }
+
+    public bool HasDeliveryRows => DeliveryRows.Count > 0;
 
     public LanguageOptionViewModel? SelectedLanguageOption
     {
@@ -861,6 +921,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ReviewCommentsColumn = Text(LocalizationKey.ReviewCommentsColumn);
         ReviewFixColumn = Text(LocalizationKey.ReviewFixColumn);
         NoReviewRowsText = Text(LocalizationKey.NoReviewRows);
+        ExportDeliveryText = Text(LocalizationKey.ExportDelivery);
+        DeliveryPackageColumn = Text(LocalizationKey.DeliveryPackageColumn);
+        DeliveryManifestColumn = Text(LocalizationKey.DeliveryManifestColumn);
+        DeliveryReportColumn = Text(LocalizationKey.DeliveryReportColumn);
+        DeliveryFinalImagesColumn = Text(LocalizationKey.DeliveryFinalImagesColumn);
+        NoDeliveryRowsText = Text(LocalizationKey.NoDeliveryRows);
         PlanEditorTitle = Text(LocalizationKey.PlanEditor);
         SeriesTitleLabel = Text(LocalizationKey.SeriesTitle);
         SeriesDescriptionLabel = Text(LocalizationKey.SeriesDescription);
@@ -1022,6 +1088,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         QueueRows = BuildQueueRows(run);
         GalleryRows = BuildGalleryRows(run);
         ReviewRows = [];
+        DeliveryRows = [];
         RunFakeReviewCommand.NotifyCanExecuteChanged();
     }
 
@@ -1111,6 +1178,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 pair.First.Comments,
                 pair.First.SuggestedFix ?? string.Empty);
         }).ToArray();
+        DeliveryRows = [];
+        ExportDeliveryCommand.NotifyCanExecuteChanged();
     }
 
     private bool CanRunFakeReview()
@@ -1125,6 +1194,60 @@ public sealed partial class MainWindowViewModel : ObservableObject
             .SelectMany(item => item.PromptVersions)
             .FirstOrDefault(prompt => prompt.Id == promptVersionId)
             ?.PromptText ?? string.Empty;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanExportDelivery))]
+    private async Task ExportDeliveryAsync()
+    {
+        if (SelectedProject is null)
+        {
+            return;
+        }
+
+        var reviewByItem = ReviewRows.ToDictionary(row => row.ItemTitle, StringComparer.OrdinalIgnoreCase);
+        var outputDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ImageSeriesStudio",
+            "deliveries",
+            SelectedProject.Id.ToString("N"),
+            DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss"));
+        var items = GalleryRows
+            .Where(row => reviewByItem.TryGetValue(row.ItemTitle, out var review)
+                && Enum.TryParse<ReviewDecision>(review.Decision, out var decision)
+                && decision is ReviewDecision.Pass)
+            .Select((row, index) => new DeliveryExportItem(
+                $"{index + 1:000}-{row.ItemTitle}",
+                row.ItemTitle,
+                row.AssetPath,
+                row.MetadataPath,
+                row.PromptText,
+                ReviewDecision.Pass,
+                HumanApproved: true))
+            .ToArray();
+
+        var result = await _projectService.ExportDeliveryPackageAsync(
+            new DeliveryExportRequest(
+                SelectedProject.Name,
+                outputDirectory,
+                items),
+            CancellationToken.None);
+
+        DeliveryRows =
+        [
+            new DeliveryRowViewModel(
+                result.PackageDirectory,
+                result.ManifestJsonPath,
+                result.ManifestCsvPath,
+                result.ReviewReportPath,
+                result.FinalImagePaths.Count.ToString()),
+        ];
+    }
+
+    private bool CanExportDelivery()
+    {
+        return SelectedProject is not null
+            && GalleryRows.Count > 0
+            && ReviewRows.Any(row => row.Decision == ReviewDecision.Pass.ToString());
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateSeries))]
@@ -1266,6 +1389,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         QueueRows = [];
         GalleryRows = [];
         ReviewRows = [];
+        DeliveryRows = [];
         RebuildPlanRows();
         RebuildPromptRows();
         CreateSeriesCommand.NotifyCanExecuteChanged();
@@ -1321,6 +1445,8 @@ public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, 
     public bool IsGallery => Kind is WorkbenchTabKind.Gallery;
 
     public bool IsReview => Kind is WorkbenchTabKind.Review;
+
+    public bool IsDelivery => Kind is WorkbenchTabKind.Delivery;
 }
 
 public enum WorkbenchTabKind
@@ -1383,3 +1509,10 @@ public sealed record ReviewRowViewModel(
     string ScoreText,
     string Comments,
     string SuggestedFix);
+
+public sealed record DeliveryRowViewModel(
+    string PackageDirectory,
+    string ManifestJsonPath,
+    string ManifestCsvPath,
+    string ReviewReportPath,
+    string FinalImageCount);

@@ -104,6 +104,12 @@ public sealed class LocalizationService
         [LocalizationKey.ReviewCommentsColumn] = "Comments",
         [LocalizationKey.ReviewFixColumn] = "Suggested fix",
         [LocalizationKey.NoReviewRows] = "Run fake review to see structured results here.",
+        [LocalizationKey.ExportDelivery] = "Export delivery",
+        [LocalizationKey.DeliveryPackageColumn] = "Package",
+        [LocalizationKey.DeliveryManifestColumn] = "Manifest",
+        [LocalizationKey.DeliveryReportColumn] = "Review report",
+        [LocalizationKey.DeliveryFinalImagesColumn] = "Final images",
+        [LocalizationKey.NoDeliveryRows] = "Export approved fake review results to see delivery package paths here.",
     };
 
     private static readonly IReadOnlyDictionary<LocalizationKey, string> Chinese = new Dictionary<LocalizationKey, string>
@@ -205,6 +211,12 @@ public sealed class LocalizationService
         [LocalizationKey.ReviewCommentsColumn] = "评语",
         [LocalizationKey.ReviewFixColumn] = "修复建议",
         [LocalizationKey.NoReviewRows] = "运行假评审后，结构化结果将显示在这里。",
+        [LocalizationKey.ExportDelivery] = "导出交付包",
+        [LocalizationKey.DeliveryPackageColumn] = "交付包",
+        [LocalizationKey.DeliveryManifestColumn] = "清单",
+        [LocalizationKey.DeliveryReportColumn] = "评审报告",
+        [LocalizationKey.DeliveryFinalImagesColumn] = "最终图数",
+        [LocalizationKey.NoDeliveryRows] = "导出已通过的假评审结果后，交付包路径将显示在这里。",
     };
 
     private readonly Func<CultureInfo> _currentCulture;
@@ -380,4 +392,10 @@ public enum LocalizationKey
     ReviewCommentsColumn,
     ReviewFixColumn,
     NoReviewRows,
+    ExportDelivery,
+    DeliveryPackageColumn,
+    DeliveryManifestColumn,
+    DeliveryReportColumn,
+    DeliveryFinalImagesColumn,
+    NoDeliveryRows,
 }

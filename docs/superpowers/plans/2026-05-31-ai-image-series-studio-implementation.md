@@ -343,7 +343,7 @@ Expected: a project can be created, saved, and loaded from a temporary SQLite da
   - Keep human approval as the final decision.
   - Gate: review tests plus `dotnet build`.
 
-- [ ] **Task 7C.8: Delivery export panel**
+- [x] **Task 7C.8: Delivery export panel**
   - Call `DeliveryPackageWriter` from the Delivery tab.
   - Export manifest, prompts, metadata, review report, and final image copies.
   - Gate: delivery tests plus `dotnet build`.

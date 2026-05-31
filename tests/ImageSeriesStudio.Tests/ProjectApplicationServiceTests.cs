@@ -1,6 +1,8 @@
+using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
 using ImageSeriesStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -358,6 +360,76 @@ public sealed class ProjectApplicationServiceTests
             {
                 Directory.Delete(databaseDirectory, recursive: true);
             }
+        }
+    }
+
+    [Fact]
+    public async Task ProjectApplicationService_ExportsDeliveryPackage()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+        var packageDirectory = Path.Combine(rootDirectory, "delivery");
+        Directory.CreateDirectory(sourceDirectory);
+
+        try
+        {
+            var imagePath = Path.Combine(sourceDirectory, "final.png");
+            var metadataPath = Path.Combine(sourceDirectory, "final.json");
+            await File.WriteAllBytesAsync(imagePath, [1, 2, 3], CancellationToken.None);
+            await File.WriteAllTextAsync(metadataPath, """{"providerId":"fake-image"}""", CancellationToken.None);
+
+            var service = new ProjectApplicationService(
+                new InMemoryProjectRepository(),
+                textPlanningProvider: null,
+                imageGenerationProvider: null,
+                visionReviewProvider: null,
+                deliveryPackageWriter: new DeliveryPackageWriter());
+
+            var result = await service.ExportDeliveryPackageAsync(
+                new DeliveryExportRequest(
+                    "Delivery demo",
+                    packageDirectory,
+                    [
+                        new DeliveryExportItem(
+                            "final-image",
+                            "Final image",
+                            imagePath,
+                            metadataPath,
+                            "A finished fake image.",
+                            ReviewDecision.Pass,
+                            HumanApproved: true),
+                    ]),
+                CancellationToken.None);
+
+            Assert.True(File.Exists(result.ManifestJsonPath));
+            Assert.True(File.Exists(result.ManifestCsvPath));
+            Assert.True(File.Exists(result.ReviewReportPath));
+            Assert.Single(result.FinalImagePaths);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    private sealed class InMemoryProjectRepository : IProjectRepository
+    {
+        public Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<ImageProject?>(null);
+        }
+
+        public Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken)
+        {
+            return Task.FromResult<IReadOnlyList<ProjectSummary>>([]);
         }
     }
 }

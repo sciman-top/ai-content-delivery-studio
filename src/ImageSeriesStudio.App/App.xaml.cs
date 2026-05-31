@@ -1,9 +1,11 @@
 using System.IO;
+using ImageSeriesStudio.Application.Delivery;
 using System.Windows;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.App.ViewModels;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
 using ImageSeriesStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +38,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
         builder.Services.AddSingleton<IImageGenerationProvider, FakeImageGenerationProvider>();
         builder.Services.AddSingleton<IVisionReviewProvider, FakeVisionReviewProvider>();
+        builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
         builder.Services.AddTransient<MainWindowViewModel>();
         builder.Services.AddTransient<MainWindow>();
 

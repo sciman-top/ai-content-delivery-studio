@@ -1,10 +1,11 @@
 using System.Text;
 using System.Text.Json;
+using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Core.Projects;
 
 namespace ImageSeriesStudio.Infrastructure.Delivery;
 
-public sealed class DeliveryPackageWriter
+public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
 {
     private static readonly JsonSerializerOptions ManifestJsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -88,6 +89,34 @@ public sealed class DeliveryPackageWriter
             csvPath,
             reviewReportPath,
             finalImagePaths);
+    }
+
+    public async Task<DeliveryExportResult> WriteAsync(
+        DeliveryExportRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await WriteAsync(
+            new DeliveryPackageRequest(
+                request.ProjectName,
+                request.OutputDirectory,
+                request.Items
+                    .Select(item => new DeliveryPackageItem(
+                        item.ItemKey,
+                        item.Title,
+                        item.FinalImagePath,
+                        item.MetadataPath,
+                        item.PromptText,
+                        item.ReviewDecision,
+                        item.HumanApproved))
+                    .ToArray()),
+            cancellationToken);
+
+        return new DeliveryExportResult(
+            result.PackageDirectory,
+            result.ManifestJsonPath,
+            result.ManifestCsvPath,
+            result.ReviewReportPath,
+            result.FinalImagePaths);
     }
 
     private static string NormalizeKey(string value)
