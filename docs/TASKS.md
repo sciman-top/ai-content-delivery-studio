@@ -46,8 +46,8 @@
 
 ## Phase 3: OpenAI Integration
 
-- [ ] Add OpenAI provider configuration.
-- [ ] Store secrets outside repo.
+- [x] Add OpenAI provider configuration.
+- [x] Store secrets outside repo.
 - [ ] Implement text planning provider.
 - [ ] Implement image generation provider.
 - [ ] Implement vision review provider.

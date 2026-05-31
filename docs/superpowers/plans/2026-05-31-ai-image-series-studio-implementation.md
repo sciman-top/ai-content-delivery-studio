@@ -354,10 +354,16 @@ Expected: a project can be created, saved, and loaded from a temporary SQLite da
 
 **Files:**
 
+- Create: `src/ImageSeriesStudio.Infrastructure/OpenAI/OpenAiProviderOptions.cs`
 - Create: `src/ImageSeriesStudio.Infrastructure/OpenAI/OpenAiTextPlanningProvider.cs`
 - Create: `src/ImageSeriesStudio.Infrastructure/OpenAI/OpenAiImageGenerationProvider.cs`
 - Create: `src/ImageSeriesStudio.Infrastructure/OpenAI/OpenAiVisionReviewProvider.cs`
+- Test: `tests/ImageSeriesStudio.Tests/OpenAiProviderConfigurationTests.cs`
 - Test: `tests/ImageSeriesStudio.Tests/OpenAiProviderContractTests.cs`
+
+- [x] **Step 0: Add provider configuration and real API guard**
+
+Keep real API calls disabled by default. Read secrets from an external secret source, not project files.
 
 - [ ] **Step 1: Implement provider adapters behind interfaces**
 
