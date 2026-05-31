@@ -48,7 +48,7 @@
 
 - [x] Add OpenAI provider configuration.
 - [x] Store secrets outside repo.
-- [ ] Implement text planning provider.
+- [x] Implement text planning provider.
 - [ ] Implement image generation provider.
 - [ ] Implement vision review provider.
 - [ ] Add provider capability validation.
