@@ -78,6 +78,14 @@ public sealed class LocalizationService
         [LocalizationKey.PromptCreatedColumn] = "Created",
         [LocalizationKey.NoPromptRows] = "Select an item and create a prompt version from the inspector.",
         [LocalizationKey.NoItemSelectedForPrompt] = "Select a series item before creating a prompt version.",
+        [LocalizationKey.FakePlanningTitle] = "Fake planning",
+        [LocalizationKey.PlanningGoal] = "Goal",
+        [LocalizationKey.PlanningAudience] = "Audience",
+        [LocalizationKey.PlanningItemCount] = "Item count",
+        [LocalizationKey.PlanningStyleBrief] = "Style brief",
+        [LocalizationKey.RunFakePlanning] = "Run fake planning",
+        [LocalizationKey.DefaultPlanningAudience] = "creators",
+        [LocalizationKey.DefaultPlanningStyleBrief] = "clean editorial style",
     };
 
     private static readonly IReadOnlyDictionary<LocalizationKey, string> Chinese = new Dictionary<LocalizationKey, string>
@@ -153,6 +161,14 @@ public sealed class LocalizationService
         [LocalizationKey.PromptCreatedColumn] = "创建时间",
         [LocalizationKey.NoPromptRows] = "请先选择条目，再从检查器创建提示词版本。",
         [LocalizationKey.NoItemSelectedForPrompt] = "创建提示词版本前需要先选择系列条目。",
+        [LocalizationKey.FakePlanningTitle] = "假规划",
+        [LocalizationKey.PlanningGoal] = "目标",
+        [LocalizationKey.PlanningAudience] = "受众",
+        [LocalizationKey.PlanningItemCount] = "条目数量",
+        [LocalizationKey.PlanningStyleBrief] = "风格简述",
+        [LocalizationKey.RunFakePlanning] = "运行假规划",
+        [LocalizationKey.DefaultPlanningAudience] = "创作者",
+        [LocalizationKey.DefaultPlanningStyleBrief] = "干净的编辑风格",
     };
 
     private readonly Func<CultureInfo> _currentCulture;
@@ -302,4 +318,12 @@ public enum LocalizationKey
     PromptCreatedColumn,
     NoPromptRows,
     NoItemSelectedForPrompt,
+    FakePlanningTitle,
+    PlanningGoal,
+    PlanningAudience,
+    PlanningItemCount,
+    PlanningStyleBrief,
+    RunFakePlanning,
+    DefaultPlanningAudience,
+    DefaultPlanningStyleBrief,
 }

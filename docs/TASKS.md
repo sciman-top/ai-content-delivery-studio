@@ -38,6 +38,7 @@
 - [x] Add series and item editor foundation.
 - [x] Add series and item table.
 - [x] Add prompt version editor.
+- [x] Add fake planning action.
 - [ ] Add queue panel.
 - [ ] Add candidate gallery.
 - [ ] Add review panel.

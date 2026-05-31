@@ -358,6 +358,20 @@
                 <TextBlock Text="{Binding CurrentProjectTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
                 <TextBlock Text="{Binding CurrentProjectSummary}" TextWrapping="Wrap" Foreground="#4B5563" Margin="0,0,0,14" />
 
+                <TextBlock Text="{Binding FakePlanningTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
+                <TextBlock Text="{Binding PlanningGoalLabel}" Margin="0,0,0,4" />
+                <TextBox Text="{Binding NewPlanningGoal, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+                <TextBlock Text="{Binding PlanningAudienceLabel}" Margin="0,0,0,4" />
+                <TextBox Text="{Binding NewPlanningAudience, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+                <TextBlock Text="{Binding PlanningItemCountLabel}" Margin="0,0,0,4" />
+                <TextBox Text="{Binding NewPlanningItemCount, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+                <TextBlock Text="{Binding PlanningStyleBriefLabel}" Margin="0,0,0,4" />
+                <TextBox Text="{Binding NewPlanningStyleBrief, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+                <Button Content="{Binding RunFakePlanningText}"
+                        Command="{Binding RunFakePlanningCommand}"
+                        HorizontalAlignment="Stretch"
+                        Margin="0,0,0,14" />
+
                 <TextBlock Text="{Binding AvailableProjectsTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
                 <ListBox ItemsSource="{Binding Projects}"
                          SelectedItem="{Binding SelectedProject, Mode=TwoWay}"

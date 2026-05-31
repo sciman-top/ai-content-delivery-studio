@@ -323,7 +323,7 @@ Expected: a project can be created, saved, and loaded from a temporary SQLite da
   - Keep provider/model fields provider-neutral.
   - Gate: prompt service tests plus `dotnet build`.
 
-- [ ] **Task 7C.4: Fake planning action**
+- [x] **Task 7C.4: Fake planning action**
   - Run `FakeTextPlanningProvider` from the Brief/Plan path.
   - Create draft series items from the returned plan.
   - Gate: fake workflow test plus UI build.

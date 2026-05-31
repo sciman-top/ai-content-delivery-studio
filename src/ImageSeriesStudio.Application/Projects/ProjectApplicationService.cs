@@ -1,14 +1,24 @@
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Providers;
 
 namespace ImageSeriesStudio.Application.Projects;
 
 public sealed class ProjectApplicationService
 {
     private readonly IProjectRepository _repository;
+    private readonly ITextPlanningProvider? _textPlanningProvider;
 
     public ProjectApplicationService(IProjectRepository repository)
+        : this(repository, textPlanningProvider: null)
+    {
+    }
+
+    public ProjectApplicationService(
+        IProjectRepository repository,
+        ITextPlanningProvider? textPlanningProvider)
     {
         _repository = repository;
+        _textPlanningProvider = textPlanningProvider;
     }
 
     public async Task<ImageProject> CreateProjectAsync(
@@ -79,6 +89,42 @@ public sealed class ProjectApplicationService
 
         await _repository.SaveAsync(project, cancellationToken);
         return prompt;
+    }
+
+    public async Task<ImageSeries> CreatePlanWithProviderAsync(
+        Guid projectId,
+        PlanningRequest request,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        if (_textPlanningProvider is null)
+        {
+            throw new InvalidOperationException("Text planning provider is not registered.");
+        }
+
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var plan = await _textPlanningProvider.CreatePlanAsync(request, cancellationToken);
+        var providerProfile = ResolveProviderProfile(project, providerProfileId: null, timestamp);
+        var seriesTitle = string.IsNullOrWhiteSpace(request.Goal) ? plan.Summary : request.Goal.Trim();
+        var series = project.AddSeries(seriesTitle, plan.Summary, timestamp);
+
+        foreach (var plannedItem in plan.Items)
+        {
+            var item = series.AddItem(plannedItem.Title, plannedItem.Brief, timestamp);
+            item.AddPromptVersion(
+                plannedItem.PromptDraft,
+                CreateDefaultGenerationSettings(),
+                providerProfile.Id,
+                timestamp);
+        }
+
+        await _repository.SaveAsync(project, cancellationToken);
+        return series;
+    }
+
+    private static GenerationSettings CreateDefaultGenerationSettings()
+    {
+        return new GenerationSettings(1024, 1024, "standard", "png");
     }
 
     private static ProviderProfile ResolveProviderProfile(

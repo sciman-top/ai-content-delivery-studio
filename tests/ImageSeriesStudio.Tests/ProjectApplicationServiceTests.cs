@@ -1,5 +1,7 @@
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Infrastructure.Fakes;
 using ImageSeriesStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -198,6 +200,58 @@ public sealed class ProjectApplicationServiceTests
             Assert.Equal(1024, loadedPrompt.Settings.Width);
             Assert.Equal(ProviderKind.Fake, loadedProfile.Kind);
             Assert.Equal(loadedProfile.Id, loadedPrompt.ProviderProfileId);
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ProjectApplicationService_CreatesPlanWithFakeProvider()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-fake-plan.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(
+                new EfProjectRepository(new AppDbContext(options)),
+                new FakeTextPlanningProvider());
+            var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Fake planning demo", timestamp, CancellationToken.None);
+
+            var series = await service.CreatePlanWithProviderAsync(
+                project.Id,
+                new PlanningRequest(
+                    "three article illustrations",
+                    "content authors",
+                    3,
+                    "clean editorial style"),
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+
+            var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var loadedSeries = Assert.Single(loaded!.Series);
+
+            Assert.Equal(series.Id, loadedSeries.Id);
+            Assert.Equal("three article illustrations", loadedSeries.Title);
+            Assert.Equal(3, loadedSeries.Items.Count);
+            Assert.All(loadedSeries.Items, item => Assert.Single(item.PromptVersions));
+            Assert.Single(loaded.ProviderProfiles);
         }
         finally
         {

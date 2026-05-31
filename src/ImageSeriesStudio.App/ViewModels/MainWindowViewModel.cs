@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Providers;
 
 namespace ImageSeriesStudio.App.ViewModels;
 
@@ -26,12 +27,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private LanguageOptionViewModel? _selectedLanguageOption;
     private ProjectSummaryViewModel? _selectedProject;
     private string _newProjectName = string.Empty;
+    private string _newPlanningGoal = string.Empty;
+    private string _newPlanningAudience = string.Empty;
+    private string _newPlanningItemCount = "3";
+    private string _newPlanningStyleBrief = string.Empty;
     private string _projectNameLabel = string.Empty;
     private string _newProjectNamePlaceholder = string.Empty;
     private string _createProjectText = string.Empty;
     private string _availableProjectsTitle = string.Empty;
     private string _currentProjectTitle = string.Empty;
     private string _currentProjectSummary = string.Empty;
+    private string _fakePlanningTitle = string.Empty;
+    private string _planningGoalLabel = string.Empty;
+    private string _planningAudienceLabel = string.Empty;
+    private string _planningItemCountLabel = string.Empty;
+    private string _planningStyleBriefLabel = string.Empty;
+    private string _runFakePlanningText = string.Empty;
     private string _planEditorTitle = string.Empty;
     private string _seriesTitleLabel = string.Empty;
     private string _seriesDescriptionLabel = string.Empty;
@@ -84,6 +95,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         RefreshLocalizedText();
         SelectedLanguageOption = LanguageOptions.First(option => option.Preference == _localizationService.Preference);
         NewProjectName = NewProjectNamePlaceholder;
+        NewPlanningAudience = Text(LocalizationKey.DefaultPlanningAudience);
+        NewPlanningStyleBrief = Text(LocalizationKey.DefaultPlanningStyleBrief);
         _ = RefreshProjectsAsync();
     }
 
@@ -172,6 +185,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
             CurrentProjectSummary = value is null
                 ? Text(LocalizationKey.NoProjectLoaded)
                 : $"{value.Name} ({value.UpdatedAt.LocalDateTime:g})";
+            if (value is not null && string.IsNullOrWhiteSpace(NewPlanningGoal))
+            {
+                NewPlanningGoal = value.Name;
+            }
+
+            RunFakePlanningCommand.NotifyCanExecuteChanged();
             _ = value is null ? ClearPlanAsync() : LoadPlanAsync(value.Id);
         }
     }
@@ -186,6 +205,48 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 CreateProjectCommand.NotifyCanExecuteChanged();
             }
         }
+    }
+
+    public string NewPlanningGoal
+    {
+        get => _newPlanningGoal;
+        set
+        {
+            if (SetProperty(ref _newPlanningGoal, value))
+            {
+                RunFakePlanningCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string NewPlanningAudience
+    {
+        get => _newPlanningAudience;
+        set
+        {
+            if (SetProperty(ref _newPlanningAudience, value))
+            {
+                RunFakePlanningCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string NewPlanningItemCount
+    {
+        get => _newPlanningItemCount;
+        set
+        {
+            if (SetProperty(ref _newPlanningItemCount, value))
+            {
+                RunFakePlanningCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string NewPlanningStyleBrief
+    {
+        get => _newPlanningStyleBrief;
+        set => SetProperty(ref _newPlanningStyleBrief, value);
     }
 
     public string ProjectNameLabel
@@ -222,6 +283,42 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _currentProjectSummary;
         private set => SetProperty(ref _currentProjectSummary, value);
+    }
+
+    public string FakePlanningTitle
+    {
+        get => _fakePlanningTitle;
+        private set => SetProperty(ref _fakePlanningTitle, value);
+    }
+
+    public string PlanningGoalLabel
+    {
+        get => _planningGoalLabel;
+        private set => SetProperty(ref _planningGoalLabel, value);
+    }
+
+    public string PlanningAudienceLabel
+    {
+        get => _planningAudienceLabel;
+        private set => SetProperty(ref _planningAudienceLabel, value);
+    }
+
+    public string PlanningItemCountLabel
+    {
+        get => _planningItemCountLabel;
+        private set => SetProperty(ref _planningItemCountLabel, value);
+    }
+
+    public string PlanningStyleBriefLabel
+    {
+        get => _planningStyleBriefLabel;
+        private set => SetProperty(ref _planningStyleBriefLabel, value);
+    }
+
+    public string RunFakePlanningText
+    {
+        get => _runFakePlanningText;
+        private set => SetProperty(ref _runFakePlanningText, value);
     }
 
     public string PlanEditorTitle
@@ -561,6 +658,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         CreateProjectText = Text(LocalizationKey.CreateProject);
         AvailableProjectsTitle = Text(LocalizationKey.AvailableProjects);
         CurrentProjectTitle = Text(LocalizationKey.CurrentProject);
+        FakePlanningTitle = Text(LocalizationKey.FakePlanningTitle);
+        PlanningGoalLabel = Text(LocalizationKey.PlanningGoal);
+        PlanningAudienceLabel = Text(LocalizationKey.PlanningAudience);
+        PlanningItemCountLabel = Text(LocalizationKey.PlanningItemCount);
+        PlanningStyleBriefLabel = Text(LocalizationKey.PlanningStyleBrief);
+        RunFakePlanningText = Text(LocalizationKey.RunFakePlanning);
         PlanEditorTitle = Text(LocalizationKey.PlanEditor);
         SeriesTitleLabel = Text(LocalizationKey.SeriesTitle);
         SeriesDescriptionLabel = Text(LocalizationKey.SeriesDescription);
@@ -593,6 +696,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         CurrentProjectSummary = SelectedProject is null
             ? Text(LocalizationKey.NoProjectLoaded)
             : $"{SelectedProject.Name} ({SelectedProject.UpdatedAt.LocalDateTime:g})";
+        if (string.IsNullOrWhiteSpace(NewPlanningAudience))
+        {
+            NewPlanningAudience = Text(LocalizationKey.DefaultPlanningAudience);
+        }
+
+        if (string.IsNullOrWhiteSpace(NewPlanningStyleBrief))
+        {
+            NewPlanningStyleBrief = Text(LocalizationKey.DefaultPlanningStyleBrief);
+        }
+
         NavigationItems =
         [
             Text(LocalizationKey.Workspaces),
@@ -655,6 +768,40 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedProject = selectedProjectId is null
             ? Projects.FirstOrDefault()
             : Projects.FirstOrDefault(project => project.Id == selectedProjectId);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunFakePlanning))]
+    private async Task RunFakePlanningAsync()
+    {
+        if (SelectedProject is null || !TryGetPlanningItemCount(out var itemCount))
+        {
+            return;
+        }
+
+        var series = await _projectService.CreatePlanWithProviderAsync(
+            SelectedProject.Id,
+            new PlanningRequest(
+                NewPlanningGoal.Trim(),
+                NewPlanningAudience.Trim(),
+                itemCount,
+                NewPlanningStyleBrief.Trim()),
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        await LoadPlanAsync(SelectedProject.Id, series.Id);
+    }
+
+    private bool CanRunFakePlanning()
+    {
+        return SelectedProject is not null
+            && !string.IsNullOrWhiteSpace(NewPlanningGoal)
+            && !string.IsNullOrWhiteSpace(NewPlanningAudience)
+            && TryGetPlanningItemCount(out _);
+    }
+
+    private bool TryGetPlanningItemCount(out int itemCount)
+    {
+        return int.TryParse(NewPlanningItemCount, out itemCount) && itemCount > 0;
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateSeries))]
