@@ -1,3 +1,4 @@
+using ImageSeriesStudio.Core.Generation;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 
@@ -7,18 +8,28 @@ public sealed class ProjectApplicationService
 {
     private readonly IProjectRepository _repository;
     private readonly ITextPlanningProvider? _textPlanningProvider;
+    private readonly IImageGenerationProvider? _imageGenerationProvider;
 
     public ProjectApplicationService(IProjectRepository repository)
-        : this(repository, textPlanningProvider: null)
+        : this(repository, textPlanningProvider: null, imageGenerationProvider: null)
     {
     }
 
     public ProjectApplicationService(
         IProjectRepository repository,
         ITextPlanningProvider? textPlanningProvider)
+        : this(repository, textPlanningProvider, imageGenerationProvider: null)
+    {
+    }
+
+    public ProjectApplicationService(
+        IProjectRepository repository,
+        ITextPlanningProvider? textPlanningProvider,
+        IImageGenerationProvider? imageGenerationProvider)
     {
         _repository = repository;
         _textPlanningProvider = textPlanningProvider;
+        _imageGenerationProvider = imageGenerationProvider;
     }
 
     public async Task<ImageProject> CreateProjectAsync(
@@ -122,9 +133,67 @@ public sealed class ProjectApplicationService
         return series;
     }
 
+    public async Task<GenerationQueueRun> RunGenerationQueueAsync(
+        Guid projectId,
+        string outputDirectory,
+        CancellationToken cancellationToken)
+    {
+        if (_imageGenerationProvider is null)
+        {
+            throw new InvalidOperationException("Image generation provider is not registered.");
+        }
+
+        if (!_imageGenerationProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Real image generation requires explicit approval.");
+        }
+
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var requests = CreateGenerationRequests(project, outputDirectory);
+        var queue = new GenerationQueue(
+            _imageGenerationProvider,
+            new GenerationQueueOptions(MaxConcurrency: 1, MaxRetries: 0));
+
+        return await queue.RunAsync(requests, cancellationToken);
+    }
+
     private static GenerationSettings CreateDefaultGenerationSettings()
     {
         return new GenerationSettings(1024, 1024, "standard", "png");
+    }
+
+    private static IReadOnlyList<ImageGenerationRequest> CreateGenerationRequests(
+        ImageProject project,
+        string outputDirectory)
+    {
+        var index = 0;
+        return project.Series
+            .SelectMany(series => series.Items)
+            .Select(item => new
+            {
+                Item = item,
+                Prompt = item.PromptVersions.OrderByDescending(prompt => prompt.VersionNumber).FirstOrDefault(),
+            })
+            .Where(value => value.Prompt is not null)
+            .Select(value =>
+            {
+                index++;
+                return new ImageGenerationRequest(
+                    value.Item.Id,
+                    value.Prompt!.Id,
+                    value.Prompt.PromptText,
+                    value.Prompt.Settings,
+                    outputDirectory,
+                    $"{index:000}-{SanitizeFileName(value.Item.Title)}.png");
+            })
+            .ToArray();
+    }
+
+    private static string SanitizeFileName(string value)
+    {
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var sanitized = new string(value.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
+        return string.IsNullOrWhiteSpace(sanitized) ? "image" : sanitized.Trim();
     }
 
     private static ProviderProfile ResolveProviderProfile(

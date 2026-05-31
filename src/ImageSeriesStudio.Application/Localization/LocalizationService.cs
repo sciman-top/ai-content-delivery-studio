@@ -86,6 +86,13 @@ public sealed class LocalizationService
         [LocalizationKey.RunFakePlanning] = "Run fake planning",
         [LocalizationKey.DefaultPlanningAudience] = "creators",
         [LocalizationKey.DefaultPlanningStyleBrief] = "clean editorial style",
+        [LocalizationKey.RunFakeGeneration] = "Run fake generation",
+        [LocalizationKey.QueueItemColumn] = "Item",
+        [LocalizationKey.QueueStatusColumn] = "Status",
+        [LocalizationKey.QueueAttemptsColumn] = "Attempts",
+        [LocalizationKey.QueueOutputColumn] = "Output",
+        [LocalizationKey.QueueErrorColumn] = "Error",
+        [LocalizationKey.NoQueueRows] = "Create prompt versions, then run fake generation from the inspector.",
     };
 
     private static readonly IReadOnlyDictionary<LocalizationKey, string> Chinese = new Dictionary<LocalizationKey, string>
@@ -169,6 +176,13 @@ public sealed class LocalizationService
         [LocalizationKey.RunFakePlanning] = "运行假规划",
         [LocalizationKey.DefaultPlanningAudience] = "创作者",
         [LocalizationKey.DefaultPlanningStyleBrief] = "干净的编辑风格",
+        [LocalizationKey.RunFakeGeneration] = "运行假生成",
+        [LocalizationKey.QueueItemColumn] = "条目",
+        [LocalizationKey.QueueStatusColumn] = "状态",
+        [LocalizationKey.QueueAttemptsColumn] = "尝试次数",
+        [LocalizationKey.QueueOutputColumn] = "输出",
+        [LocalizationKey.QueueErrorColumn] = "错误",
+        [LocalizationKey.NoQueueRows] = "先创建提示词版本，再从检查器运行假生成。",
     };
 
     private readonly Func<CultureInfo> _currentCulture;
@@ -326,4 +340,11 @@ public enum LocalizationKey
     RunFakePlanning,
     DefaultPlanningAudience,
     DefaultPlanningStyleBrief,
+    RunFakeGeneration,
+    QueueItemColumn,
+    QueueStatusColumn,
+    QueueAttemptsColumn,
+    QueueOutputColumn,
+    QueueErrorColumn,
+    NoQueueRows,
 }

@@ -1,7 +1,9 @@
+using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.Core.Generation;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 
@@ -43,6 +45,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _planningItemCountLabel = string.Empty;
     private string _planningStyleBriefLabel = string.Empty;
     private string _runFakePlanningText = string.Empty;
+    private string _runFakeGenerationText = string.Empty;
+    private string _queueItemColumn = string.Empty;
+    private string _queueStatusColumn = string.Empty;
+    private string _queueAttemptsColumn = string.Empty;
+    private string _queueOutputColumn = string.Empty;
+    private string _queueErrorColumn = string.Empty;
+    private string _noQueueRowsText = string.Empty;
     private string _planEditorTitle = string.Empty;
     private string _seriesTitleLabel = string.Empty;
     private string _seriesDescriptionLabel = string.Empty;
@@ -83,6 +92,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<PlanRowViewModel> _planRows = [];
     private IReadOnlyList<PromptVersionViewModel> _promptVersions = [];
     private IReadOnlyList<PromptRowViewModel> _promptRows = [];
+    private IReadOnlyList<QueueRowViewModel> _queueRows = [];
     private SeriesSummaryViewModel? _selectedSeries;
     private SeriesItemViewModel? _selectedSeriesItem;
 
@@ -190,7 +200,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 NewPlanningGoal = value.Name;
             }
 
+            QueueRows = [];
             RunFakePlanningCommand.NotifyCanExecuteChanged();
+            RunFakeGenerationCommand.NotifyCanExecuteChanged();
             _ = value is null ? ClearPlanAsync() : LoadPlanAsync(value.Id);
         }
     }
@@ -319,6 +331,48 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _runFakePlanningText;
         private set => SetProperty(ref _runFakePlanningText, value);
+    }
+
+    public string RunFakeGenerationText
+    {
+        get => _runFakeGenerationText;
+        private set => SetProperty(ref _runFakeGenerationText, value);
+    }
+
+    public string QueueItemColumn
+    {
+        get => _queueItemColumn;
+        private set => SetProperty(ref _queueItemColumn, value);
+    }
+
+    public string QueueStatusColumn
+    {
+        get => _queueStatusColumn;
+        private set => SetProperty(ref _queueStatusColumn, value);
+    }
+
+    public string QueueAttemptsColumn
+    {
+        get => _queueAttemptsColumn;
+        private set => SetProperty(ref _queueAttemptsColumn, value);
+    }
+
+    public string QueueOutputColumn
+    {
+        get => _queueOutputColumn;
+        private set => SetProperty(ref _queueOutputColumn, value);
+    }
+
+    public string QueueErrorColumn
+    {
+        get => _queueErrorColumn;
+        private set => SetProperty(ref _queueErrorColumn, value);
+    }
+
+    public string NoQueueRowsText
+    {
+        get => _noQueueRowsText;
+        private set => SetProperty(ref _noQueueRowsText, value);
     }
 
     public string PlanEditorTitle
@@ -621,11 +675,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _promptRows, value))
             {
                 OnPropertyChanged(nameof(HasPromptRows));
+                RunFakeGenerationCommand.NotifyCanExecuteChanged();
             }
         }
     }
 
     public bool HasPromptRows => PromptRows.Count > 0;
+
+    public IReadOnlyList<QueueRowViewModel> QueueRows
+    {
+        get => _queueRows;
+        private set
+        {
+            if (SetProperty(ref _queueRows, value))
+            {
+                OnPropertyChanged(nameof(HasQueueRows));
+            }
+        }
+    }
+
+    public bool HasQueueRows => QueueRows.Count > 0;
 
     public LanguageOptionViewModel? SelectedLanguageOption
     {
@@ -664,6 +733,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PlanningItemCountLabel = Text(LocalizationKey.PlanningItemCount);
         PlanningStyleBriefLabel = Text(LocalizationKey.PlanningStyleBrief);
         RunFakePlanningText = Text(LocalizationKey.RunFakePlanning);
+        RunFakeGenerationText = Text(LocalizationKey.RunFakeGeneration);
+        QueueItemColumn = Text(LocalizationKey.QueueItemColumn);
+        QueueStatusColumn = Text(LocalizationKey.QueueStatusColumn);
+        QueueAttemptsColumn = Text(LocalizationKey.QueueAttemptsColumn);
+        QueueOutputColumn = Text(LocalizationKey.QueueOutputColumn);
+        QueueErrorColumn = Text(LocalizationKey.QueueErrorColumn);
+        NoQueueRowsText = Text(LocalizationKey.NoQueueRows);
         PlanEditorTitle = Text(LocalizationKey.PlanEditor);
         SeriesTitleLabel = Text(LocalizationKey.SeriesTitle);
         SeriesDescriptionLabel = Text(LocalizationKey.SeriesDescription);
@@ -804,6 +880,58 @@ public sealed partial class MainWindowViewModel : ObservableObject
         return int.TryParse(NewPlanningItemCount, out itemCount) && itemCount > 0;
     }
 
+    [RelayCommand(CanExecute = nameof(CanRunFakeGeneration))]
+    private async Task RunFakeGenerationAsync()
+    {
+        if (SelectedProject is null)
+        {
+            return;
+        }
+
+        var outputDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ImageSeriesStudio",
+            "generated",
+            SelectedProject.Id.ToString("N"));
+        var run = await _projectService.RunGenerationQueueAsync(
+            SelectedProject.Id,
+            outputDirectory,
+            CancellationToken.None);
+
+        QueueRows = BuildQueueRows(run);
+    }
+
+    private bool CanRunFakeGeneration()
+    {
+        return SelectedProject is not null && PromptRows.Count > 0;
+    }
+
+    private IReadOnlyList<QueueRowViewModel> BuildQueueRows(GenerationQueueRun run)
+    {
+        var itemTitles = Series
+            .SelectMany(series => series.Items)
+            .ToDictionary(item => item.Id, item => item.Title);
+        var imageIndex = 0;
+        var images = run.Images.ToArray();
+
+        return run.Tasks.Select(task =>
+        {
+            var outputPath = string.Empty;
+            if (task.Status is GenerationTaskStatus.Succeeded && imageIndex < images.Length)
+            {
+                outputPath = images[imageIndex].AssetPath;
+                imageIndex++;
+            }
+
+            return new QueueRowViewModel(
+                itemTitles.GetValueOrDefault(task.SeriesItemId, task.SeriesItemId.ToString("N")),
+                task.Status.ToString(),
+                task.AttemptCount.ToString(),
+                outputPath,
+                task.ErrorMessage ?? string.Empty);
+        }).ToArray();
+    }
+
     [RelayCommand(CanExecute = nameof(CanCreateSeries))]
     private async Task CreateSeriesAsync()
     {
@@ -940,6 +1068,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedSeries = null;
         SeriesItems = [];
         SelectedSeriesItem = null;
+        QueueRows = [];
         RebuildPlanRows();
         RebuildPromptRows();
         CreateSeriesCommand.NotifyCanExecuteChanged();
@@ -989,6 +1118,8 @@ public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, 
     public bool IsPlan => Kind is WorkbenchTabKind.Plan;
 
     public bool IsPrompts => Kind is WorkbenchTabKind.Prompts;
+
+    public bool IsQueue => Kind is WorkbenchTabKind.Queue;
 }
 
 public enum WorkbenchTabKind
@@ -1030,3 +1161,10 @@ public sealed record PromptRowViewModel(
     string PromptText,
     string SettingsSummary,
     string CreatedAt);
+
+public sealed record QueueRowViewModel(
+    string ItemTitle,
+    string Status,
+    string Attempts,
+    string OutputPath,
+    string ErrorMessage);

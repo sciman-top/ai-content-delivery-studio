@@ -261,4 +261,52 @@ public sealed class ProjectApplicationServiceTests
             }
         }
     }
+
+    [Fact]
+    public async Task ProjectApplicationService_RunsGenerationQueueWithFakeProvider()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-fake-generation.sqlite");
+        var outputDirectory = Path.Combine(databaseDirectory, "generated");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(
+                new EfProjectRepository(new AppDbContext(options)),
+                new FakeTextPlanningProvider(),
+                new FakeImageGenerationProvider());
+            var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Fake generation demo", timestamp, CancellationToken.None);
+            await service.CreatePlanWithProviderAsync(
+                project.Id,
+                new PlanningRequest("two concept images", "designers", 2, "bright studio"),
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+
+            var run = await service.RunGenerationQueueAsync(project.Id, outputDirectory, CancellationToken.None);
+
+            Assert.Equal(2, run.Tasks.Count);
+            Assert.All(run.Tasks, task => Assert.Equal(GenerationTaskStatus.Succeeded, task.Status));
+            Assert.Equal(2, run.Images.Count);
+            Assert.All(run.Images, image => Assert.True(File.Exists(image.AssetPath)));
+            Assert.All(run.Images, image => Assert.True(File.Exists(image.MetadataPath)));
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
 }

@@ -328,7 +328,7 @@ Expected: a project can be created, saved, and loaded from a temporary SQLite da
   - Create draft series items from the returned plan.
   - Gate: fake workflow test plus UI build.
 
-- [ ] **Task 7C.5: Queue panel**
+- [x] **Task 7C.5: Queue panel**
   - Bind `GenerationQueue` state to the Queue tab.
   - Support cancellation and retry visibility.
   - Gate: queue tests plus `dotnet build`.
