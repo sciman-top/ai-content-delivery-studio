@@ -36,7 +36,7 @@
 - Create: `ImageSeriesStudio.sln`
 - Create: project files listed above.
 
-- [ ] **Step 1: Create solution and projects**
+- [x] **Step 1: Create solution and projects**
 
 Run:
 
@@ -59,7 +59,7 @@ dotnet add tests/ImageSeriesStudio.Tests reference src/ImageSeriesStudio.Infrast
 
 Expected: all projects are added to the solution.
 
-- [ ] **Step 2: Add packages**
+- [x] **Step 2: Add packages**
 
 Run:
 
@@ -73,7 +73,7 @@ dotnet add tests/ImageSeriesStudio.Tests package Microsoft.NET.Test.Sdk
 
 Expected: package restore succeeds.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 Run:
 
@@ -91,15 +91,15 @@ Expected: build and tests pass.
 - Create: `src/ImageSeriesStudio.Core/Projects/ProjectModel.cs`
 - Test: `tests/ImageSeriesStudio.Tests/ProjectModelTests.cs`
 
-- [ ] **Step 1: Add domain records**
+- [x] **Step 1: Add domain records**
 
 Create project, series, item, prompt version, task, candidate, review, and delivery records. Include stable IDs, timestamps, state fields, provider profile IDs, and asset paths.
 
-- [ ] **Step 2: Add state transition tests**
+- [x] **Step 2: Add state transition tests**
 
 Test that an item can move from `Draft` to `Ready`, `NeedsReview`, `Approved`, and `Delivered`, and rejects invalid backwards transitions without an explicit reopen operation.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 Run:
 
@@ -117,15 +117,15 @@ Expected: tests pass.
 - Create: `src/ImageSeriesStudio.Infrastructure/Fakes/FakeProviders.cs`
 - Test: `tests/ImageSeriesStudio.Tests/FakeProviderTests.cs`
 
-- [ ] **Step 1: Define provider contracts**
+- [x] **Step 1: Define provider contracts**
 
 Define `ITextPlanningProvider`, `IImageGenerationProvider`, `IVisionReviewProvider`, and `IProviderCapabilities`.
 
-- [ ] **Step 2: Implement deterministic fake providers**
+- [x] **Step 2: Implement deterministic fake providers**
 
 Fake text provider returns a small series plan. Fake image provider writes a small generated placeholder image and sidecar metadata. Fake vision provider returns a structured review result with configurable pass/fail.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 Run:
 
@@ -142,15 +142,15 @@ Expected: tests pass without network access.
 - Create: `src/ImageSeriesStudio.Infrastructure/Persistence/AppDbContext.cs`
 - Test: `tests/ImageSeriesStudio.Tests/PersistenceTests.cs`
 
-- [ ] **Step 1: Add EF Core SQLite context**
+- [x] **Step 1: Add EF Core SQLite context**
 
 Map project, series, items, prompt versions, tasks, candidates, and reviews.
 
-- [ ] **Step 2: Add in-memory temporary database tests**
+- [x] **Step 2: Add in-memory temporary database tests**
 
 Use a temporary SQLite file under the test temp directory. Save and load a complete fake project.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 Run:
 
@@ -167,15 +167,15 @@ Expected: tests pass and no database file is left under the repository.
 - Create: `src/ImageSeriesStudio.Core/Generation/GenerationQueue.cs`
 - Test: `tests/ImageSeriesStudio.Tests/GenerationQueueTests.cs`
 
-- [ ] **Step 1: Implement bounded queue**
+- [x] **Step 1: Implement bounded queue**
 
 Support queued, running, succeeded, failed, and cancelled task states. Include retry count, max retries, timeout, and cancellation token.
 
-- [ ] **Step 2: Test retry and cancellation**
+- [x] **Step 2: Test retry and cancellation**
 
 Use fake providers that fail once then succeed, and fake providers that respect cancellation.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 Run:
 
@@ -193,15 +193,15 @@ Expected: tests pass.
 - Create: `src/ImageSeriesStudio.Infrastructure/Delivery/DeliveryPackageWriter.cs`
 - Test: `tests/ImageSeriesStudio.Tests/DeliveryPackageTests.cs`
 
-- [ ] **Step 1: Add review model**
+- [x] **Step 1: Add review model**
 
 Represent rubric dimensions, hard-fail flags, reviewer comments, AI repair suggestion, human approval, and final decision.
 
-- [ ] **Step 2: Add delivery package writer**
+- [x] **Step 2: Add delivery package writer**
 
 Export final images, prompt snapshots, sidecar metadata, review report, and manifest.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 Run:
 
@@ -220,15 +220,15 @@ Expected: tests pass and exported package has one final image per approved item.
 - Modify: `src/ImageSeriesStudio.App/MainWindow.xaml`
 - Create: `src/ImageSeriesStudio.App/ViewModels/MainWindowViewModel.cs`
 
-- [ ] **Step 1: Wire Generic Host**
+- [x] **Step 1: Wire Generic Host**
 
 Use `Host.CreateApplicationBuilder`, register services, start the host on app startup, and stop it on app exit.
 
-- [ ] **Step 2: Add workbench shell**
+- [x] **Step 2: Add workbench shell**
 
 Create tabs for Brief, Plan, Prompts, Queue, Gallery, Review, and Delivery. Bind visible state to `MainWindowViewModel`.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 Run:
 

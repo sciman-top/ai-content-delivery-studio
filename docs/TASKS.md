@@ -10,24 +10,24 @@
 
 ## Phase 1: Core Model
 
-- [ ] Create .NET solution and projects.
-- [ ] Add WPF app targeting `net10.0-windows`.
-- [ ] Add `ImageSeriesStudio.Core` domain library.
-- [ ] Add `ImageSeriesStudio.Infrastructure` library.
-- [ ] Add test project.
-- [ ] Define domain entities and state machines.
-- [ ] Define provider contracts.
-- [ ] Add fake providers.
-- [ ] Add SQLite persistence.
-- [ ] Add workspace folder service.
-- [ ] Add delivery manifest model.
-- [ ] Add unit tests.
+- [x] Create .NET solution and projects.
+- [x] Add WPF app targeting `net10.0-windows`.
+- [x] Add `ImageSeriesStudio.Core` domain library.
+- [x] Add `ImageSeriesStudio.Infrastructure` library.
+- [x] Add test project.
+- [x] Define domain entities and state machines.
+- [x] Define provider contracts.
+- [x] Add fake providers.
+- [x] Add SQLite persistence.
+- [x] Add workspace folder service.
+- [x] Add delivery manifest model.
+- [x] Add unit tests.
 
 ## Phase 2: UI MVP
 
-- [ ] Add Generic Host startup to WPF.
-- [ ] Add MVVM Toolkit.
-- [ ] Add workbench shell.
+- [x] Add Generic Host startup to WPF.
+- [x] Add MVVM Toolkit.
+- [x] Add workbench shell.
 - [ ] Add project creation and load/save.
 - [ ] Add series and item table.
 - [ ] Add prompt version editor.
