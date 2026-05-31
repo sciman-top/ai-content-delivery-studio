@@ -50,7 +50,7 @@
 - [x] Store secrets outside repo.
 - [x] Implement text planning provider.
 - [x] Implement image generation provider.
-- [ ] Implement vision review provider.
+- [x] Implement vision review provider.
 - [ ] Add provider capability validation.
 - [ ] Add dry-run and opt-in real API smoke tests.
 - [ ] Add cost estimate and quota guard.

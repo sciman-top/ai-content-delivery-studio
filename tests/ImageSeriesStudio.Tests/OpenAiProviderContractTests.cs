@@ -227,6 +227,125 @@ public sealed class OpenAiProviderContractTests
         Assert.Equal(1, handler.CallCount);
     }
 
+    [Fact]
+    public async Task VisionReviewProvider_PostsImageInputAndParsesStructuredReview()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var imagePath = Path.Combine(rootDirectory, "candidate.png");
+        await File.WriteAllBytesAsync(imagePath, [1, 2, 3, 4], CancellationToken.None);
+
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_review_123",
+              "output_text": "{\"decision\":\"pass\",\"scores\":{\"match\":5},\"hardFailures\":[],\"comments\":\"Looks aligned.\",\"suggestedFix\":null}"
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateVisionProvider(httpClient);
+        var candidateId = Guid.Parse("33333333-3333-3333-3333-333333333333");
+
+        try
+        {
+            var result = await provider.ReviewAsync(
+                new VisionReviewRequest(
+                    candidateId,
+                    imagePath,
+                    new ReviewRubric(
+                        Guid.NewGuid(),
+                        Guid.NewGuid(),
+                        "Default review",
+                        [new ReviewRubricDimension("match", "Image should match the prompt.", 1)],
+                        DateTimeOffset.UtcNow),
+                    "Create a clean science poster."),
+                CancellationToken.None);
+
+            Assert.Equal(candidateId, result.CandidateImageId);
+            Assert.Equal(ReviewDecision.Pass, result.Decision);
+            Assert.Equal(5, result.Scores["match"]);
+            Assert.Empty(result.HardFailures);
+            Assert.Equal("Looks aligned.", result.Comments);
+            Assert.Null(result.SuggestedFix);
+
+            Assert.Equal(HttpMethod.Post, handler.LastRequest!.Method);
+            Assert.Equal("https://api.openai.com/v1/responses", handler.LastRequest.RequestUri!.ToString());
+            Assert.Equal("Bearer", handler.LastRequest.Headers.Authorization!.Scheme);
+
+            using var payload = JsonDocument.Parse(handler.LastRequestBody!);
+            Assert.Equal("gpt-5", payload.RootElement.GetProperty("model").GetString());
+            Assert.False(payload.RootElement.GetProperty("store").GetBoolean());
+            Assert.Equal(
+                "json_schema",
+                payload.RootElement.GetProperty("text").GetProperty("format").GetProperty("type").GetString());
+
+            var content = payload.RootElement
+                .GetProperty("input")[0]
+                .GetProperty("content");
+            Assert.Equal("input_text", content[0].GetProperty("type").GetString());
+            Assert.Contains("Create a clean science poster.", content[0].GetProperty("text").GetString());
+            Assert.Equal("input_image", content[1].GetProperty("type").GetString());
+            Assert.StartsWith("data:image/png;base64,", content[1].GetProperty("image_url").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task VisionReviewProvider_DoesNotSendHttpWhenRealApiIsDisabled()
+    {
+        using var handler = new CaptureHandler(_ => JsonResponse("{}"));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiVisionReviewProvider(
+            httpClient,
+            new OpenAiProviderOptions(),
+            new StaticSecretStore("test-openai-key"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.ReviewAsync(
+                CreateVisionReviewRequest(Path.Combine(Path.GetTempPath(), $"{Guid.NewGuid():N}.png")),
+                CancellationToken.None));
+
+        Assert.Equal(0, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task VisionReviewProvider_MapsNonSuccessResponsesToHttpRequestException()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var imagePath = Path.Combine(rootDirectory, "candidate.png");
+        await File.WriteAllBytesAsync(imagePath, [1, 2, 3, 4], CancellationToken.None);
+        using var handler = new CaptureHandler(_ => new HttpResponseMessage(HttpStatusCode.BadGateway)
+        {
+            ReasonPhrase = "Bad Gateway",
+            Content = new StringContent("""{"error":{"message":"upstream failed"}}""", Encoding.UTF8, "application/json"),
+        });
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateVisionProvider(httpClient);
+
+        try
+        {
+            var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+                provider.ReviewAsync(CreateVisionReviewRequest(imagePath), CancellationToken.None));
+
+            Assert.Contains("502", exception.Message, StringComparison.Ordinal);
+            Assert.Equal(1, handler.CallCount);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
     private static OpenAiTextPlanningProvider CreateTextProvider(HttpClient httpClient)
     {
         return new OpenAiTextPlanningProvider(
@@ -241,6 +360,28 @@ public sealed class OpenAiProviderContractTests
             httpClient,
             new OpenAiProviderOptions { RealApiEnabled = true },
             new StaticSecretStore("test-openai-key"));
+    }
+
+    private static OpenAiVisionReviewProvider CreateVisionProvider(HttpClient httpClient)
+    {
+        return new OpenAiVisionReviewProvider(
+            httpClient,
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            new StaticSecretStore("test-openai-key"));
+    }
+
+    private static VisionReviewRequest CreateVisionReviewRequest(string assetPath)
+    {
+        return new VisionReviewRequest(
+            Guid.NewGuid(),
+            assetPath,
+            new ReviewRubric(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                "Default review",
+                [new ReviewRubricDimension("match", "Image should match the prompt.", 1)],
+                DateTimeOffset.UtcNow),
+            "prompt");
     }
 
     private static HttpResponseMessage JsonResponse(string content)
