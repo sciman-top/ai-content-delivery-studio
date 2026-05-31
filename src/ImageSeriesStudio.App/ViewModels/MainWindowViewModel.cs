@@ -52,6 +52,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _queueOutputColumn = string.Empty;
     private string _queueErrorColumn = string.Empty;
     private string _noQueueRowsText = string.Empty;
+    private string _galleryItemColumn = string.Empty;
+    private string _galleryImageColumn = string.Empty;
+    private string _galleryMetadataColumn = string.Empty;
+    private string _noGalleryRowsText = string.Empty;
     private string _planEditorTitle = string.Empty;
     private string _seriesTitleLabel = string.Empty;
     private string _seriesDescriptionLabel = string.Empty;
@@ -93,6 +97,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<PromptVersionViewModel> _promptVersions = [];
     private IReadOnlyList<PromptRowViewModel> _promptRows = [];
     private IReadOnlyList<QueueRowViewModel> _queueRows = [];
+    private IReadOnlyList<GalleryRowViewModel> _galleryRows = [];
     private SeriesSummaryViewModel? _selectedSeries;
     private SeriesItemViewModel? _selectedSeriesItem;
 
@@ -201,6 +206,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             }
 
             QueueRows = [];
+            GalleryRows = [];
             RunFakePlanningCommand.NotifyCanExecuteChanged();
             RunFakeGenerationCommand.NotifyCanExecuteChanged();
             _ = value is null ? ClearPlanAsync() : LoadPlanAsync(value.Id);
@@ -373,6 +379,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _noQueueRowsText;
         private set => SetProperty(ref _noQueueRowsText, value);
+    }
+
+    public string GalleryItemColumn
+    {
+        get => _galleryItemColumn;
+        private set => SetProperty(ref _galleryItemColumn, value);
+    }
+
+    public string GalleryImageColumn
+    {
+        get => _galleryImageColumn;
+        private set => SetProperty(ref _galleryImageColumn, value);
+    }
+
+    public string GalleryMetadataColumn
+    {
+        get => _galleryMetadataColumn;
+        private set => SetProperty(ref _galleryMetadataColumn, value);
+    }
+
+    public string NoGalleryRowsText
+    {
+        get => _noGalleryRowsText;
+        private set => SetProperty(ref _noGalleryRowsText, value);
     }
 
     public string PlanEditorTitle
@@ -696,6 +726,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public bool HasQueueRows => QueueRows.Count > 0;
 
+    public IReadOnlyList<GalleryRowViewModel> GalleryRows
+    {
+        get => _galleryRows;
+        private set
+        {
+            if (SetProperty(ref _galleryRows, value))
+            {
+                OnPropertyChanged(nameof(HasGalleryRows));
+            }
+        }
+    }
+
+    public bool HasGalleryRows => GalleryRows.Count > 0;
+
     public LanguageOptionViewModel? SelectedLanguageOption
     {
         get => _selectedLanguageOption;
@@ -740,6 +784,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         QueueOutputColumn = Text(LocalizationKey.QueueOutputColumn);
         QueueErrorColumn = Text(LocalizationKey.QueueErrorColumn);
         NoQueueRowsText = Text(LocalizationKey.NoQueueRows);
+        GalleryItemColumn = Text(LocalizationKey.GalleryItemColumn);
+        GalleryImageColumn = Text(LocalizationKey.GalleryImageColumn);
+        GalleryMetadataColumn = Text(LocalizationKey.GalleryMetadataColumn);
+        NoGalleryRowsText = Text(LocalizationKey.NoGalleryRows);
         PlanEditorTitle = Text(LocalizationKey.PlanEditor);
         SeriesTitleLabel = Text(LocalizationKey.SeriesTitle);
         SeriesDescriptionLabel = Text(LocalizationKey.SeriesDescription);
@@ -899,6 +947,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             CancellationToken.None);
 
         QueueRows = BuildQueueRows(run);
+        GalleryRows = BuildGalleryRows(run);
     }
 
     private bool CanRunFakeGeneration()
@@ -929,6 +978,29 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 task.AttemptCount.ToString(),
                 outputPath,
                 task.ErrorMessage ?? string.Empty);
+        }).ToArray();
+    }
+
+    private IReadOnlyList<GalleryRowViewModel> BuildGalleryRows(GenerationQueueRun run)
+    {
+        var itemTitles = Series
+            .SelectMany(series => series.Items)
+            .ToDictionary(item => item.Id, item => item.Title);
+        var succeededTasks = run.Tasks
+            .Where(task => task.Status is GenerationTaskStatus.Succeeded)
+            .ToArray();
+
+        return run.Images.Select((image, index) =>
+        {
+            var task = index < succeededTasks.Length ? succeededTasks[index] : null;
+            var itemTitle = task is null
+                ? image.CandidateImageId.ToString("N")
+                : itemTitles.GetValueOrDefault(task.SeriesItemId, task.SeriesItemId.ToString("N"));
+
+            return new GalleryRowViewModel(
+                itemTitle,
+                image.AssetPath,
+                image.MetadataPath);
         }).ToArray();
     }
 
@@ -1069,6 +1141,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SeriesItems = [];
         SelectedSeriesItem = null;
         QueueRows = [];
+        GalleryRows = [];
         RebuildPlanRows();
         RebuildPromptRows();
         CreateSeriesCommand.NotifyCanExecuteChanged();
@@ -1120,6 +1193,8 @@ public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, 
     public bool IsPrompts => Kind is WorkbenchTabKind.Prompts;
 
     public bool IsQueue => Kind is WorkbenchTabKind.Queue;
+
+    public bool IsGallery => Kind is WorkbenchTabKind.Gallery;
 }
 
 public enum WorkbenchTabKind
@@ -1168,3 +1243,8 @@ public sealed record QueueRowViewModel(
     string Attempts,
     string OutputPath,
     string ErrorMessage);
+
+public sealed record GalleryRowViewModel(
+    string ItemTitle,
+    string AssetPath,
+    string MetadataPath);

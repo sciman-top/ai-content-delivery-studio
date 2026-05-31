@@ -40,7 +40,7 @@
 - [x] Add prompt version editor.
 - [x] Add fake planning action.
 - [x] Add queue panel.
-- [ ] Add candidate gallery.
+- [x] Add candidate gallery.
 - [ ] Add review panel.
 - [ ] Add delivery export panel.
 

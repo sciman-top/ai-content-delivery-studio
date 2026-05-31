@@ -333,7 +333,7 @@ Expected: a project can be created, saved, and loaded from a temporary SQLite da
   - Support cancellation and retry visibility.
   - Gate: queue tests plus `dotnet build`.
 
-- [ ] **Task 7C.6: Candidate gallery**
+- [x] **Task 7C.6: Candidate gallery**
   - Show generated placeholder images from fake provider output.
   - Prepare virtualization-friendly item model.
   - Gate: fake provider tests plus `dotnet build`.

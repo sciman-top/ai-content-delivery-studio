@@ -93,6 +93,10 @@ public sealed class LocalizationService
         [LocalizationKey.QueueOutputColumn] = "Output",
         [LocalizationKey.QueueErrorColumn] = "Error",
         [LocalizationKey.NoQueueRows] = "Create prompt versions, then run fake generation from the inspector.",
+        [LocalizationKey.GalleryItemColumn] = "Item",
+        [LocalizationKey.GalleryImageColumn] = "Candidate",
+        [LocalizationKey.GalleryMetadataColumn] = "Metadata",
+        [LocalizationKey.NoGalleryRows] = "Run fake generation to see candidate images here.",
     };
 
     private static readonly IReadOnlyDictionary<LocalizationKey, string> Chinese = new Dictionary<LocalizationKey, string>
@@ -183,6 +187,10 @@ public sealed class LocalizationService
         [LocalizationKey.QueueOutputColumn] = "输出",
         [LocalizationKey.QueueErrorColumn] = "错误",
         [LocalizationKey.NoQueueRows] = "先创建提示词版本，再从检查器运行假生成。",
+        [LocalizationKey.GalleryItemColumn] = "条目",
+        [LocalizationKey.GalleryImageColumn] = "候选图",
+        [LocalizationKey.GalleryMetadataColumn] = "元数据",
+        [LocalizationKey.NoGalleryRows] = "运行假生成后，候选图将显示在这里。",
     };
 
     private readonly Func<CultureInfo> _currentCulture;
@@ -347,4 +355,8 @@ public enum LocalizationKey
     QueueOutputColumn,
     QueueErrorColumn,
     NoQueueRows,
+    GalleryItemColumn,
+    GalleryImageColumn,
+    GalleryMetadataColumn,
+    NoGalleryRows,
 }

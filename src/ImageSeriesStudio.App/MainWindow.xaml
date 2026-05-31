@@ -89,6 +89,9 @@
                                         <DataTrigger Binding="{Binding IsQueue}" Value="True">
                                             <Setter Property="Visibility" Value="Collapsed" />
                                         </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsGallery}" Value="True">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
                             </TextBlock.Style>
@@ -458,6 +461,122 @@
                                                                    TextWrapping="Wrap"
                                                                    Foreground="#8A3B3B"
                                                                    Margin="10,0,0,0" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </ScrollViewer>
+                            </Border>
+                        </Grid>
+                        <Grid Grid.Row="1" Margin="0,16,0,0">
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsGallery}" Value="True">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="40" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <Border Grid.Row="0" Background="#E9EDF3" BorderBrush="#D4DAE5" BorderThickness="1">
+                                <Grid Margin="12,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="160" />
+                                        <ColumnDefinition Width="2.3*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding DataContext.GalleryItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold" />
+                                    <TextBlock Grid.Column="1"
+                                               Text="{Binding DataContext.GalleryImageColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Margin="10,0,0,0" />
+                                    <TextBlock Grid.Column="2"
+                                               Text="{Binding DataContext.GalleryMetadataColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Margin="10,0,0,0" />
+                                </Grid>
+                            </Border>
+
+                            <TextBlock Grid.Row="1"
+                                       Text="{Binding DataContext.NoGalleryRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                       Foreground="#5E6978"
+                                       Margin="0,14,0,0"
+                                       TextWrapping="Wrap">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsGallery}" Value="True" />
+                                                    <Condition Binding="{Binding DataContext.HasGalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False" />
+                                                </MultiDataTrigger.Conditions>
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <Border Grid.Row="2" BorderBrush="#D4DAE5" BorderThickness="1,0,1,1">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding DataContext.HasGalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                    <ItemsControl ItemsSource="{Binding DataContext.GalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1.2*" />
+                                                            <ColumnDefinition Width="160" />
+                                                            <ColumnDefinition Width="2.3*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0"
+                                                                   Text="{Binding ItemTitle}"
+                                                                   FontWeight="SemiBold"
+                                                                   TextTrimming="CharacterEllipsis" />
+                                                        <Border Grid.Column="1"
+                                                                Width="112"
+                                                                Height="84"
+                                                                BorderBrush="#D4DAE5"
+                                                                BorderThickness="1"
+                                                                Background="#F6F7F9"
+                                                                Margin="10,0,0,0">
+                                                            <Image Source="{Binding AssetPath}"
+                                                                   Stretch="Uniform"
+                                                                   RenderOptions.BitmapScalingMode="NearestNeighbor" />
+                                                        </Border>
+                                                        <StackPanel Grid.Column="2" Margin="10,0,0,0">
+                                                            <TextBlock Text="{Binding AssetPath}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       Foreground="#4B5563" />
+                                                            <TextBlock Text="{Binding MetadataPath}"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       Foreground="#5E6978"
+                                                                       Margin="0,6,0,0" />
+                                                        </StackPanel>
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
