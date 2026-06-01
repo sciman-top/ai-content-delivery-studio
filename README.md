@@ -52,6 +52,20 @@ dotnet test
 dotnet format --verify-no-changes
 ```
 
+## Local Publish
+
+Create a Windows publish folder under the ignored `publish/` directory:
+
+```powershell
+.\scripts\publish-app.ps1 -Configuration Release -Runtime win-x64
+```
+
+Preview the command without writing output:
+
+```powershell
+.\scripts\publish-app.ps1 -WhatIfOnly
+```
+
 Until source code exists, documentation validation is:
 
 ```powershell

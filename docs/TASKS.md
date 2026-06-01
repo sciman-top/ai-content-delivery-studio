@@ -75,7 +75,7 @@
 
 ## Release Readiness
 
-- [ ] Add installer or packaged publish.
+- [x] Add installer or packaged publish.
 - [x] Add diagnostics export.
 - [x] Add backup and restore.
 - [x] Add accessibility review.
