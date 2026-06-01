@@ -61,7 +61,7 @@
 - [x] Add structured AI review output.
 - [x] Add prompt repair suggestions.
 - [x] Add prompt diff.
-- [ ] Add candidate comparison.
+- [x] Add candidate comparison.
 - [ ] Add batch requeue by reason.
 - [ ] Add final approval workflow.
 

@@ -438,7 +438,9 @@ Generate deterministic prompt repair suggestions from structured review output, 
 
 Provide deterministic line-level prompt diff for original and repair-suggested prompts.
 
-- [ ] **Step 4b: Add candidate comparison**
+- [x] **Step 4b: Add candidate comparison**
+
+Rank candidates by repair need, review decision, hard failures, and weighted rubric score.
 - [ ] **Step 5: Add batch requeue by failure reason**
 - [ ] **Step 6: Add human final approval workflow**
 
