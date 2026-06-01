@@ -59,7 +59,7 @@
 
 - [x] Add review rubric templates.
 - [x] Add structured AI review output.
-- [ ] Add prompt repair suggestions.
+- [x] Add prompt repair suggestions.
 - [ ] Add prompt diff.
 - [ ] Add candidate comparison.
 - [ ] Add batch requeue by reason.

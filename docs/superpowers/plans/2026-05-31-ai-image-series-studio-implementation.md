@@ -431,7 +431,9 @@ Provide reusable domain templates for general image quality, text-heavy posters,
 
 Normalize provider review results into a domain output with rubric scores, hard failures, comments, suggested fix, and persistable `ReviewResult` conversion.
 
-- [ ] **Step 3: Add structured repair suggestions**
+- [x] **Step 3: Add structured repair suggestions**
+
+Generate deterministic prompt repair suggestions from structured review output, including severity, reasons, actions, and revised prompt text.
 - [ ] **Step 4: Add prompt diff and candidate comparison**
 - [ ] **Step 5: Add batch requeue by failure reason**
 - [ ] **Step 6: Add human final approval workflow**
