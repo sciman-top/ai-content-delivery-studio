@@ -434,7 +434,11 @@ Normalize provider review results into a domain output with rubric scores, hard 
 - [x] **Step 3: Add structured repair suggestions**
 
 Generate deterministic prompt repair suggestions from structured review output, including severity, reasons, actions, and revised prompt text.
-- [ ] **Step 4: Add prompt diff and candidate comparison**
+- [x] **Step 4a: Add prompt diff**
+
+Provide deterministic line-level prompt diff for original and repair-suggested prompts.
+
+- [ ] **Step 4b: Add candidate comparison**
 - [ ] **Step 5: Add batch requeue by failure reason**
 - [ ] **Step 6: Add human final approval workflow**
 
