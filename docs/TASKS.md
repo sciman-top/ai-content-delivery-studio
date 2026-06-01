@@ -53,7 +53,7 @@
 - [x] Implement vision review provider.
 - [x] Add provider capability validation.
 - [x] Add dry-run and opt-in real API smoke tests.
-- [ ] Add cost estimate and quota guard.
+- [x] Add cost estimate and quota guard.
 
 ## Phase 4: Quality Loop
 

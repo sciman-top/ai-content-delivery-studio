@@ -392,6 +392,10 @@ dotnet test --filter OpenAiProviderContractTests
 
 Expected: mocked contract tests pass. Real API tests remain skipped by default.
 
+- [x] **Step 5: Add local cost estimate and quota guard**
+
+Use configurable rate cards and local quota limits. Do not hard-code live provider prices into the domain model.
+
 ## Task 9: Physics Project Import Sample
 
 **Files:**
