@@ -403,9 +403,9 @@ Use configurable rate cards and local quota limits. Do not hard-code live provid
 - Create: `src/ImageSeriesStudio.Infrastructure/Import/PhysicsPosterImportService.cs`
 - Test: `tests/ImageSeriesStudio.Tests/PhysicsPosterImportTests.cs`
 
-- [ ] **Step 1: Import prompt and delivery metadata**
+- [x] **Step 1: Import prompt metadata**
 
-Map physics prompts and finalized content into generic project, series, item, prompt, candidate, and review structures.
+Map physics master-list rows and prompt files into generic project, series, item, and prompt structures.
 
 - [ ] **Step 2: Keep import read-only**
 

@@ -67,8 +67,8 @@
 
 ## Phase 5: Sample Migration
 
-- [ ] Import the physics poster project as a sample.
-- [ ] Map existing prompt files to generic `SeriesItem` and `PromptVersion`.
+- [x] Import the physics poster project as a sample.
+- [x] Map existing prompt files to generic `SeriesItem` and `PromptVersion`.
 - [ ] Map finalized delivery files to `CandidateImage` and `ReviewResult`.
 - [ ] Validate manifest compatibility.
 - [ ] Document migration limits.
