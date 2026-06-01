@@ -138,6 +138,12 @@ Migration limits:
 
 Diagnostics packages are local support artifacts for troubleshooting. They may include application version, OS and .NET runtime details, selected project counts, provider capability summaries, and whether required secrets are configured. They must not include secret values, local SQLite database contents, generated image binaries, raw workspace folders, or transient API request payloads.
 
+## Backup And Restore
+
+Local backup/restore is file-based and conservative by default. The safe default backup excludes `.env`, local appsettings overrides, SQLite databases, build outputs, `workspace/`, and `outputs/`. Restore validates every archive entry against the target directory before writing, so a crafted zip entry cannot escape the selected restore root.
+
+Full project-state backup that intentionally includes SQLite or generated assets must be an explicit user action with a separate manifest and size warning.
+
 ## Quality Gates
 
 Before real provider integration:

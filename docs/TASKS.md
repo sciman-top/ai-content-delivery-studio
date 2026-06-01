@@ -77,7 +77,7 @@
 
 - [ ] Add installer or packaged publish.
 - [x] Add diagnostics export.
-- [ ] Add backup and restore.
+- [x] Add backup and restore.
 - [ ] Add accessibility review.
 - [ ] Add large-gallery performance review.
 - [ ] Add user guide.
