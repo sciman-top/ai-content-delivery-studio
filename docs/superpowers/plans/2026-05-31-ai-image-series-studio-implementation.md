@@ -444,7 +444,9 @@ Rank candidates by repair need, review decision, hard failures, and weighted rub
 - [x] **Step 5: Add batch requeue by failure reason**
 
 Group failed or repair-needed candidates by hard failure, failed review, low score, or suggested fix before requeue execution.
-- [ ] **Step 6: Add human final approval workflow**
+- [x] **Step 6: Add human final approval workflow**
+
+Require a clean passing AI review before human approval, and require reviewer notes for rejection.
 
 ## Final Gate
 
