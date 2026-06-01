@@ -76,7 +76,7 @@
 ## Release Readiness
 
 - [ ] Add installer or packaged publish.
-- [ ] Add diagnostics export.
+- [x] Add diagnostics export.
 - [ ] Add backup and restore.
 - [ ] Add accessibility review.
 - [ ] Add large-gallery performance review.

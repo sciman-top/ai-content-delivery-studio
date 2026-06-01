@@ -134,6 +134,10 @@ Migration limits:
 - Redact secrets from logs and exported manifests.
 - Record provider profile and model settings without exposing credentials.
 
+## Diagnostics Export
+
+Diagnostics packages are local support artifacts for troubleshooting. They may include application version, OS and .NET runtime details, selected project counts, provider capability summaries, and whether required secrets are configured. They must not include secret values, local SQLite database contents, generated image binaries, raw workspace folders, or transient API request payloads.
+
 ## Quality Gates
 
 Before real provider integration:
