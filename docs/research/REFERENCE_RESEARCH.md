@@ -1,6 +1,6 @@
 # Reference Research
 
-Last reviewed: 2026-05-31.
+Last reviewed: 2026-06-01.
 
 This document records the external evidence used to shape the first engineering target. Official documentation defines API and platform semantics. Community projects provide product and workflow inspiration only.
 
@@ -21,6 +21,9 @@ Key findings:
 - `gpt-image-2` currently does not support transparent background.
 - Complex prompts can be slow. Text rendering, consistency, and exact composition control remain known limitations.
 - `quality: "low"` is suitable for fast drafts before medium or high quality final generation.
+- `gpt-image-2` accepts many valid resolutions when max edge length, edge multiples, aspect ratio, and total-pixel constraints are satisfied.
+- Cost and latency should be estimated from input text tokens, input image tokens for edits/reference images, and image output tokens.
+- Reference-image and edit workflows need cost warnings because high-fidelity image inputs can increase token usage.
 
 ### Images And Vision
 
@@ -91,6 +94,7 @@ Patterns to borrow:
 - Workflow graph as first-class artifact.
 - Reproducible workflow files.
 - Queue-based generation.
+- Generated images can carry workflow metadata, and workflows can also be stored as compact JSON for versioning and sharing.
 - Advanced user mode can expose graph/workflow internals without forcing that complexity on beginners.
 
 ### AUTOMATIC1111 Stable Diffusion WebUI
@@ -101,6 +105,8 @@ Patterns to borrow:
 
 - Parameter experiments such as prompt matrix and X/Y/Z plot.
 - Metadata stored with generated images or sidecar records.
+- Prompt validation warnings for model limits.
+- Customizable filename patterns for traceability.
 - Extension/plugin ecosystem.
 - API access for automation.
 
@@ -116,6 +122,8 @@ Patterns to borrow:
 - Creator-oriented workspace instead of a thin prompt form.
 - Canvas and gallery concepts.
 - Model and asset management.
+- Boards that separate generated images from uploaded assets.
+- Image actions that can load workflow settings, reuse prompts, reuse seeds, or remix a prior output.
 - Workflow and queue visibility.
 
 ### Hugging Face Diffusers
@@ -127,6 +135,22 @@ Patterns to borrow:
 - Provider-neutral pipeline abstraction.
 - Small, swappable pipeline components.
 - Reproducible configuration and testable inference paths.
+- Explicit scheduler/model configuration and seed control as part of reproducible experiments.
+
+## Style And Parameter Governance Findings
+
+The product should treat image type, style, generation settings, reference assets, experiments, and review rubrics as linked but separate objects.
+
+Recommended local contracts:
+
+- `ImageTypePreset`: category, aspect ratio, output format, text policy, rubric, and delivery naming policy.
+- `StyleGuide`: repeatable series-level visual language, palette, lighting, composition, negative constraints, and reference links.
+- `GenerationRecipe`: provider-neutral model/settings intent plus provider-specific validation warnings.
+- `ReferenceImageSet`: reusable style, subject, composition, palette, mask, and negative references.
+- `ParameterExperiment`: bounded variation axes, stable slugs, prompt variants, settings, and candidate metadata.
+- `ReviewRubric`: structured checks for requirement match, series consistency, subject accuracy, text readability, safety, and delivery readiness.
+
+AI 推荐: implement presets, style guides, and recipes before graph UI. Community graph tools prove that workflow graphs are powerful, but this app needs a stable provider-neutral domain contract first.
 
 ### Label Studio, CVAT, FiftyOne
 

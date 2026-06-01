@@ -27,6 +27,10 @@ public sealed class DeliveryPackageTests
             await File.WriteAllTextAsync(rejectedMetadata, """{"providerId":"fake-image"}""", CancellationToken.None);
 
             var writer = new DeliveryPackageWriter();
+            var styleGuideId = Guid.NewGuid();
+            var recipeId = Guid.NewGuid();
+            var referenceSetId = Guid.NewGuid();
+            var generationTaskId = Guid.NewGuid();
             var result = await writer.WriteAsync(
                 new DeliveryPackageRequest(
                     "Sample project",
@@ -39,7 +43,14 @@ public sealed class DeliveryPackageTests
                             approvedMetadata,
                             "A clean blue poster background",
                             ReviewDecision.Pass,
-                            HumanApproved: true),
+                            HumanApproved: true,
+                            StyleGuideId: styleGuideId,
+                            StyleGuideVersion: 2,
+                            RecipeId: recipeId,
+                            ReferenceImageSetIds: [referenceSetId],
+                            ExperimentSlug: "001-lighting-soft",
+                            ExperimentParameters: new Dictionary<string, string> { ["lighting"] = "soft" },
+                            GenerationTaskId: generationTaskId),
                         new DeliveryPackageItem(
                             "alt",
                             "Rejected alternate",
@@ -67,6 +78,13 @@ public sealed class DeliveryPackageTests
             Assert.Equal("Sample project", manifest.RootElement.GetProperty("projectName").GetString());
             Assert.Equal(1, items.GetArrayLength());
             Assert.Equal("Cover", items[0].GetProperty("title").GetString());
+            Assert.Equal(styleGuideId, items[0].GetProperty("styleGuideId").GetGuid());
+            Assert.Equal(2, items[0].GetProperty("styleGuideVersion").GetInt32());
+            Assert.Equal(recipeId, items[0].GetProperty("recipeId").GetGuid());
+            Assert.Equal(referenceSetId, items[0].GetProperty("referenceImageSetIds")[0].GetGuid());
+            Assert.Equal("001-lighting-soft", items[0].GetProperty("experimentSlug").GetString());
+            Assert.Equal("soft", items[0].GetProperty("experimentParameters").GetProperty("lighting").GetString());
+            Assert.Equal(generationTaskId, items[0].GetProperty("generationTaskId").GetGuid());
         }
         finally
         {

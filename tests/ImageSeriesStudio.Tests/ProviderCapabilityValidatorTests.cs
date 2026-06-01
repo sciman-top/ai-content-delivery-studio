@@ -28,8 +28,38 @@ public sealed class ProviderCapabilityValidatorTests
             new OpenAiProviderOptions(),
             new StaticSecretStore());
 
-        Assert.Empty(ProviderCapabilityValidator.ValidateImageGenerationProvider(new FakeImageGenerationProvider()));
+        var fakeProvider = new FakeImageGenerationProvider();
+
+        Assert.Empty(ProviderCapabilityValidator.ValidateImageGenerationProvider(fakeProvider));
         Assert.Empty(ProviderCapabilityValidator.ValidateImageGenerationProvider(openAiProvider));
+        Assert.Contains(fakeProvider.Capabilities.SupportedSizes, size => size.Width == 1024 && size.Height == 1024);
+        Assert.Contains("png", fakeProvider.Capabilities.SupportedOutputFormats);
+        Assert.Contains("standard", fakeProvider.Capabilities.SupportedQualities);
+        Assert.Contains("auto", fakeProvider.Capabilities.SupportedBackgroundModes);
+        Assert.NotEmpty(fakeProvider.Capabilities.CostHints);
+    }
+
+    [Fact]
+    public void ValidateImageGenerationProvider_RejectsMissingOutputSettings()
+    {
+        var provider = new InvalidImageGenerationProvider(
+            new ProviderCapabilities(
+                "invalid-image",
+                "Invalid Image Provider",
+                ["image-model"],
+                SupportsTextPlanning: false,
+                SupportsImageGeneration: true,
+                SupportsVisionReview: false,
+                SupportsImageEditing: false,
+                SupportsStreaming: false));
+
+        var errors = ProviderCapabilityValidator.ValidateImageGenerationProvider(provider);
+
+        Assert.Contains(errors, error => error.Contains("size", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, error => error.Contains("quality", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, error => error.Contains("format", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, error => error.Contains("background", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, error => error.Contains("cost", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

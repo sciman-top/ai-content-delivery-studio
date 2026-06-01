@@ -19,7 +19,14 @@ public sealed record DeliveryExportItem(
     string MetadataPath,
     string PromptText,
     ReviewDecision ReviewDecision,
-    bool HumanApproved);
+    bool HumanApproved,
+    Guid? StyleGuideId = null,
+    int? StyleGuideVersion = null,
+    Guid? RecipeId = null,
+    IReadOnlyList<Guid>? ReferenceImageSetIds = null,
+    string? ExperimentSlug = null,
+    IReadOnlyDictionary<string, string>? ExperimentParameters = null,
+    Guid? GenerationTaskId = null);
 
 public sealed record DeliveryExportResult(
     string PackageDirectory,

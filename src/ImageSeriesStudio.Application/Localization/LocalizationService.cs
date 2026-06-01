@@ -110,6 +110,14 @@ public sealed class LocalizationService
         [LocalizationKey.DeliveryReportColumn] = "Review report",
         [LocalizationKey.DeliveryFinalImagesColumn] = "Final images",
         [LocalizationKey.NoDeliveryRows] = "Export approved fake review results to see delivery package paths here.",
+        [LocalizationKey.StyleRecipeInspector] = "Style and recipe",
+        [LocalizationKey.ImageTypePreset] = "Image type",
+        [LocalizationKey.StyleGuide] = "Style guide",
+        [LocalizationKey.GenerationRecipe] = "Generation recipe",
+        [LocalizationKey.StyleRecipeSummary] = "Current setup",
+        [LocalizationKey.DefaultStyleGuideName] = "Default editorial guide",
+        [LocalizationKey.DefaultStyleGuideSummary] = "Clean layout, controlled palette, and deterministic text-safe composition.",
+        [LocalizationKey.DefaultGenerationRecipeName] = "Fake standard PNG",
     };
 
     private static readonly IReadOnlyDictionary<LocalizationKey, string> Chinese = new Dictionary<LocalizationKey, string>
@@ -217,6 +225,14 @@ public sealed class LocalizationService
         [LocalizationKey.DeliveryReportColumn] = "评审报告",
         [LocalizationKey.DeliveryFinalImagesColumn] = "最终图数",
         [LocalizationKey.NoDeliveryRows] = "导出已通过的假评审结果后，交付包路径将显示在这里。",
+        [LocalizationKey.StyleRecipeInspector] = "风格与配方",
+        [LocalizationKey.ImageTypePreset] = "图片类型",
+        [LocalizationKey.StyleGuide] = "风格指南",
+        [LocalizationKey.GenerationRecipe] = "生成配方",
+        [LocalizationKey.StyleRecipeSummary] = "当前配置",
+        [LocalizationKey.DefaultStyleGuideName] = "默认编辑风格指南",
+        [LocalizationKey.DefaultStyleGuideSummary] = "干净版式、受控配色，并为确定性文字合成保留安全空间。",
+        [LocalizationKey.DefaultGenerationRecipeName] = "假标准 PNG",
     };
 
     private readonly Func<CultureInfo> _currentCulture;
@@ -398,4 +414,12 @@ public enum LocalizationKey
     DeliveryReportColumn,
     DeliveryFinalImagesColumn,
     NoDeliveryRows,
+    StyleRecipeInspector,
+    ImageTypePreset,
+    StyleGuide,
+    GenerationRecipe,
+    StyleRecipeSummary,
+    DefaultStyleGuideName,
+    DefaultStyleGuideSummary,
+    DefaultGenerationRecipeName,
 }

@@ -52,7 +52,13 @@ public sealed class FakeImageGenerationProvider : IImageGenerationProvider
         SupportsImageGeneration: true,
         SupportsVisionReview: false,
         SupportsImageEditing: true,
-        SupportsStreaming: false);
+        SupportsStreaming: false,
+        supportedSizes: [new ImageOutputSize(512, 512), new ImageOutputSize(1024, 1024)],
+        supportedQualities: ["draft", "standard"],
+        supportedOutputFormats: ["png"],
+        supportedBackgroundModes: ["auto", "opaque"],
+        supportsReferenceImages: true,
+        costHints: [new ProviderCostHint("fake-image-v1", "free")]);
 
     public async Task<ImageGenerationResult> GenerateImageAsync(
         ImageGenerationRequest request,

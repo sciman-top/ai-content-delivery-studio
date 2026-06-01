@@ -81,3 +81,21 @@
 - [x] Add accessibility review.
 - [x] Add large-gallery performance review.
 - [x] Add user guide.
+
+## Phase 6: Advanced Workflows
+
+- [x] Add provider-neutral parameter grid experiments.
+- [x] Add reference image sets.
+- [x] Document style and parameter governance.
+- [x] Record ADR for style and parameter governance.
+- [x] Add image type presets.
+- [x] Add style guide domain model.
+- [x] Add provider-neutral generation recipes.
+- [x] Extend provider capabilities for output settings.
+- [x] Validate generation recipes before queue execution.
+- [x] Link parameter experiments to queue tasks and candidate review.
+- [x] Add style library and recipe inspector UI.
+- [x] Include style, recipe, reference, and experiment metadata in delivery packages.
+- [ ] Add mask/edit workflow.
+- [ ] Add workflow export/import.
+- [ ] Add optional graph view.

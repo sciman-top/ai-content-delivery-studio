@@ -365,7 +365,7 @@ Expected: a project can be created, saved, and loaded from a temporary SQLite da
 
 Keep real API calls disabled by default. Read secrets from an external secret source, not project files.
 
-- [ ] **Step 1: Implement provider adapters behind interfaces**
+- [x] **Step 1: Implement provider adapters behind interfaces**
 
 Do not expose OpenAI request objects outside infrastructure.
 
@@ -382,7 +382,7 @@ Verify request shape, response parsing, metadata capture, and error mapping with
 
 Real API smoke must be skipped unless an explicit local environment variable enables it.
 
-- [ ] **Step 4: Gate**
+- [x] **Step 4: Gate**
 
 Run:
 
@@ -455,6 +455,56 @@ Group failed or repair-needed candidates by hard failure, failed review, low sco
 - [x] **Step 6: Add human final approval workflow**
 
 Require a clean passing AI review before human approval, and require reviewer notes for rejection.
+
+## Task 11: Parameter Grid Experiments
+
+**Files:**
+
+- Create: `src/ImageSeriesStudio.Core/Experiments/ParameterGridExperiment.cs`
+- Test: `tests/ImageSeriesStudio.Tests/ParameterGridExperimentTests.cs`
+
+- [x] **Step 1: Add parameter grid domain model**
+
+Represent parameter axes and generated variants without binding the feature to a specific provider or UI.
+
+- [x] **Step 2: Generate stable prompt variants**
+
+Create deterministic Cartesian-product variants, stable slugs, prompt template token replacement, and traceable parameter values.
+
+- [x] **Step 3: Gate**
+
+Run:
+
+```powershell
+dotnet test --filter ParameterGridExperimentTests
+```
+
+Expected: parameter grid tests pass without network access or generated assets.
+
+## Task 12: Reference Image Sets
+
+**Files:**
+
+- Create: `src/ImageSeriesStudio.Core/References/ReferenceImageSet.cs`
+- Test: `tests/ImageSeriesStudio.Tests/ReferenceImageSetTests.cs`
+
+- [x] **Step 1: Add reference image set model**
+
+Represent reusable reference images with explicit roles such as style, subject, composition, palette, mask, and negative reference.
+
+- [x] **Step 2: Keep asset paths workspace-relative**
+
+Normalize path separators, reject absolute paths, reject `..` escape segments, and prevent duplicate image paths inside one reference set.
+
+- [x] **Step 3: Gate**
+
+Run:
+
+```powershell
+dotnet test --filter ReferenceImageSetTests
+```
+
+Expected: reference image set tests pass without reading or copying image binaries.
 
 ## Final Gate
 

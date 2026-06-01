@@ -1,4 +1,6 @@
+using ImageSeriesStudio.Core.Experiments;
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Tests;
 
@@ -51,11 +53,61 @@ public sealed class CandidateComparisonTests
         Assert.Null(comparison.BestCandidate);
     }
 
+    [Fact]
+    public void Compare_CarriesExperimentVariantMetadataIntoRows()
+    {
+        var recipe = GenerationRecipe.Create(
+            Guid.NewGuid(),
+            "fake-image-v1",
+            ImageTypePresetCatalog.ArticleCover,
+            1024,
+            1024,
+            "standard",
+            "png",
+            ImageBackgroundMode.Auto,
+            compression: null,
+            ImageModerationMode.Auto,
+            seed: 11,
+            []);
+        var variant = ParameterGridExperiment.CreateVariants(
+            "A {{lighting}} article cover.",
+            new GenerationSettings(1024, 1024, "standard", "png", 11),
+            [new ParameterGridAxis("lighting", ["soft rim"])],
+            recipe)
+            .Single()
+            .WithGenerationTask(Guid.NewGuid());
+        var input = CreateInput(
+            "Variant",
+            ReviewDecision.Pass,
+            hardFailures: [],
+            suggestedFix: null,
+            variant,
+            ("match", 1, 5));
+
+        var row = Assert.Single(CandidateComparison.Compare([input]).Rows);
+
+        Assert.Equal("001-lighting-soft-rim", row.ExperimentSlug);
+        Assert.Equal("soft rim", row.ExperimentParameters["lighting"]);
+        Assert.Equal(variant.GenerationTaskId, row.GenerationTaskId);
+        Assert.Equal(recipe.Id, row.RecipeId);
+    }
+
     private static CandidateComparisonInput CreateInput(
         string title,
         ReviewDecision decision,
         IReadOnlyList<string> hardFailures,
         string? suggestedFix,
+        params (string Name, int Weight, int Score)[] scores)
+    {
+        return CreateInput(title, decision, hardFailures, suggestedFix, experimentVariant: null, scores);
+    }
+
+    private static CandidateComparisonInput CreateInput(
+        string title,
+        ReviewDecision decision,
+        IReadOnlyList<string> hardFailures,
+        string? suggestedFix,
+        ParameterGridVariant? experimentVariant,
         params (string Name, int Weight, int Score)[] scores)
     {
         var candidateId = Guid.NewGuid();
@@ -71,6 +123,7 @@ public sealed class CandidateComparisonTests
                     .ToArray(),
                 hardFailures,
                 $"{title} comments",
-                suggestedFix));
+                suggestedFix),
+            experimentVariant);
     }
 }

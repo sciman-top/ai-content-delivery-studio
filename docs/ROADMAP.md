@@ -111,12 +111,18 @@ Exit gate:
 
 Goal: support broader common image-generation scenarios.
 
+Status: started with provider-neutral parameter grid experiments, reference image sets, image type presets, style guides, generation recipes, provider capability validation, delivery metadata, and a WPF style/recipe inspector.
+
 Deliverables:
 
 - Parameter grid experiments.
 - Reference image sets.
-- Mask/edit workflow.
+- Image type presets.
 - Style guide library.
+- Provider-neutral generation recipes.
+- Provider capability validation for output settings.
+- Experiment-to-review comparison flow.
+- Mask/edit workflow.
 - Workflow export/import.
 - Provider plugin boundary.
 - Optional graph view inspired by node workflow tools.

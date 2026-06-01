@@ -33,7 +33,18 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             SupportsImageGeneration: true,
             SupportsVisionReview: false,
             SupportsImageEditing: false,
-            SupportsStreaming: false);
+            SupportsStreaming: false,
+            supportedSizes:
+            [
+                new ImageOutputSize(1024, 1024),
+                new ImageOutputSize(1024, 1536),
+                new ImageOutputSize(1536, 1024),
+            ],
+            supportedQualities: ["auto", "low", "medium", "high"],
+            supportedOutputFormats: ["png", "jpeg", "webp"],
+            supportedBackgroundModes: ["auto", "opaque"],
+            supportsReferenceImages: false,
+            costHints: [new ProviderCostHint(_options.ImageGenerationModel, "provider-rate-card")]);
     }
 
     public IProviderCapabilities Capabilities { get; }

@@ -7,6 +7,7 @@ using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Generation;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.App.ViewModels;
 
@@ -99,6 +100,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _promptCreatedColumn = string.Empty;
     private string _noPromptRowsText = string.Empty;
     private string _noItemSelectedForPromptText = string.Empty;
+    private string _styleRecipeInspectorTitle = string.Empty;
+    private string _imageTypePresetLabel = string.Empty;
+    private string _styleGuideLabel = string.Empty;
+    private string _generationRecipeLabel = string.Empty;
+    private string _styleRecipeSummaryTitle = string.Empty;
+    private string _styleRecipeSummaryText = string.Empty;
     private string _selectedSeriesItemTitleText = string.Empty;
     private string _newSeriesTitle = string.Empty;
     private string _newSeriesDescription = string.Empty;
@@ -114,8 +121,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<GalleryRowViewModel> _galleryRows = [];
     private IReadOnlyList<ReviewRowViewModel> _reviewRows = [];
     private IReadOnlyList<DeliveryRowViewModel> _deliveryRows = [];
+    private IReadOnlyList<ImageTypePresetOptionViewModel> _imageTypePresetOptions = [];
+    private IReadOnlyList<StyleGuideOptionViewModel> _styleGuideOptions = [];
+    private IReadOnlyList<GenerationRecipeOptionViewModel> _generationRecipeOptions = [];
     private SeriesSummaryViewModel? _selectedSeries;
     private SeriesItemViewModel? _selectedSeriesItem;
+    private ImageTypePresetOptionViewModel? _selectedImageTypePresetOption;
+    private StyleGuideOptionViewModel? _selectedStyleGuideOption;
+    private GenerationRecipeOptionViewModel? _selectedGenerationRecipeOption;
 
     public MainWindowViewModel(
         LocalizationService localizationService,
@@ -675,6 +688,42 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _noItemSelectedForPromptText, value);
     }
 
+    public string StyleRecipeInspectorTitle
+    {
+        get => _styleRecipeInspectorTitle;
+        private set => SetProperty(ref _styleRecipeInspectorTitle, value);
+    }
+
+    public string ImageTypePresetLabel
+    {
+        get => _imageTypePresetLabel;
+        private set => SetProperty(ref _imageTypePresetLabel, value);
+    }
+
+    public string StyleGuideLabel
+    {
+        get => _styleGuideLabel;
+        private set => SetProperty(ref _styleGuideLabel, value);
+    }
+
+    public string GenerationRecipeLabel
+    {
+        get => _generationRecipeLabel;
+        private set => SetProperty(ref _generationRecipeLabel, value);
+    }
+
+    public string StyleRecipeSummaryTitle
+    {
+        get => _styleRecipeSummaryTitle;
+        private set => SetProperty(ref _styleRecipeSummaryTitle, value);
+    }
+
+    public string StyleRecipeSummaryText
+    {
+        get => _styleRecipeSummaryText;
+        private set => SetProperty(ref _styleRecipeSummaryText, value);
+    }
+
     public string SelectedSeriesItemTitleText
     {
         get => _selectedSeriesItemTitleText;
@@ -755,6 +804,60 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _seriesItems;
         private set => SetProperty(ref _seriesItems, value);
+    }
+
+    public IReadOnlyList<ImageTypePresetOptionViewModel> ImageTypePresetOptions
+    {
+        get => _imageTypePresetOptions;
+        private set => SetProperty(ref _imageTypePresetOptions, value);
+    }
+
+    public ImageTypePresetOptionViewModel? SelectedImageTypePresetOption
+    {
+        get => _selectedImageTypePresetOption;
+        set
+        {
+            if (SetProperty(ref _selectedImageTypePresetOption, value))
+            {
+                RefreshStyleRecipeSummary();
+            }
+        }
+    }
+
+    public IReadOnlyList<StyleGuideOptionViewModel> StyleGuideOptions
+    {
+        get => _styleGuideOptions;
+        private set => SetProperty(ref _styleGuideOptions, value);
+    }
+
+    public StyleGuideOptionViewModel? SelectedStyleGuideOption
+    {
+        get => _selectedStyleGuideOption;
+        set
+        {
+            if (SetProperty(ref _selectedStyleGuideOption, value))
+            {
+                RefreshStyleRecipeSummary();
+            }
+        }
+    }
+
+    public IReadOnlyList<GenerationRecipeOptionViewModel> GenerationRecipeOptions
+    {
+        get => _generationRecipeOptions;
+        private set => SetProperty(ref _generationRecipeOptions, value);
+    }
+
+    public GenerationRecipeOptionViewModel? SelectedGenerationRecipeOption
+    {
+        get => _selectedGenerationRecipeOption;
+        set
+        {
+            if (SetProperty(ref _selectedGenerationRecipeOption, value))
+            {
+                RefreshStyleRecipeSummary();
+            }
+        }
     }
 
     public SeriesItemViewModel? SelectedSeriesItem
@@ -956,6 +1059,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PromptCreatedColumn = Text(LocalizationKey.PromptCreatedColumn);
         NoPromptRowsText = Text(LocalizationKey.NoPromptRows);
         NoItemSelectedForPromptText = Text(LocalizationKey.NoItemSelectedForPrompt);
+        StyleRecipeInspectorTitle = Text(LocalizationKey.StyleRecipeInspector);
+        ImageTypePresetLabel = Text(LocalizationKey.ImageTypePreset);
+        StyleGuideLabel = Text(LocalizationKey.StyleGuide);
+        GenerationRecipeLabel = Text(LocalizationKey.GenerationRecipe);
+        StyleRecipeSummaryTitle = Text(LocalizationKey.StyleRecipeSummary);
+        RefreshStyleRecipeOptions();
         CurrentProjectSummary = SelectedProject is null
             ? Text(LocalizationKey.NoProjectLoaded)
             : $"{SelectedProject.Name} ({SelectedProject.UpdatedAt.LocalDateTime:g})";
@@ -1003,6 +1112,55 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedSeriesItemTitleText = SelectedSeriesItem?.Title ?? NoItemSelectedForPromptText;
         RebuildPlanRows();
         RebuildPromptRows();
+    }
+
+    private void RefreshStyleRecipeOptions()
+    {
+        var previousPresetId = SelectedImageTypePresetOption?.Id;
+        var previousStyleGuideId = SelectedStyleGuideOption?.Id;
+        var previousRecipeId = SelectedGenerationRecipeOption?.Id;
+
+        ImageTypePresetOptions = ImageTypePresetCatalog.Defaults
+            .Select(preset => new ImageTypePresetOptionViewModel(
+                preset.Id,
+                preset.DisplayName,
+                $"{preset.DefaultAspectRatio}, {preset.DefaultOutputFormat}, {preset.TextPolicy}"))
+            .ToArray();
+        StyleGuideOptions =
+        [
+            new(
+                "default-editorial",
+                Text(LocalizationKey.DefaultStyleGuideName),
+                Text(LocalizationKey.DefaultStyleGuideSummary)),
+        ];
+        GenerationRecipeOptions =
+        [
+            new(
+                "fake-standard-png",
+                Text(LocalizationKey.DefaultGenerationRecipeName),
+                "fake-image-v1, 1024x1024, standard, png, auto"),
+        ];
+
+        SelectedImageTypePresetOption = SelectById(ImageTypePresetOptions, previousPresetId) ?? ImageTypePresetOptions.FirstOrDefault();
+        SelectedStyleGuideOption = SelectById(StyleGuideOptions, previousStyleGuideId) ?? StyleGuideOptions.FirstOrDefault();
+        SelectedGenerationRecipeOption = SelectById(GenerationRecipeOptions, previousRecipeId) ?? GenerationRecipeOptions.FirstOrDefault();
+        RefreshStyleRecipeSummary();
+    }
+
+    private void RefreshStyleRecipeSummary()
+    {
+        var preset = SelectedImageTypePresetOption?.DisplayName ?? "-";
+        var guide = SelectedStyleGuideOption?.Name ?? "-";
+        var recipe = SelectedGenerationRecipeOption?.DisplayName ?? "-";
+        StyleRecipeSummaryText = $"{preset} / {guide} / {recipe}";
+    }
+
+    private static T? SelectById<T>(IReadOnlyList<T> values, string? id)
+        where T : IIdentifiedOption
+    {
+        return string.IsNullOrWhiteSpace(id)
+            ? default
+            : values.FirstOrDefault(value => value.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateProject))]
@@ -1465,6 +1623,17 @@ public sealed record LanguageOptionViewModel(LanguagePreference Preference, stri
 public sealed record ProjectSummaryViewModel(Guid Id, string Name, DateTimeOffset UpdatedAt);
 
 public sealed record SeriesSummaryViewModel(Guid Id, string Title, IReadOnlyList<SeriesItemViewModel> Items);
+
+public interface IIdentifiedOption
+{
+    string Id { get; }
+}
+
+public sealed record ImageTypePresetOptionViewModel(string Id, string DisplayName, string Summary) : IIdentifiedOption;
+
+public sealed record StyleGuideOptionViewModel(string Id, string Name, string Summary) : IIdentifiedOption;
+
+public sealed record GenerationRecipeOptionViewModel(string Id, string DisplayName, string Summary) : IIdentifiedOption;
 
 public sealed record SeriesItemViewModel(
     Guid Id,

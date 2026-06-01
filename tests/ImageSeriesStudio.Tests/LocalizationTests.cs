@@ -69,4 +69,18 @@ public sealed class LocalizationTests
         service.SetLanguage(LanguagePreference.English);
         Assert.Equal("Needs review", service.GetSeriesItemStatusText(SeriesItemStatus.NeedsReview));
     }
+
+    [Fact]
+    public void LocalizationService_ReturnsStyleRecipeInspectorText()
+    {
+        var service = new LocalizationService();
+
+        service.SetLanguage(LanguagePreference.English);
+        Assert.Equal("Style and recipe", service.GetText(LocalizationKey.StyleRecipeInspector));
+        Assert.Equal("Image type", service.GetText(LocalizationKey.ImageTypePreset));
+
+        service.SetLanguage(LanguagePreference.Chinese);
+        Assert.Equal("风格与配方", service.GetText(LocalizationKey.StyleRecipeInspector));
+        Assert.Equal("图片类型", service.GetText(LocalizationKey.ImageTypePreset));
+    }
 }

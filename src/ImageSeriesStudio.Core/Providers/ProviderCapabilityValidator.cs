@@ -9,7 +9,13 @@ public static class ProviderCapabilityValidator
 
     public static IReadOnlyList<string> ValidateImageGenerationProvider(IImageGenerationProvider provider)
     {
-        return Validate(provider.Capabilities, requiredCapabilityName: "image generation", capabilities => capabilities.SupportsImageGeneration);
+        var errors = Validate(
+            provider.Capabilities,
+            requiredCapabilityName: "image generation",
+            capabilities => capabilities.SupportsImageGeneration).ToList();
+
+        ValidateImageOutputSettings(provider.Capabilities, errors);
+        return errors;
     }
 
     public static IReadOnlyList<string> ValidateVisionReviewProvider(IVisionReviewProvider provider)
@@ -55,5 +61,66 @@ public static class ProviderCapabilityValidator
         }
 
         return errors;
+    }
+
+    private static void ValidateImageOutputSettings(IProviderCapabilities capabilities, List<string> errors)
+    {
+        if (capabilities.SupportedSizes.Count == 0)
+        {
+            errors.Add("Image generation provider must declare at least one supported output size.");
+        }
+
+        if (capabilities.SupportedSizes.Any(size => size.Width <= 0 || size.Height <= 0))
+        {
+            errors.Add("Image generation provider output sizes must be positive.");
+        }
+
+        ValidateStringSet(
+            capabilities.SupportedQualities,
+            "Image generation provider must declare at least one supported quality.",
+            "Image generation provider supported qualities cannot be blank.",
+            "Image generation provider supported qualities must be unique.",
+            errors);
+        ValidateStringSet(
+            capabilities.SupportedOutputFormats,
+            "Image generation provider must declare at least one supported output format.",
+            "Image generation provider supported output formats cannot be blank.",
+            "Image generation provider supported output formats must be unique.",
+            errors);
+        ValidateStringSet(
+            capabilities.SupportedBackgroundModes,
+            "Image generation provider must declare at least one supported background mode.",
+            "Image generation provider supported background modes cannot be blank.",
+            "Image generation provider supported background modes must be unique.",
+            errors);
+
+        if (capabilities.CostHints.Count == 0)
+        {
+            errors.Add("Image generation provider must declare at least one cost hint.");
+        }
+    }
+
+    private static void ValidateStringSet(
+        IReadOnlyList<string> values,
+        string missingMessage,
+        string blankMessage,
+        string duplicateMessage,
+        List<string> errors)
+    {
+        if (values.Count == 0)
+        {
+            errors.Add(missingMessage);
+            return;
+        }
+
+        if (values.Any(string.IsNullOrWhiteSpace))
+        {
+            errors.Add(blankMessage);
+        }
+
+        if (values.Distinct(StringComparer.OrdinalIgnoreCase).Count() != values.Count)
+        {
+            errors.Add(duplicateMessage);
+        }
     }
 }

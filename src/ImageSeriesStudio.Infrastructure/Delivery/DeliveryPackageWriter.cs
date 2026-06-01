@@ -64,7 +64,14 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 ToRelativePath(request.OutputDirectory, promptPath),
                 File.Exists(metadataPath) ? ToRelativePath(request.OutputDirectory, metadataPath) : null,
                 item.ReviewDecision,
-                item.HumanApproved));
+                item.HumanApproved,
+                item.StyleGuideId,
+                item.StyleGuideVersion,
+                item.RecipeId,
+                item.ReferenceImageSetIds ?? [],
+                item.ExperimentSlug,
+                item.ExperimentParameters ?? new Dictionary<string, string>(),
+                item.GenerationTaskId));
         }
 
         var manifestPath = Path.Combine(request.OutputDirectory, "manifest.json");
@@ -107,7 +114,14 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                         item.MetadataPath,
                         item.PromptText,
                         item.ReviewDecision,
-                        item.HumanApproved))
+                        item.HumanApproved,
+                        item.StyleGuideId,
+                        item.StyleGuideVersion,
+                        item.RecipeId,
+                        item.ReferenceImageSetIds,
+                        item.ExperimentSlug,
+                        item.ExperimentParameters,
+                        item.GenerationTaskId))
                     .ToArray()),
             cancellationToken);
 
@@ -140,7 +154,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
     private static string WriteManifestCsv(IReadOnlyList<DeliveryManifestItem> items)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved");
+        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId");
 
         foreach (var item in items)
         {
@@ -152,7 +166,14 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 EscapeCsv(item.PromptPath),
                 EscapeCsv(item.MetadataPath ?? string.Empty),
                 EscapeCsv(item.ReviewDecision.ToString()),
-                item.HumanApproved ? "true" : "false"));
+                item.HumanApproved ? "true" : "false",
+                EscapeCsv(item.StyleGuideId?.ToString() ?? string.Empty),
+                item.StyleGuideVersion?.ToString() ?? string.Empty,
+                EscapeCsv(item.RecipeId?.ToString() ?? string.Empty),
+                EscapeCsv(string.Join(';', item.ReferenceImageSetIds)),
+                EscapeCsv(item.ExperimentSlug ?? string.Empty),
+                EscapeCsv(FormatExperimentParameters(item.ExperimentParameters)),
+                EscapeCsv(item.GenerationTaskId?.ToString() ?? string.Empty)));
         }
 
         return builder.ToString();
@@ -170,6 +191,11 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
         }
 
         return builder.ToString();
+    }
+
+    private static string FormatExperimentParameters(IReadOnlyDictionary<string, string> parameters)
+    {
+        return string.Join(';', parameters.Select(parameter => $"{parameter.Key}={parameter.Value}"));
     }
 
     private static string EscapeCsv(string value)
@@ -195,7 +221,14 @@ public sealed record DeliveryPackageItem(
     string MetadataPath,
     string PromptText,
     ReviewDecision ReviewDecision,
-    bool HumanApproved);
+    bool HumanApproved,
+    Guid? StyleGuideId = null,
+    int? StyleGuideVersion = null,
+    Guid? RecipeId = null,
+    IReadOnlyList<Guid>? ReferenceImageSetIds = null,
+    string? ExperimentSlug = null,
+    IReadOnlyDictionary<string, string>? ExperimentParameters = null,
+    Guid? GenerationTaskId = null);
 
 public sealed record DeliveryPackageResult(
     string PackageDirectory,
@@ -216,4 +249,11 @@ internal sealed record DeliveryManifestItem(
     string PromptPath,
     string? MetadataPath,
     ReviewDecision ReviewDecision,
-    bool HumanApproved);
+    bool HumanApproved,
+    Guid? StyleGuideId,
+    int? StyleGuideVersion,
+    Guid? RecipeId,
+    IReadOnlyList<Guid> ReferenceImageSetIds,
+    string? ExperimentSlug,
+    IReadOnlyDictionary<string, string> ExperimentParameters,
+    Guid? GenerationTaskId);

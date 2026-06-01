@@ -1,5 +1,6 @@
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Core.Generation;
 
@@ -31,7 +32,16 @@ public sealed class GenerationQueue
         using var concurrency = new SemaphoreSlim(_options.MaxConcurrency);
 
         var executions = requests
-            .Select(request => RunWithThrottleAsync(request, concurrency, cancellationToken))
+            .Select(request =>
+            {
+                var validationErrors = ValidateRecipe(request);
+                return validationErrors.Count == 0
+                    ? RunWithThrottleAsync(request, concurrency, cancellationToken)
+                    : Task.FromResult(GenerationQueueExecution.Failed(
+                        request,
+                        attemptCount: 0,
+                        string.Join(" ", validationErrors)));
+            })
             .ToArray();
 
         var results = await Task.WhenAll(executions);
@@ -112,6 +122,56 @@ public sealed class GenerationQueue
         }
 
         return attemptCancellation;
+    }
+
+    private IReadOnlyList<string> ValidateRecipe(ImageGenerationRequest request)
+    {
+        if (request.Recipe is null)
+        {
+            return [];
+        }
+
+        var errors = new List<string>();
+        var capabilities = _provider.Capabilities;
+        var recipe = request.Recipe;
+
+        if (!capabilities.ModelIds.Contains(recipe.ModelId, StringComparer.OrdinalIgnoreCase))
+        {
+            errors.Add($"Unsupported model: {recipe.ModelId}.");
+        }
+
+        if (!capabilities.SupportedSizes.Any(size => size.Width == recipe.Width && size.Height == recipe.Height))
+        {
+            errors.Add($"Unsupported output size: {recipe.Width}x{recipe.Height}.");
+        }
+
+        if (!capabilities.SupportedQualities.Contains(recipe.Quality, StringComparer.OrdinalIgnoreCase))
+        {
+            errors.Add($"Unsupported quality: {recipe.Quality}.");
+        }
+
+        if (!capabilities.SupportedOutputFormats.Contains(recipe.OutputFormat, StringComparer.OrdinalIgnoreCase))
+        {
+            errors.Add($"Unsupported output format: {recipe.OutputFormat}.");
+        }
+
+        var backgroundMode = FormatBackgroundMode(recipe.Background);
+        if (!capabilities.SupportedBackgroundModes.Contains(backgroundMode, StringComparer.OrdinalIgnoreCase))
+        {
+            errors.Add($"Unsupported background mode: {backgroundMode}.");
+        }
+
+        return errors;
+    }
+
+    private static string FormatBackgroundMode(ImageBackgroundMode background)
+    {
+        return background switch
+        {
+            ImageBackgroundMode.Opaque => "opaque",
+            ImageBackgroundMode.Transparent => "transparent",
+            _ => "auto",
+        };
     }
 }
 

@@ -1,10 +1,13 @@
+using ImageSeriesStudio.Core.Experiments;
+
 namespace ImageSeriesStudio.Core.Projects;
 
 public sealed record CandidateComparisonInput(
     Guid CandidateImageId,
     string Title,
     string AssetPath,
-    StructuredReviewOutput Review);
+    StructuredReviewOutput Review,
+    ParameterGridVariant? ExperimentVariant = null);
 
 public sealed record CandidateComparison(
     IReadOnlyList<CandidateComparisonRow> Rows)
@@ -22,7 +25,11 @@ public sealed record CandidateComparison(
                     candidate.Review.Decision,
                     CalculateWeightedScore(candidate.Review),
                     candidate.Review.HardFailures.Count,
-                    candidate.Review.NeedsRepair))
+                    candidate.Review.NeedsRepair,
+                    candidate.ExperimentVariant?.Slug,
+                    candidate.ExperimentVariant?.ParameterValues ?? new Dictionary<string, string>(),
+                    candidate.ExperimentVariant?.GenerationTaskId,
+                    candidate.ExperimentVariant?.Recipe?.Id))
                 .OrderBy(row => row.NeedsRepair)
                 .ThenByDescending(row => row.Decision is ReviewDecision.Pass)
                 .ThenBy(row => row.HardFailureCount)
@@ -50,4 +57,8 @@ public sealed record CandidateComparisonRow(
     ReviewDecision Decision,
     double WeightedScore,
     int HardFailureCount,
-    bool NeedsRepair);
+    bool NeedsRepair,
+    string? ExperimentSlug,
+    IReadOnlyDictionary<string, string> ExperimentParameters,
+    Guid? GenerationTaskId,
+    Guid? RecipeId);

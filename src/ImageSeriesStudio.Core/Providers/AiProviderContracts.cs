@@ -1,4 +1,5 @@
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Core.Providers;
 
@@ -40,17 +41,86 @@ public interface IProviderCapabilities
     bool SupportsImageEditing { get; }
 
     bool SupportsStreaming { get; }
+
+    IReadOnlyList<ImageOutputSize> SupportedSizes { get; }
+
+    IReadOnlyList<string> SupportedQualities { get; }
+
+    IReadOnlyList<string> SupportedOutputFormats { get; }
+
+    IReadOnlyList<string> SupportedBackgroundModes { get; }
+
+    bool SupportsReferenceImages { get; }
+
+    IReadOnlyList<ProviderCostHint> CostHints { get; }
 }
 
-public sealed record ProviderCapabilities(
-    string ProviderId,
-    string DisplayName,
-    IReadOnlyList<string> ModelIds,
-    bool SupportsTextPlanning,
-    bool SupportsImageGeneration,
-    bool SupportsVisionReview,
-    bool SupportsImageEditing,
-    bool SupportsStreaming) : IProviderCapabilities;
+public sealed class ProviderCapabilities : IProviderCapabilities
+{
+    public ProviderCapabilities(
+        string providerId,
+        string displayName,
+        IReadOnlyList<string> modelIds,
+        bool SupportsTextPlanning,
+        bool SupportsImageGeneration,
+        bool SupportsVisionReview,
+        bool SupportsImageEditing,
+        bool SupportsStreaming,
+        IReadOnlyList<ImageOutputSize>? supportedSizes = null,
+        IReadOnlyList<string>? supportedQualities = null,
+        IReadOnlyList<string>? supportedOutputFormats = null,
+        IReadOnlyList<string>? supportedBackgroundModes = null,
+        bool supportsReferenceImages = false,
+        IReadOnlyList<ProviderCostHint>? costHints = null)
+    {
+        ProviderId = providerId;
+        DisplayName = displayName;
+        ModelIds = modelIds;
+        this.SupportsTextPlanning = SupportsTextPlanning;
+        this.SupportsImageGeneration = SupportsImageGeneration;
+        this.SupportsVisionReview = SupportsVisionReview;
+        this.SupportsImageEditing = SupportsImageEditing;
+        this.SupportsStreaming = SupportsStreaming;
+        SupportedSizes = supportedSizes ?? [];
+        SupportedQualities = supportedQualities ?? [];
+        SupportedOutputFormats = supportedOutputFormats ?? [];
+        SupportedBackgroundModes = supportedBackgroundModes ?? [];
+        SupportsReferenceImages = supportsReferenceImages;
+        CostHints = costHints ?? [];
+    }
+
+    public string ProviderId { get; }
+
+    public string DisplayName { get; }
+
+    public IReadOnlyList<string> ModelIds { get; }
+
+    public bool SupportsTextPlanning { get; }
+
+    public bool SupportsImageGeneration { get; }
+
+    public bool SupportsVisionReview { get; }
+
+    public bool SupportsImageEditing { get; }
+
+    public bool SupportsStreaming { get; }
+
+    public IReadOnlyList<ImageOutputSize> SupportedSizes { get; }
+
+    public IReadOnlyList<string> SupportedQualities { get; }
+
+    public IReadOnlyList<string> SupportedOutputFormats { get; }
+
+    public IReadOnlyList<string> SupportedBackgroundModes { get; }
+
+    public bool SupportsReferenceImages { get; }
+
+    public IReadOnlyList<ProviderCostHint> CostHints { get; }
+}
+
+public sealed record ImageOutputSize(int Width, int Height);
+
+public sealed record ProviderCostHint(string Name, string CostBand);
 
 public sealed record PlanningRequest(
     string Goal,
@@ -74,7 +144,8 @@ public sealed record ImageGenerationRequest(
     string PromptText,
     GenerationSettings Settings,
     string OutputDirectory,
-    string OutputFileName = "");
+    string OutputFileName = "",
+    GenerationRecipe? Recipe = null);
 
 public sealed record ImageGenerationResult(
     Guid CandidateImageId,
