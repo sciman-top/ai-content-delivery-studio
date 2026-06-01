@@ -421,6 +421,17 @@ dotnet test --filter PhysicsPosterImportTests
 
 Expected: import succeeds against a small fixture and never writes to the source project.
 
+## Task 10: Review Quality Loop
+
+- [x] **Step 1: Add review rubric templates**
+
+Provide reusable domain templates for general image quality, text-heavy posters, and series consistency. The fake review workflow should use the default general template.
+
+- [ ] **Step 2: Add structured repair suggestions**
+- [ ] **Step 3: Add prompt diff and candidate comparison**
+- [ ] **Step 4: Add batch requeue by failure reason**
+- [ ] **Step 5: Add human final approval workflow**
+
 ## Final Gate
 
 Run:

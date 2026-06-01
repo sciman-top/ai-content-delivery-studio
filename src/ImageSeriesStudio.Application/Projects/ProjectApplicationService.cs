@@ -196,12 +196,9 @@ public sealed class ProjectApplicationService
             throw new InvalidOperationException("Real vision review requires explicit approval.");
         }
 
-        var rubric = new ReviewRubric(
-            Guid.NewGuid(),
-            projectId,
-            "Default fake review",
-            [new ReviewRubricDimension("match", "Candidate should match the prompt and item brief.", 1)],
-            DateTimeOffset.UtcNow);
+        var rubric = ReviewRubricTemplateCatalog
+            .GetById(ReviewRubricTemplateCatalog.GeneralImage)
+            .CreateRubric(projectId, DateTimeOffset.UtcNow);
 
         var results = new List<VisionReviewResult>();
         foreach (var candidate in candidates)
