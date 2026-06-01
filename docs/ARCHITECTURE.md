@@ -114,6 +114,19 @@ For image series with important text, especially educational posters and infogra
 
 This avoids over-reliance on image model text rendering.
 
+## Physics Project Migration Limits
+
+The physics poster importer is a sample migration path, not a second implementation root. It reads the source project as an external artifact and maps selected prompt metadata, finalized delivery manifest rows, final images, alternate images, and metadata sidecars into generic project, candidate, and review structures.
+
+Migration limits:
+
+- The importer is read-only against `D:\CODE\physicist_chinese_poster_batch_tool`.
+- The importer blocks source-relative paths that escape the selected source root.
+- It does not copy generated image binaries into this repository by default.
+- It does not migrate API keys, workspace state, local SQLite databases, logs, or transient batch runtime state.
+- It preserves the generic app model as the target contract; physics-specific naming remains import metadata, not domain vocabulary.
+- Human final approval remains explicit in the generic workflow, even when imported final images are mapped as approved review records.
+
 ## Security
 
 - Store API keys in Windows Credential Manager or DPAPI-backed local secrets.

@@ -415,7 +415,7 @@ Do not mutate the source physics project. Copy only selected sample metadata int
 
 Read `outputs/finalized-by-content/finalized-manifest.csv` and map final/alternate images to `CandidateImage` and `ReviewResult` without copying or modifying source files.
 
-- [ ] **Step 3: Gate**
+- [x] **Step 3: Gate**
 
 Run:
 
@@ -424,6 +424,10 @@ dotnet test --filter PhysicsPosterImportTests
 ```
 
 Expected: import succeeds against a small fixture and never writes to the source project.
+
+- [x] **Step 4: Document migration limits**
+
+Record that the importer is read-only, blocks source-root escapes, does not copy binaries or transient runtime state by default, and keeps physics-specific details as import metadata rather than generic domain vocabulary.
 
 ## Task 10: Review Quality Loop
 

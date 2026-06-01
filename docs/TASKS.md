@@ -71,7 +71,7 @@
 - [x] Map existing prompt files to generic `SeriesItem` and `PromptVersion`.
 - [x] Map finalized delivery files to `CandidateImage` and `ReviewResult`.
 - [x] Validate manifest compatibility.
-- [ ] Document migration limits.
+- [x] Document migration limits.
 
 ## Release Readiness
 
