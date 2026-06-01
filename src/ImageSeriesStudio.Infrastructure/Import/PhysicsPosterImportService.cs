@@ -59,6 +59,59 @@ public sealed class PhysicsPosterImportService
         return project;
     }
 
+    public async Task<IReadOnlyList<PhysicsFinalizedDeliveryItem>> ImportFinalizedDeliveryAsync(
+        string sourceRoot,
+        int maxRows,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        if (maxRows <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxRows), "Max rows must be positive.");
+        }
+
+        var root = Path.GetFullPath(sourceRoot);
+        var manifestPath = Path.Combine(root, "outputs", "finalized-by-content", "finalized-manifest.csv");
+        if (!File.Exists(manifestPath))
+        {
+            throw new FileNotFoundException("Physics finalized manifest was not found.", manifestPath);
+        }
+
+        var rows = await LoadRowsAsync(manifestPath, cancellationToken);
+        var imported = new List<PhysicsFinalizedDeliveryItem>();
+
+        foreach (var row in rows.Take(maxRows))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var metadataByImage = BuildMetadataMap(root, ReadField(row, "metadata_files", string.Empty));
+            var finalCandidates = CreateCandidates(
+                root,
+                ReadField(row, "final_images", string.Empty),
+                metadataByImage,
+                CandidateImageStatus.Final,
+                humanApproved: true,
+                timestamp);
+            var alternateCandidates = CreateCandidates(
+                root,
+                ReadField(row, "alternate_images", string.Empty),
+                metadataByImage,
+                CandidateImageStatus.Alternate,
+                humanApproved: false,
+                timestamp);
+
+            imported.Add(new PhysicsFinalizedDeliveryItem(
+                ReadField(row, "series", string.Empty),
+                RequireField(row, "id"),
+                ReadField(row, "title_cn", string.Empty),
+                ReadField(row, "status", string.Empty),
+                ReadField(row, "warnings", string.Empty),
+                finalCandidates.Concat(alternateCandidates).ToArray()));
+        }
+
+        return imported;
+    }
+
     private static async Task<PhysicsManifest> LoadManifestAsync(
         string manifestPath,
         CancellationToken cancellationToken)
@@ -192,6 +245,62 @@ public sealed class PhysicsPosterImportService
         return fullPath;
     }
 
+    private static IReadOnlyDictionary<string, string> BuildMetadataMap(string root, string metadataFiles)
+    {
+        return SplitManifestList(metadataFiles)
+            .Select(path => ResolveInsideRoot(root, path))
+            .ToDictionary(
+                path => Path.ChangeExtension(path, ".png"),
+                path => path,
+                StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static IReadOnlyList<PhysicsImportedCandidate> CreateCandidates(
+        string root,
+        string manifestList,
+        IReadOnlyDictionary<string, string> metadataByImage,
+        CandidateImageStatus status,
+        bool humanApproved,
+        DateTimeOffset timestamp)
+    {
+        return SplitManifestList(manifestList)
+            .Select(path =>
+            {
+                var imagePath = ResolveInsideRoot(root, path);
+                var metadataPath = metadataByImage.TryGetValue(imagePath, out var foundMetadata)
+                    ? foundMetadata
+                    : Path.ChangeExtension(imagePath, ".json");
+                var candidate = new CandidateImage(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    status,
+                    imagePath,
+                    metadataPath,
+                    timestamp);
+                var review = new ReviewResult(
+                    Guid.NewGuid(),
+                    candidate.Id,
+                    ReviewDecision.Pass,
+                    new Dictionary<string, int> { ["imported_delivery"] = 5 },
+                    [],
+                    humanApproved ? "Imported finalized physics delivery image." : "Imported alternate physics delivery image.",
+                    suggestedFix: null,
+                    humanApproved,
+                    timestamp);
+
+                return new PhysicsImportedCandidate(candidate, review);
+            })
+            .ToArray();
+    }
+
+    private static IReadOnlyList<string> SplitManifestList(string value)
+    {
+        return value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+    }
+
     private static string RequireField(IReadOnlyDictionary<string, string> row, string key)
     {
         var value = ReadField(row, key, string.Empty);
@@ -219,3 +328,15 @@ public sealed class PhysicsPosterImportService
         string ModelDefault,
         string ProductionSize);
 }
+
+public sealed record PhysicsFinalizedDeliveryItem(
+    string Series,
+    string SourceId,
+    string Title,
+    string Status,
+    string Warnings,
+    IReadOnlyList<PhysicsImportedCandidate> Candidates);
+
+public sealed record PhysicsImportedCandidate(
+    CandidateImage CandidateImage,
+    ReviewResult ReviewResult);

@@ -407,9 +407,13 @@ Use configurable rate cards and local quota limits. Do not hard-code live provid
 
 Map physics master-list rows and prompt files into generic project, series, item, and prompt structures.
 
-- [ ] **Step 2: Keep import read-only**
+- [x] **Step 2: Keep import read-only**
 
 Do not mutate the source physics project. Copy only selected sample metadata into a new workspace.
+
+- [x] **Step 2b: Map finalized delivery manifest**
+
+Read `outputs/finalized-by-content/finalized-manifest.csv` and map final/alternate images to `CandidateImage` and `ReviewResult` without copying or modifying source files.
 
 - [ ] **Step 3: Gate**
 

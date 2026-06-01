@@ -69,8 +69,8 @@
 
 - [x] Import the physics poster project as a sample.
 - [x] Map existing prompt files to generic `SeriesItem` and `PromptVersion`.
-- [ ] Map finalized delivery files to `CandidateImage` and `ReviewResult`.
-- [ ] Validate manifest compatibility.
+- [x] Map finalized delivery files to `CandidateImage` and `ReviewResult`.
+- [x] Validate manifest compatibility.
 - [ ] Document migration limits.
 
 ## Release Readiness
