@@ -378,7 +378,7 @@ Do not expose OpenAI request objects outside infrastructure.
 
 Verify request shape, response parsing, metadata capture, and error mapping without real API calls.
 
-- [ ] **Step 3: Add opt-in smoke command**
+- [x] **Step 3: Add opt-in smoke command**
 
 Real API smoke must be skipped unless an explicit local environment variable enables it.
 

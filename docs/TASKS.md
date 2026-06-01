@@ -52,7 +52,7 @@
 - [x] Implement image generation provider.
 - [x] Implement vision review provider.
 - [x] Add provider capability validation.
-- [ ] Add dry-run and opt-in real API smoke tests.
+- [x] Add dry-run and opt-in real API smoke tests.
 - [ ] Add cost estimate and quota guard.
 
 ## Phase 4: Quality Loop
