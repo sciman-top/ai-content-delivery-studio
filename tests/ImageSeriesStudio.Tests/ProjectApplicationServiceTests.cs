@@ -364,6 +364,34 @@ public sealed class ProjectApplicationServiceTests
     }
 
     [Fact]
+    public async Task ProjectApplicationService_RunsStructuredVisionReviewWithRubricScores()
+    {
+        var service = new ProjectApplicationService(
+            new InMemoryProjectRepository(),
+            textPlanningProvider: null,
+            imageGenerationProvider: null,
+            visionReviewProvider: new FakeVisionReviewProvider(defaultPasses: true));
+        var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+        var project = await service.CreateProjectAsync("Structured review demo", timestamp, CancellationToken.None);
+
+        var reviews = await service.RunStructuredVisionReviewAsync(
+            project.Id,
+            [
+                new ReviewCandidateInput(
+                    Guid.NewGuid(),
+                    "Opening image",
+                    Path.Combine(Path.GetTempPath(), "candidate.png"),
+                    "A clean editorial candidate."),
+            ],
+            CancellationToken.None);
+
+        var review = Assert.Single(reviews);
+        Assert.Equal(ReviewDecision.Pass, review.Decision);
+        Assert.Contains(review.Scores, score => score.Name == "match" && score.Score == 5);
+        Assert.False(review.NeedsRepair);
+    }
+
+    [Fact]
     public async Task ProjectApplicationService_ExportsDeliveryPackage()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));

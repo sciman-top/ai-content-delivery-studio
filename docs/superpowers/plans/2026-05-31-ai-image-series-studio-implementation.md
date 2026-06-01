@@ -427,10 +427,14 @@ Expected: import succeeds against a small fixture and never writes to the source
 
 Provide reusable domain templates for general image quality, text-heavy posters, and series consistency. The fake review workflow should use the default general template.
 
-- [ ] **Step 2: Add structured repair suggestions**
-- [ ] **Step 3: Add prompt diff and candidate comparison**
-- [ ] **Step 4: Add batch requeue by failure reason**
-- [ ] **Step 5: Add human final approval workflow**
+- [x] **Step 2: Add structured AI review output**
+
+Normalize provider review results into a domain output with rubric scores, hard failures, comments, suggested fix, and persistable `ReviewResult` conversion.
+
+- [ ] **Step 3: Add structured repair suggestions**
+- [ ] **Step 4: Add prompt diff and candidate comparison**
+- [ ] **Step 5: Add batch requeue by failure reason**
+- [ ] **Step 6: Add human final approval workflow**
 
 ## Final Gate
 

@@ -186,6 +186,24 @@ public sealed class ProjectApplicationService
         IReadOnlyList<ReviewCandidateInput> candidates,
         CancellationToken cancellationToken)
     {
+        var reviews = await RunStructuredVisionReviewAsync(projectId, candidates, cancellationToken);
+
+        return reviews
+            .Select(review => new VisionReviewResult(
+                review.CandidateImageId,
+                review.Decision,
+                review.Scores.ToDictionary(score => score.Name, score => score.Score),
+                review.HardFailures,
+                review.Comments,
+                review.SuggestedFix))
+            .ToArray();
+    }
+
+    public async Task<IReadOnlyList<StructuredReviewOutput>> RunStructuredVisionReviewAsync(
+        Guid projectId,
+        IReadOnlyList<ReviewCandidateInput> candidates,
+        CancellationToken cancellationToken)
+    {
         if (_visionReviewProvider is null)
         {
             throw new InvalidOperationException("Vision review provider is not registered.");
@@ -200,7 +218,7 @@ public sealed class ProjectApplicationService
             .GetById(ReviewRubricTemplateCatalog.GeneralImage)
             .CreateRubric(projectId, DateTimeOffset.UtcNow);
 
-        var results = new List<VisionReviewResult>();
+        var results = new List<StructuredReviewOutput>();
         foreach (var candidate in candidates)
         {
             var result = await _visionReviewProvider.ReviewAsync(
@@ -210,7 +228,7 @@ public sealed class ProjectApplicationService
                     rubric,
                     candidate.PromptText),
                 cancellationToken);
-            results.Add(result);
+            results.Add(StructuredReviewOutput.FromProviderResult(result, rubric));
         }
 
         return results;

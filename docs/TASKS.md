@@ -58,7 +58,7 @@
 ## Phase 4: Quality Loop
 
 - [x] Add review rubric templates.
-- [ ] Add structured AI review output.
+- [x] Add structured AI review output.
 - [ ] Add prompt repair suggestions.
 - [ ] Add prompt diff.
 - [ ] Add candidate comparison.
