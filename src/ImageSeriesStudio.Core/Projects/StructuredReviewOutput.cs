@@ -12,7 +12,11 @@ public sealed record StructuredReviewOutput(
 {
     public bool HasHardFailures => HardFailures.Count > 0;
 
-    public bool NeedsRepair => Decision is ReviewDecision.Fail || HasHardFailures || !string.IsNullOrWhiteSpace(SuggestedFix);
+    public bool NeedsRepair =>
+        Decision is ReviewDecision.Fail
+        || HasHardFailures
+        || Scores.Any(score => score.Score > 0 && score.Score < 3)
+        || !string.IsNullOrWhiteSpace(SuggestedFix);
 
     public ReviewResult ToReviewResult(DateTimeOffset createdAt, bool humanApproved = false)
     {

@@ -50,10 +50,17 @@ public sealed class StructuredReviewOutputTests
             null);
         var hardFailure = failed with { Decision = ReviewDecision.Pass, HardFailures = ["bad-text"] };
         var suggestedFix = failed with { Decision = ReviewDecision.Pass, SuggestedFix = "Revise text area." };
+        var lowScore = failed with
+        {
+            Decision = ReviewDecision.Pass,
+            Scores = [new StructuredReviewScore("match", "Match prompt.", 3, 2)],
+            SuggestedFix = null,
+        };
 
         Assert.True(failed.NeedsRepair);
         Assert.True(hardFailure.NeedsRepair);
         Assert.True(suggestedFix.NeedsRepair);
+        Assert.True(lowScore.NeedsRepair);
     }
 
     [Fact]

@@ -62,7 +62,7 @@
 - [x] Add prompt repair suggestions.
 - [x] Add prompt diff.
 - [x] Add candidate comparison.
-- [ ] Add batch requeue by reason.
+- [x] Add batch requeue by reason.
 - [ ] Add final approval workflow.
 
 ## Phase 5: Sample Migration
