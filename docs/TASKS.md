@@ -78,6 +78,6 @@
 - [ ] Add installer or packaged publish.
 - [x] Add diagnostics export.
 - [x] Add backup and restore.
-- [ ] Add accessibility review.
-- [ ] Add large-gallery performance review.
-- [ ] Add user guide.
+- [x] Add accessibility review.
+- [x] Add large-gallery performance review.
+- [x] Add user guide.

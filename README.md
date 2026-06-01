@@ -33,6 +33,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/PRODUCT_DESIGN.md](do
 - [Architecture](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Task Checklist](docs/TASKS.md)
+- [User Guide](docs/USER_GUIDE.md)
 - [Reference Research](docs/research/REFERENCE_RESEARCH.md)
 - [ADR 0001: Independent Repo And Stack](docs/adr/0001-independent-repo-and-stack.md)
 - [ADR 0002: API Boundaries And Review Loop](docs/adr/0002-api-boundaries-and-review-loop.md)
