@@ -714,7 +714,7 @@ dotnet test --filter "FakeTextPlanningProvider_CreatesPromptDirectionsForBrief|T
 
 Expected: both tests pass.
 
-- [ ] **Step 8: Commit provider slice**
+- [x] **Step 8: Commit provider slice**
 
 Run:
 
@@ -732,7 +732,7 @@ git commit -m "feat: 添加假数据提示词方向规划"
 - Modify: `src/ImageSeriesStudio.Application/Projects/ProjectApplicationService.cs`
 - Test: `tests/ImageSeriesStudio.Tests/ProjectApplicationServiceTests.cs`
 
-- [ ] **Step 1: Write failing service test**
+- [x] **Step 1: Write failing service test**
 
 Add to `tests/ImageSeriesStudio.Tests/ProjectApplicationServiceTests.cs`:
 
@@ -809,7 +809,7 @@ public async Task ProjectApplicationService_CreatesBriefDirectionsAndPromotesPro
 }
 ```
 
-- [ ] **Step 2: Run failing service test**
+- [x] **Step 2: Run failing service test**
 
 Run:
 
@@ -819,7 +819,7 @@ dotnet test --filter ProjectApplicationService_CreatesBriefDirectionsAndPromotes
 
 Expected: fails because service methods do not exist.
 
-- [ ] **Step 3: Add service methods**
+- [x] **Step 3: Add service methods**
 
 In `src/ImageSeriesStudio.Application/Projects/ProjectApplicationService.cs`, add:
 
@@ -918,7 +918,7 @@ public async Task<PromptVersion> PromotePromptDirectionAsync(
 }
 ```
 
-- [ ] **Step 4: Verify service workflow**
+- [x] **Step 4: Verify service workflow**
 
 Run:
 

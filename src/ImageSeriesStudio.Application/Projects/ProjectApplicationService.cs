@@ -1,6 +1,7 @@
 using ImageSeriesStudio.Core.Generation;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Styles;
 using ImageSeriesStudio.Application.Delivery;
 
 namespace ImageSeriesStudio.Application.Projects;
@@ -122,6 +123,107 @@ public sealed class ProjectApplicationService
         var providerProfile = ResolveProviderProfile(project, providerProfileId, timestamp);
         var prompt = item.AddPromptVersion(promptText, settings, providerProfile.Id, timestamp);
 
+        await _repository.SaveAsync(project, cancellationToken);
+        return prompt;
+    }
+
+    public async Task<CreativeBrief> CreateCreativeBriefAsync(
+        Guid projectId,
+        Guid seriesId,
+        string goal,
+        string audience,
+        ImageTextPolicy textPolicy,
+        string styleIntent,
+        IReadOnlyList<string> mustInclude,
+        IReadOnlyList<string> mustAvoid,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var series = project.Series.SingleOrDefault(series => series.Id == seriesId)
+            ?? throw new InvalidOperationException($"Series not found: {seriesId}");
+        var brief = series.AddCreativeBrief(
+            goal,
+            audience,
+            textPolicy,
+            styleIntent,
+            mustInclude,
+            mustAvoid,
+            timestamp);
+
+        await _repository.SaveAsync(project, cancellationToken);
+        return brief;
+    }
+
+    public async Task<CreativeBrief> CreatePromptDirectionsAsync(
+        Guid projectId,
+        Guid creativeBriefId,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        if (_textPlanningProvider is null)
+        {
+            throw new InvalidOperationException("Text planning provider is not registered.");
+        }
+
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var brief = project.Series
+            .SelectMany(series => series.CreativeBriefs)
+            .SingleOrDefault(brief => brief.Id == creativeBriefId)
+            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
+
+        var result = await _textPlanningProvider.CreatePromptDirectionsAsync(
+            new BriefPlanningRequest(
+                brief.Goal,
+                brief.Audience,
+                brief.StyleIntent,
+                brief.MustInclude,
+                brief.MustAvoid,
+                DirectionCount: 3),
+            cancellationToken);
+
+        brief.ReplaceDirections(
+            result.Directions
+                .Select(direction => PromptDirection.Create(
+                    direction.Key,
+                    direction.Name,
+                    direction.IntendedUse,
+                    direction.PromptText,
+                    direction.NegativePrompt,
+                    direction.Strength,
+                    direction.Risk,
+                    timestamp))
+                .ToArray(),
+            timestamp);
+
+        await _repository.SaveAsync(project, cancellationToken);
+        return brief;
+    }
+
+    public async Task<PromptVersion> PromotePromptDirectionAsync(
+        Guid projectId,
+        Guid seriesItemId,
+        Guid creativeBriefId,
+        string directionKey,
+        GenerationSettings settings,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var item = project.Series
+            .SelectMany(series => series.Items)
+            .SingleOrDefault(item => item.Id == seriesItemId)
+            ?? throw new InvalidOperationException($"Series item not found: {seriesItemId}");
+        var brief = project.Series
+            .SelectMany(series => series.CreativeBriefs)
+            .SingleOrDefault(brief => brief.Id == creativeBriefId)
+            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
+        var direction = brief.PromptDirections.SingleOrDefault(direction =>
+            direction.Key.Equals(directionKey, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Prompt direction not found: {directionKey}");
+
+        var providerProfile = ResolveProviderProfile(project, providerProfileId: null, timestamp);
+        var prompt = item.AddPromptVersion(direction.PromptText, settings, providerProfile.Id, timestamp);
         await _repository.SaveAsync(project, cancellationToken);
         return prompt;
     }

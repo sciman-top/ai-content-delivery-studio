@@ -2,6 +2,7 @@ using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Styles;
 using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
 using ImageSeriesStudio.Infrastructure.Persistence;
@@ -254,6 +255,88 @@ public sealed class ProjectApplicationServiceTests
             Assert.Equal(3, loadedSeries.Items.Count);
             Assert.All(loadedSeries.Items, item => Assert.Single(item.PromptVersions));
             Assert.Single(loaded.ProviderProfiles);
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ProjectApplicationService_CreatesBriefDirectionsAndPromotesPromptVersion()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-brief.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(
+                new EfProjectRepository(new AppDbContext(options)),
+                new FakeTextPlanningProvider());
+            var timestamp = new DateTimeOffset(2026, 6, 2, 9, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Brief demo", timestamp, CancellationToken.None);
+            var series = await service.AddSeriesAsync(
+                project.Id,
+                "Article images",
+                "Series",
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+            var item = await service.AddItemAsync(
+                project.Id,
+                series.Id,
+                "Opening",
+                "Opening visual",
+                timestamp.AddMinutes(2),
+                CancellationToken.None);
+
+            var brief = await service.CreateCreativeBriefAsync(
+                project.Id,
+                series.Id,
+                "article illustration",
+                "teachers",
+                ImageTextPolicy.DeterministicPostRender,
+                "clean editorial",
+                ["accurate visual"],
+                ["small fake text"],
+                timestamp.AddMinutes(3),
+                CancellationToken.None);
+
+            var planned = await service.CreatePromptDirectionsAsync(
+                project.Id,
+                brief.Id,
+                timestamp.AddMinutes(4),
+                CancellationToken.None);
+
+            var promoted = await service.PromotePromptDirectionAsync(
+                project.Id,
+                item.Id,
+                brief.Id,
+                "conservative",
+                new GenerationSettings(1024, 1024, "standard", "png"),
+                timestamp.AddMinutes(5),
+                CancellationToken.None);
+
+            var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var loadedBrief = loaded!.Series.Single().CreativeBriefs.Single();
+            var loadedPrompt = loaded.Series.Single().Items.Single().PromptVersions.Single();
+
+            Assert.Equal(brief.Id, loadedBrief.Id);
+            Assert.Equal(3, planned.PromptDirections.Count);
+            Assert.Equal(promoted.Id, loadedPrompt.Id);
+            Assert.Contains("article illustration", loadedPrompt.PromptText);
         }
         finally
         {
