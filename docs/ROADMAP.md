@@ -74,6 +74,27 @@ Exit gate:
 - A 2-item sample series can be planned, generated, reviewed, revised, and delivered.
 - API keys never appear in logs, git status, or delivery manifests.
 
+## Phase 3A: Cloud-First Provider Hardening
+
+Goal: make the real-provider path robust on low-hardware Windows machines without requiring local model installs.
+
+Deliverables:
+
+- Cloud-first provider strategy recorded in ADR and implementation plan.
+- Official OpenAI workflow split between direct Image API and stateful Responses API where appropriate.
+- Windows Credential Locker or DPAPI-backed secret storage for production paths.
+- `Microsoft.Extensions.Http.Resilience` integration for named provider clients.
+- Provider request ID, latency, token, and cost telemetry capture.
+- OpenTelemetry-based traces and metrics for provider calls and queue execution.
+- Streaming and multi-turn image workflow support where provider capabilities allow it.
+- Remote workflow-engine adapter boundary for optional managed or hosted integrations.
+
+Exit gate:
+
+- A low-hardware Windows machine can run the app with no local model runtime installed.
+- A 2-item sample series can complete the real-provider loop through opt-in cloud APIs.
+- Retries, timeouts, redaction, and request provenance are verified.
+
 ## Phase 4: Review And Regeneration Loop
 
 Goal: make quality iteration strong enough for serious series production.
@@ -90,6 +111,23 @@ Deliverables:
 Exit gate:
 
 - User can select unsatisfactory images, revise prompts, regenerate, and preserve all history.
+
+## Phase 4A: Deterministic Text Composition And Delivery Assurance
+
+Goal: make text-heavy educational, document, and poster outputs reliable even when image-model text rendering is imperfect.
+
+Deliverables:
+
+- Deterministic post-render text composition service for labels, legends, formulas, and callouts.
+- Readability and text-placement review checks.
+- Persisted human approval state with reviewer and notes.
+- Delivery manifests and review reports that include final approval evidence.
+
+Exit gate:
+
+- A text-heavy visual can be produced as image background plus deterministic text overlay.
+- Review can distinguish visual-scene success from text-layout failure.
+- Delivery export preserves final approval evidence and text-composition provenance.
 
 ## Phase 5: Delivery Packaging And Physics Project Migration
 
@@ -166,8 +204,10 @@ Goal: evolve from MVP workbench to a durable local production studio.
 Deliverables:
 
 - Clean application layer with command/query use cases and repository ports.
+- Cloud-first provider adapters with official SDKs where practical, resilient HTTP execution, secure local secret storage, and full request provenance.
 - Versioned design blueprints and workflow templates, then optional workflow graph import/export.
 - Provider plugin boundary with capability discovery and contract tests.
 - Localized prompt templates, review reports, delivery manifests, and user guide.
+- Deterministic text composition for text-heavy educational and document-oriented visuals.
 - Large-gallery virtualization, thumbnail cache, crash-safe queue recovery, backup/restore, and diagnostics bundle.
 - Packaged Windows release with accessibility and performance gates.

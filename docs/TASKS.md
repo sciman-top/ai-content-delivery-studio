@@ -55,6 +55,23 @@
 - [x] Add dry-run and opt-in real API smoke tests.
 - [x] Add cost estimate and quota guard.
 
+## Phase 3A: Cloud-First Provider Hardening
+
+- [x] Record cloud-first provider hardening design spec.
+- [x] Record cloud-first provider hardening implementation plan.
+- [x] Record ADR for cloud-first provider and tooling strategy.
+- [x] Refresh research evidence for OpenAI Responses API, Microsoft resilience, OpenTelemetry, and Credential Locker.
+- [ ] Add Windows Credential Locker or DPAPI secret store adapter.
+- [ ] Replace environment-variable-only production secret retrieval.
+- [ ] Evaluate and adopt the official OpenAI .NET SDK where the API surface is stable enough.
+- [ ] Keep raw `HttpClient` fallback only for unsupported or lagging SDK surfaces.
+- [ ] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
+- [ ] Capture request IDs, token usage, latency, and cost telemetry per provider call.
+- [ ] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
+- [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits.
+- [ ] Add a remote workflow-engine adapter boundary without requiring local model installs.
+- [ ] Run full build, test, and format gates for the implementation slice.
+
 ## Phase 4: Quality Loop
 
 - [x] Add review rubric templates.
@@ -64,6 +81,14 @@
 - [x] Add candidate comparison.
 - [x] Add batch requeue by reason.
 - [x] Add final approval workflow.
+
+## Phase 4A: Deterministic Text Composition And Delivery Assurance
+
+- [ ] Add deterministic post-render text composition service for educational or text-heavy visuals.
+- [ ] Add readability, label, and callout-specific review checks.
+- [ ] Persist human approval decisions and reviewer notes.
+- [ ] Export final approval state in delivery manifests and review reports.
+- [ ] Run full build, test, and format gates for the implementation slice.
 
 ## Phase 5: Sample Migration
 
@@ -144,8 +169,8 @@
 
 ## Phase 9: Blueprint-First Generalized Series Workflow
 
-- [ ] Record blueprint-first generalized series design spec.
-- [ ] Record blueprint-first implementation plan.
+- [x] Record blueprint-first generalized series design spec.
+- [x] Record blueprint-first implementation plan.
 - [ ] Add `DesignBlueprint` domain record and persistence.
 - [ ] Extend fake planning provider with blueprint candidates.
 - [ ] Add application workflow to create, compare, and promote blueprint routes.

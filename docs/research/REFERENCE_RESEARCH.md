@@ -47,6 +47,21 @@ Key findings:
 - Style transfer works best when prompts explicitly separate what must stay consistent from what must change.
 - Editing-heavy workflows, brand-sensitive work, text-in-image use cases, and customer-facing assets are strong candidates for higher quality models and stricter first-pass review.
 
+### Responses API State And Tooling
+
+Sources:
+
+- https://developers.openai.com/api/docs/guides/tools
+- https://developers.openai.com/api/reference/responses/overview
+
+Key findings:
+
+- Responses API is the most capable OpenAI surface for stateful model interactions involving tools, image inputs, and multi-step workflows.
+- The image generation tool supports multi-turn editing through `previous_response_id` or prior image-generation call IDs.
+- Image generation in Responses can expose `revised_prompt`, which is useful provenance for review and delivery metadata.
+- Partial images can be streamed for more interactive generation UX.
+- Function tools are a good fit for local operations such as saving project files, creating queue items, validating manifests, or exporting delivery packages.
+
 ## Official Google Vertex AI References
 
 ### Image Generation
@@ -100,19 +115,6 @@ Key findings:
 - Image-to-image and inpainting are not niche features; they are standard repair workflows.
 - Edit-first repair is often cheaper and more stable than full regeneration when the route and composition are already correct.
 
-### Responses API And Tools
-
-Sources:
-
-- https://developers.openai.com/api/docs/guides/tools
-- https://developers.openai.com/api/reference/responses/overview
-
-Key findings:
-
-- Responses API supports tool use, function calling, hosted tools, MCP tools, streaming, background responses, and conversation state.
-- `previous_response_id` can be used for multi-turn workflows.
-- Function tools are a good fit for local operations such as saving project files, creating generation tasks, validating manifests, or exporting delivery packages.
-
 ## Official Microsoft References
 
 ### Windows Developer Platform
@@ -143,6 +145,44 @@ Key findings:
 
 - EF Core has an official SQLite provider maintained as part of EF Core.
 - SQLite is appropriate for local project metadata, task state, prompt versions, review records, and manifests.
+
+### HTTP Resilience
+
+Sources:
+
+- https://learn.microsoft.com/dotnet/core/resilience/
+- https://learn.microsoft.com/dotnet/core/resilience/http-resilience
+
+Key findings:
+
+- `Microsoft.Extensions.Http.Resilience` is the current official package for resilient `HttpClient` behavior in .NET.
+- The standard handler provides rate limiting, total timeout, retry, circuit breaker, and attempt timeout.
+- Retries should be disabled for unsafe HTTP methods when request semantics are not idempotent.
+- Provider adapters should use named clients with explicit resilience policies instead of ad hoc retry code.
+
+### OpenTelemetry And Networking Telemetry
+
+Sources:
+
+- https://learn.microsoft.com/dotnet/core/diagnostics/observability-with-otel
+- https://learn.microsoft.com/dotnet/fundamentals/networking/telemetry/overview
+
+Key findings:
+
+- .NET already exposes logs, metrics, and traces through `ILogger`, `Meter`, and `ActivitySource`.
+- `HttpClient` is instrumented, making provider-call telemetry feasible without custom transport hacks.
+- OpenTelemetry is the right vendor-neutral path for provider latency, queue duration, failure-rate, and throughput instrumentation.
+- Local OTLP dashboards are a good development-time aid before introducing any hosted observability backend.
+
+### Credential Locker
+
+Source: https://learn.microsoft.com/windows/apps/develop/security/credential-locker
+
+Key findings:
+
+- Credential Locker APIs are available to desktop apps such as WPF and WinForms.
+- Credentials should be stored as passwords or small secret values, not arbitrary blobs.
+- Product secret storage should prefer Credential Locker or DPAPI-backed local secrets over plain environment-variable-only production flows.
 
 ## Community Projects And Best Practices
 
@@ -209,6 +249,26 @@ Patterns to borrow:
 - Explicit scheduler/model configuration and seed control as part of reproducible experiments.
 - Image-to-image and inpaint are standard pipeline families, reinforcing that the product should model them as first-class modes.
 
+### Skills.sh
+
+Source: https://skills.sh/
+
+Patterns to borrow:
+
+- Reusable skill bundles are an effective packaging format for workflow templates, prompt helpers, and operational conventions.
+- Template import/export and versioning ideas are useful for future blueprint or workflow-template features.
+- External skill text should remain inspiration only and must not override repository rules, product contracts, or provider semantics.
+
+### GitHub Monthly Trend Signals
+
+Source: https://github.com/trending?since=monthly
+
+Patterns to borrow:
+
+- Monthly trending is useful for discovering multimodal workflow directions, tool chaining habits, and active creator ergonomics.
+- Trending repositories are discovery input, not architecture authority.
+- Stable project docs and official API/platform references should decide durable dependencies.
+
 ## Style And Parameter Governance Findings
 
 The product should treat image type, style, generation settings, reference assets, experiments, and review rubrics as linked but separate objects.
@@ -253,6 +313,16 @@ The strongest official and community sources converge on a few product truths:
 - review is a structured loop, not an afterthought
 
 AI 推荐: keep the product generalized as a `series image workbench` with reusable blueprint routes instead of hard-coding one topic mode such as comics, posters, or science explainers.
+
+## Cloud-First Tooling Findings
+
+The current evidence also supports a specific operational recommendation for this repository:
+
+- the default product path should not require local GPU model runtimes on the user's machine
+- cloud APIs are the better default for low-hardware Windows desktops
+- ComfyUI, InvokeAI, AUTOMATIC1111, and Diffusers should inform architecture and remain optional remote or advanced integrations, not required local dependencies
+- lightweight local tools for storage, deterministic composition, reporting, diagnostics, and review state provide more value than shipping local inference complexity by default
+- official SDKs, resilient HTTP clients, secure local secret storage, and telemetry should be prioritized before any local-model installation story
 
 ## Project-Specific Evidence From The Physics Poster Tool
 
