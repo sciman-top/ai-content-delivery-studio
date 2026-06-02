@@ -109,6 +109,24 @@ Rules:
 - Generate stable slugs and preserve all axis values in metadata.
 - Use low or draft quality for exploration, then promote selected recipes to medium or high quality.
 
+### WorkflowPackage
+
+Exports and imports reusable workflow planning data without bundling generated assets, local databases, or secrets.
+
+Included:
+
+- style guides
+- generation recipes
+- reference image set metadata with workspace-relative paths
+- parameter experiment definitions
+
+Rules:
+
+- Use a versioned JSON schema.
+- Re-validate imported packages before accepting them.
+- Reject reference image paths that are absolute or escape the workspace.
+- Keep binary reference assets, generated images, local SQLite files, and API keys outside workflow packages.
+
 ### ReviewRubric
 
 Turns subjective quality into explicit checks.

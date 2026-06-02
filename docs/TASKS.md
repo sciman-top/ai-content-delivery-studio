@@ -97,7 +97,7 @@
 - [x] Add style library and recipe inspector UI.
 - [x] Include style, recipe, reference, and experiment metadata in delivery packages.
 - [ ] Add mask/edit workflow.
-- [ ] Add workflow export/import.
+- [x] Add workflow export/import.
 - [ ] Add optional graph view.
 
 ## Phase 7: Brief-First Image Generation
