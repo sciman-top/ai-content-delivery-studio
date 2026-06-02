@@ -33,6 +33,23 @@ public sealed class PersistenceTests
                 ["accurate formula area"],
                 ["model-rendered small text"],
                 timestamp.AddMinutes(2));
+            var recommendation = PromptDirectionRecommendation.Create(
+                ImageTypePresetCatalog.EducationalPoster,
+                ImageTextPolicy.DeterministicPostRender,
+                "clean editorial science style",
+                new AspectRatio(4, 5),
+                1024,
+                1280,
+                "draft",
+                "png",
+                ImageBackgroundMode.Opaque,
+                ReviewRubricTemplateCatalog.TextHeavyPoster,
+                draftCount: 2,
+                finalCount: 1,
+                "Educational poster output needs post-render text.",
+                confidence: 0.9,
+                ["model-rendered small text is risky"],
+                ["reserve label space"]);
             brief.ReplaceDirections(
                 [
                     PromptDirection.Create(
@@ -43,7 +60,8 @@ public sealed class PersistenceTests
                         "No unreadable formula text.",
                         "Accurate and easy to review.",
                         "Less dramatic than a cover image.",
-                        timestamp.AddMinutes(3)),
+                        timestamp.AddMinutes(3),
+                        recommendation),
                 ],
                 timestamp.AddMinutes(4));
             var item = series.AddItem("Cover", "Opening image", timestamp.AddMinutes(3));
@@ -80,7 +98,13 @@ public sealed class PersistenceTests
                 Assert.Equal("Physics posters", loadedSeries.Title);
                 var loadedBrief = Assert.Single(loadedSeries.CreativeBriefs);
                 Assert.Equal("Physics classroom poster", loadedBrief.Goal);
-                Assert.Equal("conservative", Assert.Single(loadedBrief.PromptDirections).Key);
+                var loadedDirection = Assert.Single(loadedBrief.PromptDirections);
+                Assert.Equal("conservative", loadedDirection.Key);
+                Assert.NotNull(loadedDirection.Recommendation);
+                Assert.Equal(ImageTypePresetCatalog.EducationalPoster, loadedDirection.Recommendation.ImageTypePresetId);
+                Assert.Equal(1024, loadedDirection.Recommendation.Width);
+                Assert.Equal(1280, loadedDirection.Recommendation.Height);
+                Assert.Equal("model-rendered small text is risky", Assert.Single(loadedDirection.Recommendation.CapabilityWarnings));
                 Assert.Equal(SeriesItemStatus.Ready, loadedItem.Status);
                 Assert.Equal("A clean blue poster background", loadedPrompt.PromptText);
                 Assert.Single(loaded.ProviderProfiles);

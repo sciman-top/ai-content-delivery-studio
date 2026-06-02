@@ -135,6 +135,7 @@ public sealed class PromptDirection
         NegativePrompt = string.Empty;
         Strength = string.Empty;
         Risk = string.Empty;
+        Recommendation = null;
     }
 
     [JsonConstructor]
@@ -147,7 +148,8 @@ public sealed class PromptDirection
         string negativePrompt,
         string strength,
         string risk,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        PromptDirectionRecommendation? recommendation = null)
     {
         Id = id;
         Key = RequireText(key, nameof(key));
@@ -158,6 +160,7 @@ public sealed class PromptDirection
         Strength = strength.Trim();
         Risk = risk.Trim();
         CreatedAt = createdAt;
+        Recommendation = recommendation;
     }
 
     public Guid Id { get; private set; }
@@ -178,6 +181,8 @@ public sealed class PromptDirection
 
     public DateTimeOffset CreatedAt { get; private set; }
 
+    public PromptDirectionRecommendation? Recommendation { get; private set; }
+
     public static PromptDirection Create(
         string key,
         string name,
@@ -186,7 +191,8 @@ public sealed class PromptDirection
         string negativePrompt,
         string strength,
         string risk,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        PromptDirectionRecommendation? recommendation = null)
     {
         return new PromptDirection(
             Guid.NewGuid(),
@@ -197,7 +203,8 @@ public sealed class PromptDirection
             negativePrompt,
             strength,
             risk,
-            createdAt);
+            createdAt,
+            recommendation);
     }
 
     private static string RequireText(string value, string parameterName)
