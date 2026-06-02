@@ -35,6 +35,12 @@ public static class ReviewRubricTemplateCatalog
 
     public const string SeriesConsistency = "series-consistency";
 
+    public const string EditorialIllustration = "editorial-illustration";
+
+    public const string EducationalAccuracy = "educational-accuracy";
+
+    public const string ScholarlySchematic = "scholarly-schematic";
+
     private static readonly IReadOnlyList<ReviewRubricTemplate> Templates =
     [
         new ReviewRubricTemplate(
@@ -46,6 +52,36 @@ public static class ReviewRubricTemplateCatalog
                 new ReviewRubricDimensionTemplate("composition", "Main subject, framing, and visual hierarchy should be clear.", 2),
                 new ReviewRubricDimensionTemplate("visual_quality", "Image should be coherent, polished, and free of obvious artifacts.", 2),
                 new ReviewRubricDimensionTemplate("delivery_fit", "Output should be suitable for the intended audience and delivery format.", 1),
+            ]),
+        new ReviewRubricTemplate(
+            EditorialIllustration,
+            "Editorial illustration",
+            "Rubric for article covers and inline editorial images.",
+            [
+                new ReviewRubricDimensionTemplate("requirement_match", "Candidate should match the document-backed illustration target.", 3),
+                new ReviewRubricDimensionTemplate("source_evidence_fit", "Candidate should fit the cited document evidence without adding unsupported claims.", 3),
+                new ReviewRubricDimensionTemplate("visual_hierarchy", "Composition should be clear for article reading context.", 2),
+                new ReviewRubricDimensionTemplate("delivery_readiness", "Output should fit the intended article slot and audience.", 1),
+            ]),
+        new ReviewRubricTemplate(
+            EducationalAccuracy,
+            "Educational accuracy",
+            "Rubric for educational diagrams and explanatory illustrations.",
+            [
+                new ReviewRubricDimensionTemplate("concept_accuracy", "Candidate should preserve the correct concept relationship.", 4),
+                new ReviewRubricDimensionTemplate("source_evidence_fit", "Candidate should stay within the source document evidence.", 3),
+                new ReviewRubricDimensionTemplate("text_policy", "Layout should support deterministic labels, formulas, and legends.", 3),
+                new ReviewRubricDimensionTemplate("diagram_clarity", "Visual structure should be easy to teach from.", 2),
+            ]),
+        new ReviewRubricTemplate(
+            ScholarlySchematic,
+            "Scholarly schematic",
+            "Rubric for schematic scholarly draft visuals that must avoid fake evidence.",
+            [
+                new ReviewRubricDimensionTemplate("no_fake_evidence", "Candidate must not imply real experimental, clinical, archival, or field evidence.", 5),
+                new ReviewRubricDimensionTemplate("source_evidence_fit", "Candidate should clearly derive from the cited source section.", 4),
+                new ReviewRubricDimensionTemplate("schematic_clarity", "Candidate should read as a schematic or concept-level visual.", 3),
+                new ReviewRubricDimensionTemplate("text_policy", "Required labels should be reserved for deterministic composition.", 2),
             ]),
         new ReviewRubricTemplate(
             TextHeavyPoster,

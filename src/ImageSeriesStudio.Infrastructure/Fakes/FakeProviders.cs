@@ -1,6 +1,8 @@
 using System.Text.Json;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Infrastructure.Fakes;
 
@@ -96,6 +98,68 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
             ["Use draft generation before final quality."],
             ["Confirm whether final text should be composed in app."],
             "fake-text-brief"));
+    }
+
+    public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
+        DocumentIllustrationPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var timestamp = DateTimeOffset.UtcNow;
+        var brief = DocumentBrief.Create(
+            Guid.NewGuid(),
+            DocumentSourceKind.Paste,
+            $"{request.Title.Trim()}.txt",
+            request.Title,
+            request.DocumentFamily,
+            request.Audience,
+            request.Sections,
+            request.KeyClaims,
+            request.Sections.Select(section => $"Illustrate {section}").ToArray(),
+            request.KnownConstraints,
+            request.StrictnessLevel,
+            timestamp);
+
+        var evidence = request.KeyClaims.Count == 0 ? [request.SourceText] : request.KeyClaims;
+        var target = request.StrictnessLevel is IllustrationStrictnessLevel.ScholarlyDraft
+            ? IllustrationTarget.Create(
+                brief.Id,
+                "Graphical abstract schematic",
+                "document:summary",
+                IllustrationPurpose.GraphicalAbstract,
+                ["summarize the central concept as a schematic"],
+                ["do not imply real experimental evidence"],
+                evidence,
+                ImageTypePresetCatalog.GraphicalAbstract,
+                ReviewRubricTemplateCatalog.ScholarlySchematic,
+                ImageTextPolicy.DeterministicPostRender,
+                ["scholarly draft mode"],
+                timestamp)
+            : IllustrationTarget.Create(
+                brief.Id,
+                "Concept illustration",
+                "document:introduction",
+                IllustrationPurpose.ConceptDiagram,
+                ["explain the central idea visually"],
+                request.KnownConstraints,
+                evidence,
+                ImageTypePresetCatalog.ConceptDiagram,
+                ReviewRubricTemplateCatalog.EducationalAccuracy,
+                ImageTextPolicy.DeterministicPostRender,
+                ["fake provider"],
+                timestamp);
+
+        var plan = IllustrationPlan.Create(
+            brief.ProjectId,
+            brief.Id,
+            $"Fake document illustration plan for {request.Title.Trim()}.",
+            [target],
+            ["Central concept covered."],
+            request.KnownConstraints,
+            timestamp);
+
+        return Task.FromResult(new DocumentIllustrationPlanningResult(brief, plan, "fake-document-plan"));
     }
 }
 

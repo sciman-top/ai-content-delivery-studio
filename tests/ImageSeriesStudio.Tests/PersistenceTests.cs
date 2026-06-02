@@ -1,3 +1,4 @@
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Styles;
 using ImageSeriesStudio.Infrastructure.Persistence;
@@ -95,5 +96,86 @@ public sealed class PersistenceTests
 
         Assert.False(File.Exists(databasePath));
         Assert.DoesNotContain("ai-image-series-studio", databasePath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task PersistsDocumentBriefsAndIllustrationPlans()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "document-illustration.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            var timestamp = DateTimeOffset.Parse("2026-06-02T10:00:00Z");
+            var project = ImageProject.Create("Document persistence", timestamp);
+            var brief = DocumentBrief.Create(
+                project.Id,
+                DocumentSourceKind.Markdown,
+                "article.md",
+                "Article",
+                DocumentFamily.Editorial,
+                "readers",
+                ["intro"],
+                ["central claim"],
+                ["cover"],
+                ["avoid fake data"],
+                IllustrationStrictnessLevel.Editorial,
+                timestamp);
+            var target = IllustrationTarget.Create(
+                brief.Id,
+                "Cover",
+                "intro",
+                IllustrationPurpose.Cover,
+                ["central claim"],
+                ["fake data"],
+                ["central claim"],
+                ImageTypePresetCatalog.ArticleCover,
+                ReviewRubricTemplateCatalog.EditorialIllustration,
+                ImageTextPolicy.Hybrid,
+                ["editorial"],
+                timestamp);
+            var plan = IllustrationPlan.Create(
+                project.Id,
+                brief.Id,
+                "Cover plan",
+                [target],
+                ["intro covered"],
+                ["no data chart"],
+                timestamp);
+            project.AddDocumentBrief(brief, timestamp);
+            project.AddIllustrationPlan(plan, timestamp);
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+                setup.Projects.Add(project);
+                await setup.SaveChangesAsync();
+            }
+
+            await using (var read = new AppDbContext(options))
+            {
+                var loaded = await read.Projects
+                    .Include(value => value.DocumentBriefs)
+                    .Include(value => value.IllustrationPlans)
+                    .SingleAsync();
+
+                Assert.Single(loaded.DocumentBriefs);
+                Assert.Single(loaded.IllustrationPlans);
+                Assert.Equal("Article", loaded.DocumentBriefs.Single().Title);
+                Assert.Equal("Cover plan", loaded.IllustrationPlans.Single().Summary);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
     }
 }

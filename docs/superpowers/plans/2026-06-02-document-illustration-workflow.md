@@ -51,7 +51,7 @@ Modify:
 - Create: `src/ImageSeriesStudio.Core/Documents/DocumentIllustration.cs`
 - Create: `tests/ImageSeriesStudio.Tests/DocumentIllustrationModelTests.cs`
 
-- [ ] **Step 1: Write failing domain tests**
+- [x] **Step 1: Write failing domain tests**
 
 Create `tests/ImageSeriesStudio.Tests/DocumentIllustrationModelTests.cs`:
 
@@ -171,7 +171,7 @@ public sealed class DocumentIllustrationModelTests
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -181,7 +181,7 @@ dotnet test --filter DocumentIllustrationModelTests
 
 Expected: fails because `ImageSeriesStudio.Core.Documents` types do not exist.
 
-- [ ] **Step 3: Add the document illustration domain model**
+- [x] **Step 3: Add the document illustration domain model**
 
 Create `src/ImageSeriesStudio.Core/Documents/DocumentIllustration.cs`:
 
@@ -594,7 +594,7 @@ public sealed record IllustrationTarget
 }
 ```
 
-- [ ] **Step 4: Run tests to verify they pass**
+- [x] **Step 4: Run tests to verify they pass**
 
 Run:
 
@@ -622,7 +622,7 @@ git commit -m "feat: 增加文稿配图领域模型"
 - Modify: `tests/ImageSeriesStudio.Tests/ImageTypePresetTests.cs`
 - Modify: `tests/ImageSeriesStudio.Tests/ReviewRubricTemplateTests.cs`
 
-- [ ] **Step 1: Write failing catalog tests**
+- [x] **Step 1: Write failing catalog tests**
 
 Append this test to `ImageTypePresetTests`:
 
@@ -661,7 +661,7 @@ public void Catalog_IncludesDocumentIllustrationRubrics()
 }
 ```
 
-- [ ] **Step 2: Run tests to verify they fail**
+- [x] **Step 2: Run tests to verify they fail**
 
 Run:
 
@@ -671,7 +671,7 @@ dotnet test --filter "ImageTypePresetTests|ReviewRubricTemplateTests"
 
 Expected: fails because the new constants and catalog entries do not exist.
 
-- [ ] **Step 3: Add image type preset constants and entries**
+- [x] **Step 3: Add image type preset constants and entries**
 
 Modify `ImageTypePresetCatalog` in `src/ImageSeriesStudio.Core/Styles/ImageTypePreset.cs`:
 
@@ -726,7 +726,7 @@ ImageTypePreset.Create(
     "{series}/schematic-{item-number}-{item-slug}"),
 ```
 
-- [ ] **Step 4: Add rubric constants and entries**
+- [x] **Step 4: Add rubric constants and entries**
 
 Modify `ReviewRubricTemplateCatalog` in `src/ImageSeriesStudio.Core/Projects/ReviewRubricTemplates.cs`:
 
@@ -773,7 +773,7 @@ new ReviewRubricTemplate(
     ]),
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run:
 
@@ -800,7 +800,7 @@ git commit -m "feat: 增加文稿配图预设和评审规则"
 - Modify: `src/ImageSeriesStudio.Infrastructure/Fakes/FakeProviders.cs`
 - Modify: `tests/ImageSeriesStudio.Tests/FakeProviderTests.cs`
 
-- [ ] **Step 1: Write failing fake provider test**
+- [x] **Step 1: Write failing fake provider test**
 
 Append this test to `FakeProviderTests`:
 
@@ -836,7 +836,7 @@ Add these usings to `FakeProviderTests`:
 using ImageSeriesStudio.Core.Documents;
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -846,7 +846,7 @@ dotnet test --filter FakeTextPlanningProvider_CreatesDocumentIllustrationPlan
 
 Expected: fails because the provider contract does not expose document illustration planning.
 
-- [ ] **Step 3: Extend text planning provider contract**
+- [x] **Step 3: Extend text planning provider contract**
 
 Modify `ITextPlanningProvider` in `AiProviderContracts.cs`:
 
@@ -879,7 +879,7 @@ public sealed record DocumentIllustrationPlanningResult(
     string ProviderTraceId);
 ```
 
-- [ ] **Step 4: Implement fake document planning**
+- [x] **Step 4: Implement fake document planning**
 
 Add this method to `FakeTextPlanningProvider`:
 
@@ -954,7 +954,7 @@ using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Styles;
 ```
 
-- [ ] **Step 5: Update OpenAI text provider to keep compile safety**
+- [x] **Step 5: Update OpenAI text provider to keep compile safety**
 
 Modify `src/ImageSeriesStudio.Infrastructure/OpenAI/OpenAiTextPlanningProvider.cs` by adding a method with the same signature. The first implementation should throw an explicit opt-in message:
 
@@ -973,7 +973,7 @@ Add this using:
 using ImageSeriesStudio.Core.Documents;
 ```
 
-- [ ] **Step 6: Run tests to verify they pass**
+- [x] **Step 6: Run tests to verify they pass**
 
 Run:
 
@@ -999,7 +999,7 @@ git commit -m "feat: 增加假文稿配图规划 Provider"
 - Modify: `src/ImageSeriesStudio.Application/Projects/ProjectApplicationService.cs`
 - Create: `tests/ImageSeriesStudio.Tests/DocumentIllustrationWorkflowTests.cs`
 
-- [ ] **Step 1: Write failing application workflow test**
+- [x] **Step 1: Write failing application workflow test**
 
 Create `tests/ImageSeriesStudio.Tests/DocumentIllustrationWorkflowTests.cs`:
 
@@ -1075,7 +1075,7 @@ public sealed class DocumentIllustrationWorkflowTests
 }
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -1085,7 +1085,7 @@ dotnet test --filter DocumentIllustrationWorkflowTests
 
 Expected: fails because `CreateDocumentIllustrationPlanWithProviderAsync` does not exist.
 
-- [ ] **Step 3: Add application workflow result record**
+- [x] **Step 3: Add application workflow result record**
 
 Add this record near the other public records at the bottom of `ProjectApplicationService.cs`:
 
@@ -1097,7 +1097,7 @@ public sealed record DocumentIllustrationWorkflowResult(
     int ApprovedTargetCount);
 ```
 
-- [ ] **Step 4: Add the document illustration workflow method**
+- [x] **Step 4: Add the document illustration workflow method**
 
 Add this method to `ProjectApplicationService`:
 
@@ -1199,7 +1199,7 @@ Add these usings:
 using ImageSeriesStudio.Core.Documents;
 ```
 
-- [ ] **Step 5: Run tests to verify they pass**
+- [x] **Step 5: Run tests to verify they pass**
 
 Run:
 
@@ -1226,7 +1226,7 @@ git commit -m "feat: 接入文稿配图应用工作流"
 - Modify: `src/ImageSeriesStudio.Infrastructure/Persistence/AppDbContext.cs`
 - Modify: `tests/ImageSeriesStudio.Tests/PersistenceTests.cs`
 
-- [ ] **Step 1: Write failing persistence test**
+- [x] **Step 1: Write failing persistence test**
 
 Append this test to `PersistenceTests`:
 
@@ -1320,7 +1320,7 @@ using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Styles;
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run:
 
@@ -1330,7 +1330,7 @@ dotnet test --filter PersistsDocumentBriefsAndIllustrationPlans
 
 Expected: fails because `ImageProject` does not expose document brief or illustration plan collections.
 
-- [ ] **Step 3: Add document collections to project model**
+- [x] **Step 3: Add document collections to project model**
 
 Modify `ImageProject` in `ProjectModel.cs`:
 
@@ -1381,7 +1381,7 @@ Add this using:
 using ImageSeriesStudio.Core.Documents;
 ```
 
-- [ ] **Step 4: Map document entities in EF Core**
+- [x] **Step 4: Map document entities in EF Core**
 
 Modify `AppDbContext.cs`:
 
@@ -1460,7 +1460,7 @@ entity.Navigation(project => project.IllustrationPlans).UsePropertyAccessMode(Pr
 
 `IllustrationPlan.ProjectId` is part of the Task 1 model, so the project relationship is explicit before EF mapping begins.
 
-- [ ] **Step 5: Run persistence test**
+- [x] **Step 5: Run persistence test**
 
 Run:
 
@@ -1488,7 +1488,7 @@ git commit -m "feat: 持久化文稿配图规划证据"
 - Modify: `src/ImageSeriesStudio.App/MainWindow.xaml`
 - Modify: `tests/ImageSeriesStudio.Tests/LocalizationTests.cs`
 
-- [ ] **Step 1: Write failing localization test**
+- [x] **Step 1: Write failing localization test**
 
 Append this assertion group to the existing localization coverage:
 
@@ -1501,7 +1501,7 @@ Assert.NotEmpty(english.GetText(LocalizationKey.DocumentSourceText));
 Assert.NotEmpty(english.GetText(LocalizationKey.RunFakeDocumentPlanning));
 ```
 
-- [ ] **Step 2: Run localization test to verify it fails**
+- [x] **Step 2: Run localization test to verify it fails**
 
 Run:
 
@@ -1511,7 +1511,7 @@ dotnet test --filter LocalizationTests
 
 Expected: fails because the new localization keys do not exist.
 
-- [ ] **Step 3: Add localization keys and strings**
+- [x] **Step 3: Add localization keys and strings**
 
 Add enum members:
 
@@ -1546,7 +1546,7 @@ Add Chinese strings:
 [LocalizationKey.DocumentPlanningResult] = "文稿配图目标已加入计划。",
 ```
 
-- [ ] **Step 4: Add view-model state and command**
+- [x] **Step 4: Add view-model state and command**
 
 In `MainWindowViewModel.cs`, add backing fields:
 
@@ -1675,7 +1675,7 @@ Add usings:
 using ImageSeriesStudio.Core.Documents;
 ```
 
-- [ ] **Step 5: Bind controls in the inspector**
+- [x] **Step 5: Bind controls in the inspector**
 
 In `MainWindow.xaml`, place this block near the existing fake planning controls:
 
@@ -1702,7 +1702,7 @@ In `MainWindow.xaml`, place this block near the existing fake planning controls:
         Margin="0,0,0,14" />
 ```
 
-- [ ] **Step 6: Run tests and build**
+- [x] **Step 6: Run tests and build**
 
 Run:
 
@@ -1729,7 +1729,7 @@ git commit -m "feat: 增加文稿配图假规划入口"
 - Modify: `docs/TASKS.md`
 - Modify: `docs/USER_GUIDE.md`
 
-- [ ] **Step 1: Update task checklist**
+- [x] **Step 1: Update task checklist**
 
 Add this section to `docs/TASKS.md`:
 
@@ -1738,17 +1738,17 @@ Add this section to `docs/TASKS.md`:
 
 - [x] Add document illustration design spec.
 - [x] Add implementation plan.
-- [ ] Add document illustration domain model.
-- [ ] Add article, concept, graphical abstract, and scholarly schematic presets.
-- [ ] Add document-specific review rubrics.
-- [ ] Add fake document illustration planner.
-- [ ] Add application workflow from approved targets to series items.
-- [ ] Add persistence for document planning evidence.
-- [ ] Add minimal WPF entry point.
+- [x] Add document illustration domain model.
+- [x] Add article, concept, graphical abstract, and scholarly schematic presets.
+- [x] Add document-specific review rubrics.
+- [x] Add fake document illustration planner.
+- [x] Add application workflow from approved targets to series items.
+- [x] Add persistence for document planning evidence.
+- [x] Add minimal WPF entry point.
 - [ ] Add real provider and binary document extraction in later slices.
 ```
 
-- [ ] **Step 2: Update user guide**
+- [x] **Step 2: Update user guide**
 
 Add this section to `docs/USER_GUIDE.md`:
 
@@ -1760,7 +1760,7 @@ The document illustration workflow helps turn article or draft text into planned
 Scholarly draft mode blocks fake evidence imagery. Use it for schematic concepts, graphical abstracts, and background plates rather than fabricated data plots or experimental images.
 ```
 
-- [ ] **Step 3: Run full gates**
+- [x] **Step 3: Run full gates**
 
 Run:
 

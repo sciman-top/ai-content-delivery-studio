@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,10 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<CreativeBrief> CreativeBriefs => Set<CreativeBrief>();
 
+    public DbSet<DocumentBrief> DocumentBriefs => Set<DocumentBrief>();
+
+    public DbSet<IllustrationPlan> IllustrationPlans => Set<IllustrationPlan>();
+
     public DbSet<SeriesItem> SeriesItems => Set<SeriesItem>();
 
     public DbSet<PromptVersion> PromptVersions => Set<PromptVersion>();
@@ -37,6 +42,8 @@ public sealed class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Ignore<IllustrationTarget>();
+
         modelBuilder.Entity<ImageProject>(entity =>
         {
             entity.HasKey(project => project.Id);
@@ -49,8 +56,18 @@ public sealed class AppDbContext : DbContext
                 .WithOne()
                 .HasForeignKey(profile => profile.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(project => project.DocumentBriefs)
+                .WithOne()
+                .HasForeignKey(brief => brief.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(project => project.IllustrationPlans)
+                .WithOne()
+                .HasForeignKey(plan => plan.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.Navigation(project => project.Series).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.ProviderProfiles).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.DocumentBriefs).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.IllustrationPlans).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
         modelBuilder.Entity<ImageSeries>(entity =>
@@ -87,6 +104,57 @@ public sealed class AppDbContext : DbContext
                 .HasConversion(
                     values => JsonSerializer.Serialize(values, JsonOptions),
                     json => JsonSerializer.Deserialize<List<PromptDirection>>(json, JsonOptions) ?? new List<PromptDirection>());
+        });
+
+        modelBuilder.Entity<DocumentBrief>(entity =>
+        {
+            entity.HasKey(brief => brief.Id);
+            entity.Property(brief => brief.ProjectId);
+            entity.Property(brief => brief.SourceKind);
+            entity.Property(brief => brief.SourceDisplayName).IsRequired();
+            entity.Property(brief => brief.Title).IsRequired();
+            entity.Property(brief => brief.DocumentFamily);
+            entity.Property(brief => brief.Audience).IsRequired();
+            entity.Property(brief => brief.StrictnessLevel);
+            entity.Property(brief => brief.CreatedAt);
+            entity.Property(brief => brief.Sections)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+            entity.Property(brief => brief.KeyClaims)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+            entity.Property(brief => brief.VisualOpportunities)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+            entity.Property(brief => brief.KnownConstraints)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+        });
+
+        modelBuilder.Entity<IllustrationPlan>(entity =>
+        {
+            entity.HasKey(plan => plan.Id);
+            entity.Property(plan => plan.ProjectId);
+            entity.Property(plan => plan.DocumentBriefId);
+            entity.Property(plan => plan.Summary).IsRequired();
+            entity.Property(plan => plan.CreatedAt);
+            entity.Property(plan => plan.UpdatedAt);
+            entity.Property(plan => plan.Targets)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<IllustrationTarget>>(json, JsonOptions) ?? new List<IllustrationTarget>());
+            entity.Property(plan => plan.CoverageNotes)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+            entity.Property(plan => plan.RiskNotes)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
         });
 
         modelBuilder.Entity<SeriesItem>(entity =>

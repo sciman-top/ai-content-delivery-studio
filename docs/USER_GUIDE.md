@@ -21,6 +21,12 @@ Domain identifiers, provider IDs, model IDs, and error strings remain in English
 5. Compare candidates and repair prompts when review output indicates a problem.
 6. Export a delivery package only after final human approval.
 
+## Document Illustration
+
+The document illustration workflow helps turn article or draft text into planned image targets. The first implementation uses fake providers by default and supports pasted or plain text content. It can create concept illustrations and graphical abstract drafts, then add approved targets to the existing Plan and Prompts workflow.
+
+Scholarly draft mode blocks fake evidence imagery. Use it for schematic concepts, graphical abstracts, and background plates rather than fabricated data plots or experimental images.
+
 ## Safety Defaults
 
 - Fake providers are the default path for development and tests.

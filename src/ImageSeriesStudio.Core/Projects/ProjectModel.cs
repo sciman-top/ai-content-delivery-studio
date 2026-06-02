@@ -1,3 +1,4 @@
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Core.Projects;
@@ -6,6 +7,8 @@ public sealed class ImageProject
 {
     private readonly List<ImageSeries> _series = [];
     private readonly List<ProviderProfile> _providerProfiles = [];
+    private readonly List<DocumentBrief> _documentBriefs = [];
+    private readonly List<IllustrationPlan> _illustrationPlans = [];
 
     private ImageProject()
     {
@@ -32,6 +35,10 @@ public sealed class ImageProject
 
     public IReadOnlyCollection<ProviderProfile> ProviderProfiles => _providerProfiles.AsReadOnly();
 
+    public IReadOnlyCollection<DocumentBrief> DocumentBriefs => _documentBriefs.AsReadOnly();
+
+    public IReadOnlyCollection<IllustrationPlan> IllustrationPlans => _illustrationPlans.AsReadOnly();
+
     public static ImageProject Create(string name, DateTimeOffset createdAt)
     {
         return new ImageProject(Guid.NewGuid(), name, createdAt);
@@ -51,6 +58,30 @@ public sealed class ImageProject
         _providerProfiles.Add(profile);
         UpdatedAt = timestamp;
         return profile;
+    }
+
+    public void AddDocumentBrief(DocumentBrief brief, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(brief);
+        if (brief.ProjectId != Id)
+        {
+            throw new InvalidOperationException("Document brief belongs to a different project.");
+        }
+
+        _documentBriefs.Add(brief);
+        UpdatedAt = timestamp;
+    }
+
+    public void AddIllustrationPlan(IllustrationPlan plan, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        if (!_documentBriefs.Any(brief => brief.Id == plan.DocumentBriefId))
+        {
+            throw new InvalidOperationException("Illustration plan requires a document brief in the same project.");
+        }
+
+        _illustrationPlans.Add(plan);
+        UpdatedAt = timestamp;
     }
 
     private static string RequireText(string value, string parameterName)

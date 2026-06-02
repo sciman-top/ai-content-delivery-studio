@@ -115,6 +115,14 @@ public static class ImageTypePresetCatalog
 
     public const string ArticleCover = "article-cover";
 
+    public const string ArticleInlineIllustration = "article-inline-illustration";
+
+    public const string ConceptDiagram = "concept-diagram";
+
+    public const string GraphicalAbstract = "graphical-abstract";
+
+    public const string ScholarlySchematic = "scholarly-schematic";
+
     public const string SocialSquare = "social-square";
 
     public const string BackgroundPlate = "background-plate";
@@ -139,6 +147,42 @@ public static class ImageTypePresetCatalog
             ImageTextPolicy.Hybrid,
             ReviewRubricTemplateCatalog.GeneralImage,
             "{series}/cover-{item-slug}"),
+        ImageTypePreset.Create(
+            ArticleInlineIllustration,
+            "Article inline illustration",
+            "Inline article illustration tied to a specific section or claim.",
+            new AspectRatio(16, 9),
+            "png",
+            ImageTextPolicy.Hybrid,
+            ReviewRubricTemplateCatalog.EditorialIllustration,
+            "{series}/inline-{item-number}-{item-slug}"),
+        ImageTypePreset.Create(
+            ConceptDiagram,
+            "Concept diagram",
+            "Educational concept diagram with clear structure and deterministic label support.",
+            new AspectRatio(16, 9),
+            "png",
+            ImageTextPolicy.DeterministicPostRender,
+            ReviewRubricTemplateCatalog.EducationalAccuracy,
+            "{series}/concept-{item-number}-{item-slug}"),
+        ImageTypePreset.Create(
+            GraphicalAbstract,
+            "Graphical abstract",
+            "Schematic graphical abstract for a scholarly or educational draft.",
+            new AspectRatio(16, 9),
+            "png",
+            ImageTextPolicy.DeterministicPostRender,
+            ReviewRubricTemplateCatalog.ScholarlySchematic,
+            "{series}/graphical-abstract-{item-slug}"),
+        ImageTypePreset.Create(
+            ScholarlySchematic,
+            "Scholarly schematic",
+            "Concept-level scholarly schematic that avoids fabricated evidence imagery.",
+            new AspectRatio(16, 9),
+            "png",
+            ImageTextPolicy.DeterministicPostRender,
+            ReviewRubricTemplateCatalog.ScholarlySchematic,
+            "{series}/schematic-{item-number}-{item-slug}"),
         ImageTypePreset.Create(
             SocialSquare,
             "Social media square",

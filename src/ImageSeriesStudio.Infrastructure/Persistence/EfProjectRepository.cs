@@ -38,6 +38,8 @@ public sealed class EfProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(project => project.ProviderProfiles)
+            .Include(project => project.DocumentBriefs)
+            .Include(project => project.IllustrationPlans)
             .Include(project => project.Series)
             .ThenInclude(series => series.CreativeBriefs)
             .Include(project => project.Series)
@@ -85,6 +87,22 @@ public sealed class EfProjectRepository : IProjectRepository
                         _dbContext.PromptVersions.Add(prompt);
                     }
                 }
+            }
+        }
+
+        foreach (var brief in project.DocumentBriefs)
+        {
+            if (!await _dbContext.DocumentBriefs.AnyAsync(existing => existing.Id == brief.Id, cancellationToken))
+            {
+                _dbContext.DocumentBriefs.Add(brief);
+            }
+        }
+
+        foreach (var plan in project.IllustrationPlans)
+        {
+            if (!await _dbContext.IllustrationPlans.AnyAsync(existing => existing.Id == plan.Id, cancellationToken))
+            {
+                _dbContext.IllustrationPlans.Add(plan);
             }
         }
     }

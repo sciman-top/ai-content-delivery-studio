@@ -1,4 +1,5 @@
 using ImageSeriesStudio.Core.Generation;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Core.Styles;
@@ -259,6 +260,64 @@ public sealed class ProjectApplicationService
         return series;
     }
 
+    public async Task<DocumentIllustrationWorkflowResult> CreateDocumentIllustrationPlanWithProviderAsync(
+        Guid projectId,
+        DocumentIllustrationPlanningRequest request,
+        bool approveAllTargets,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        if (_textPlanningProvider is null)
+        {
+            throw new InvalidOperationException("Text planning provider is not registered.");
+        }
+
+        if (request.DocumentFamily is DocumentFamily.ScholarlyDraft
+            && request.KnownConstraints.Any(value => value.Contains("fake evidence", StringComparison.OrdinalIgnoreCase)))
+        {
+            throw new InvalidOperationException("Scholarly draft planning cannot request fake evidence imagery.");
+        }
+
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var providerResult = await _textPlanningProvider.CreateDocumentIllustrationPlanAsync(request, cancellationToken);
+        var plan = approveAllTargets
+            ? providerResult.Plan.Targets.Aggregate(
+                providerResult.Plan,
+                (current, target) => current.ApproveTarget(target.Id, timestamp))
+            : providerResult.Plan;
+
+        Guid? seriesId = null;
+        if (approveAllTargets && plan.ApprovedTargets.Count > 0)
+        {
+            var providerProfile = ResolveProviderProfile(project, providerProfileId: null, timestamp);
+            var series = project.AddSeries(
+                $"Document illustrations: {providerResult.Brief.Title}",
+                plan.Summary,
+                timestamp);
+            seriesId = series.Id;
+
+            foreach (var target in plan.ApprovedTargets)
+            {
+                var item = series.AddItem(
+                    target.Title,
+                    BuildDocumentTargetBrief(target),
+                    timestamp);
+                item.AddPromptVersion(
+                    BuildDocumentTargetPrompt(target),
+                    CreateDefaultGenerationSettings(),
+                    providerProfile.Id,
+                    timestamp);
+            }
+        }
+
+        await _repository.SaveAsync(project, cancellationToken);
+        return new DocumentIllustrationWorkflowResult(
+            providerResult.Brief.Id,
+            plan.Id,
+            seriesId,
+            plan.ApprovedTargets.Count);
+    }
+
     public async Task<GenerationQueueRun> RunGenerationQueueAsync(
         Guid projectId,
         string outputDirectory,
@@ -353,6 +412,34 @@ public sealed class ProjectApplicationService
         return new GenerationSettings(1024, 1024, "standard", "png");
     }
 
+    private static string BuildDocumentTargetBrief(IllustrationTarget target)
+    {
+        return string.Join(
+            Environment.NewLine,
+            [
+                $"Purpose: {target.Purpose}",
+                $"Location: {target.DocumentLocation}",
+                $"Must show: {string.Join("; ", target.MustShow)}",
+                $"Must not show: {string.Join("; ", target.MustNotShow)}",
+                $"Source evidence: {string.Join("; ", target.SourceEvidence)}",
+                $"Strictness: {string.Join("; ", target.StrictnessNotes)}",
+            ]);
+    }
+
+    private static string BuildDocumentTargetPrompt(IllustrationTarget target)
+    {
+        return string.Join(
+            Environment.NewLine,
+            [
+                $"Create a {target.Purpose} for a document illustration workflow.",
+                $"Must show: {string.Join("; ", target.MustShow)}",
+                $"Must not show: {string.Join("; ", target.MustNotShow)}",
+                $"Use this source evidence: {string.Join("; ", target.SourceEvidence)}",
+                "Do not imply real experimental, clinical, archival, or field evidence unless the user provided that evidence explicitly.",
+                $"Text policy: {target.TextPolicy}.",
+            ]);
+    }
+
     private static IReadOnlyList<ImageGenerationRequest> CreateGenerationRequests(
         ImageProject project,
         string outputDirectory)
@@ -423,6 +510,12 @@ public sealed record ProjectSummary(
     string Name,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
+
+public sealed record DocumentIllustrationWorkflowResult(
+    Guid DocumentBriefId,
+    Guid IllustrationPlanId,
+    Guid? SeriesId,
+    int ApprovedTargetCount);
 
 public sealed record ReviewCandidateInput(
     Guid CandidateImageId,

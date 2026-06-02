@@ -103,4 +103,20 @@ public sealed class LocalizationTests
         Assert.Equal("生成提示词方向", service.GetText(LocalizationKey.GeneratePromptDirections));
         Assert.Equal("晋级为提示词版本", service.GetText(LocalizationKey.PromotePromptDirection));
     }
+
+    [Fact]
+    public void LocalizationService_ReturnsDocumentIllustrationText()
+    {
+        var service = new LocalizationService();
+
+        service.SetLanguage(LanguagePreference.English);
+        Assert.Equal("Document illustration", service.GetText(LocalizationKey.DocumentIllustrationTitle));
+        Assert.Equal("Document text", service.GetText(LocalizationKey.DocumentSourceText));
+        Assert.Equal("Run fake document planning", service.GetText(LocalizationKey.RunFakeDocumentPlanning));
+
+        service.SetLanguage(LanguagePreference.Chinese);
+        Assert.Equal("文稿配图", service.GetText(LocalizationKey.DocumentIllustrationTitle));
+        Assert.Equal("文稿文本", service.GetText(LocalizationKey.DocumentSourceText));
+        Assert.Equal("运行假文稿配图规划", service.GetText(LocalizationKey.RunFakeDocumentPlanning));
+    }
 }

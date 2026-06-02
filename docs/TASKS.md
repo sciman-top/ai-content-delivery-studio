@@ -116,9 +116,9 @@
 - [x] Add document illustration design spec.
 - [x] Add document illustration implementation plan.
 - [x] Add document illustration domain model.
-- [ ] Add article, concept, graphical abstract, and scholarly schematic presets.
-- [ ] Add document-specific review rubrics.
-- [ ] Add fake document illustration planner.
-- [ ] Add application workflow from approved targets to series items.
-- [ ] Add persistence for document planning evidence.
-- [ ] Add minimal WPF entry point.
+- [x] Add article, concept, graphical abstract, and scholarly schematic presets.
+- [x] Add document-specific review rubrics.
+- [x] Add fake document illustration planner.
+- [x] Add application workflow from approved targets to series items.
+- [x] Add persistence for document planning evidence.
+- [x] Add minimal WPF entry point.

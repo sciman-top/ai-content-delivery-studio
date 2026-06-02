@@ -28,8 +28,27 @@ public sealed class ImageTypePresetTests
             presets,
             preset => Assert.Equal(ImageTypePresetCatalog.EducationalPoster, preset.Id),
             preset => Assert.Equal(ImageTypePresetCatalog.ArticleCover, preset.Id),
+            preset => Assert.Equal(ImageTypePresetCatalog.ArticleInlineIllustration, preset.Id),
+            preset => Assert.Equal(ImageTypePresetCatalog.ConceptDiagram, preset.Id),
+            preset => Assert.Equal(ImageTypePresetCatalog.GraphicalAbstract, preset.Id),
+            preset => Assert.Equal(ImageTypePresetCatalog.ScholarlySchematic, preset.Id),
             preset => Assert.Equal(ImageTypePresetCatalog.SocialSquare, preset.Id),
             preset => Assert.Equal(ImageTypePresetCatalog.BackgroundPlate, preset.Id));
+    }
+
+    [Fact]
+    public void Catalog_IncludesDocumentIllustrationPresets()
+    {
+        var presets = ImageTypePresetCatalog.Defaults.Select(preset => preset.Id).ToArray();
+
+        Assert.Contains(ImageTypePresetCatalog.ArticleInlineIllustration, presets);
+        Assert.Contains(ImageTypePresetCatalog.ConceptDiagram, presets);
+        Assert.Contains(ImageTypePresetCatalog.GraphicalAbstract, presets);
+        Assert.Contains(ImageTypePresetCatalog.ScholarlySchematic, presets);
+
+        var scholarly = ImageTypePresetCatalog.GetById(ImageTypePresetCatalog.ScholarlySchematic);
+        Assert.Equal(ImageTextPolicy.DeterministicPostRender, scholarly.TextPolicy);
+        Assert.Equal(ReviewRubricTemplateCatalog.ScholarlySchematic, scholarly.ReviewRubricTemplateId);
     }
 
     [Fact]

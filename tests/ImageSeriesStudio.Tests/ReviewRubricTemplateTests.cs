@@ -16,6 +16,20 @@ public sealed class ReviewRubricTemplateTests
     }
 
     [Fact]
+    public void Catalog_IncludesDocumentIllustrationRubrics()
+    {
+        var templates = ReviewRubricTemplateCatalog.All.Select(template => template.Id).ToArray();
+
+        Assert.Contains(ReviewRubricTemplateCatalog.EditorialIllustration, templates);
+        Assert.Contains(ReviewRubricTemplateCatalog.EducationalAccuracy, templates);
+        Assert.Contains(ReviewRubricTemplateCatalog.ScholarlySchematic, templates);
+
+        var scholarly = ReviewRubricTemplateCatalog.GetById(ReviewRubricTemplateCatalog.ScholarlySchematic);
+        Assert.Contains(scholarly.Dimensions, dimension => dimension.Name == "no_fake_evidence");
+        Assert.Contains(scholarly.Dimensions, dimension => dimension.Name == "source_evidence_fit");
+    }
+
+    [Fact]
     public void Templates_DeclarePositiveWeightedDimensions()
     {
         foreach (var template in ReviewRubricTemplateCatalog.All)
