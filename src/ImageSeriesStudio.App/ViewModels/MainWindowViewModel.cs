@@ -62,6 +62,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _generatePromptDirectionsText = string.Empty;
     private string _promotePromptDirectionText = string.Empty;
     private string _promptDirectionsHeader = string.Empty;
+    private string _noPromptDirectionRowsText = string.Empty;
     private string _runFakePlanningText = string.Empty;
     private string _runFakeGenerationText = string.Empty;
     private string _queueItemColumn = string.Empty;
@@ -132,6 +133,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<SeriesItemViewModel> _seriesItems = [];
     private IReadOnlyList<PlanRowViewModel> _planRows = [];
     private IReadOnlyList<PromptVersionViewModel> _promptVersions = [];
+    private IReadOnlyList<PromptDirectionRowViewModel> _promptDirectionRows = [];
     private IReadOnlyList<PromptRowViewModel> _promptRows = [];
     private IReadOnlyList<QueueRowViewModel> _queueRows = [];
     private IReadOnlyList<GalleryRowViewModel> _galleryRows = [];
@@ -145,6 +147,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private ImageTypePresetOptionViewModel? _selectedImageTypePresetOption;
     private StyleGuideOptionViewModel? _selectedStyleGuideOption;
     private GenerationRecipeOptionViewModel? _selectedGenerationRecipeOption;
+    private PromptDirectionRowViewModel? _selectedPromptDirection;
+    private Guid? _activeCreativeBriefId;
 
     public MainWindowViewModel(
         LocalizationService localizationService,
@@ -254,6 +258,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
             GalleryRows = [];
             ReviewRows = [];
             DeliveryRows = [];
+            PromptDirectionRows = [];
+            SelectedPromptDirection = null;
+            _activeCreativeBriefId = null;
+            CreateBriefCommand.NotifyCanExecuteChanged();
+            GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
+            PromotePromptDirectionCommand.NotifyCanExecuteChanged();
             RunFakePlanningCommand.NotifyCanExecuteChanged();
             RunFakeDocumentPlanningCommand.NotifyCanExecuteChanged();
             RunFakeGenerationCommand.NotifyCanExecuteChanged();
@@ -281,6 +291,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _newPlanningGoal, value))
             {
                 RunFakePlanningCommand.NotifyCanExecuteChanged();
+                CreateBriefCommand.NotifyCanExecuteChanged();
+                GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -293,6 +305,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _newPlanningAudience, value))
             {
                 RunFakePlanningCommand.NotifyCanExecuteChanged();
+                CreateBriefCommand.NotifyCanExecuteChanged();
+                GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -312,7 +326,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public string NewPlanningStyleBrief
     {
         get => _newPlanningStyleBrief;
-        set => SetProperty(ref _newPlanningStyleBrief, value);
+        set
+        {
+            if (SetProperty(ref _newPlanningStyleBrief, value))
+            {
+                CreateBriefCommand.NotifyCanExecuteChanged();
+                GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
+            }
+        }
     }
 
     public string ProjectNameLabel
@@ -730,6 +751,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _promptDirectionsHeader, value);
     }
 
+    public string NoPromptDirectionRowsText
+    {
+        get => _noPromptDirectionRowsText;
+        private set => SetProperty(ref _noPromptDirectionRowsText, value);
+    }
+
     public string PromptEditorTitle
     {
         get => _promptEditorTitle;
@@ -917,6 +944,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             SeriesItems = value?.Items ?? [];
             SelectedSeriesItem = SeriesItems.FirstOrDefault();
             AddItemCommand.NotifyCanExecuteChanged();
+            CreateBriefCommand.NotifyCanExecuteChanged();
+            GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -993,6 +1022,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             PromptVersions = value?.PromptVersions ?? [];
             SelectedSeriesItemTitleText = value?.Title ?? NoItemSelectedForPromptText;
             CreatePromptVersionCommand.NotifyCanExecuteChanged();
+            PromotePromptDirectionCommand.NotifyCanExecuteChanged();
         }
     }
 
@@ -1009,6 +1039,33 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     public bool HasPlanRows => PlanRows.Count > 0;
+
+    public IReadOnlyList<PromptDirectionRowViewModel> PromptDirectionRows
+    {
+        get => _promptDirectionRows;
+        private set
+        {
+            if (SetProperty(ref _promptDirectionRows, value))
+            {
+                OnPropertyChanged(nameof(HasPromptDirectionRows));
+                GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool HasPromptDirectionRows => PromptDirectionRows.Count > 0;
+
+    public PromptDirectionRowViewModel? SelectedPromptDirection
+    {
+        get => _selectedPromptDirection;
+        set
+        {
+            if (SetProperty(ref _selectedPromptDirection, value))
+            {
+                PromotePromptDirectionCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
 
     public IReadOnlyList<PromptVersionViewModel> PromptVersions
     {
@@ -1137,6 +1194,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         GeneratePromptDirectionsText = Text(LocalizationKey.GeneratePromptDirections);
         PromotePromptDirectionText = Text(LocalizationKey.PromotePromptDirection);
         PromptDirectionsHeader = Text(LocalizationKey.PromptDirectionsHeader);
+        NoPromptDirectionRowsText = Text(LocalizationKey.NoPromptDirectionRows);
         RunFakePlanningText = Text(LocalizationKey.RunFakePlanning);
         RunFakeGenerationText = Text(LocalizationKey.RunFakeGeneration);
         QueueItemColumn = Text(LocalizationKey.QueueItemColumn);
@@ -1398,6 +1456,141 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private bool TryGetPlanningItemCount(out int itemCount)
     {
         return int.TryParse(NewPlanningItemCount, out itemCount) && itemCount > 0;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanCreateBrief))]
+    private async Task CreateBriefAsync()
+    {
+        if (SelectedProject is null || SelectedSeries is null)
+        {
+            return;
+        }
+
+        var brief = await CreateBriefForSelectedSeriesAsync();
+        _activeCreativeBriefId = brief.Id;
+        await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id, SelectedSeriesItem?.Id);
+        _activeCreativeBriefId = brief.Id;
+    }
+
+    private bool CanCreateBrief()
+    {
+        return SelectedProject is not null
+            && SelectedSeries is not null
+            && !string.IsNullOrWhiteSpace(NewPlanningGoal)
+            && !string.IsNullOrWhiteSpace(NewPlanningAudience);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanGeneratePromptDirections))]
+    private async Task GeneratePromptDirectionsAsync()
+    {
+        if (SelectedProject is null || SelectedSeries is null)
+        {
+            return;
+        }
+
+        var briefId = await EnsureActiveCreativeBriefIdAsync();
+        var brief = await _projectService.CreatePromptDirectionsAsync(
+            SelectedProject.Id,
+            briefId,
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        _activeCreativeBriefId = brief.Id;
+        await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id, SelectedSeriesItem?.Id);
+        _activeCreativeBriefId = brief.Id;
+        SelectedPromptDirection = PromptDirectionRows.FirstOrDefault(direction => direction.CreativeBriefId == brief.Id)
+            ?? PromptDirectionRows.FirstOrDefault();
+    }
+
+    private bool CanGeneratePromptDirections()
+    {
+        return CanCreateBrief();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPromotePromptDirection))]
+    private async Task PromotePromptDirectionAsync()
+    {
+        if (SelectedProject is null || SelectedSeriesItem is null || SelectedPromptDirection is null)
+        {
+            return;
+        }
+
+        await _projectService.PromotePromptDirectionAsync(
+            SelectedProject.Id,
+            SelectedSeriesItem.Id,
+            SelectedPromptDirection.CreativeBriefId,
+            SelectedPromptDirection.DirectionKey,
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        await LoadPlanAsync(SelectedProject.Id, SelectedSeries?.Id, SelectedSeriesItem.Id);
+    }
+
+    private bool CanPromotePromptDirection()
+    {
+        return SelectedProject is not null
+            && SelectedSeriesItem is not null
+            && SelectedPromptDirection is not null;
+    }
+
+    private async Task<Guid> EnsureActiveCreativeBriefIdAsync()
+    {
+        var project = SelectedProject is null
+            ? null
+            : await _projectService.LoadProjectAsync(SelectedProject.Id, CancellationToken.None);
+        var selectedSeries = project?.Series.SingleOrDefault(series => series.Id == SelectedSeries?.Id);
+
+        if (_activeCreativeBriefId is { } existingBriefId
+            && selectedSeries?.CreativeBriefs.Any(brief => brief.Id == existingBriefId) == true)
+        {
+            return existingBriefId;
+        }
+
+        var latestBrief = selectedSeries?.CreativeBriefs
+            .OrderByDescending(brief => brief.UpdatedAt)
+            .FirstOrDefault();
+
+        if (latestBrief is not null)
+        {
+            _activeCreativeBriefId = latestBrief.Id;
+            return latestBrief.Id;
+        }
+
+        var created = await CreateBriefForSelectedSeriesAsync();
+        _activeCreativeBriefId = created.Id;
+        return created.Id;
+    }
+
+    private async Task<CreativeBrief> CreateBriefForSelectedSeriesAsync()
+    {
+        if (SelectedProject is null || SelectedSeries is null)
+        {
+            throw new InvalidOperationException("A project and series must be selected before creating a brief.");
+        }
+
+        return await _projectService.CreateCreativeBriefAsync(
+            SelectedProject.Id,
+            SelectedSeries.Id,
+            NewPlanningGoal.Trim(),
+            NewPlanningAudience.Trim(),
+            ImageTextPolicy.Hybrid,
+            NewPlanningStyleBrief.Trim(),
+            BuildBriefMustInclude(),
+            ["unreadable small text"],
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+    }
+
+    private IReadOnlyList<string> BuildBriefMustInclude()
+    {
+        var itemBriefs = SelectedSeries?.Items
+            .Select(item => string.IsNullOrWhiteSpace(item.Brief) ? item.Title : $"{item.Title}: {item.Brief}")
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .ToArray() ?? [];
+
+        return itemBriefs.Length == 0
+            ? [SelectedSeries?.Title ?? NewPlanningGoal.Trim()]
+            : itemBriefs;
     }
 
     [RelayCommand(CanExecute = nameof(CanRunFakeGeneration))]
@@ -1699,6 +1892,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                             .ToArray()))
                     .ToArray()))
             .ToArray();
+        PromptDirectionRows = BuildPromptDirectionRows(project);
         RebuildPlanRows();
         RebuildPromptRows();
 
@@ -1710,6 +1904,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             SelectedSeriesItem = SelectedSeries?.Items.FirstOrDefault(item => item.Id == selectedItemId) ?? SelectedSeriesItem;
         }
 
+        SelectedPromptDirection = PromptDirectionRows.FirstOrDefault(direction =>
+            _activeCreativeBriefId is null || direction.CreativeBriefId == _activeCreativeBriefId);
         CreateSeriesCommand.NotifyCanExecuteChanged();
     }
 
@@ -1723,11 +1919,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
         GalleryRows = [];
         ReviewRows = [];
         DeliveryRows = [];
+        PromptDirectionRows = [];
+        SelectedPromptDirection = null;
+        _activeCreativeBriefId = null;
         RebuildPlanRows();
         RebuildPromptRows();
         CreateSeriesCommand.NotifyCanExecuteChanged();
         AddItemCommand.NotifyCanExecuteChanged();
         CreatePromptVersionCommand.NotifyCanExecuteChanged();
+        CreateBriefCommand.NotifyCanExecuteChanged();
+        GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
+        PromotePromptDirectionCommand.NotifyCanExecuteChanged();
         return Task.CompletedTask;
     }
 
@@ -1754,6 +1956,48 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 prompt.SettingsSummary,
                 prompt.CreatedAt.LocalDateTime.ToString("g")))))
             .ToArray();
+    }
+
+    private static IReadOnlyList<PromptDirectionRowViewModel> BuildPromptDirectionRows(ImageProject project)
+    {
+        return project.Series
+            .SelectMany(series => series.CreativeBriefs.SelectMany(brief => brief.PromptDirections.Select(direction => new PromptDirectionRowViewModel(
+                brief.Id,
+                direction.Key,
+                direction.Name,
+                direction.IntendedUse,
+                direction.PromptText,
+                direction.Strength,
+                direction.Risk,
+                FormatRecommendation(direction.Recommendation),
+                direction.Recommendation?.RecommendationReason ?? string.Empty,
+                FormatList(direction.Recommendation?.CapabilityWarnings),
+                FormatList(direction.Recommendation?.NonExecutableSuggestions)))))
+            .ToArray();
+    }
+
+    private static string FormatRecommendation(PromptDirectionRecommendation? recommendation)
+    {
+        if (recommendation is null)
+        {
+            return string.Empty;
+        }
+
+        return string.Join(
+            " / ",
+            [
+                recommendation.ImageTypePresetId,
+                recommendation.TextPolicy.ToString(),
+                $"{recommendation.Width}x{recommendation.Height}",
+                recommendation.QualityBand,
+                recommendation.OutputFormat,
+                recommendation.ReviewRubricTemplateId,
+            ]);
+    }
+
+    private static string FormatList(IReadOnlyList<string>? values)
+    {
+        return values is null || values.Count == 0 ? string.Empty : string.Join("; ", values);
     }
 
     private static string FormatGenerationSettings(GenerationSettings settings)
@@ -1820,6 +2064,19 @@ public sealed record SeriesItemViewModel(
     IReadOnlyList<PromptVersionViewModel> PromptVersions);
 
 public sealed record PlanRowViewModel(string SeriesTitle, string ItemTitle, string Brief, string StatusText);
+
+public sealed record PromptDirectionRowViewModel(
+    Guid CreativeBriefId,
+    string DirectionKey,
+    string Name,
+    string IntendedUse,
+    string PromptText,
+    string Strength,
+    string Risk,
+    string RecommendationSummary,
+    string RecommendationReason,
+    string CapabilityWarningSummary,
+    string NonExecutableSuggestionSummary);
 
 public sealed record PromptVersionViewModel(
     Guid Id,

@@ -95,6 +95,7 @@ public sealed class LocalizationTests
         Assert.Equal("Create brief", service.GetText(LocalizationKey.CreateBrief));
         Assert.Equal("Generate directions", service.GetText(LocalizationKey.GeneratePromptDirections));
         Assert.Equal("Promote direction", service.GetText(LocalizationKey.PromotePromptDirection));
+        Assert.Contains("recommendation warnings", service.GetText(LocalizationKey.NoPromptDirectionRows));
 
         service.SetLanguage(LanguagePreference.Chinese);
         Assert.Equal("需求设计", service.GetText(LocalizationKey.Brief));
@@ -102,6 +103,7 @@ public sealed class LocalizationTests
         Assert.Equal("创建设计简报", service.GetText(LocalizationKey.CreateBrief));
         Assert.Equal("生成提示词方向", service.GetText(LocalizationKey.GeneratePromptDirections));
         Assert.Equal("晋级为提示词版本", service.GetText(LocalizationKey.PromotePromptDirection));
+        Assert.Contains("推荐风险", service.GetText(LocalizationKey.NoPromptDirectionRows));
     }
 
     [Fact]

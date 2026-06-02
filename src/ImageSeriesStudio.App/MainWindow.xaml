@@ -149,14 +149,17 @@
 
                             <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,0">
                                 <Button Content="{Binding DataContext.CreateBriefText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                        Command="{Binding DataContext.CreateBriefCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                                         MinWidth="112"
                                         Height="30"
                                         Margin="0,0,8,0" />
                                 <Button Content="{Binding DataContext.GeneratePromptDirectionsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                        Command="{Binding DataContext.GeneratePromptDirectionsCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                                         MinWidth="128"
                                         Height="30"
                                         Margin="0,0,8,0" />
                                 <Button Content="{Binding DataContext.PromotePromptDirectionText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                        Command="{Binding DataContext.PromotePromptDirectionCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                                         MinWidth="128"
                                         Height="30" />
                             </StackPanel>
@@ -166,7 +169,71 @@
                                        FontWeight="SemiBold"
                                        Margin="0,18,0,8" />
 
-                            <Border Grid.Row="3" BorderBrush="#D4DAE5" BorderThickness="1" Background="#FFFFFF" />
+                            <Border Grid.Row="3" BorderBrush="#D4DAE5" BorderThickness="1" Background="#FFFFFF">
+                                <Grid>
+                                    <TextBlock Text="{Binding DataContext.NoPromptDirectionRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               Foreground="#5E6978"
+                                               Margin="12"
+                                               TextWrapping="Wrap">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.HasPromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                    <ListBox ItemsSource="{Binding DataContext.PromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                             SelectedItem="{Binding DataContext.SelectedPromptDirection, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
+                                             BorderThickness="0"
+                                             Background="Transparent">
+                                        <ListBox.Style>
+                                            <Style TargetType="ListBox">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding DataContext.HasPromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </ListBox.Style>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontWeight="SemiBold"
+                                                                   TextWrapping="Wrap" />
+                                                        <TextBlock Text="{Binding IntendedUse}"
+                                                                   Foreground="#4B5563"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="0,4,0,0" />
+                                                        <TextBlock Text="{Binding RecommendationSummary}"
+                                                                   Foreground="#1F2937"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="0,8,0,0" />
+                                                        <TextBlock Text="{Binding RecommendationReason}"
+                                                                   Foreground="#4B5563"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="0,4,0,0" />
+                                                        <TextBlock Text="{Binding CapabilityWarningSummary}"
+                                                                   Foreground="#8A4B00"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="0,6,0,0" />
+                                                        <TextBlock Text="{Binding NonExecutableSuggestionSummary}"
+                                                                   Foreground="#5E6978"
+                                                                   TextWrapping="Wrap"
+                                                                   Margin="0,4,0,0" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </Grid>
+                            </Border>
                         </Grid>
                         <Grid Grid.Row="1" Margin="0,16,0,0">
                             <Grid.Style>
