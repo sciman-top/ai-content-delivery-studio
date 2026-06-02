@@ -52,30 +52,96 @@ public sealed class ImageTypePresetTests
     }
 
     [Fact]
+    public void Catalog_ContainsGovernanceMetadataForEveryPreset()
+    {
+        foreach (var preset in ImageTypePresetCatalog.Defaults)
+        {
+            Assert.Equal(ImageTypePresetCatalog.CatalogVersion, preset.CatalogVersion);
+            Assert.False(string.IsNullOrWhiteSpace(preset.DeliveryFamily));
+            Assert.Contains(preset.DefaultAspectRatio, preset.SupportedAspectRatios);
+            Assert.False(string.IsNullOrWhiteSpace(preset.DefaultQualityBand));
+            Assert.NotEmpty(preset.WorkflowModes);
+            Assert.NotEmpty(preset.StyleDimensionHints);
+            Assert.NotEmpty(preset.RequiredBriefFields);
+            Assert.NotEmpty(preset.CommonFailureModes);
+            Assert.NotEmpty(preset.CapabilityRequirements);
+            Assert.All(preset.WorkflowModes, value => Assert.False(string.IsNullOrWhiteSpace(value)));
+            Assert.All(preset.StyleDimensionHints, value => Assert.False(string.IsNullOrWhiteSpace(value)));
+            Assert.All(preset.RequiredBriefFields, value => Assert.False(string.IsNullOrWhiteSpace(value)));
+            Assert.All(preset.CommonFailureModes, value => Assert.False(string.IsNullOrWhiteSpace(value)));
+            Assert.All(preset.CapabilityRequirements, value => Assert.False(string.IsNullOrWhiteSpace(value)));
+            _ = ReviewRubricTemplateCatalog.GetById(preset.ReviewRubricTemplateId);
+        }
+    }
+
+    [Fact]
+    public void Catalog_TextHeavyPresetsUseDeterministicTextPolicy()
+    {
+        var textHeavyPresetIds = new[]
+        {
+            ImageTypePresetCatalog.EducationalPoster,
+            ImageTypePresetCatalog.ConceptDiagram,
+            ImageTypePresetCatalog.GraphicalAbstract,
+            ImageTypePresetCatalog.ScholarlySchematic,
+            ImageTypePresetCatalog.BackgroundPlate,
+        };
+
+        foreach (var presetId in textHeavyPresetIds)
+        {
+            var preset = ImageTypePresetCatalog.GetById(presetId);
+
+            Assert.Equal(ImageTextPolicy.DeterministicPostRender, preset.TextPolicy);
+            Assert.Contains(preset.CapabilityRequirements, value =>
+                value.Contains("deterministic", StringComparison.OrdinalIgnoreCase));
+        }
+    }
+
+    [Fact]
     public void Create_RejectsInvalidPresetData()
     {
         Assert.Throws<ArgumentException>(() =>
-            ImageTypePreset.Create(
+            CreatePresetForValidation(
                 " ",
                 "Poster",
                 "Description",
-                new AspectRatio(4, 5),
-                "png",
-                ImageTextPolicy.Hybrid,
-                ReviewRubricTemplateCatalog.GeneralImage,
-                "{item-slug}"));
+                new AspectRatio(4, 5)));
 
         Assert.Throws<ArgumentException>(() => new AspectRatio(0, 5));
 
         Assert.Throws<ArgumentException>(() =>
-            ImageTypePreset.Create(
+            CreatePresetForValidation(
                 "custom",
                 "Custom",
                 "Description",
                 new AspectRatio(1, 1),
-                " ",
-                ImageTextPolicy.ImageModelOnly,
-                ReviewRubricTemplateCatalog.GeneralImage,
-                "{item-slug}"));
+                outputFormat: " "));
+    }
+
+    private static ImageTypePreset CreatePresetForValidation(
+        string id,
+        string displayName,
+        string description,
+        AspectRatio defaultAspectRatio,
+        string outputFormat = "png")
+    {
+        return ImageTypePreset.Create(
+            id,
+            displayName,
+            description,
+            defaultAspectRatio,
+            outputFormat,
+            ImageTextPolicy.Hybrid,
+            ReviewRubricTemplateCatalog.GeneralImage,
+            "{item-slug}",
+            ImageTypePresetCatalog.CatalogVersion,
+            "validation",
+            [defaultAspectRatio],
+            ImageBackgroundMode.Auto,
+            "draft",
+            ["text-to-image"],
+            ["validation"],
+            ["goal"],
+            ["bad validation data"],
+            ["provider size support"]);
     }
 }

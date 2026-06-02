@@ -47,7 +47,18 @@ public sealed record ImageTypePreset
         string defaultOutputFormat,
         ImageTextPolicy textPolicy,
         string reviewRubricTemplateId,
-        string deliveryNamingPolicy)
+        string deliveryNamingPolicy,
+        string catalogVersion,
+        string deliveryFamily,
+        IReadOnlyList<AspectRatio> supportedAspectRatios,
+        ImageBackgroundMode defaultBackgroundMode,
+        string defaultQualityBand,
+        IReadOnlyList<string> workflowModes,
+        IReadOnlyList<string> styleDimensionHints,
+        IReadOnlyList<string> requiredBriefFields,
+        IReadOnlyList<string> commonFailureModes,
+        IReadOnlyList<string> capabilityRequirements,
+        bool isDeprecated)
     {
         Id = id;
         DisplayName = displayName;
@@ -57,6 +68,17 @@ public sealed record ImageTypePreset
         TextPolicy = textPolicy;
         ReviewRubricTemplateId = reviewRubricTemplateId;
         DeliveryNamingPolicy = deliveryNamingPolicy;
+        CatalogVersion = catalogVersion;
+        DeliveryFamily = deliveryFamily;
+        SupportedAspectRatios = supportedAspectRatios;
+        DefaultBackgroundMode = defaultBackgroundMode;
+        DefaultQualityBand = defaultQualityBand;
+        WorkflowModes = workflowModes;
+        StyleDimensionHints = styleDimensionHints;
+        RequiredBriefFields = requiredBriefFields;
+        CommonFailureModes = commonFailureModes;
+        CapabilityRequirements = capabilityRequirements;
+        IsDeprecated = isDeprecated;
     }
 
     public string Id { get; }
@@ -75,6 +97,28 @@ public sealed record ImageTypePreset
 
     public string DeliveryNamingPolicy { get; }
 
+    public string CatalogVersion { get; }
+
+    public string DeliveryFamily { get; }
+
+    public IReadOnlyList<AspectRatio> SupportedAspectRatios { get; }
+
+    public ImageBackgroundMode DefaultBackgroundMode { get; }
+
+    public string DefaultQualityBand { get; }
+
+    public IReadOnlyList<string> WorkflowModes { get; }
+
+    public IReadOnlyList<string> StyleDimensionHints { get; }
+
+    public IReadOnlyList<string> RequiredBriefFields { get; }
+
+    public IReadOnlyList<string> CommonFailureModes { get; }
+
+    public IReadOnlyList<string> CapabilityRequirements { get; }
+
+    public bool IsDeprecated { get; }
+
     public static ImageTypePreset Create(
         string id,
         string displayName,
@@ -83,9 +127,21 @@ public sealed record ImageTypePreset
         string defaultOutputFormat,
         ImageTextPolicy textPolicy,
         string reviewRubricTemplateId,
-        string deliveryNamingPolicy)
+        string deliveryNamingPolicy,
+        string catalogVersion,
+        string deliveryFamily,
+        IReadOnlyList<AspectRatio> supportedAspectRatios,
+        ImageBackgroundMode defaultBackgroundMode,
+        string defaultQualityBand,
+        IReadOnlyList<string> workflowModes,
+        IReadOnlyList<string> styleDimensionHints,
+        IReadOnlyList<string> requiredBriefFields,
+        IReadOnlyList<string> commonFailureModes,
+        IReadOnlyList<string> capabilityRequirements,
+        bool isDeprecated = false)
     {
         ArgumentNullException.ThrowIfNull(defaultAspectRatio);
+        ArgumentNullException.ThrowIfNull(supportedAspectRatios);
 
         return new ImageTypePreset(
             RequireText(id, nameof(id)),
@@ -95,7 +151,47 @@ public sealed record ImageTypePreset
             RequireText(defaultOutputFormat, nameof(defaultOutputFormat)).ToLowerInvariant(),
             textPolicy,
             RequireText(reviewRubricTemplateId, nameof(reviewRubricTemplateId)),
-            RequireText(deliveryNamingPolicy, nameof(deliveryNamingPolicy)));
+            RequireText(deliveryNamingPolicy, nameof(deliveryNamingPolicy)),
+            RequireText(catalogVersion, nameof(catalogVersion)),
+            RequireText(deliveryFamily, nameof(deliveryFamily)),
+            NormalizeAspectRatios(supportedAspectRatios, defaultAspectRatio),
+            defaultBackgroundMode,
+            RequireText(defaultQualityBand, nameof(defaultQualityBand)).ToLowerInvariant(),
+            NormalizeTextList(workflowModes, nameof(workflowModes)),
+            NormalizeTextList(styleDimensionHints, nameof(styleDimensionHints)),
+            NormalizeTextList(requiredBriefFields, nameof(requiredBriefFields)),
+            NormalizeTextList(commonFailureModes, nameof(commonFailureModes)),
+            NormalizeTextList(capabilityRequirements, nameof(capabilityRequirements)),
+            isDeprecated);
+    }
+
+    private static IReadOnlyList<AspectRatio> NormalizeAspectRatios(
+        IReadOnlyList<AspectRatio> supportedAspectRatios,
+        AspectRatio defaultAspectRatio)
+    {
+        return supportedAspectRatios
+            .Append(defaultAspectRatio)
+            .Distinct()
+            .ToArray();
+    }
+
+    private static IReadOnlyList<string> NormalizeTextList(
+        IReadOnlyList<string> values,
+        string parameterName)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+
+        var normalized = values
+            .Select(value => value.Trim())
+            .Where(value => value.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (normalized.Length == 0)
+        {
+            throw new ArgumentException("At least one value is required.", parameterName);
+        }
+
+        return normalized;
     }
 
     private static string RequireText(string value, string parameterName)
@@ -111,6 +207,8 @@ public sealed record ImageTypePreset
 
 public static class ImageTypePresetCatalog
 {
+    public const string CatalogVersion = "2026-06-02";
+
     public const string EducationalPoster = "educational-poster";
 
     public const string ArticleCover = "article-cover";
@@ -137,7 +235,17 @@ public static class ImageTypePresetCatalog
             "png",
             ImageTextPolicy.DeterministicPostRender,
             ReviewRubricTemplateCatalog.TextHeavyPoster,
-            "{series}/{item-number}-{item-slug}"),
+            "{series}/{item-number}-{item-slug}",
+            CatalogVersion,
+            "education",
+            [new AspectRatio(4, 5), new AspectRatio(16, 9)],
+            ImageBackgroundMode.Opaque,
+            "draft",
+            ["text-to-image", "background-plate"],
+            ["educational", "diagram", "poster"],
+            ["goal", "audience", "must_include", "text_policy"],
+            ["unreadable small text", "crowded layout", "formula hallucination"],
+            ["deterministic text composition", "provider size support"]),
         ImageTypePreset.Create(
             ArticleCover,
             "Article cover",
@@ -146,7 +254,17 @@ public static class ImageTypePresetCatalog
             "png",
             ImageTextPolicy.Hybrid,
             ReviewRubricTemplateCatalog.GeneralImage,
-            "{series}/cover-{item-slug}"),
+            "{series}/cover-{item-slug}",
+            CatalogVersion,
+            "editorial",
+            [new AspectRatio(16, 9), new AspectRatio(4, 5), new AspectRatio(1, 1)],
+            ImageBackgroundMode.Auto,
+            "draft",
+            ["text-to-image"],
+            ["editorial", "cover", "hero"],
+            ["goal", "audience", "delivery_context"],
+            ["weak first impression", "unsupported headline text"],
+            ["provider size support", "hybrid text review"]),
         ImageTypePreset.Create(
             ArticleInlineIllustration,
             "Article inline illustration",
@@ -155,7 +273,17 @@ public static class ImageTypePresetCatalog
             "png",
             ImageTextPolicy.Hybrid,
             ReviewRubricTemplateCatalog.EditorialIllustration,
-            "{series}/inline-{item-number}-{item-slug}"),
+            "{series}/inline-{item-number}-{item-slug}",
+            CatalogVersion,
+            "editorial",
+            [new AspectRatio(16, 9), new AspectRatio(4, 3), new AspectRatio(1, 1)],
+            ImageBackgroundMode.Auto,
+            "draft",
+            ["text-to-image", "reference-image"],
+            ["editorial", "inline", "explanatory"],
+            ["goal", "audience", "source_evidence"],
+            ["adds unsupported claims", "poor section fit"],
+            ["provider size support", "source evidence review"]),
         ImageTypePreset.Create(
             ConceptDiagram,
             "Concept diagram",
@@ -164,7 +292,17 @@ public static class ImageTypePresetCatalog
             "png",
             ImageTextPolicy.DeterministicPostRender,
             ReviewRubricTemplateCatalog.EducationalAccuracy,
-            "{series}/concept-{item-number}-{item-slug}"),
+            "{series}/concept-{item-number}-{item-slug}",
+            CatalogVersion,
+            "education",
+            [new AspectRatio(16, 9), new AspectRatio(4, 3)],
+            ImageBackgroundMode.Opaque,
+            "draft",
+            ["text-to-image", "background-plate"],
+            ["conceptual", "diagram", "teaching"],
+            ["goal", "audience", "must_include", "must_avoid"],
+            ["incorrect concept relationship", "unreadable labels"],
+            ["deterministic text composition", "concept accuracy review"]),
         ImageTypePreset.Create(
             GraphicalAbstract,
             "Graphical abstract",
@@ -173,7 +311,17 @@ public static class ImageTypePresetCatalog
             "png",
             ImageTextPolicy.DeterministicPostRender,
             ReviewRubricTemplateCatalog.ScholarlySchematic,
-            "{series}/graphical-abstract-{item-slug}"),
+            "{series}/graphical-abstract-{item-slug}",
+            CatalogVersion,
+            "scholarly",
+            [new AspectRatio(16, 9), new AspectRatio(4, 3)],
+            ImageBackgroundMode.Opaque,
+            "draft",
+            ["text-to-image", "background-plate"],
+            ["schematic", "summary", "scholarly"],
+            ["goal", "source_evidence", "must_avoid"],
+            ["implies fake evidence", "overly decorative layout"],
+            ["deterministic text composition", "scholarly evidence review"]),
         ImageTypePreset.Create(
             ScholarlySchematic,
             "Scholarly schematic",
@@ -182,7 +330,17 @@ public static class ImageTypePresetCatalog
             "png",
             ImageTextPolicy.DeterministicPostRender,
             ReviewRubricTemplateCatalog.ScholarlySchematic,
-            "{series}/schematic-{item-number}-{item-slug}"),
+            "{series}/schematic-{item-number}-{item-slug}",
+            CatalogVersion,
+            "scholarly",
+            [new AspectRatio(16, 9), new AspectRatio(4, 3)],
+            ImageBackgroundMode.Opaque,
+            "draft",
+            ["text-to-image", "background-plate"],
+            ["schematic", "concept-level", "evidence-safe"],
+            ["goal", "source_evidence", "known_constraints"],
+            ["fabricated experimental evidence", "ambiguous causal relationship"],
+            ["deterministic text composition", "scholarly evidence review"]),
         ImageTypePreset.Create(
             SocialSquare,
             "Social media square",
@@ -191,7 +349,17 @@ public static class ImageTypePresetCatalog
             "png",
             ImageTextPolicy.Hybrid,
             ReviewRubricTemplateCatalog.GeneralImage,
-            "{series}/social-{item-slug}"),
+            "{series}/social-{item-slug}",
+            CatalogVersion,
+            "social",
+            [new AspectRatio(1, 1), new AspectRatio(4, 5), new AspectRatio(16, 9)],
+            ImageBackgroundMode.Auto,
+            "draft",
+            ["text-to-image"],
+            ["social", "compact", "high-contrast"],
+            ["goal", "audience", "delivery_context"],
+            ["poor thumbnail readability", "too much small text"],
+            ["provider size support", "hybrid text review"]),
         ImageTypePreset.Create(
             BackgroundPlate,
             "Background plate",
@@ -200,7 +368,17 @@ public static class ImageTypePresetCatalog
             "png",
             ImageTextPolicy.DeterministicPostRender,
             ReviewRubricTemplateCatalog.TextHeavyPoster,
-            "{series}/plate-{item-slug}"),
+            "{series}/plate-{item-slug}",
+            CatalogVersion,
+            "layout",
+            [new AspectRatio(16, 9), new AspectRatio(4, 5), new AspectRatio(1, 1)],
+            ImageBackgroundMode.Opaque,
+            "draft",
+            ["background-plate", "text-to-image"],
+            ["background", "clean-space", "layout-safe"],
+            ["goal", "text_policy", "layout_constraints"],
+            ["insufficient text space", "visual clutter"],
+            ["deterministic text composition", "layout review"]),
     ];
 
     public static IReadOnlyList<ImageTypePreset> Defaults => Presets;
