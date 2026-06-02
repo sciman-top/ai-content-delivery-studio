@@ -1,6 +1,6 @@
 # Reference Research
 
-Last reviewed: 2026-06-01.
+Last reviewed: 2026-06-03.
 
 This document records the external evidence used to shape the first engineering target. Official documentation defines API and platform semantics. Community projects provide product and workflow inspiration only.
 
@@ -35,6 +35,70 @@ Key findings:
 - Multiple image inputs are supported, but image inputs count toward token usage.
 - Review accuracy has limits: small text, rotated text, graphs, spatial reasoning, counting, panoramic shapes, metadata, and non-English text can be unreliable.
 - Vision review should therefore be structured and auditable, but not treated as the sole final authority.
+
+### GPT Image Prompting Guide
+
+Source: https://developers.openai.com/cookbook/examples/multimodal/image-gen-models-prompting-guide
+
+Key findings:
+
+- Production image workflows benefit from a stable prompt structure instead of clever one-off phrasing.
+- Low-quality drafts are often the right first pass before medium or high quality candidate promotion.
+- Style transfer works best when prompts explicitly separate what must stay consistent from what must change.
+- Editing-heavy workflows, brand-sensitive work, text-in-image use cases, and customer-facing assets are strong candidates for higher quality models and stricter first-pass review.
+
+## Official Google Vertex AI References
+
+### Image Generation
+
+Sources:
+
+- https://docs.cloud.google.com/vertex-ai/generative-ai/docs/image/generate-images
+- https://docs.cloud.google.com/vertex-ai/generative-ai/docs/image/overview
+
+Key findings:
+
+- Google documents image generation, editing, customization, deterministic generation, negative prompting, prompt rewriting, aspect ratio, and resolution as product-level workflows rather than scattered parameters.
+- Prompt rewriting and deterministic generation are first-class considerations for production systems.
+- Subject customization and style customization should be modeled separately.
+- Responsible AI configuration is part of normal image-generation setup, not a late afterthought.
+
+### Prompting And Iteration
+
+Source: https://docs.cloud.google.com/vertex-ai/generative-ai/docs/learn/prompts/introduction-prompt-design
+
+Key findings:
+
+- Clear instructions, prompt structure, parameter experiments, and iterative comparison are explicit best practices.
+- Prompt comparison is a documented workflow, reinforcing the product need for multiple prompt directions and blueprint options before full generation.
+
+## Official Stability AI References
+
+### Stable Image Platform
+
+Sources:
+
+- https://platform.stability.ai/docs/getting-started/stable-image
+- https://platform.stability.ai/docs/features/api-parameters
+- https://platform.stability.ai/docs/features/multi-prompting
+
+Key findings:
+
+- Stable Image workflows treat prompt, negative prompt, seed, and mode selection as core execution parameters.
+- Multi-prompting and explicit parameter control are useful patterns for bounded experiments and variation studies.
+- A generalized image workbench should preserve these settings as explicit metadata instead of hiding them inside prose prompts.
+
+### Image Editing
+
+Sources:
+
+- https://platform.stability.ai/docs/legacy/grpc-api/features/image-to-image
+- https://platform.stability.ai/docs/legacy/grpc-api/features/inpainting
+
+Key findings:
+
+- Image-to-image and inpainting are not niche features; they are standard repair workflows.
+- Edit-first repair is often cheaper and more stable than full regeneration when the route and composition are already correct.
 
 ### Responses API And Tools
 
@@ -86,8 +150,9 @@ Key findings:
 
 Sources:
 
-- https://github.com/comfyanonymous/ComfyUI
+- https://github.com/Comfy-Org/ComfyUI
 - https://docs.comfy.org/
+- https://docs.comfy.org/development/core-concepts/workflow
 
 Patterns to borrow:
 
@@ -95,6 +160,7 @@ Patterns to borrow:
 - Reproducible workflow files.
 - Queue-based generation.
 - Generated images can carry workflow metadata, and workflows can also be stored as compact JSON for versioning and sharing.
+- Built-in workflow templates support guided reuse without forcing users into blank-canvas graph editing first.
 - Advanced user mode can expose graph/workflow internals without forcing that complexity on beginners.
 
 ### AUTOMATIC1111 Stable Diffusion WebUI
@@ -116,6 +182,7 @@ Sources:
 
 - https://github.com/invoke-ai/InvokeAI
 - https://invoke-ai.github.io/InvokeAI/
+- https://invoke-ai.github.io/InvokeAI/nodes/NODES/
 
 Patterns to borrow:
 
@@ -125,10 +192,14 @@ Patterns to borrow:
 - Boards that separate generated images from uploaded assets.
 - Image actions that can load workflow settings, reuse prompts, reuse seeds, or remix a prior output.
 - Workflow and queue visibility.
+- The workspace should feel like a creative production surface, not only a request form.
 
 ### Hugging Face Diffusers
 
-Source: https://github.com/huggingface/diffusers
+Sources:
+
+- https://github.com/huggingface/diffusers
+- https://huggingface.co/docs/diffusers/api/pipelines/overview
 
 Patterns to borrow:
 
@@ -136,6 +207,7 @@ Patterns to borrow:
 - Small, swappable pipeline components.
 - Reproducible configuration and testable inference paths.
 - Explicit scheduler/model configuration and seed control as part of reproducible experiments.
+- Image-to-image and inpaint are standard pipeline families, reinforcing that the product should model them as first-class modes.
 
 ## Style And Parameter Governance Findings
 
@@ -167,6 +239,20 @@ Patterns to borrow:
 - Review and annotation are first-class workflows.
 - Quality assurance needs structured labels, status, comments, and audit history.
 - A gallery is not enough; review needs filters, assignments, decisions, and exportable records.
+- Visual asset tools gain real production value when review states and QA routes are explicit.
+
+## Generalized Product Direction Findings
+
+The strongest official and community sources converge on a few product truths:
+
+- requirement capture should come before expensive generation
+- multiple prompt or blueprint directions should be compared before final execution
+- references, style rules, recipes, and review rubrics should be distinct durable objects
+- editing and localized repair are standard workflows, not advanced edge cases
+- workflow metadata and output provenance matter as much as the image file itself
+- review is a structured loop, not an afterthought
+
+AI 推荐: keep the product generalized as a `series image workbench` with reusable blueprint routes instead of hard-coding one topic mode such as comics, posters, or science explainers.
 
 ## Project-Specific Evidence From The Physics Poster Tool
 

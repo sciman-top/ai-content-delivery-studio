@@ -141,3 +141,16 @@
 - [x] Add user documentation for document illustration workflow safety boundaries and first-run fake-provider behavior.
 - [x] Run full build, test, and format gates for the implementation slice.
 - [ ] Add real provider integration and binary document extraction in later slices.
+
+## Phase 9: Blueprint-First Generalized Series Workflow
+
+- [ ] Record blueprint-first generalized series design spec.
+- [ ] Record blueprint-first implementation plan.
+- [ ] Add `DesignBlueprint` domain record and persistence.
+- [ ] Extend fake planning provider with blueprint candidates.
+- [ ] Add application workflow to create, compare, and promote blueprint routes.
+- [ ] Add optional `SeriesItemKind` support for panel-like narrative items.
+- [ ] Expand Brief tab UI with blueprint cards and promotion actions.
+- [ ] Route review outcomes back to brief, blueprint, prompt, or settings layers.
+- [ ] Include blueprint metadata in delivery packages.
+- [ ] Run full build, test, and format gates for the implementation slice.

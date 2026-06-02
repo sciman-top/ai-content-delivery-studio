@@ -127,6 +127,24 @@ Deliverables:
 - Provider plugin boundary.
 - Optional graph view inspired by node workflow tools.
 
+## Phase 9: Blueprint-First Generalized Series Workflow
+
+Goal: support common image-series use cases through reusable design blueprints instead of topic-specific modes.
+
+Deliverables:
+
+- Design blueprint domain model and persistence.
+- Fake-first blueprint candidate generation.
+- Blueprint promotion workflow in the Brief tab.
+- Generic support for panel-like series items without creating a second isolated comic subsystem.
+- Review routing that can send failures back to brief, blueprint, prompt, or settings layers.
+- Blueprint metadata included in delivery packages.
+
+Exit gate:
+
+- A short requirement can become a brief, then several blueprint candidates, then a promoted image-series plan, and finally the existing prompt/generation/review loop.
+- The same workflow can support at least three generalized routes such as poster series, article illustration pack, and panel narrative sequence.
+
 ## Phase 7: Product Hardening
 
 Goal: make it reliable as a daily Windows tool.
@@ -148,7 +166,7 @@ Goal: evolve from MVP workbench to a durable local production studio.
 Deliverables:
 
 - Clean application layer with command/query use cases and repository ports.
-- Versioned workflow templates, then optional workflow graph import/export.
+- Versioned design blueprints and workflow templates, then optional workflow graph import/export.
 - Provider plugin boundary with capability discovery and contract tests.
 - Localized prompt templates, review reports, delivery manifests, and user guide.
 - Large-gallery virtualization, thumbnail cache, crash-safe queue recovery, backup/restore, and diagnostics bundle.

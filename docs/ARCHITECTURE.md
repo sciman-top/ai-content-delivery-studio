@@ -30,8 +30,8 @@ ai-image-series-studio/
 ```mermaid
 flowchart TB
     UI["WPF App: Views and ViewModels"]
-    APP["Application Services: planning, queue, review, delivery, localization"]
-    CORE["Domain Core: project, series, item, prompt, task, candidate, review"]
+    APP["Application Services: brief, blueprints, planning, queue, review, delivery, localization"]
+    CORE["Domain Core: project, brief, blueprint, series, item, prompt, task, candidate, review"]
     INFRA["Infrastructure: SQLite, filesystem, OpenAI, fake providers"]
     EXT["External APIs: text, image, vision"]
 
@@ -63,12 +63,43 @@ The app must not let one AI API shape the whole architecture. Use separate contr
 
 OpenAI is the first implementation. Fake providers are required for tests and UI development.
 
+The generalized design workflow should treat provider adapters as execution and planning engines, not as product-shaping objects. Topic-specific or provider-specific concepts should not leak into the core project model.
+
+## Blueprint-First Design Layer
+
+The product should add a reusable design layer between requirement capture and prompt generation.
+
+Recommended durable records:
+
+- `CreativeBrief`
+- `DesignBlueprint`
+- `PromptDirection`
+- `Series`
+- `SeriesItem`
+- `PromptVersion`
+
+Recommended logical flow:
+
+```mermaid
+flowchart LR
+    A["Requirement or source text"] --> B["CreativeBrief"]
+    B --> C["DesignBlueprint candidates"]
+    C --> D["Promoted blueprint"]
+    D --> E["Series plan or panel plan"]
+    E --> F["Prompt directions"]
+    F --> G["Prompt versions"]
+```
+
+This allows posters, diagrams, article illustrations, storyboards, and comic-like panel sequences to share one architecture.
+
 ## Data Model
 
 Core entities:
 
 - `Workspace`
 - `Project`
+- `CreativeBrief`
+- `DesignBlueprint`
 - `Series`
 - `SeriesItem`
 - `PromptVersion`
@@ -78,6 +109,11 @@ Core entities:
 - `ReviewResult`
 - `DeliveryPackage`
 - `ProviderProfile`
+
+Recommended extensions:
+
+- `SeriesItemKind` such as `Standard`, `Panel`, `Diagram`, `Keyframe`, `Cover`
+- review repair routing that distinguishes brief, blueprint, prompt, reference, and settings problems
 
 State machines:
 
@@ -113,6 +149,13 @@ For image series with important text, especially educational posters and infogra
 3. Review the combined image.
 
 This avoids over-reliance on image model text rendering.
+
+For generalized series workflows, review should identify the right repair layer:
+
+- return to brief when the goal is underspecified
+- return to blueprint when the chosen visual route is wrong
+- return to prompt when the route is correct but wording drifted
+- return to settings or references when execution drifted
 
 ## Physics Project Migration Limits
 
@@ -169,6 +212,7 @@ The best end state is a modular local desktop product:
 - Application use cases can be tested without WPF, SQLite, or network access.
 - WPF shell can be replaced without rewriting core logic.
 - Provider adapters can be swapped or added.
+- Requirement capture, blueprint selection, and prompt generation stay distinct and traceable.
 - Chinese and English are selectable across UI, prompts, review reports, and delivery output.
 - Workflows are reproducible through stored prompt versions and metadata.
 - Every generated output is traceable to prompt, model, settings, references, review, and delivery version.
