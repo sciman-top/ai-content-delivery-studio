@@ -104,9 +104,21 @@
 
 - [x] Record brief-first image generation design spec.
 - [x] Record brief-first implementation plan.
-- [ ] Add `CreativeBrief` and `PromptDirection` domain records.
-- [ ] Persist creative briefs under image series.
+- [x] Add `CreativeBrief` and `PromptDirection` domain records.
+- [x] Persist creative briefs under image series.
 - [ ] Add fake-first prompt direction planning.
 - [ ] Add application service workflow to create briefs, generate directions, and promote directions.
 - [ ] Add minimal Brief tab UI and localization.
 - [ ] Run full build, test, and format gates for the implementation slice.
+
+## Phase 8: Document Illustration Workflow
+
+- [x] Add document illustration design spec.
+- [x] Add document illustration implementation plan.
+- [x] Add document illustration domain model.
+- [ ] Add article, concept, graphical abstract, and scholarly schematic presets.
+- [ ] Add document-specific review rubrics.
+- [ ] Add fake document illustration planner.
+- [ ] Add application workflow from approved targets to series items.
+- [ ] Add persistence for document planning evidence.
+- [ ] Add minimal WPF entry point.

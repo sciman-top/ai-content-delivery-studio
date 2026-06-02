@@ -59,7 +59,7 @@ Deferred to later plans:
 - Modify: `src/ImageSeriesStudio.Core/Projects/ProjectModel.cs`
 - Test: `tests/ImageSeriesStudio.Tests/CreativeBriefTests.cs`
 
-- [ ] **Step 1: Write failing domain tests**
+- [x] **Step 1: Write failing domain tests**
 
 Create `tests/ImageSeriesStudio.Tests/CreativeBriefTests.cs`:
 
@@ -159,7 +159,7 @@ public sealed class CreativeBriefTests
 }
 ```
 
-- [ ] **Step 2: Run the failing tests**
+- [x] **Step 2: Run the failing tests**
 
 Run:
 
@@ -169,7 +169,7 @@ dotnet test --filter CreativeBriefTests
 
 Expected: fails because `CreativeBrief`, `PromptDirection`, and `ImageSeries.CreativeBriefs` do not exist.
 
-- [ ] **Step 3: Add domain records**
+- [x] **Step 3: Add domain records**
 
 Create `src/ImageSeriesStudio.Core/Projects/CreativeBrief.cs`:
 
@@ -338,7 +338,7 @@ public sealed record PromptDirection(
 }
 ```
 
-- [ ] **Step 4: Connect briefs to series**
+- [x] **Step 4: Connect briefs to series**
 
 Modify `src/ImageSeriesStudio.Core/Projects/ProjectModel.cs` inside `ImageSeries`:
 
@@ -379,7 +379,7 @@ public CreativeBrief AddCreativeBrief(
 }
 ```
 
-- [ ] **Step 5: Verify domain tests pass**
+- [x] **Step 5: Verify domain tests pass**
 
 Run:
 
@@ -389,7 +389,7 @@ dotnet test --filter CreativeBriefTests
 
 Expected: all `CreativeBriefTests` pass.
 
-- [ ] **Step 6: Commit domain slice**
+- [x] **Step 6: Commit domain slice**
 
 Run:
 
@@ -408,7 +408,7 @@ git commit -m "feat: 添加生图需求设计领域模型"
 - Modify: `src/ImageSeriesStudio.Infrastructure/Persistence/EfProjectRepository.cs`
 - Test: `tests/ImageSeriesStudio.Tests/PersistenceTests.cs`
 
-- [ ] **Step 1: Extend persistence test**
+- [x] **Step 1: Extend persistence test**
 
 In `tests/ImageSeriesStudio.Tests/PersistenceTests.cs`, inside `AppDbContext_SavesAndLoadsCompleteFakeProject`, add after series creation:
 
@@ -454,7 +454,7 @@ Assert.Equal("Physics classroom poster", loadedBrief.Goal);
 Assert.Equal("conservative", Assert.Single(loadedBrief.PromptDirections).Key);
 ```
 
-- [ ] **Step 2: Run persistence test and see mapping failure**
+- [x] **Step 2: Run persistence test and see mapping failure**
 
 Run:
 
@@ -464,7 +464,7 @@ dotnet test --filter PersistenceTests
 
 Expected: fails because EF mapping for `CreativeBrief` is missing.
 
-- [ ] **Step 3: Add EF mapping**
+- [x] **Step 3: Add EF mapping**
 
 Modify `src/ImageSeriesStudio.Infrastructure/Persistence/AppDbContext.cs`.
 
@@ -508,7 +508,7 @@ modelBuilder.Entity<CreativeBrief>(entity =>
 });
 ```
 
-- [ ] **Step 4: Include briefs in repository loads**
+- [x] **Step 4: Include briefs in repository loads**
 
 In `src/ImageSeriesStudio.Infrastructure/Persistence/EfProjectRepository.cs`, update the project load query to include:
 
@@ -519,7 +519,7 @@ In `src/ImageSeriesStudio.Infrastructure/Persistence/EfProjectRepository.cs`, up
 
 Keep the existing includes for items, prompts, generation tasks, candidates, and provider profiles.
 
-- [ ] **Step 5: Verify persistence**
+- [x] **Step 5: Verify persistence**
 
 Run:
 

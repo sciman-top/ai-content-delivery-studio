@@ -17,6 +17,8 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<ImageSeries> Series => Set<ImageSeries>();
 
+    public DbSet<CreativeBrief> CreativeBriefs => Set<CreativeBrief>();
+
     public DbSet<SeriesItem> SeriesItems => Set<SeriesItem>();
 
     public DbSet<PromptVersion> PromptVersions => Set<PromptVersion>();
@@ -59,7 +61,32 @@ public sealed class AppDbContext : DbContext
                 .WithOne()
                 .HasForeignKey(item => item.SeriesId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(series => series.CreativeBriefs)
+                .WithOne()
+                .HasForeignKey(brief => brief.SeriesId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.Navigation(series => series.Items).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(series => series.CreativeBriefs).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<CreativeBrief>(entity =>
+        {
+            entity.HasKey(brief => brief.Id);
+            entity.Property(brief => brief.Goal).IsRequired();
+            entity.Property(brief => brief.Audience).IsRequired();
+            entity.Property(brief => brief.StyleIntent).IsRequired();
+            entity.Property(brief => brief.MustInclude)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+            entity.Property(brief => brief.MustAvoid)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+            entity.Property(brief => brief.PromptDirections)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<PromptDirection>>(json, JsonOptions) ?? new List<PromptDirection>());
         });
 
         modelBuilder.Entity<SeriesItem>(entity =>

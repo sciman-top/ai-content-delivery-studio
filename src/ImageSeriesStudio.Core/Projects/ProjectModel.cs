@@ -1,7 +1,5 @@
 using ImageSeriesStudio.Core.Styles;
 
-using ImageSeriesStudio.Core.Styles;
-
 namespace ImageSeriesStudio.Core.Projects;
 
 public sealed class ImageProject
@@ -70,7 +68,6 @@ public sealed class ImageSeries
 {
     private readonly List<SeriesItem> _items = [];
     private readonly List<CreativeBrief> _creativeBriefs = [];
-    private readonly List<CreativeBrief> _creativeBriefs = [];
 
     private ImageSeries()
     {
@@ -104,8 +101,6 @@ public sealed class ImageSeries
 
     public IReadOnlyCollection<CreativeBrief> CreativeBriefs => _creativeBriefs.AsReadOnly();
 
-    public IReadOnlyCollection<CreativeBrief> CreativeBriefs => _creativeBriefs.AsReadOnly();
-
     public static ImageSeries Create(Guid projectId, string title, string description, DateTimeOffset createdAt)
     {
         return new ImageSeries(Guid.NewGuid(), projectId, title, description, createdAt);
@@ -117,29 +112,6 @@ public sealed class ImageSeries
         _items.Add(item);
         UpdatedAt = timestamp;
         return item;
-    }
-
-    public CreativeBrief AddCreativeBrief(
-        string goal,
-        string audience,
-        ImageTextPolicy textPolicy,
-        string styleIntent,
-        IReadOnlyList<string> mustInclude,
-        IReadOnlyList<string> mustAvoid,
-        DateTimeOffset timestamp)
-    {
-        var brief = CreativeBrief.Create(
-            Id,
-            goal,
-            audience,
-            textPolicy,
-            styleIntent,
-            mustInclude,
-            mustAvoid,
-            timestamp);
-        _creativeBriefs.Add(brief);
-        UpdatedAt = timestamp;
-        return brief;
     }
 
     public CreativeBrief AddCreativeBrief(

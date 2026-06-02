@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Core.Projects;
@@ -136,7 +137,8 @@ public sealed class PromptDirection
         Risk = string.Empty;
     }
 
-    private PromptDirection(
+    [JsonConstructor]
+    public PromptDirection(
         Guid id,
         string key,
         string name,

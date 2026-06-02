@@ -1,4 +1,5 @@
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Styles;
 using ImageSeriesStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,6 +24,27 @@ public sealed class PersistenceTests
             var project = ImageProject.Create("Sample project", timestamp);
             var profile = project.AddProviderProfile("Fake provider", ProviderKind.Fake, timestamp.AddMinutes(1));
             var series = project.AddSeries("Physics posters", "Poster series", timestamp.AddMinutes(2));
+            var brief = series.AddCreativeBrief(
+                "Physics classroom poster",
+                "middle school teachers",
+                ImageTextPolicy.DeterministicPostRender,
+                "clean editorial science style",
+                ["accurate formula area"],
+                ["model-rendered small text"],
+                timestamp.AddMinutes(2));
+            brief.ReplaceDirections(
+                [
+                    PromptDirection.Create(
+                        "conservative",
+                        "Conservative faithful",
+                        "Use for accurate classroom delivery.",
+                        "Create a clean science background.",
+                        "No unreadable formula text.",
+                        "Accurate and easy to review.",
+                        "Less dramatic than a cover image.",
+                        timestamp.AddMinutes(3)),
+                ],
+                timestamp.AddMinutes(4));
             var item = series.AddItem("Cover", "Opening image", timestamp.AddMinutes(3));
             item.AddPromptVersion(
                 "A clean blue poster background",
@@ -43,6 +65,8 @@ public sealed class PersistenceTests
                 var loaded = await db.Projects
                     .Include(project => project.ProviderProfiles)
                     .Include(project => project.Series)
+                    .ThenInclude(series => series.CreativeBriefs)
+                    .Include(project => project.Series)
                     .ThenInclude(series => series.Items)
                     .ThenInclude(item => item.PromptVersions)
                     .SingleAsync();
@@ -53,6 +77,9 @@ public sealed class PersistenceTests
 
                 Assert.Equal("Sample project", loaded.Name);
                 Assert.Equal("Physics posters", loadedSeries.Title);
+                var loadedBrief = Assert.Single(loadedSeries.CreativeBriefs);
+                Assert.Equal("Physics classroom poster", loadedBrief.Goal);
+                Assert.Equal("conservative", Assert.Single(loadedBrief.PromptDirections).Key);
                 Assert.Equal(SeriesItemStatus.Ready, loadedItem.Status);
                 Assert.Equal("A clean blue poster background", loadedPrompt.PromptText);
                 Assert.Single(loaded.ProviderProfiles);

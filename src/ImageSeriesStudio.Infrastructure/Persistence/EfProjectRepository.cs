@@ -39,6 +39,8 @@ public sealed class EfProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(project => project.ProviderProfiles)
             .Include(project => project.Series)
+            .ThenInclude(series => series.CreativeBriefs)
+            .Include(project => project.Series)
             .ThenInclude(series => series.Items)
             .ThenInclude(item => item.PromptVersions)
             .SingleOrDefaultAsync(project => project.Id == projectId, cancellationToken);
@@ -59,6 +61,14 @@ public sealed class EfProjectRepository : IProjectRepository
             if (!await _dbContext.Series.AnyAsync(existing => existing.Id == series.Id, cancellationToken))
             {
                 _dbContext.Entry(series).State = EntityState.Added;
+            }
+
+            foreach (var brief in series.CreativeBriefs)
+            {
+                if (!await _dbContext.CreativeBriefs.AnyAsync(existing => existing.Id == brief.Id, cancellationToken))
+                {
+                    _dbContext.CreativeBriefs.Add(brief);
+                }
             }
 
             foreach (var item in series.Items)
