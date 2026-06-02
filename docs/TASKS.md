@@ -116,6 +116,7 @@
 - [x] Record preset governance design spec.
 - [x] Record preset governance implementation plan.
 - [x] Record preset governance evidence table.
+- [x] Record preset governance ADR.
 - [x] Add governance metadata to image type presets.
 - [x] Add structured prompt direction recommendation model.
 - [x] Add fake-first recommendation output.
