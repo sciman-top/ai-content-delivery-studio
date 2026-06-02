@@ -129,12 +129,15 @@
 
 ## Phase 8: Document Illustration Workflow
 
-- [x] Add document illustration design spec.
-- [x] Add document illustration implementation plan.
-- [x] Add document illustration domain model.
+- [x] Record document illustration workflow design spec.
+- [x] Record document illustration implementation plan.
+- [x] Add document illustration domain records for source text, target concepts, and target promotion.
 - [x] Add article, concept, graphical abstract, and scholarly schematic presets.
 - [x] Add document-specific review rubrics.
-- [x] Add fake document illustration planner.
-- [x] Add application workflow from approved targets to series items.
+- [x] Add fake-first target planning and prompt preparation.
+- [x] Add application workflow to create illustration briefs, generate targets, approve targets, and promote approved targets into the existing Plan/Prompts workflow.
 - [x] Add persistence for document planning evidence.
-- [x] Add minimal WPF entry point.
+- [x] Add document illustration UI entry, localization, and draft-mode guidance.
+- [x] Add user documentation for document illustration workflow safety boundaries and first-run fake-provider behavior.
+- [x] Run full build, test, and format gates for the implementation slice.
+- [ ] Add real provider integration and binary document extraction in later slices.

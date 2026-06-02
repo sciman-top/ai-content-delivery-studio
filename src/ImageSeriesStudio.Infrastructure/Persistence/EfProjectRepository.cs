@@ -94,7 +94,7 @@ public sealed class EfProjectRepository : IProjectRepository
         {
             if (!await _dbContext.DocumentBriefs.AnyAsync(existing => existing.Id == brief.Id, cancellationToken))
             {
-                _dbContext.DocumentBriefs.Add(brief);
+                _dbContext.Entry(brief).State = EntityState.Added;
             }
         }
 
@@ -102,7 +102,7 @@ public sealed class EfProjectRepository : IProjectRepository
         {
             if (!await _dbContext.IllustrationPlans.AnyAsync(existing => existing.Id == plan.Id, cancellationToken))
             {
-                _dbContext.IllustrationPlans.Add(plan);
+                _dbContext.Entry(plan).State = EntityState.Added;
             }
         }
     }

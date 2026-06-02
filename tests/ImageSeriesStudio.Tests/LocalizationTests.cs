@@ -21,6 +21,67 @@ public sealed class LocalizationTests
     }
 
     [Fact]
+    public void LocalizationService_ReturnsDocumentIllustrationEntryTextForBothLanguages()
+    {
+        var service = new LocalizationService();
+        var expectedTexts = new Dictionary<LanguagePreference, IReadOnlyDictionary<string, string>>
+        {
+            [LanguagePreference.English] = new Dictionary<string, string>
+            {
+                ["DocumentIllustrationTitle"] = "Document illustration",
+                ["DocumentSourceText"] = "Source text",
+                ["DocumentAudience"] = "Audience",
+                ["DocumentStrictness"] = "Strictness",
+                ["RunFakeDocumentPlanning"] = "Run fake document planning",
+                ["DocumentPlanningResult"] = "Document planning result",
+                ["DefaultDocumentSourceText"] = "Teachers need a clear concept diagram for the central idea.",
+                ["DefaultDocumentAudience"] = "teachers",
+                ["DocumentStrictnessEditorial"] = "Editorial review",
+                ["DocumentStrictnessEducational"] = "Educational use",
+                ["DocumentStrictnessScholarlyDraft"] = "Scholarly draft",
+                ["DocumentPastedSourceSection"] = "Pasted source text",
+                ["DocumentReadableTextConstraint"] = "Use deterministic post-render text for readable labels and callouts.",
+                ["DocumentPlanningResultTemplate"] = "Approved targets: {0}.",
+            },
+            [LanguagePreference.Chinese] = new Dictionary<string, string>
+            {
+                ["DocumentIllustrationTitle"] = "文稿配图",
+                ["DocumentSourceText"] = "来源文本",
+                ["DocumentAudience"] = "受众",
+                ["DocumentStrictness"] = "严格度",
+                ["RunFakeDocumentPlanning"] = "运行假文稿规划",
+                ["DocumentPlanningResult"] = "文稿规划结果",
+                ["DefaultDocumentSourceText"] = "教师需要一张清晰的核心概念图。",
+                ["DefaultDocumentAudience"] = "教师",
+                ["DocumentStrictnessEditorial"] = "编辑审阅",
+                ["DocumentStrictnessEducational"] = "教学使用",
+                ["DocumentStrictnessScholarlyDraft"] = "学术草稿",
+                ["DocumentPastedSourceSection"] = "粘贴来源文本",
+                ["DocumentReadableTextConstraint"] = "需要可读标签和说明时，使用确定性后期排版文字。",
+                ["DocumentPlanningResultTemplate"] = "已批准目标：{0} 个。",
+            },
+        };
+        var definedKeys = Enum.GetNames<LocalizationKey>();
+
+        foreach (var keyName in expectedTexts.SelectMany(pair => pair.Value.Keys).Distinct())
+        {
+            Assert.Contains(keyName, definedKeys);
+        }
+
+        foreach (var (preference, texts) in expectedTexts)
+        {
+            service.SetLanguage(preference);
+
+            foreach (var (keyName, expectedText) in texts)
+            {
+                var key = Enum.Parse<LocalizationKey>(keyName);
+
+                Assert.Equal(expectedText, service.GetText(key));
+            }
+        }
+    }
+
+    [Fact]
     public void LocalizationService_ResolvesSystemLanguageFromCulture()
     {
         var service = new LocalizationService(() => new CultureInfo("zh-CN"));
@@ -113,12 +174,12 @@ public sealed class LocalizationTests
 
         service.SetLanguage(LanguagePreference.English);
         Assert.Equal("Document illustration", service.GetText(LocalizationKey.DocumentIllustrationTitle));
-        Assert.Equal("Document text", service.GetText(LocalizationKey.DocumentSourceText));
+        Assert.Equal("Source text", service.GetText(LocalizationKey.DocumentSourceText));
         Assert.Equal("Run fake document planning", service.GetText(LocalizationKey.RunFakeDocumentPlanning));
 
         service.SetLanguage(LanguagePreference.Chinese);
         Assert.Equal("文稿配图", service.GetText(LocalizationKey.DocumentIllustrationTitle));
-        Assert.Equal("文稿文本", service.GetText(LocalizationKey.DocumentSourceText));
-        Assert.Equal("运行假文稿配图规划", service.GetText(LocalizationKey.RunFakeDocumentPlanning));
+        Assert.Equal("来源文本", service.GetText(LocalizationKey.DocumentSourceText));
+        Assert.Equal("运行假文稿规划", service.GetText(LocalizationKey.RunFakeDocumentPlanning));
     }
 }

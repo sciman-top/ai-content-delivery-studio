@@ -60,28 +60,52 @@ public sealed class ImageProject
         return profile;
     }
 
-    public void AddDocumentBrief(DocumentBrief brief, DateTimeOffset timestamp)
+    public DocumentBrief AddDocumentBrief(DocumentBrief brief, DateTimeOffset timestamp)
     {
         ArgumentNullException.ThrowIfNull(brief);
+
         if (brief.ProjectId != Id)
         {
-            throw new InvalidOperationException("Document brief belongs to a different project.");
+            throw new ArgumentException("Document brief must belong to this project.", nameof(brief));
+        }
+
+        if (_documentBriefs.Any(existing => existing.Id == brief.Id))
+        {
+            throw new InvalidOperationException($"Document brief already exists: {brief.Id}");
         }
 
         _documentBriefs.Add(brief);
         UpdatedAt = timestamp;
+        return brief;
     }
 
-    public void AddIllustrationPlan(IllustrationPlan plan, DateTimeOffset timestamp)
+    public IllustrationPlan AddIllustrationPlan(IllustrationPlan plan, DateTimeOffset timestamp)
     {
         ArgumentNullException.ThrowIfNull(plan);
+
+        if (plan.ProjectId != Id)
+        {
+            throw new ArgumentException("Illustration plan must belong to this project.", nameof(plan));
+        }
+
         if (!_documentBriefs.Any(brief => brief.Id == plan.DocumentBriefId))
         {
-            throw new InvalidOperationException("Illustration plan requires a document brief in the same project.");
+            throw new InvalidOperationException($"Document brief not found for illustration plan: {plan.DocumentBriefId}");
+        }
+
+        if (plan.Targets.Any(target => target.DocumentBriefId != plan.DocumentBriefId))
+        {
+            throw new InvalidOperationException("Illustration plan targets must reference the plan document brief.");
+        }
+
+        if (_illustrationPlans.Any(existing => existing.Id == plan.Id))
+        {
+            throw new InvalidOperationException($"Illustration plan already exists: {plan.Id}");
         }
 
         _illustrationPlans.Add(plan);
         UpdatedAt = timestamp;
+        return plan;
     }
 
     private static string RequireText(string value, string parameterName)

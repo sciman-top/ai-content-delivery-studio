@@ -67,7 +67,9 @@ public sealed class AppDbContext : DbContext
             entity.Navigation(project => project.Series).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.ProviderProfiles).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.DocumentBriefs).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.DocumentBriefs).AutoInclude();
             entity.Navigation(project => project.IllustrationPlans).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.IllustrationPlans).AutoInclude();
         });
 
         modelBuilder.Entity<ImageSeries>(entity =>
@@ -118,21 +120,13 @@ public sealed class AppDbContext : DbContext
             entity.Property(brief => brief.StrictnessLevel);
             entity.Property(brief => brief.CreatedAt);
             entity.Property(brief => brief.Sections)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
             entity.Property(brief => brief.KeyClaims)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
             entity.Property(brief => brief.VisualOpportunities)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
             entity.Property(brief => brief.KnownConstraints)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
         });
 
         modelBuilder.Entity<IllustrationPlan>(entity =>
@@ -143,18 +137,17 @@ public sealed class AppDbContext : DbContext
             entity.Property(plan => plan.Summary).IsRequired();
             entity.Property(plan => plan.CreatedAt);
             entity.Property(plan => plan.UpdatedAt);
+            entity.Ignore(plan => plan.ApprovedTargets);
+            entity.HasOne<DocumentBrief>()
+                .WithMany()
+                .HasForeignKey(plan => plan.DocumentBriefId)
+                .OnDelete(DeleteBehavior.Restrict);
             entity.Property(plan => plan.Targets)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<IllustrationTarget>>(json, JsonOptions) ?? new List<IllustrationTarget>());
+                .HasConversion(targets => SerializeTargets(targets), json => DeserializeTargets(json));
             entity.Property(plan => plan.CoverageNotes)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
             entity.Property(plan => plan.RiskNotes)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
         });
 
         modelBuilder.Entity<SeriesItem>(entity =>
@@ -244,5 +237,25 @@ public sealed class AppDbContext : DbContext
             entity.HasKey(profile => profile.Id);
             entity.Property(profile => profile.DisplayName).IsRequired();
         });
+    }
+
+    private static string SerializeStringList(IReadOnlyList<string> values)
+    {
+        return JsonSerializer.Serialize(values, JsonOptions);
+    }
+
+    private static IReadOnlyList<string> DeserializeStringList(string json)
+    {
+        return JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? [];
+    }
+
+    private static string SerializeTargets(IReadOnlyList<IllustrationTarget> targets)
+    {
+        return JsonSerializer.Serialize(targets, JsonOptions);
+    }
+
+    private static IReadOnlyList<IllustrationTarget> DeserializeTargets(string json)
+    {
+        return JsonSerializer.Deserialize<List<IllustrationTarget>>(json, JsonOptions) ?? [];
     }
 }

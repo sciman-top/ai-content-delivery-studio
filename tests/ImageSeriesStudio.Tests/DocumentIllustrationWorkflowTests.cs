@@ -9,21 +9,13 @@ namespace ImageSeriesStudio.Tests;
 public sealed class DocumentIllustrationWorkflowTests
 {
     [Fact]
-    public async Task CreateDocumentIllustrationPlanWithProvider_CreatesSeriesItemsAndPromptsFromApprovedTargets()
+    public async Task CreateDocumentIllustrationPlanWithProvider_AddsApprovedTargetsToProject()
     {
         var repository = new InMemoryProjectRepository();
         var service = new ProjectApplicationService(repository, new FakeTextPlanningProvider());
         var timestamp = new DateTimeOffset(2026, 6, 2, 9, 0, 0, TimeSpan.Zero);
         var project = await service.CreateProjectAsync("Document illustration demo", timestamp, CancellationToken.None);
-        var request = new DocumentIllustrationPlanningRequest(
-            "Quantum teaching note",
-            "Teachers need an intuitive explanation of superposition.",
-            "teachers",
-            DocumentFamily.Educational,
-            IllustrationStrictnessLevel.Educational,
-            ["Introduction", "Classroom analogy"],
-            ["Superposition needs a visual analogy."],
-            ["avoid fake lab data"]);
+        var request = CreateRequest();
 
         var result = await service.CreateDocumentIllustrationPlanWithProviderAsync(
             project.Id,
@@ -39,7 +31,19 @@ public sealed class DocumentIllustrationWorkflowTests
         Assert.True(result.ApprovedTargetCount > 0);
 
         var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
-        var series = Assert.Single(loaded!.Series);
+        var brief = Assert.Single(loaded!.DocumentBriefs);
+        var plan = Assert.Single(loaded.IllustrationPlans);
+        var approvedTargets = plan.ApprovedTargets;
+        var series = Assert.Single(loaded.Series);
+
+        Assert.Equal(project.Id, brief.ProjectId);
+        Assert.Equal(project.Id, plan.ProjectId);
+        Assert.Equal(brief.Id, plan.DocumentBriefId);
+        Assert.Equal(brief.Id, result.DocumentBriefId);
+        Assert.Equal(plan.Id, result.IllustrationPlanId);
+        Assert.NotEmpty(approvedTargets);
+        Assert.Equal(plan.Targets.Count, approvedTargets.Count);
+        Assert.Equal(approvedTargets.Count, result.ApprovedTargetCount);
 
         Assert.Contains("Document illustrations", series.Title);
         Assert.NotEmpty(series.Items);
@@ -55,6 +59,55 @@ public sealed class DocumentIllustrationWorkflowTests
                 "Do not imply real experimental, clinical, archival, or field evidence unless the user provided that evidence explicitly.",
                 prompt.PromptText);
         });
+    }
+
+    [Fact]
+    public async Task CreateDocumentIllustrationPlanWithProvider_StoresPlanWithoutSeriesWhenTargetsRemainDraft()
+    {
+        var repository = new InMemoryProjectRepository();
+        var service = new ProjectApplicationService(repository, new FakeTextPlanningProvider());
+        var timestamp = new DateTimeOffset(2026, 6, 2, 9, 0, 0, TimeSpan.Zero);
+        var project = await service.CreateProjectAsync("Document illustration demo", timestamp, CancellationToken.None);
+        var request = CreateRequest();
+
+        var result = await service.CreateDocumentIllustrationPlanWithProviderAsync(
+            project.Id,
+            request,
+            approveAllTargets: false,
+            timestamp.AddMinutes(1),
+            CancellationToken.None);
+
+        Assert.NotEqual(Guid.Empty, result.DocumentBriefId);
+        Assert.NotEqual(Guid.Empty, result.IllustrationPlanId);
+        Assert.Null(result.SeriesId);
+        Assert.Equal(0, result.ApprovedTargetCount);
+
+        var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+        var brief = Assert.Single(loaded!.DocumentBriefs);
+        var plan = Assert.Single(loaded.IllustrationPlans);
+
+        Assert.Equal(project.Id, brief.ProjectId);
+        Assert.Equal(project.Id, plan.ProjectId);
+        Assert.Equal(brief.Id, plan.DocumentBriefId);
+        Assert.Equal(brief.Id, result.DocumentBriefId);
+        Assert.Equal(plan.Id, result.IllustrationPlanId);
+        Assert.NotEmpty(plan.Targets);
+        Assert.Empty(plan.ApprovedTargets);
+        Assert.All(plan.Targets, target => Assert.Equal(IllustrationTargetApprovalState.Draft, target.ApprovalState));
+        Assert.Empty(loaded.Series);
+    }
+
+    private static DocumentIllustrationPlanningRequest CreateRequest()
+    {
+        return new DocumentIllustrationPlanningRequest(
+            "Quantum teaching note",
+            "Teachers need an intuitive explanation of superposition.",
+            "teachers",
+            DocumentFamily.Educational,
+            IllustrationStrictnessLevel.Educational,
+            ["Introduction", "Classroom analogy"],
+            ["Superposition needs a visual analogy."],
+            ["avoid fake lab data"]);
     }
 
     private sealed class InMemoryProjectRepository : IProjectRepository

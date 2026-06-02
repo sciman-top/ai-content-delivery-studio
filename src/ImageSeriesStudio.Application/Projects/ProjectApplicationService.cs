@@ -302,6 +302,11 @@ public sealed class ProjectApplicationService
             throw new InvalidOperationException("Text planning provider is not registered.");
         }
 
+        if (!_textPlanningProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Real document illustration planning requires explicit approval.");
+        }
+
         if (request.DocumentFamily is DocumentFamily.ScholarlyDraft
             && request.KnownConstraints.Any(value => value.Contains("fake evidence", StringComparison.OrdinalIgnoreCase)))
         {
@@ -310,23 +315,31 @@ public sealed class ProjectApplicationService
 
         var project = await RequireProjectAsync(projectId, cancellationToken);
         var providerResult = await _textPlanningProvider.CreateDocumentIllustrationPlanAsync(request, cancellationToken);
-        var plan = approveAllTargets
-            ? providerResult.Plan.Targets.Aggregate(
-                providerResult.Plan,
-                (current, target) => current.ApproveTarget(target.Id, timestamp))
-            : providerResult.Plan;
+        var brief = RebindDocumentBrief(project.Id, providerResult.Brief, timestamp);
+        var plan = RebindIllustrationPlan(project.Id, brief.Id, providerResult.Plan, timestamp);
 
-        Guid? seriesId = null;
-        if (approveAllTargets && plan.ApprovedTargets.Count > 0)
+        if (approveAllTargets)
+        {
+            foreach (var target in plan.Targets)
+            {
+                plan = plan.ApproveTarget(target.Id, timestamp);
+            }
+        }
+
+        project.AddDocumentBrief(brief, timestamp);
+        project.AddIllustrationPlan(plan, timestamp);
+
+        var approvedTargets = plan.ApprovedTargets;
+        ImageSeries? series = null;
+        if (approvedTargets.Count > 0)
         {
             var providerProfile = ResolveProviderProfile(project, providerProfileId: null, timestamp);
-            var series = project.AddSeries(
-                $"Document illustrations: {providerResult.Brief.Title}",
+            series = project.AddSeries(
+                $"Document illustrations: {brief.Title}",
                 plan.Summary,
                 timestamp);
-            seriesId = series.Id;
 
-            foreach (var target in plan.ApprovedTargets)
+            foreach (var target in approvedTargets)
             {
                 var item = series.AddItem(
                     target.Title,
@@ -342,10 +355,10 @@ public sealed class ProjectApplicationService
 
         await _repository.SaveAsync(project, cancellationToken);
         return new DocumentIllustrationWorkflowResult(
-            providerResult.Brief.Id,
+            brief.Id,
             plan.Id,
-            seriesId,
-            plan.ApprovedTargets.Count);
+            series?.Id,
+            approvedTargets.Count);
     }
 
     public async Task<GenerationQueueRun> RunGenerationQueueAsync(
@@ -486,6 +499,58 @@ public sealed class ProjectApplicationService
             recommendation.OutputFormat);
     }
 
+    private static DocumentBrief RebindDocumentBrief(
+        Guid projectId,
+        DocumentBrief source,
+        DateTimeOffset timestamp)
+    {
+        return DocumentBrief.Create(
+            projectId,
+            source.SourceKind,
+            source.SourceDisplayName,
+            source.Title,
+            source.DocumentFamily,
+            source.Audience,
+            source.Sections,
+            source.KeyClaims,
+            source.VisualOpportunities,
+            source.KnownConstraints,
+            source.StrictnessLevel,
+            timestamp);
+    }
+
+    private static IllustrationPlan RebindIllustrationPlan(
+        Guid projectId,
+        Guid documentBriefId,
+        IllustrationPlan source,
+        DateTimeOffset timestamp)
+    {
+        var targets = source.Targets
+            .Select(target => IllustrationTarget.Create(
+                documentBriefId,
+                target.Title,
+                target.DocumentLocation,
+                target.Purpose,
+                target.MustShow,
+                target.MustNotShow,
+                target.SourceEvidence,
+                target.SuggestedImageTypePresetId,
+                target.SuggestedReviewRubricTemplateId,
+                target.TextPolicy,
+                target.StrictnessNotes,
+                timestamp))
+            .ToArray();
+
+        return IllustrationPlan.Create(
+            projectId,
+            documentBriefId,
+            source.Summary,
+            targets,
+            source.CoverageNotes,
+            source.RiskNotes,
+            timestamp);
+    }
+
     private static (SeriesItem Item, PromptDirection Direction) ResolvePromptDirectionTarget(
         ImageProject project,
         Guid seriesItemId,
@@ -514,10 +579,15 @@ public sealed class ProjectApplicationService
             [
                 $"Purpose: {target.Purpose}",
                 $"Location: {target.DocumentLocation}",
-                $"Must show: {string.Join("; ", target.MustShow)}",
-                $"Must not show: {string.Join("; ", target.MustNotShow)}",
-                $"Source evidence: {string.Join("; ", target.SourceEvidence)}",
-                $"Strictness: {string.Join("; ", target.StrictnessNotes)}",
+                "Must show:",
+                FormatList(target.MustShow),
+                "Must not show:",
+                FormatList(target.MustNotShow),
+                "Source evidence:",
+                FormatList(target.SourceEvidence),
+                "Strictness:",
+                FormatList(target.StrictnessNotes),
+                $"Text policy: {target.TextPolicy}",
             ]);
     }
 
@@ -526,13 +596,24 @@ public sealed class ProjectApplicationService
         return string.Join(
             Environment.NewLine,
             [
-                $"Create a {target.Purpose} for a document illustration workflow.",
-                $"Must show: {string.Join("; ", target.MustShow)}",
-                $"Must not show: {string.Join("; ", target.MustNotShow)}",
-                $"Use this source evidence: {string.Join("; ", target.SourceEvidence)}",
+                $"Create a document illustration titled \"{target.Title}\" for {target.DocumentLocation}.",
+                $"Purpose: {target.Purpose}.",
+                "Must show:",
+                FormatList(target.MustShow),
+                "Must not show:",
+                FormatList(target.MustNotShow),
+                "Source evidence:",
+                FormatList(target.SourceEvidence),
+                $"Text policy: {target.TextPolicy}. Use deterministic post-render text when required for labels, captions, or callouts.",
                 "Do not imply real experimental, clinical, archival, or field evidence unless the user provided that evidence explicitly.",
-                $"Text policy: {target.TextPolicy}.",
             ]);
+    }
+
+    private static string FormatList(IReadOnlyList<string> values)
+    {
+        return values.Count == 0
+            ? "- None specified."
+            : string.Join(Environment.NewLine, values.Select(value => $"- {value}"));
     }
 
     private static IReadOnlyList<ImageGenerationRequest> CreateGenerationRequests(

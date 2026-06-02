@@ -48,6 +48,17 @@ public enum IllustrationTargetApprovalState
 
 public sealed record DocumentBrief
 {
+    private DocumentBrief()
+    {
+        SourceDisplayName = string.Empty;
+        Title = string.Empty;
+        Audience = string.Empty;
+        Sections = [];
+        KeyClaims = [];
+        VisualOpportunities = [];
+        KnownConstraints = [];
+    }
+
     private DocumentBrief(
         Guid id,
         Guid projectId,
@@ -78,31 +89,31 @@ public sealed record DocumentBrief
         CreatedAt = createdAt;
     }
 
-    public Guid Id { get; }
+    public Guid Id { get; private set; }
 
-    public Guid ProjectId { get; }
+    public Guid ProjectId { get; private set; }
 
-    public DocumentSourceKind SourceKind { get; }
+    public DocumentSourceKind SourceKind { get; private set; }
 
-    public string SourceDisplayName { get; }
+    public string SourceDisplayName { get; private set; }
 
-    public string Title { get; }
+    public string Title { get; private set; }
 
-    public DocumentFamily DocumentFamily { get; }
+    public DocumentFamily DocumentFamily { get; private set; }
 
-    public string Audience { get; }
+    public string Audience { get; private set; }
 
-    public IReadOnlyList<string> Sections { get; }
+    public IReadOnlyList<string> Sections { get; private set; }
 
-    public IReadOnlyList<string> KeyClaims { get; }
+    public IReadOnlyList<string> KeyClaims { get; private set; }
 
-    public IReadOnlyList<string> VisualOpportunities { get; }
+    public IReadOnlyList<string> VisualOpportunities { get; private set; }
 
-    public IReadOnlyList<string> KnownConstraints { get; }
+    public IReadOnlyList<string> KnownConstraints { get; private set; }
 
-    public IllustrationStrictnessLevel StrictnessLevel { get; }
+    public IllustrationStrictnessLevel StrictnessLevel { get; private set; }
 
-    public DateTimeOffset CreatedAt { get; }
+    public DateTimeOffset CreatedAt { get; private set; }
 
     public static DocumentBrief Create(
         Guid projectId,
@@ -118,25 +129,30 @@ public sealed record DocumentBrief
         IllustrationStrictnessLevel strictnessLevel,
         DateTimeOffset createdAt)
     {
-        if (projectId == Guid.Empty)
-        {
-            throw new ArgumentException("Project id cannot be empty.", nameof(projectId));
-        }
-
         return new DocumentBrief(
             Guid.NewGuid(),
-            projectId,
+            RequireNonEmptyId(projectId, nameof(projectId)),
             sourceKind,
             RequireText(sourceDisplayName, nameof(sourceDisplayName)),
             RequireText(title, nameof(title)),
             documentFamily,
             RequireText(audience, nameof(audience)),
-            NormalizeList(sections),
-            NormalizeList(keyClaims),
-            NormalizeList(visualOpportunities),
-            NormalizeList(knownConstraints),
+            DocumentIllustrationNormalization.NormalizeOptionalList(sections),
+            DocumentIllustrationNormalization.NormalizeOptionalList(keyClaims),
+            DocumentIllustrationNormalization.NormalizeOptionalList(visualOpportunities),
+            DocumentIllustrationNormalization.NormalizeOptionalList(knownConstraints),
             strictnessLevel,
             createdAt);
+    }
+
+    private static Guid RequireNonEmptyId(Guid value, string parameterName)
+    {
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Value cannot be empty.", parameterName);
+        }
+
+        return value;
     }
 
     private static string RequireText(string value, string parameterName)
@@ -148,19 +164,18 @@ public sealed record DocumentBrief
 
         return value.Trim();
     }
-
-    private static IReadOnlyList<string> NormalizeList(IReadOnlyList<string> values)
-    {
-        return values
-            .Select(value => value.Trim())
-            .Where(value => value.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-    }
 }
 
 public sealed record IllustrationPlan
 {
+    private IllustrationPlan()
+    {
+        Summary = string.Empty;
+        Targets = [];
+        CoverageNotes = [];
+        RiskNotes = [];
+    }
+
     private IllustrationPlan(
         Guid id,
         Guid projectId,
@@ -183,27 +198,28 @@ public sealed record IllustrationPlan
         UpdatedAt = updatedAt;
     }
 
-    public Guid Id { get; }
+    public Guid Id { get; private set; }
 
-    public Guid ProjectId { get; }
+    public Guid ProjectId { get; private set; }
 
-    public Guid DocumentBriefId { get; }
+    public Guid DocumentBriefId { get; private set; }
 
-    public string Summary { get; }
+    public string Summary { get; private set; }
 
-    public IReadOnlyList<IllustrationTarget> Targets { get; }
+    public IReadOnlyList<IllustrationTarget> Targets { get; private set; }
 
-    public IReadOnlyList<IllustrationTarget> ApprovedTargets => Targets
-        .Where(target => target.ApprovalState is IllustrationTargetApprovalState.Approved)
-        .ToArray();
+    public IReadOnlyList<IllustrationTarget> ApprovedTargets =>
+        Targets
+            .Where(target => target.ApprovalState == IllustrationTargetApprovalState.Approved)
+            .ToArray();
 
-    public IReadOnlyList<string> CoverageNotes { get; }
+    public IReadOnlyList<string> CoverageNotes { get; private set; }
 
-    public IReadOnlyList<string> RiskNotes { get; }
+    public IReadOnlyList<string> RiskNotes { get; private set; }
 
-    public DateTimeOffset CreatedAt { get; }
+    public DateTimeOffset CreatedAt { get; private set; }
 
-    public DateTimeOffset UpdatedAt { get; }
+    public DateTimeOffset UpdatedAt { get; private set; }
 
     public static IllustrationPlan Create(
         Guid projectId,
@@ -214,49 +230,50 @@ public sealed record IllustrationPlan
         IReadOnlyList<string> riskNotes,
         DateTimeOffset createdAt)
     {
-        if (projectId == Guid.Empty)
-        {
-            throw new ArgumentException("Project id cannot be empty.", nameof(projectId));
-        }
-
-        if (documentBriefId == Guid.Empty)
-        {
-            throw new ArgumentException("Document brief id cannot be empty.", nameof(documentBriefId));
-        }
-
-        if (targets.Count == 0)
-        {
-            throw new ArgumentException("At least one target is required.", nameof(targets));
-        }
+        var normalizedTargets = NormalizeTargets(targets);
 
         return new IllustrationPlan(
             Guid.NewGuid(),
-            projectId,
-            documentBriefId,
-            RequireText(summary, nameof(summary)),
-            targets,
-            NormalizeList(coverageNotes),
-            NormalizeList(riskNotes),
+            DocumentIllustrationNormalization.RequireNonEmptyId(projectId, nameof(projectId)),
+            DocumentIllustrationNormalization.RequireNonEmptyId(documentBriefId, nameof(documentBriefId)),
+            DocumentIllustrationNormalization.RequireText(summary, nameof(summary)),
+            normalizedTargets,
+            DocumentIllustrationNormalization.NormalizeOptionalList(coverageNotes),
+            DocumentIllustrationNormalization.NormalizeOptionalList(riskNotes),
             createdAt,
             createdAt);
     }
 
-    public IllustrationPlan ApproveTarget(Guid targetId, DateTimeOffset timestamp)
+    public IllustrationPlan ApproveTarget(Guid targetId, DateTimeOffset updatedAt)
     {
-        return UpdateTarget(targetId, target => target.Approve(timestamp), timestamp);
+        return ChangeTargetState(targetId, updatedAt, (target, timestamp) => target.Approve(timestamp));
     }
 
-    public IllustrationPlan RejectTarget(Guid targetId, DateTimeOffset timestamp)
+    public IllustrationPlan RejectTarget(Guid targetId, DateTimeOffset updatedAt)
     {
-        return UpdateTarget(targetId, target => target.Reject(timestamp), timestamp);
+        return ChangeTargetState(targetId, updatedAt, (target, timestamp) => target.Reject(timestamp));
     }
 
-    private IllustrationPlan UpdateTarget(
+    private IllustrationPlan ChangeTargetState(
         Guid targetId,
-        Func<IllustrationTarget, IllustrationTarget> update,
-        DateTimeOffset timestamp)
+        DateTimeOffset updatedAt,
+        Func<IllustrationTarget, DateTimeOffset, IllustrationTarget> changeTarget)
     {
-        if (!Targets.Any(target => target.Id == targetId))
+        var found = false;
+        var updatedTargets = Targets
+            .Select(target =>
+            {
+                if (target.Id != targetId)
+                {
+                    return target;
+                }
+
+                found = true;
+                return changeTarget(target, updatedAt);
+            })
+            .ToArray();
+
+        if (!found)
         {
             throw new InvalidOperationException($"Illustration target not found: {targetId}");
         }
@@ -266,39 +283,30 @@ public sealed record IllustrationPlan
             ProjectId,
             DocumentBriefId,
             Summary,
-            Targets
-                .Select(target => target.Id == targetId ? update(target) : target)
-                .ToArray(),
+            updatedTargets,
             CoverageNotes,
             RiskNotes,
             CreatedAt,
-            timestamp);
+            updatedAt);
     }
 
-    private static string RequireText(string value, string parameterName)
+    private static IReadOnlyList<IllustrationTarget> NormalizeTargets(IReadOnlyList<IllustrationTarget> targets)
     {
-        if (string.IsNullOrWhiteSpace(value))
+        ArgumentNullException.ThrowIfNull(targets);
+
+        if (targets.Count == 0)
         {
-            throw new ArgumentException("Value cannot be empty.", parameterName);
+            throw new ArgumentException("At least one target is required.", nameof(targets));
         }
 
-        return value.Trim();
-    }
-
-    private static IReadOnlyList<string> NormalizeList(IReadOnlyList<string> values)
-    {
-        return values
-            .Select(value => value.Trim())
-            .Where(value => value.Length > 0)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        return targets.ToArray();
     }
 }
 
 public sealed record IllustrationTarget
 {
     [JsonConstructor]
-    public IllustrationTarget(
+    private IllustrationTarget(
         Guid id,
         Guid documentBriefId,
         string title,
@@ -376,47 +384,42 @@ public sealed record IllustrationTarget
         IReadOnlyList<string> strictnessNotes,
         DateTimeOffset createdAt)
     {
-        if (documentBriefId == Guid.Empty)
-        {
-            throw new ArgumentException("Document brief id cannot be empty.", nameof(documentBriefId));
-        }
-
-        if (purpose is IllustrationPurpose.ExperimentalEvidence)
+        if (purpose == IllustrationPurpose.ExperimentalEvidence)
         {
             throw new InvalidOperationException("Experimental evidence targets are blocked in document illustration planning.");
         }
 
         return new IllustrationTarget(
             Guid.NewGuid(),
-            documentBriefId,
-            RequireText(title, nameof(title)),
-            RequireText(documentLocation, nameof(documentLocation)),
+            DocumentIllustrationNormalization.RequireNonEmptyId(documentBriefId, nameof(documentBriefId)),
+            DocumentIllustrationNormalization.RequireText(title, nameof(title)),
+            DocumentIllustrationNormalization.RequireText(documentLocation, nameof(documentLocation)),
             purpose,
-            NormalizeRequiredList(mustShow, nameof(mustShow)),
-            NormalizeList(mustNotShow),
-            NormalizeRequiredList(sourceEvidence, nameof(sourceEvidence)),
-            RequireText(suggestedImageTypePresetId, nameof(suggestedImageTypePresetId)),
-            RequireText(suggestedReviewRubricTemplateId, nameof(suggestedReviewRubricTemplateId)),
+            DocumentIllustrationNormalization.NormalizeRequiredList(mustShow, nameof(mustShow)),
+            DocumentIllustrationNormalization.NormalizeOptionalList(mustNotShow),
+            DocumentIllustrationNormalization.NormalizeRequiredList(sourceEvidence, nameof(sourceEvidence)),
+            DocumentIllustrationNormalization.RequireText(suggestedImageTypePresetId, nameof(suggestedImageTypePresetId)),
+            DocumentIllustrationNormalization.RequireText(suggestedReviewRubricTemplateId, nameof(suggestedReviewRubricTemplateId)),
             textPolicy,
-            NormalizeList(strictnessNotes),
+            DocumentIllustrationNormalization.NormalizeOptionalList(strictnessNotes),
             IllustrationTargetApprovalState.Draft,
             createdAt,
             createdAt);
     }
 
-    public IllustrationTarget Approve(DateTimeOffset timestamp)
+    public IllustrationTarget Approve(DateTimeOffset updatedAt)
     {
-        return WithApprovalState(IllustrationTargetApprovalState.Approved, timestamp);
+        return WithApprovalState(IllustrationTargetApprovalState.Approved, updatedAt);
     }
 
-    public IllustrationTarget Reject(DateTimeOffset timestamp)
+    public IllustrationTarget Reject(DateTimeOffset updatedAt)
     {
-        return WithApprovalState(IllustrationTargetApprovalState.Rejected, timestamp);
+        return WithApprovalState(IllustrationTargetApprovalState.Rejected, updatedAt);
     }
 
     private IllustrationTarget WithApprovalState(
         IllustrationTargetApprovalState approvalState,
-        DateTimeOffset timestamp)
+        DateTimeOffset updatedAt)
     {
         return new IllustrationTarget(
             Id,
@@ -433,10 +436,23 @@ public sealed record IllustrationTarget
             StrictnessNotes,
             approvalState,
             CreatedAt,
-            timestamp);
+            updatedAt);
+    }
+}
+
+internal static class DocumentIllustrationNormalization
+{
+    public static Guid RequireNonEmptyId(Guid value, string parameterName)
+    {
+        if (value == Guid.Empty)
+        {
+            throw new ArgumentException("Value cannot be empty.", parameterName);
+        }
+
+        return value;
     }
 
-    private static string RequireText(string value, string parameterName)
+    public static string RequireText(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
@@ -446,9 +462,9 @@ public sealed record IllustrationTarget
         return value.Trim();
     }
 
-    private static IReadOnlyList<string> NormalizeRequiredList(IReadOnlyList<string> values, string parameterName)
+    public static IReadOnlyList<string> NormalizeRequiredList(IReadOnlyList<string> values, string parameterName)
     {
-        var normalized = NormalizeList(values);
+        var normalized = NormalizeOptionalList(values);
         if (normalized.Count == 0)
         {
             throw new ArgumentException("At least one value is required.", parameterName);
@@ -457,10 +473,12 @@ public sealed record IllustrationTarget
         return normalized;
     }
 
-    private static IReadOnlyList<string> NormalizeList(IReadOnlyList<string> values)
+    public static IReadOnlyList<string> NormalizeOptionalList(IReadOnlyList<string> values)
     {
+        ArgumentNullException.ThrowIfNull(values);
+
         return values
-            .Select(value => value.Trim())
+            .Select(value => value?.Trim() ?? string.Empty)
             .Where(value => value.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();

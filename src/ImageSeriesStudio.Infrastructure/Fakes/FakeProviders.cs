@@ -176,60 +176,87 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        var timestamp = DateTimeOffset.UtcNow;
+        var createdAt = DateTimeOffset.UtcNow;
+        var title = EnsureText(request.Title, "Untitled document");
+        var sourceText = EnsureText(request.SourceText, "No source text supplied.");
+        var keyClaims = Normalize(request.KeyClaims);
+        var evidence = keyClaims.Count > 0 ? keyClaims : [sourceText];
+        var projectId = Guid.NewGuid();
         var brief = DocumentBrief.Create(
-            Guid.NewGuid(),
+            projectId,
             DocumentSourceKind.Paste,
-            $"{request.Title.Trim()}.txt",
-            request.Title,
+            $"{title}.txt",
+            title,
             request.DocumentFamily,
-            request.Audience,
-            request.Sections,
-            request.KeyClaims,
-            request.Sections.Select(section => $"Illustrate {section}").ToArray(),
-            request.KnownConstraints,
+            EnsureText(request.Audience, "general audience"),
+            Normalize(request.Sections),
+            keyClaims,
+            evidence.Select(claim => $"Visualize: {claim}").ToArray(),
+            Normalize(request.KnownConstraints),
             request.StrictnessLevel,
-            timestamp);
+            createdAt);
 
-        var evidence = request.KeyClaims.Count == 0 ? [request.SourceText] : request.KeyClaims;
-        var target = request.StrictnessLevel is IllustrationStrictnessLevel.ScholarlyDraft
+        var target = request.StrictnessLevel == IllustrationStrictnessLevel.ScholarlyDraft
             ? IllustrationTarget.Create(
                 brief.Id,
-                "Graphical abstract schematic",
-                "document:summary",
+                $"Graphical abstract for {title}",
+                FirstOrDefault(brief.Sections, "Document overview"),
                 IllustrationPurpose.GraphicalAbstract,
-                ["summarize the central concept as a schematic"],
-                ["do not imply real experimental evidence"],
+                evidence,
+                [
+                    "real experimental evidence imagery",
+                    "fake experimental evidence imagery",
+                    "fabricated lab data",
+                ],
                 evidence,
                 ImageTypePresetCatalog.GraphicalAbstract,
                 ReviewRubricTemplateCatalog.ScholarlySchematic,
                 ImageTextPolicy.DeterministicPostRender,
-                ["scholarly draft mode"],
-                timestamp)
+                ["Keep every visual claim traceable to supplied source evidence."],
+                createdAt)
             : IllustrationTarget.Create(
                 brief.Id,
-                "Concept illustration",
-                "document:introduction",
+                $"Concept diagram for {title}",
+                FirstOrDefault(brief.Sections, "Document overview"),
                 IllustrationPurpose.ConceptDiagram,
-                ["explain the central idea visually"],
-                request.KnownConstraints,
+                evidence,
+                brief.KnownConstraints,
                 evidence,
                 ImageTypePresetCatalog.ConceptDiagram,
                 ReviewRubricTemplateCatalog.EducationalAccuracy,
                 ImageTextPolicy.DeterministicPostRender,
-                ["fake provider"],
-                timestamp);
+                ["Use deterministic post-render text for labels and explanatory callouts."],
+                createdAt);
 
         var plan = IllustrationPlan.Create(
             brief.ProjectId,
             brief.Id,
-            $"Fake document illustration plan for {request.Title.Trim()}.",
+            $"Fake document illustration plan for {title}.",
             [target],
-            ["Central concept covered."],
-            request.KnownConstraints,
-            timestamp);
+            ["Fake provider created one source-grounded illustration target."],
+            brief.KnownConstraints,
+            createdAt);
 
         return Task.FromResult(new DocumentIllustrationPlanningResult(brief, plan, "fake-document-plan"));
+    }
+
+    private static IReadOnlyList<string> Normalize(IReadOnlyList<string> values)
+    {
+        return values
+            .Select(value => value?.Trim() ?? string.Empty)
+            .Where(value => value.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string EnsureText(string value, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static string FirstOrDefault(IReadOnlyList<string> values, string fallback)
+    {
+        return values.Count > 0 ? values[0] : fallback;
     }
 }
 
