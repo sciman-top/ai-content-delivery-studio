@@ -121,6 +121,7 @@
 - [x] Add structured prompt direction recommendation model.
 - [x] Add fake-first recommendation output.
 - [x] Persist recommendations through the application service.
+- [x] Use prompt direction recommendations as promotion default settings.
 - [x] Add catalog invariant tests.
 - [x] Run full build, test, and format gates for the preset governance slice.
 
