@@ -182,4 +182,24 @@ public sealed class LocalizationTests
         Assert.Equal("来源文本", service.GetText(LocalizationKey.DocumentSourceText));
         Assert.Equal("运行假文稿规划", service.GetText(LocalizationKey.RunFakeDocumentPlanning));
     }
+
+    [Fact]
+    public void LocalizationService_ReturnsFinalApprovalText()
+    {
+        var service = new LocalizationService();
+
+        service.SetLanguage(LanguagePreference.English);
+        Assert.Equal("Human approval", service.GetText(LocalizationKey.HumanApprovalColumn));
+        Assert.Equal("Reviewer", service.GetText(LocalizationKey.FinalApprovalReviewer));
+        Assert.Equal("Pending human approval", service.GetText(LocalizationKey.HumanApprovalPending));
+        Assert.Equal("Human approved", service.GetText(LocalizationKey.HumanApprovalApproved));
+        Assert.Equal("Human rejected", service.GetText(LocalizationKey.HumanApprovalRejected));
+
+        service.SetLanguage(LanguagePreference.Chinese);
+        Assert.Equal("人工批准", service.GetText(LocalizationKey.HumanApprovalColumn));
+        Assert.Equal("审核人", service.GetText(LocalizationKey.FinalApprovalReviewer));
+        Assert.Equal("等待人工批准", service.GetText(LocalizationKey.HumanApprovalPending));
+        Assert.Equal("人工已批准", service.GetText(LocalizationKey.HumanApprovalApproved));
+        Assert.Equal("人工已拒绝", service.GetText(LocalizationKey.HumanApprovalRejected));
+    }
 }

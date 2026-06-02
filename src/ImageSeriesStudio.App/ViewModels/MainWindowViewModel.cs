@@ -87,6 +87,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _reviewCommentsColumn = string.Empty;
     private string _reviewFixColumn = string.Empty;
     private string _noReviewRowsText = string.Empty;
+    private string _humanApprovalColumn = string.Empty;
+    private string _finalApprovalReviewerLabel = string.Empty;
+    private string _finalApprovalNotesLabel = string.Empty;
+    private string _approveSelectedReviewText = string.Empty;
+    private string _rejectSelectedReviewText = string.Empty;
     private string _exportDeliveryText = string.Empty;
     private string _deliveryPackageColumn = string.Empty;
     private string _deliveryManifestColumn = string.Empty;
@@ -146,6 +151,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _newPromptText = string.Empty;
     private string _newImageEditPrompt = string.Empty;
     private string _newImageEditMaskPath = string.Empty;
+    private string _finalApprovalReviewer = string.Empty;
+    private string _finalApprovalNotes = string.Empty;
     private IReadOnlyList<SeriesSummaryViewModel> _series = [];
     private IReadOnlyList<SeriesItemViewModel> _seriesItems = [];
     private IReadOnlyList<PlanRowViewModel> _planRows = [];
@@ -167,6 +174,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private GenerationRecipeOptionViewModel? _selectedGenerationRecipeOption;
     private PromptDirectionRowViewModel? _selectedPromptDirection;
     private GalleryRowViewModel? _selectedGalleryRow;
+    private ReviewRowViewModel? _selectedReviewRow;
     private Guid? _activeCreativeBriefId;
 
     public MainWindowViewModel(
@@ -603,10 +611,40 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _reviewFixColumn, value);
     }
 
+    public string HumanApprovalColumn
+    {
+        get => _humanApprovalColumn;
+        private set => SetProperty(ref _humanApprovalColumn, value);
+    }
+
     public string NoReviewRowsText
     {
         get => _noReviewRowsText;
         private set => SetProperty(ref _noReviewRowsText, value);
+    }
+
+    public string FinalApprovalReviewerLabel
+    {
+        get => _finalApprovalReviewerLabel;
+        private set => SetProperty(ref _finalApprovalReviewerLabel, value);
+    }
+
+    public string FinalApprovalNotesLabel
+    {
+        get => _finalApprovalNotesLabel;
+        private set => SetProperty(ref _finalApprovalNotesLabel, value);
+    }
+
+    public string ApproveSelectedReviewText
+    {
+        get => _approveSelectedReviewText;
+        private set => SetProperty(ref _approveSelectedReviewText, value);
+    }
+
+    public string RejectSelectedReviewText
+    {
+        get => _rejectSelectedReviewText;
+        private set => SetProperty(ref _rejectSelectedReviewText, value);
     }
 
     public string ExportDeliveryText
@@ -1039,6 +1077,31 @@ public sealed partial class MainWindowViewModel : ObservableObject
         set => SetProperty(ref _newImageEditMaskPath, value);
     }
 
+    public string FinalApprovalReviewer
+    {
+        get => _finalApprovalReviewer;
+        set
+        {
+            if (SetProperty(ref _finalApprovalReviewer, value))
+            {
+                ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
+                RejectSelectedReviewCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string FinalApprovalNotes
+    {
+        get => _finalApprovalNotes;
+        set
+        {
+            if (SetProperty(ref _finalApprovalNotes, value))
+            {
+                RejectSelectedReviewCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
     public IReadOnlyList<SeriesSummaryViewModel> Series
     {
         get => _series;
@@ -1264,6 +1327,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _reviewRows, value))
             {
                 OnPropertyChanged(nameof(HasReviewRows));
+                SelectedReviewRow = value.FirstOrDefault(row =>
+                    SelectedReviewRow is null || row.CandidateImageId == SelectedReviewRow.CandidateImageId);
                 ExportDeliveryCommand.NotifyCanExecuteChanged();
                 RebuildWorkflowGraphRows();
             }
@@ -1271,6 +1336,19 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     public bool HasReviewRows => ReviewRows.Count > 0;
+
+    public ReviewRowViewModel? SelectedReviewRow
+    {
+        get => _selectedReviewRow;
+        set
+        {
+            if (SetProperty(ref _selectedReviewRow, value))
+            {
+                ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
+                RejectSelectedReviewCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
 
     public IReadOnlyList<DeliveryRowViewModel> DeliveryRows
     {
@@ -1374,7 +1452,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ReviewScoreColumn = Text(LocalizationKey.ReviewScoreColumn);
         ReviewCommentsColumn = Text(LocalizationKey.ReviewCommentsColumn);
         ReviewFixColumn = Text(LocalizationKey.ReviewFixColumn);
+        HumanApprovalColumn = Text(LocalizationKey.HumanApprovalColumn);
         NoReviewRowsText = Text(LocalizationKey.NoReviewRows);
+        FinalApprovalReviewerLabel = Text(LocalizationKey.FinalApprovalReviewer);
+        FinalApprovalNotesLabel = Text(LocalizationKey.FinalApprovalNotes);
+        ApproveSelectedReviewText = Text(LocalizationKey.ApproveSelectedReview);
+        RejectSelectedReviewText = Text(LocalizationKey.RejectSelectedReview);
         ExportDeliveryText = Text(LocalizationKey.ExportDelivery);
         DeliveryPackageColumn = Text(LocalizationKey.DeliveryPackageColumn);
         DeliveryManifestColumn = Text(LocalizationKey.DeliveryManifestColumn);
@@ -1972,7 +2055,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var reviews = await _projectService.RunVisionReviewAsync(
+        var reviews = await _projectService.RunStructuredVisionReviewAsync(
             SelectedProject.Id,
             GalleryRows
                 .Select(row => new ReviewCandidateInput(
@@ -1985,13 +2068,19 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         ReviewRows = reviews.Zip(GalleryRows).Select(pair =>
         {
-            var scoreText = string.Join(", ", pair.First.Scores.Select(score => $"{score.Key}:{score.Value}"));
+            var scoreText = string.Join(", ", pair.First.Scores.Select(score => $"{score.Name}:{score.Score}"));
             return new ReviewRowViewModel(
+                pair.First.CandidateImageId,
                 pair.Second.ItemTitle,
                 pair.First.Decision.ToString(),
                 scoreText,
                 pair.First.Comments,
-                pair.First.SuggestedFix ?? string.Empty);
+                pair.First.SuggestedFix ?? string.Empty,
+                HumanApproved: false,
+                Text(LocalizationKey.HumanApprovalPending),
+                string.Empty,
+                string.Empty,
+                pair.First);
         }).ToArray();
         DeliveryRows = [];
         ExportDeliveryCommand.NotifyCanExecuteChanged();
@@ -2000,6 +2089,66 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private bool CanRunFakeReview()
     {
         return SelectedProject is not null && GalleryRows.Count > 0;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanApproveSelectedReview))]
+    private Task ApproveSelectedReviewAsync()
+    {
+        ApplyFinalApproval(approve: true);
+        return Task.CompletedTask;
+    }
+
+    private bool CanApproveSelectedReview()
+    {
+        return SelectedReviewRow is { Review.Decision: ReviewDecision.Pass, Review.NeedsRepair: false }
+            && !string.IsNullOrWhiteSpace(FinalApprovalReviewer);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRejectSelectedReview))]
+    private Task RejectSelectedReviewAsync()
+    {
+        ApplyFinalApproval(approve: false);
+        return Task.CompletedTask;
+    }
+
+    private bool CanRejectSelectedReview()
+    {
+        return SelectedReviewRow is not null
+            && !string.IsNullOrWhiteSpace(FinalApprovalReviewer)
+            && !string.IsNullOrWhiteSpace(FinalApprovalNotes);
+    }
+
+    private void ApplyFinalApproval(bool approve)
+    {
+        if (SelectedReviewRow is null)
+        {
+            return;
+        }
+
+        var decision = FinalApprovalWorkflow.Decide(
+            new FinalApprovalRequest(
+                SelectedReviewRow.Review,
+                approve,
+                FinalApprovalReviewer,
+                FinalApprovalNotes),
+            DateTimeOffset.UtcNow);
+
+        var updated = SelectedReviewRow with
+        {
+            HumanApproved = decision.HumanApproved,
+            HumanApprovalStatus = decision.HumanApproved
+                ? Text(LocalizationKey.HumanApprovalApproved)
+                : Text(LocalizationKey.HumanApprovalRejected),
+            FinalReviewer = decision.Reviewer,
+            FinalApprovalNotes = decision.Notes,
+        };
+
+        ReviewRows = ReviewRows
+            .Select(row => row.CandidateImageId == updated.CandidateImageId ? updated : row)
+            .ToArray();
+        SelectedReviewRow = updated;
+        DeliveryRows = [];
+        ExportDeliveryCommand.NotifyCanExecuteChanged();
     }
 
     private string FindPromptText(Guid promptVersionId)
@@ -2019,7 +2168,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var reviewByItem = ReviewRows.ToDictionary(row => row.ItemTitle, StringComparer.OrdinalIgnoreCase);
+        var reviewByCandidate = ReviewRows.ToDictionary(row => row.CandidateImageId);
         var outputDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "ImageSeriesStudio",
@@ -2027,7 +2176,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             SelectedProject.Id.ToString("N"),
             DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss"));
         var items = GalleryRows
-            .Where(row => reviewByItem.TryGetValue(row.ItemTitle, out var review)
+            .Where(row => reviewByCandidate.TryGetValue(row.CandidateImageId, out var review)
+                && review.HumanApproved
                 && Enum.TryParse<ReviewDecision>(review.Decision, out var decision)
                 && decision is ReviewDecision.Pass)
             .Select((row, index) => new DeliveryExportItem(
@@ -2062,7 +2212,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         return SelectedProject is not null
             && GalleryRows.Count > 0
-            && ReviewRows.Any(row => row.Decision == ReviewDecision.Pass.ToString());
+            && ReviewRows.Any(row => row.HumanApproved && row.Decision == ReviewDecision.Pass.ToString());
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateSeries))]
@@ -2492,11 +2642,17 @@ public sealed record GalleryRowViewModel(
     string PromptText);
 
 public sealed record ReviewRowViewModel(
+    Guid CandidateImageId,
     string ItemTitle,
     string Decision,
     string ScoreText,
     string Comments,
-    string SuggestedFix);
+    string SuggestedFix,
+    bool HumanApproved,
+    string HumanApprovalStatus,
+    string FinalReviewer,
+    string FinalApprovalNotes,
+    StructuredReviewOutput Review);
 
 public sealed record DeliveryRowViewModel(
     string PackageDirectory,

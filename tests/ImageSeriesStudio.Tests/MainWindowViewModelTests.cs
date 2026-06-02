@@ -5,6 +5,7 @@ using ImageSeriesStudio.App.ViewModels;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
 
 namespace ImageSeriesStudio.Tests;
@@ -93,6 +94,97 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task FinalApprovalWorkflow_BlocksDeliveryUntilHumanApprovesReview()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.NewProjectName = "Approval UI demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Approval storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening frame";
+        viewModel.NewItemBrief = "Opening visual for approval.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        viewModel.NewPromptText = "Create a clean opening frame.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+        await viewModel.RunFakeReviewCommand.ExecuteAsync(null);
+
+        try
+        {
+            var reviewRow = Assert.Single(viewModel.ReviewRows);
+            Assert.False(reviewRow.HumanApproved);
+            Assert.False(viewModel.ExportDeliveryCommand.CanExecute(null));
+
+            viewModel.SelectedReviewRow = reviewRow;
+            viewModel.FinalApprovalReviewer = "Teacher";
+            viewModel.FinalApprovalNotes = "Looks ready for delivery.";
+
+            Assert.True(viewModel.ApproveSelectedReviewCommand.CanExecute(null));
+            await viewModel.ApproveSelectedReviewCommand.ExecuteAsync(null);
+
+            var approvedRow = Assert.Single(viewModel.ReviewRows);
+            Assert.True(approvedRow.HumanApproved);
+            Assert.Equal("Teacher", approvedRow.FinalReviewer);
+            Assert.Contains("approved", approvedRow.HumanApprovalStatus, StringComparison.OrdinalIgnoreCase);
+            Assert.True(viewModel.ExportDeliveryCommand.CanExecute(null));
+
+            await viewModel.ExportDeliveryCommand.ExecuteAsync(null);
+
+            Assert.Single(viewModel.DeliveryRows);
+        }
+        finally
+        {
+            DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+        }
+    }
+
+    [Fact]
+    public async Task FinalApprovalWorkflow_RejectsReviewWithNotesAndKeepsDeliveryBlocked()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.NewProjectName = "Reject UI demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Reject storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening frame";
+        viewModel.NewItemBrief = "Opening visual for rejection.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        viewModel.NewPromptText = "Create a clean opening frame.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+        await viewModel.RunFakeReviewCommand.ExecuteAsync(null);
+
+        try
+        {
+            var reviewRow = Assert.Single(viewModel.ReviewRows);
+            viewModel.SelectedReviewRow = reviewRow;
+            viewModel.FinalApprovalReviewer = "Teacher";
+            viewModel.FinalApprovalNotes = "Needs a clearer composition.";
+
+            Assert.True(viewModel.RejectSelectedReviewCommand.CanExecute(null));
+            await viewModel.RejectSelectedReviewCommand.ExecuteAsync(null);
+
+            var rejectedRow = Assert.Single(viewModel.ReviewRows);
+            Assert.False(rejectedRow.HumanApproved);
+            Assert.Equal("Teacher", rejectedRow.FinalReviewer);
+            Assert.Contains("rejected", rejectedRow.HumanApprovalStatus, StringComparison.OrdinalIgnoreCase);
+            Assert.False(viewModel.ExportDeliveryCommand.CanExecute(null));
+        }
+        finally
+        {
+            DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+        }
+    }
+
+    [Fact]
     public async Task BriefWorkflow_ShowsRecommendationRowsAndPromotesRecommendedSettings()
     {
         var viewModel = CreateViewModel();
@@ -172,7 +264,7 @@ public sealed class MainWindowViewModelTests
                 new FakeTextPlanningProvider(),
                 fakeImageProvider,
                 new FakeVisionReviewProvider(),
-                deliveryPackageWriter: null,
+                deliveryPackageWriter: new DeliveryPackageWriter(),
                 imageEditProvider: fakeImageProvider));
     }
 
@@ -187,7 +279,7 @@ public sealed class MainWindowViewModelTests
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "ImageSeriesStudio");
 
-        foreach (var folder in new[] { "generated", "edited" })
+        foreach (var folder in new[] { "generated", "edited", "deliveries" })
         {
             var directory = Path.Combine(appDataDirectory, folder, projectId.Value.ToString("N"));
             if (Directory.Exists(directory))
