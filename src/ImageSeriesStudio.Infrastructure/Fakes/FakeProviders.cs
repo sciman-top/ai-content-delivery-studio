@@ -233,7 +233,7 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
     }
 }
 
-public sealed class FakeImageGenerationProvider : IImageGenerationProvider
+public sealed class FakeImageGenerationProvider : IImageGenerationProvider, IImageEditProvider
 {
     private static readonly JsonSerializerOptions MetadataJsonOptions = new() { WriteIndented = true };
 
@@ -302,6 +302,66 @@ public sealed class FakeImageGenerationProvider : IImageGenerationProvider
             assetPath,
             metadataPath,
             "fake-image-generate",
+            generatedAt);
+    }
+
+    public async Task<ImageGenerationResult> EditImageAsync(
+        ImageEditRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!File.Exists(request.SourceImagePath))
+        {
+            throw new FileNotFoundException("Source image file does not exist.", request.SourceImagePath);
+        }
+
+        if (request.IsMaskEdit && !File.Exists(request.MaskImagePath))
+        {
+            throw new FileNotFoundException("Mask image file does not exist.", request.MaskImagePath);
+        }
+
+        Directory.CreateDirectory(request.OutputDirectory);
+        var fileName = EnsurePngFileName(
+            string.IsNullOrWhiteSpace(request.OutputFileName)
+                ? $"{request.SeriesItemId:N}-{request.SourceCandidateImageId:N}-edit.png"
+                : Path.GetFileName(request.OutputFileName));
+        var assetPath = Path.Combine(request.OutputDirectory, fileName);
+        var metadataPath = Path.ChangeExtension(assetPath, ".json");
+        var generatedAt = DateTimeOffset.UtcNow;
+
+        await File.WriteAllBytesAsync(assetPath, PlaceholderPng, cancellationToken);
+
+        var metadata = new
+        {
+            providerId = Capabilities.ProviderId,
+            editMode = request.IsMaskEdit ? "mask-edit" : "image-edit",
+            seriesItemId = request.SeriesItemId,
+            sourceCandidateId = request.SourceCandidateImageId,
+            sourceImagePath = request.SourceImagePath,
+            maskImagePath = request.MaskImagePath,
+            promptText = request.PromptText,
+            settings = new
+            {
+                width = request.Settings.Width,
+                height = request.Settings.Height,
+                quality = request.Settings.Quality,
+                outputFormat = request.Settings.OutputFormat,
+                seed = request.Settings.Seed,
+            },
+            generatedAt,
+        };
+
+        await File.WriteAllTextAsync(
+            metadataPath,
+            JsonSerializer.Serialize(metadata, MetadataJsonOptions),
+            cancellationToken);
+
+        return new ImageGenerationResult(
+            Guid.NewGuid(),
+            assetPath,
+            metadataPath,
+            "fake-image-edit",
             generatedAt);
     }
 

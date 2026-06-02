@@ -18,6 +18,22 @@ public static class ProviderCapabilityValidator
         return errors;
     }
 
+    public static IReadOnlyList<string> ValidateImageEditProvider(IImageEditProvider provider)
+    {
+        var errors = Validate(
+            provider.Capabilities,
+            requiredCapabilityName: "image editing",
+            capabilities => capabilities.SupportsImageEditing).ToList();
+
+        ValidateImageOutputSettings(provider.Capabilities, errors);
+        if (!provider.Capabilities.SupportsReferenceImages)
+        {
+            errors.Add("Image edit provider must support source or reference images.");
+        }
+
+        return errors;
+    }
+
     public static IReadOnlyList<string> ValidateVisionReviewProvider(IVisionReviewProvider provider)
     {
         return Validate(provider.Capabilities, requiredCapabilityName: "vision review", capabilities => capabilities.SupportsVisionReview);

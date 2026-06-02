@@ -26,6 +26,13 @@ public interface IImageGenerationProvider
     Task<ImageGenerationResult> GenerateImageAsync(ImageGenerationRequest request, CancellationToken cancellationToken);
 }
 
+public interface IImageEditProvider
+{
+    IProviderCapabilities Capabilities { get; }
+
+    Task<ImageGenerationResult> EditImageAsync(ImageEditRequest request, CancellationToken cancellationToken);
+}
+
 public interface IVisionReviewProvider
 {
     IProviderCapabilities Capabilities { get; }
@@ -195,6 +202,20 @@ public sealed record ImageGenerationRequest(
     string OutputDirectory,
     string OutputFileName = "",
     GenerationRecipe? Recipe = null);
+
+public sealed record ImageEditRequest(
+    Guid SeriesItemId,
+    Guid SourceCandidateImageId,
+    string SourceImagePath,
+    string? MaskImagePath,
+    string PromptText,
+    GenerationSettings Settings,
+    string OutputDirectory,
+    string OutputFileName = "",
+    GenerationRecipe? Recipe = null)
+{
+    public bool IsMaskEdit => !string.IsNullOrWhiteSpace(MaskImagePath);
+}
 
 public sealed record ImageGenerationResult(
     Guid CandidateImageId,

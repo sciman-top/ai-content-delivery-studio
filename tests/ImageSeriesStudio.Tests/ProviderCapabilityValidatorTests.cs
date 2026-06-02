@@ -40,6 +40,14 @@ public sealed class ProviderCapabilityValidatorTests
     }
 
     [Fact]
+    public void ValidateImageEditProvider_AcceptsFakeProvider()
+    {
+        var errors = ProviderCapabilityValidator.ValidateImageEditProvider(new FakeImageGenerationProvider());
+
+        Assert.Empty(errors);
+    }
+
+    [Fact]
     public void ValidateImageGenerationProvider_RejectsMissingOutputSettings()
     {
         var provider = new InvalidImageGenerationProvider(

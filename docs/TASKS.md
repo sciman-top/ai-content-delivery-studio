@@ -96,7 +96,8 @@
 - [x] Link parameter experiments to queue tasks and candidate review.
 - [x] Add style library and recipe inspector UI.
 - [x] Include style, recipe, reference, and experiment metadata in delivery packages.
-- [ ] Add mask/edit workflow.
+- [x] Add mask/edit workflow foundation.
+- [ ] Add mask/edit UI controls.
 - [x] Add workflow export/import.
 - [ ] Add optional graph view.
 

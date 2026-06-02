@@ -481,6 +481,65 @@ public sealed class ProjectApplicationServiceTests
     }
 
     [Fact]
+    public async Task ProjectApplicationService_RunsMaskEditWithFakeProvider()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-fake-edit.sqlite");
+        var sourcePath = Path.Combine(databaseDirectory, "source.png");
+        var maskPath = Path.Combine(databaseDirectory, "mask.png");
+        var outputDirectory = Path.Combine(databaseDirectory, "edited");
+        Directory.CreateDirectory(databaseDirectory);
+        await File.WriteAllBytesAsync(sourcePath, [1, 2, 3], CancellationToken.None);
+        await File.WriteAllBytesAsync(maskPath, [4, 5, 6], CancellationToken.None);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var fakeImageProvider = new FakeImageGenerationProvider();
+            var service = new ProjectApplicationService(
+                new EfProjectRepository(new AppDbContext(options)),
+                textPlanningProvider: null,
+                imageGenerationProvider: null,
+                visionReviewProvider: null,
+                deliveryPackageWriter: null,
+                imageEditProvider: fakeImageProvider);
+            var timestamp = new DateTimeOffset(2026, 6, 2, 17, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Fake edit demo", timestamp, CancellationToken.None);
+
+            var result = await service.RunImageEditAsync(
+                new ImageEditWorkflowRequest(
+                    project.Id,
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    sourcePath,
+                    maskPath,
+                    "Clean the masked area.",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    outputDirectory,
+                    "edited.png"),
+                CancellationToken.None);
+
+            Assert.True(File.Exists(result.AssetPath));
+            Assert.Equal("fake-image-edit", result.ProviderTraceId);
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ProjectApplicationService_RunsVisionReviewWithFakeProvider()
     {
         var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));

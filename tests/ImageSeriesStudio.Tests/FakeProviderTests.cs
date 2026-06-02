@@ -130,6 +130,55 @@ public sealed class FakeProviderTests
     }
 
     [Fact]
+    public async Task FakeImageGenerationProvider_WritesMaskEditOutputAndMetadata()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var outputDirectory = Path.Combine(rootDirectory, "edited");
+        var sourcePath = Path.Combine(rootDirectory, "source.png");
+        var maskPath = Path.Combine(rootDirectory, "mask.png");
+        var provider = new FakeImageGenerationProvider();
+        var seriesItemId = Guid.NewGuid();
+        var candidateId = Guid.NewGuid();
+        Directory.CreateDirectory(rootDirectory);
+        await File.WriteAllBytesAsync(sourcePath, [1, 2, 3], CancellationToken.None);
+        await File.WriteAllBytesAsync(maskPath, [4, 5, 6], CancellationToken.None);
+
+        try
+        {
+            var result = await provider.EditImageAsync(
+                new ImageEditRequest(
+                    seriesItemId,
+                    candidateId,
+                    sourcePath,
+                    maskPath,
+                    "Replace the label area with a cleaner background.",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    outputDirectory,
+                    "edited.png"),
+                CancellationToken.None);
+
+            Assert.True(File.Exists(result.AssetPath));
+            Assert.True(File.Exists(result.MetadataPath));
+            Assert.Equal("fake-image-edit", result.ProviderTraceId);
+
+            using var metadataStream = File.OpenRead(result.MetadataPath);
+            using var metadata = await JsonDocument.ParseAsync(metadataStream, cancellationToken: CancellationToken.None);
+
+            Assert.Equal("mask-edit", metadata.RootElement.GetProperty("editMode").GetString());
+            Assert.Equal(candidateId, metadata.RootElement.GetProperty("sourceCandidateId").GetGuid());
+            Assert.Equal(sourcePath, metadata.RootElement.GetProperty("sourceImagePath").GetString());
+            Assert.Equal(maskPath, metadata.RootElement.GetProperty("maskImagePath").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task FakeVisionReviewProvider_ReturnsConfiguredDecision()
     {
         var provider = new FakeVisionReviewProvider(defaultPasses: false);

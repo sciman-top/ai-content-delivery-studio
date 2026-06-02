@@ -12,6 +12,7 @@ public sealed class ProjectApplicationService
     private readonly IProjectRepository _repository;
     private readonly ITextPlanningProvider? _textPlanningProvider;
     private readonly IImageGenerationProvider? _imageGenerationProvider;
+    private readonly IImageEditProvider? _imageEditProvider;
     private readonly IVisionReviewProvider? _visionReviewProvider;
     private readonly IDeliveryPackageWriter? _deliveryPackageWriter;
 
@@ -49,11 +50,13 @@ public sealed class ProjectApplicationService
         ITextPlanningProvider? textPlanningProvider,
         IImageGenerationProvider? imageGenerationProvider,
         IVisionReviewProvider? visionReviewProvider,
-        IDeliveryPackageWriter? deliveryPackageWriter)
+        IDeliveryPackageWriter? deliveryPackageWriter,
+        IImageEditProvider? imageEditProvider = null)
     {
         _repository = repository;
         _textPlanningProvider = textPlanningProvider;
         _imageGenerationProvider = imageGenerationProvider;
+        _imageEditProvider = imageEditProvider;
         _visionReviewProvider = visionReviewProvider;
         _deliveryPackageWriter = deliveryPackageWriter;
     }
@@ -369,6 +372,41 @@ public sealed class ProjectApplicationService
         return await queue.RunAsync(requests, cancellationToken);
     }
 
+    public async Task<ImageGenerationResult> RunImageEditAsync(
+        ImageEditWorkflowRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (_imageEditProvider is null)
+        {
+            throw new InvalidOperationException("Image edit provider is not registered.");
+        }
+
+        if (!_imageEditProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Real image editing requires explicit approval.");
+        }
+
+        if (!_imageEditProvider.Capabilities.SupportsImageEditing)
+        {
+            throw new InvalidOperationException("Provider does not support image editing.");
+        }
+
+        _ = await RequireProjectAsync(request.ProjectId, cancellationToken);
+
+        return await _imageEditProvider.EditImageAsync(
+            new ImageEditRequest(
+                request.SeriesItemId,
+                request.SourceCandidateImageId,
+                request.SourceImagePath,
+                request.MaskImagePath,
+                request.PromptText,
+                request.Settings,
+                request.OutputDirectory,
+                request.OutputFileName,
+                request.Recipe),
+            cancellationToken);
+    }
+
     public async Task<IReadOnlyList<VisionReviewResult>> RunVisionReviewAsync(
         Guid projectId,
         IReadOnlyList<ReviewCandidateInput> candidates,
@@ -573,6 +611,18 @@ public sealed record DocumentIllustrationWorkflowResult(
     Guid IllustrationPlanId,
     Guid? SeriesId,
     int ApprovedTargetCount);
+
+public sealed record ImageEditWorkflowRequest(
+    Guid ProjectId,
+    Guid SeriesItemId,
+    Guid SourceCandidateImageId,
+    string SourceImagePath,
+    string? MaskImagePath,
+    string PromptText,
+    GenerationSettings Settings,
+    string OutputDirectory,
+    string OutputFileName = "",
+    GenerationRecipe? Recipe = null);
 
 public sealed record ReviewCandidateInput(
     Guid CandidateImageId,

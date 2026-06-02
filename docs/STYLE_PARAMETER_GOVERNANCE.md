@@ -98,6 +98,16 @@ Rules:
 - Record role and description per image.
 - Link reference sets to a style guide, edit recipe, or item-level prompt version.
 
+### Mask/Edit Workflow
+
+The first implementation slice is fake-first. It adds provider-neutral edit requests, mask metadata, capability validation, and an application-service entry point, but does not enable real provider edit calls by default.
+
+Rules:
+
+- Require an existing source image path for every edit.
+- Treat a mask path as an explicit `mask-edit` mode.
+- Keep real image editing disabled until provider capability tests and explicit approval are present.
+
 ### ParameterExperiment
 
 Controls systematic exploration. The current domain model already started this with provider-neutral Cartesian-product variants.

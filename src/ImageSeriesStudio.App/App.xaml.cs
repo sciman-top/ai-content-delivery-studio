@@ -36,7 +36,11 @@ public partial class App : System.Windows.Application
         builder.Services.AddTransient<IProjectRepository, EfProjectRepository>();
         builder.Services.AddTransient<ProjectApplicationService>();
         builder.Services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
-        builder.Services.AddSingleton<IImageGenerationProvider, FakeImageGenerationProvider>();
+        builder.Services.AddSingleton<FakeImageGenerationProvider>();
+        builder.Services.AddSingleton<IImageGenerationProvider>(serviceProvider =>
+            serviceProvider.GetRequiredService<FakeImageGenerationProvider>());
+        builder.Services.AddSingleton<IImageEditProvider>(serviceProvider =>
+            serviceProvider.GetRequiredService<FakeImageGenerationProvider>());
         builder.Services.AddSingleton<IVisionReviewProvider, FakeVisionReviewProvider>();
         builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
         builder.Services.AddTransient<MainWindowViewModel>();
