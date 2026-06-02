@@ -1,3 +1,4 @@
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Styles;
 
@@ -8,6 +9,10 @@ public interface ITextPlanningProvider
     IProviderCapabilities Capabilities { get; }
 
     Task<SeriesPlanResult> CreatePlanAsync(PlanningRequest request, CancellationToken cancellationToken);
+
+    Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
+        DocumentIllustrationPlanningRequest request,
+        CancellationToken cancellationToken);
 }
 
 public interface IImageGenerationProvider
@@ -131,6 +136,21 @@ public sealed record PlanningRequest(
 public sealed record SeriesPlanResult(
     string Summary,
     IReadOnlyList<SeriesPlanItem> Items,
+    string ProviderTraceId);
+
+public sealed record DocumentIllustrationPlanningRequest(
+    string Title,
+    string SourceText,
+    string Audience,
+    DocumentFamily DocumentFamily,
+    IllustrationStrictnessLevel StrictnessLevel,
+    IReadOnlyList<string> Sections,
+    IReadOnlyList<string> KeyClaims,
+    IReadOnlyList<string> KnownConstraints);
+
+public sealed record DocumentIllustrationPlanningResult(
+    DocumentBrief Brief,
+    IllustrationPlan Plan,
     string ProviderTraceId);
 
 public sealed record SeriesPlanItem(

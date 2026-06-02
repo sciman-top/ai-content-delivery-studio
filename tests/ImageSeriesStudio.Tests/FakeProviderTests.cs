@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Infrastructure.Fakes;
@@ -22,6 +23,30 @@ public sealed class FakeProviderTests
             result.Items,
             item => Assert.Equal("Image 01", item.Title),
             item => Assert.Equal("Image 02", item.Title));
+    }
+
+    [Fact]
+    public async Task FakeTextPlanningProvider_CreatesDocumentIllustrationPlan()
+    {
+        var provider = new FakeTextPlanningProvider();
+
+        var result = await provider.CreateDocumentIllustrationPlanAsync(
+            new DocumentIllustrationPlanningRequest(
+                "Quantum teaching note",
+                "Teachers need an intuitive explanation of superposition.",
+                "teachers",
+                DocumentFamily.Educational,
+                IllustrationStrictnessLevel.Educational,
+                ["Introduction", "Classroom analogy"],
+                ["Superposition needs a visual analogy."],
+                ["avoid fake lab data"]),
+            CancellationToken.None);
+
+        Assert.Equal("fake-document-plan", result.ProviderTraceId);
+        Assert.Equal(DocumentFamily.Educational, result.Brief.DocumentFamily);
+        Assert.NotEmpty(result.Plan.Targets);
+        Assert.All(result.Plan.Targets, target => Assert.NotEmpty(target.SourceEvidence));
+        Assert.Contains(result.Plan.Targets, target => target.Purpose == IllustrationPurpose.ConceptDiagram);
     }
 
     [Fact]

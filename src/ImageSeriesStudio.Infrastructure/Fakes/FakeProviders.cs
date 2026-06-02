@@ -1,6 +1,8 @@
 using System.Text.Json;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Infrastructure.Fakes;
 
@@ -34,6 +36,95 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
             "fake-text-plan");
 
         return Task.FromResult(result);
+    }
+
+    public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
+        DocumentIllustrationPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var createdAt = DateTimeOffset.UtcNow;
+        var title = EnsureText(request.Title, "Untitled document");
+        var sourceText = EnsureText(request.SourceText, "No source text supplied.");
+        var keyClaims = Normalize(request.KeyClaims);
+        var evidence = keyClaims.Count > 0 ? keyClaims : [sourceText];
+        var projectId = Guid.NewGuid();
+        var brief = DocumentBrief.Create(
+            projectId,
+            DocumentSourceKind.Paste,
+            $"{title}.txt",
+            title,
+            request.DocumentFamily,
+            EnsureText(request.Audience, "general audience"),
+            Normalize(request.Sections),
+            keyClaims,
+            evidence.Select(claim => $"Visualize: {claim}").ToArray(),
+            Normalize(request.KnownConstraints),
+            request.StrictnessLevel,
+            createdAt);
+
+        var target = request.StrictnessLevel == IllustrationStrictnessLevel.ScholarlyDraft
+            ? IllustrationTarget.Create(
+                brief.Id,
+                $"Graphical abstract for {title}",
+                FirstOrDefault(brief.Sections, "Document overview"),
+                IllustrationPurpose.GraphicalAbstract,
+                evidence,
+                [
+                    "real experimental evidence imagery",
+                    "fake experimental evidence imagery",
+                    "fabricated lab data",
+                ],
+                evidence,
+                ImageTypePresetCatalog.GraphicalAbstract,
+                ReviewRubricTemplateCatalog.ScholarlySchematic,
+                ImageTextPolicy.DeterministicPostRender,
+                ["Keep every visual claim traceable to supplied source evidence."],
+                createdAt)
+            : IllustrationTarget.Create(
+                brief.Id,
+                $"Concept diagram for {title}",
+                FirstOrDefault(brief.Sections, "Document overview"),
+                IllustrationPurpose.ConceptDiagram,
+                evidence,
+                brief.KnownConstraints,
+                evidence,
+                ImageTypePresetCatalog.ConceptDiagram,
+                ReviewRubricTemplateCatalog.EducationalAccuracy,
+                ImageTextPolicy.DeterministicPostRender,
+                ["Use deterministic post-render text for labels and explanatory callouts."],
+                createdAt);
+
+        var plan = IllustrationPlan.Create(
+            brief.ProjectId,
+            brief.Id,
+            $"Fake document illustration plan for {title}.",
+            [target],
+            ["Fake provider created one source-grounded illustration target."],
+            brief.KnownConstraints,
+            createdAt);
+
+        return Task.FromResult(new DocumentIllustrationPlanningResult(brief, plan, "fake-document-plan"));
+    }
+
+    private static IReadOnlyList<string> Normalize(IReadOnlyList<string> values)
+    {
+        return values
+            .Select(value => value?.Trim() ?? string.Empty)
+            .Where(value => value.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string EnsureText(string value, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static string FirstOrDefault(IReadOnlyList<string> values, string fallback)
+    {
+        return values.Count > 0 ? values[0] : fallback;
     }
 }
 

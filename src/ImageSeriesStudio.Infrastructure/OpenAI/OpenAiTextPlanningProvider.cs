@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Providers;
 
 namespace ImageSeriesStudio.Infrastructure.OpenAI;
@@ -34,6 +35,13 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
     }
 
     public IProviderCapabilities Capabilities { get; }
+
+    public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
+        DocumentIllustrationPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        throw new InvalidOperationException("OpenAI document illustration planning is not enabled in the first fake-provider implementation.");
+    }
 
     public async Task<SeriesPlanResult> CreatePlanAsync(
         PlanningRequest request,
