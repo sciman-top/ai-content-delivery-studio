@@ -21,6 +21,51 @@ public sealed class LocalizationTests
     }
 
     [Fact]
+    public void LocalizationService_ReturnsDocumentIllustrationEntryTextForBothLanguages()
+    {
+        var service = new LocalizationService();
+        var expectedTexts = new Dictionary<LanguagePreference, IReadOnlyDictionary<string, string>>
+        {
+            [LanguagePreference.English] = new Dictionary<string, string>
+            {
+                ["DocumentIllustrationTitle"] = "Document illustration",
+                ["DocumentSourceText"] = "Source text",
+                ["DocumentAudience"] = "Audience",
+                ["DocumentStrictness"] = "Strictness",
+                ["RunFakeDocumentPlanning"] = "Run fake document planning",
+                ["DocumentPlanningResult"] = "Document planning result",
+            },
+            [LanguagePreference.Chinese] = new Dictionary<string, string>
+            {
+                ["DocumentIllustrationTitle"] = "文稿配图",
+                ["DocumentSourceText"] = "来源文本",
+                ["DocumentAudience"] = "受众",
+                ["DocumentStrictness"] = "严格度",
+                ["RunFakeDocumentPlanning"] = "运行假文稿规划",
+                ["DocumentPlanningResult"] = "文稿规划结果",
+            },
+        };
+        var definedKeys = Enum.GetNames<LocalizationKey>();
+
+        foreach (var keyName in expectedTexts.SelectMany(pair => pair.Value.Keys).Distinct())
+        {
+            Assert.Contains(keyName, definedKeys);
+        }
+
+        foreach (var (preference, texts) in expectedTexts)
+        {
+            service.SetLanguage(preference);
+
+            foreach (var (keyName, expectedText) in texts)
+            {
+                var key = Enum.Parse<LocalizationKey>(keyName);
+
+                Assert.Equal(expectedText, service.GetText(key));
+            }
+        }
+    }
+
+    [Fact]
     public void LocalizationService_ResolvesSystemLanguageFromCulture()
     {
         var service = new LocalizationService(() => new CultureInfo("zh-CN"));

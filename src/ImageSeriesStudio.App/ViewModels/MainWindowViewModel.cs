@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Generation;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
@@ -35,6 +36,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _newPlanningAudience = string.Empty;
     private string _newPlanningItemCount = "3";
     private string _newPlanningStyleBrief = string.Empty;
+    private string _newDocumentSourceText = "Teachers need a clear concept diagram for the central idea.";
+    private string _newDocumentAudience = "teachers";
     private string _projectNameLabel = string.Empty;
     private string _newProjectNamePlaceholder = string.Empty;
     private string _createProjectText = string.Empty;
@@ -47,6 +50,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _planningItemCountLabel = string.Empty;
     private string _planningStyleBriefLabel = string.Empty;
     private string _runFakePlanningText = string.Empty;
+    private string _documentIllustrationTitle = string.Empty;
+    private string _documentSourceTextLabel = string.Empty;
+    private string _documentAudienceLabel = string.Empty;
+    private string _documentStrictnessLabel = string.Empty;
+    private string _runFakeDocumentPlanningText = string.Empty;
+    private string _documentPlanningResultText = string.Empty;
+    private string _documentPlanningResultSummary = string.Empty;
     private string _runFakeGenerationText = string.Empty;
     private string _queueItemColumn = string.Empty;
     private string _queueStatusColumn = string.Empty;
@@ -124,11 +134,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<ImageTypePresetOptionViewModel> _imageTypePresetOptions = [];
     private IReadOnlyList<StyleGuideOptionViewModel> _styleGuideOptions = [];
     private IReadOnlyList<GenerationRecipeOptionViewModel> _generationRecipeOptions = [];
+    private IReadOnlyList<IllustrationStrictnessLevel> _documentStrictnessOptions =
+    [
+        IllustrationStrictnessLevel.Editorial,
+        IllustrationStrictnessLevel.Educational,
+        IllustrationStrictnessLevel.ScholarlyDraft,
+    ];
     private SeriesSummaryViewModel? _selectedSeries;
     private SeriesItemViewModel? _selectedSeriesItem;
     private ImageTypePresetOptionViewModel? _selectedImageTypePresetOption;
     private StyleGuideOptionViewModel? _selectedStyleGuideOption;
     private GenerationRecipeOptionViewModel? _selectedGenerationRecipeOption;
+    private IllustrationStrictnessLevel _selectedDocumentStrictness = IllustrationStrictnessLevel.Educational;
 
     public MainWindowViewModel(
         LocalizationService localizationService,
@@ -239,6 +256,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             ReviewRows = [];
             DeliveryRows = [];
             RunFakePlanningCommand.NotifyCanExecuteChanged();
+            RunFakeDocumentPlanningCommand.NotifyCanExecuteChanged();
             RunFakeGenerationCommand.NotifyCanExecuteChanged();
             _ = value is null ? ClearPlanAsync() : LoadPlanAsync(value.Id);
         }
@@ -296,6 +314,24 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _newPlanningStyleBrief;
         set => SetProperty(ref _newPlanningStyleBrief, value);
+    }
+
+    public string NewDocumentSourceText
+    {
+        get => _newDocumentSourceText;
+        set
+        {
+            if (SetProperty(ref _newDocumentSourceText, value))
+            {
+                RunFakeDocumentPlanningCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string NewDocumentAudience
+    {
+        get => _newDocumentAudience;
+        set => SetProperty(ref _newDocumentAudience, value);
     }
 
     public string ProjectNameLabel
@@ -368,6 +404,48 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _runFakePlanningText;
         private set => SetProperty(ref _runFakePlanningText, value);
+    }
+
+    public string DocumentIllustrationTitle
+    {
+        get => _documentIllustrationTitle;
+        private set => SetProperty(ref _documentIllustrationTitle, value);
+    }
+
+    public string DocumentSourceTextLabel
+    {
+        get => _documentSourceTextLabel;
+        private set => SetProperty(ref _documentSourceTextLabel, value);
+    }
+
+    public string DocumentAudienceLabel
+    {
+        get => _documentAudienceLabel;
+        private set => SetProperty(ref _documentAudienceLabel, value);
+    }
+
+    public string DocumentStrictnessLabel
+    {
+        get => _documentStrictnessLabel;
+        private set => SetProperty(ref _documentStrictnessLabel, value);
+    }
+
+    public string RunFakeDocumentPlanningText
+    {
+        get => _runFakeDocumentPlanningText;
+        private set => SetProperty(ref _runFakeDocumentPlanningText, value);
+    }
+
+    public string DocumentPlanningResultText
+    {
+        get => _documentPlanningResultText;
+        private set => SetProperty(ref _documentPlanningResultText, value);
+    }
+
+    public string DocumentPlanningResultSummary
+    {
+        get => _documentPlanningResultSummary;
+        private set => SetProperty(ref _documentPlanningResultSummary, value);
     }
 
     public string RunFakeGenerationText
@@ -860,6 +938,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    public IReadOnlyList<IllustrationStrictnessLevel> DocumentStrictnessOptions
+    {
+        get => _documentStrictnessOptions;
+        private set => SetProperty(ref _documentStrictnessOptions, value);
+    }
+
+    public IllustrationStrictnessLevel SelectedDocumentStrictness
+    {
+        get => _selectedDocumentStrictness;
+        set => SetProperty(ref _selectedDocumentStrictness, value);
+    }
+
     public SeriesItemViewModel? SelectedSeriesItem
     {
         get => _selectedSeriesItem;
@@ -1006,6 +1096,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PlanningItemCountLabel = Text(LocalizationKey.PlanningItemCount);
         PlanningStyleBriefLabel = Text(LocalizationKey.PlanningStyleBrief);
         RunFakePlanningText = Text(LocalizationKey.RunFakePlanning);
+        DocumentIllustrationTitle = Text(LocalizationKey.DocumentIllustrationTitle);
+        DocumentSourceTextLabel = Text(LocalizationKey.DocumentSourceText);
+        DocumentAudienceLabel = Text(LocalizationKey.DocumentAudience);
+        DocumentStrictnessLabel = Text(LocalizationKey.DocumentStrictness);
+        RunFakeDocumentPlanningText = Text(LocalizationKey.RunFakeDocumentPlanning);
+        DocumentPlanningResultText = Text(LocalizationKey.DocumentPlanningResult);
         RunFakeGenerationText = Text(LocalizationKey.RunFakeGeneration);
         QueueItemColumn = Text(LocalizationKey.QueueItemColumn);
         QueueStatusColumn = Text(LocalizationKey.QueueStatusColumn);
@@ -1218,6 +1314,58 @@ public sealed partial class MainWindowViewModel : ObservableObject
             && !string.IsNullOrWhiteSpace(NewPlanningGoal)
             && !string.IsNullOrWhiteSpace(NewPlanningAudience)
             && TryGetPlanningItemCount(out _);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunFakeDocumentPlanning))]
+    private async Task RunFakeDocumentPlanningAsync()
+    {
+        if (SelectedProject is null || string.IsNullOrWhiteSpace(NewDocumentSourceText))
+        {
+            return;
+        }
+
+        var projectId = SelectedProject.Id;
+        var projectName = SelectedProject.Name;
+        var sourceText = NewDocumentSourceText.Trim();
+        var audience = string.IsNullOrWhiteSpace(NewDocumentAudience)
+            ? "general audience"
+            : NewDocumentAudience.Trim();
+        var result = await _projectService.CreateDocumentIllustrationPlanWithProviderAsync(
+            projectId,
+            new DocumentIllustrationPlanningRequest(
+                projectName,
+                sourceText,
+                audience,
+                MapDocumentFamily(SelectedDocumentStrictness),
+                SelectedDocumentStrictness,
+                ["Pasted source text"],
+                [sourceText],
+                ["Use deterministic post-render text for readable labels and callouts."]),
+            approveAllTargets: true,
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        await RefreshProjectsAsync(projectId);
+        await LoadPlanAsync(projectId, result.SeriesId);
+
+        var resultMessage = $"{DocumentPlanningResultText}: {result.ApprovedTargetCount} approved target(s).";
+        DocumentPlanningResultSummary = resultMessage;
+        ActivityItems = ActivityItems.Concat([resultMessage]).ToArray();
+    }
+
+    private bool CanRunFakeDocumentPlanning()
+    {
+        return SelectedProject is not null && !string.IsNullOrWhiteSpace(NewDocumentSourceText);
+    }
+
+    private static DocumentFamily MapDocumentFamily(IllustrationStrictnessLevel strictness)
+    {
+        return strictness switch
+        {
+            IllustrationStrictnessLevel.Editorial => DocumentFamily.Editorial,
+            IllustrationStrictnessLevel.ScholarlyDraft => DocumentFamily.ScholarlyDraft,
+            _ => DocumentFamily.Educational,
+        };
     }
 
     private bool TryGetPlanningItemCount(out int itemCount)
