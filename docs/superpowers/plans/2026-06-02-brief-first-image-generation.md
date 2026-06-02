@@ -1111,7 +1111,7 @@ dotnet build
 
 Expected: build succeeds.
 
-- [ ] **Step 8: Commit UI slice**
+- [x] **Step 8: Commit UI slice**
 
 Run:
 
@@ -1128,7 +1128,7 @@ git commit -m "feat: 添加需求设计工作台入口"
 
 - Review all modified source and tests.
 
-- [ ] **Step 1: Run full gate**
+- [x] **Step 1: Run full gate**
 
 Run:
 
@@ -1140,7 +1140,7 @@ dotnet format --verify-no-changes
 
 Expected: all commands succeed.
 
-- [ ] **Step 2: Run placeholder scan**
+- [x] **Step 2: Run placeholder scan**
 
 Run:
 
@@ -1150,7 +1150,7 @@ rg -n "(TB[D]|TO[D]O|PLACE''HOL[D]ER)" .
 
 Expected: no unresolved placeholder output from changed files.
 
-- [ ] **Step 3: Inspect status**
+- [x] **Step 3: Inspect status**
 
 Run:
 
