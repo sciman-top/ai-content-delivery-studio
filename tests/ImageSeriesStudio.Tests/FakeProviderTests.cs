@@ -2,6 +2,7 @@ using System.Text.Json;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Styles;
 using ImageSeriesStudio.Infrastructure.Fakes;
 
 namespace ImageSeriesStudio.Tests;
@@ -45,6 +46,21 @@ public sealed class FakeProviderTests
         Assert.Contains(result.Assumptions, assumption => assumption.Contains("draft", StringComparison.OrdinalIgnoreCase));
         Assert.Equal("conservative", result.Directions[0].Key);
         Assert.Contains("article illustration", result.Directions[0].PromptText);
+        var recommendation = result.Directions[0].Recommendation;
+
+        Assert.NotNull(recommendation);
+        Assert.Equal(ImageTypePresetCatalog.ArticleInlineIllustration, recommendation.ImageTypePresetId);
+        Assert.Equal(ImageTextPolicy.Hybrid, recommendation.TextPolicy);
+        Assert.Equal(new AspectRatio(16, 9), recommendation.AspectRatio);
+        Assert.Equal(1536, recommendation.Width);
+        Assert.Equal(1024, recommendation.Height);
+        Assert.Equal("draft", recommendation.QualityBand);
+        Assert.Equal("png", recommendation.OutputFormat);
+        Assert.Equal(ReviewRubricTemplateCatalog.EditorialIllustration, recommendation.ReviewRubricTemplateId);
+        Assert.InRange(recommendation.Confidence, 0.65, 1);
+        Assert.Contains("article", recommendation.RecommendationReason, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(recommendation.CapabilityWarnings, value => value.Contains("fake", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(recommendation.NonExecutableSuggestions, value => value.Contains("style", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]

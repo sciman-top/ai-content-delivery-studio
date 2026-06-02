@@ -90,7 +90,8 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
                 $"Create {request.Goal} for {request.Audience}. Style: {request.StyleIntent}. Include: {string.Join(", ", request.MustInclude)}.",
                 $"Avoid: {string.Join(", ", request.MustAvoid)}.",
                 template.Strength,
-                template.Risk))
+                template.Risk,
+                CreateRecommendation(request, template.Key)))
             .ToArray();
 
         return Task.FromResult(new BriefPlanningResult(
@@ -98,6 +99,75 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
             ["Use draft generation before final quality."],
             ["Confirm whether final text should be composed in app."],
             "fake-text-brief"));
+    }
+
+    private static PromptDirectionRecommendation CreateRecommendation(
+        BriefPlanningRequest request,
+        string directionKey)
+    {
+        var presetId = SelectPresetId(request.Goal);
+        var preset = ImageTypePresetCatalog.GetById(presetId);
+        var textPolicy = request.TextPolicy is ImageTextPolicy.ImageModelOnly
+            ? preset.TextPolicy
+            : request.TextPolicy;
+        var (width, height) = GetDefaultSize(preset.DefaultAspectRatio);
+
+        return PromptDirectionRecommendation.Create(
+            preset.Id,
+            textPolicy,
+            request.StyleIntent,
+            preset.DefaultAspectRatio,
+            width,
+            height,
+            preset.DefaultQualityBand,
+            preset.DefaultOutputFormat,
+            preset.DefaultBackgroundMode,
+            preset.ReviewRubricTemplateId,
+            draftCount: 2,
+            finalCount: 1,
+            $"Fake recommendation selected {preset.DisplayName} for {request.Goal}. Direction: {directionKey}.",
+            confidence: directionKey.Equals("experimental", StringComparison.OrdinalIgnoreCase) ? 0.68 : 0.84,
+            ["fake provider warning: verify real provider capabilities before generation"],
+            [$"Refine style intent before final generation: {request.StyleIntent}".Trim()]);
+    }
+
+    private static string SelectPresetId(string goal)
+    {
+        if (goal.Contains("poster", StringComparison.OrdinalIgnoreCase))
+        {
+            return ImageTypePresetCatalog.EducationalPoster;
+        }
+
+        if (goal.Contains("cover", StringComparison.OrdinalIgnoreCase))
+        {
+            return ImageTypePresetCatalog.ArticleCover;
+        }
+
+        if (goal.Contains("diagram", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("concept", StringComparison.OrdinalIgnoreCase))
+        {
+            return ImageTypePresetCatalog.ConceptDiagram;
+        }
+
+        if (goal.Contains("social", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("square", StringComparison.OrdinalIgnoreCase))
+        {
+            return ImageTypePresetCatalog.SocialSquare;
+        }
+
+        return ImageTypePresetCatalog.ArticleInlineIllustration;
+    }
+
+    private static (int Width, int Height) GetDefaultSize(AspectRatio aspectRatio)
+    {
+        if (aspectRatio.WidthUnits == aspectRatio.HeightUnits)
+        {
+            return (1024, 1024);
+        }
+
+        return aspectRatio.WidthUnits > aspectRatio.HeightUnits
+            ? (1536, 1024)
+            : (1024, 1280);
     }
 
     public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(

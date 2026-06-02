@@ -143,7 +143,8 @@ public sealed record BriefPlanningRequest(
     string StyleIntent,
     IReadOnlyList<string> MustInclude,
     IReadOnlyList<string> MustAvoid,
-    int DirectionCount = 3);
+    int DirectionCount = 3,
+    ImageTextPolicy TextPolicy = ImageTextPolicy.Hybrid);
 
 public sealed record BriefPlanningResult(
     IReadOnlyList<PromptDirectionDraft> Directions,
@@ -158,7 +159,8 @@ public sealed record PromptDirectionDraft(
     string PromptText,
     string NegativePrompt,
     string Strength,
-    string Risk);
+    string Risk,
+    PromptDirectionRecommendation? Recommendation = null);
 
 public sealed record DocumentIllustrationPlanningRequest(
     string Title,
