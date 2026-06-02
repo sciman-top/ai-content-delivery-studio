@@ -115,11 +115,11 @@
 
 - [x] Record preset governance design spec.
 - [x] Record preset governance implementation plan.
-- [ ] Add governance metadata to image type presets.
-- [ ] Add structured prompt direction recommendation model.
-- [ ] Add fake-first recommendation output.
-- [ ] Persist recommendations through the application service.
-- [ ] Add catalog invariant tests.
+- [x] Add governance metadata to image type presets.
+- [x] Add structured prompt direction recommendation model.
+- [x] Add fake-first recommendation output.
+- [x] Persist recommendations through the application service.
+- [x] Add catalog invariant tests.
 - [ ] Run full build, test, and format gates for the preset governance slice.
 
 ## Phase 8: Document Illustration Workflow
