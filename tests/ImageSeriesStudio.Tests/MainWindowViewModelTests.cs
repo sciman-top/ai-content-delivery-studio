@@ -11,6 +11,43 @@ namespace ImageSeriesStudio.Tests;
 public sealed class MainWindowViewModelTests
 {
     [Fact]
+    public async Task WorkflowGraphView_ShowsPlanAndCandidateNodes()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.NewProjectName = "Graph UI demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Lesson visuals";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening frame";
+        viewModel.NewItemBrief = "Opening visual for a lesson.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        viewModel.NewPromptText = "Create a clean opening frame.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+
+        try
+        {
+            Assert.Contains(
+                viewModel.WorkbenchTabs,
+                tab => tab.Kind is WorkbenchTabKind.Graph && tab.Title == "Graph");
+            Assert.True(viewModel.HasWorkflowGraphRows);
+            Assert.Contains(viewModel.WorkflowGraphRows, row => row.NodeType == "Project" && row.Title == "Graph UI demo");
+            Assert.Contains(viewModel.WorkflowGraphRows, row => row.NodeType == "Series" && row.Title == "Lesson visuals");
+            Assert.Contains(viewModel.WorkflowGraphRows, row => row.NodeType == "Item" && row.Title == "Opening frame");
+            Assert.Contains(viewModel.WorkflowGraphRows, row => row.NodeType == "Prompt" && row.LinksTo == "Opening frame");
+            Assert.Contains(viewModel.WorkflowGraphRows, row => row.NodeType == "Candidate" && row.LinksTo == "Opening frame");
+        }
+        finally
+        {
+            DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+        }
+    }
+
+    [Fact]
     public async Task ImageEditWorkflow_RunsFakeEditForSelectedGalleryRow()
     {
         var viewModel = CreateViewModel();

@@ -88,6 +88,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _deliveryReportColumn = string.Empty;
     private string _deliveryFinalImagesColumn = string.Empty;
     private string _noDeliveryRowsText = string.Empty;
+    private string _graphNodeColumn = string.Empty;
+    private string _graphSummaryColumn = string.Empty;
+    private string _graphLinksColumn = string.Empty;
+    private string _noGraphRowsText = string.Empty;
     private string _planEditorTitle = string.Empty;
     private string _seriesTitleLabel = string.Empty;
     private string _seriesDescriptionLabel = string.Empty;
@@ -147,6 +151,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<GalleryRowViewModel> _galleryRows = [];
     private IReadOnlyList<ReviewRowViewModel> _reviewRows = [];
     private IReadOnlyList<DeliveryRowViewModel> _deliveryRows = [];
+    private IReadOnlyList<WorkflowGraphRowViewModel> _workflowGraphRows = [];
     private IReadOnlyList<ImageTypePresetOptionViewModel> _imageTypePresetOptions = [];
     private IReadOnlyList<StyleGuideOptionViewModel> _styleGuideOptions = [];
     private IReadOnlyList<GenerationRecipeOptionViewModel> _generationRecipeOptions = [];
@@ -270,6 +275,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             PromptDirectionRows = [];
             SelectedPromptDirection = null;
             _activeCreativeBriefId = null;
+            RebuildWorkflowGraphRows();
             CreateBriefCommand.NotifyCanExecuteChanged();
             GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
             PromotePromptDirectionCommand.NotifyCanExecuteChanged();
@@ -620,6 +626,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _noDeliveryRowsText;
         private set => SetProperty(ref _noDeliveryRowsText, value);
+    }
+
+    public string GraphNodeColumn
+    {
+        get => _graphNodeColumn;
+        private set => SetProperty(ref _graphNodeColumn, value);
+    }
+
+    public string GraphSummaryColumn
+    {
+        get => _graphSummaryColumn;
+        private set => SetProperty(ref _graphSummaryColumn, value);
+    }
+
+    public string GraphLinksColumn
+    {
+        get => _graphLinksColumn;
+        private set => SetProperty(ref _graphLinksColumn, value);
+    }
+
+    public string NoGraphRowsText
+    {
+        get => _noGraphRowsText;
+        private set => SetProperty(ref _noGraphRowsText, value);
     }
 
     public string PlanEditorTitle
@@ -1189,6 +1219,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
                 RunFakeReviewCommand.NotifyCanExecuteChanged();
                 RunFakeImageEditCommand.NotifyCanExecuteChanged();
+                RebuildWorkflowGraphRows();
             }
         }
     }
@@ -1217,6 +1248,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 OnPropertyChanged(nameof(HasReviewRows));
                 ExportDeliveryCommand.NotifyCanExecuteChanged();
+                RebuildWorkflowGraphRows();
             }
         }
     }
@@ -1231,11 +1263,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _deliveryRows, value))
             {
                 OnPropertyChanged(nameof(HasDeliveryRows));
+                RebuildWorkflowGraphRows();
             }
         }
     }
 
     public bool HasDeliveryRows => DeliveryRows.Count > 0;
+
+    public IReadOnlyList<WorkflowGraphRowViewModel> WorkflowGraphRows
+    {
+        get => _workflowGraphRows;
+        private set
+        {
+            if (SetProperty(ref _workflowGraphRows, value))
+            {
+                OnPropertyChanged(nameof(HasWorkflowGraphRows));
+            }
+        }
+    }
+
+    public bool HasWorkflowGraphRows => WorkflowGraphRows.Count > 0;
 
     public LanguageOptionViewModel? SelectedLanguageOption
     {
@@ -1311,6 +1358,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         DeliveryReportColumn = Text(LocalizationKey.DeliveryReportColumn);
         DeliveryFinalImagesColumn = Text(LocalizationKey.DeliveryFinalImagesColumn);
         NoDeliveryRowsText = Text(LocalizationKey.NoDeliveryRows);
+        GraphNodeColumn = Text(LocalizationKey.GraphNodeColumn);
+        GraphSummaryColumn = Text(LocalizationKey.GraphSummaryColumn);
+        GraphLinksColumn = Text(LocalizationKey.GraphLinksColumn);
+        NoGraphRowsText = Text(LocalizationKey.NoGraphRows);
         PlanEditorTitle = Text(LocalizationKey.PlanEditor);
         SeriesTitleLabel = Text(LocalizationKey.SeriesTitle);
         SeriesDescriptionLabel = Text(LocalizationKey.SeriesDescription);
@@ -1381,6 +1432,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new(WorkbenchTabKind.Gallery, Text(LocalizationKey.Gallery), Text(LocalizationKey.GalleryEmptyState)),
             new(WorkbenchTabKind.Review, Text(LocalizationKey.Review), Text(LocalizationKey.ReviewEmptyState)),
             new(WorkbenchTabKind.Delivery, Text(LocalizationKey.Delivery), Text(LocalizationKey.DeliveryEmptyState)),
+            new(WorkbenchTabKind.Graph, Text(LocalizationKey.Graph), Text(LocalizationKey.GraphEmptyState)),
         ];
         ActivityItems =
         [
@@ -1400,6 +1452,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedSeriesItemTitleText = SelectedSeriesItem?.Title ?? NoItemSelectedForPromptText;
         RebuildPlanRows();
         RebuildPromptRows();
+        RebuildWorkflowGraphRows();
     }
 
     private void RefreshStyleRecipeOptions()
@@ -2077,6 +2130,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedPromptDirection = PromptDirectionRows.FirstOrDefault(direction =>
             _activeCreativeBriefId is null || direction.CreativeBriefId == _activeCreativeBriefId);
         CreateSeriesCommand.NotifyCanExecuteChanged();
+        RebuildWorkflowGraphRows();
     }
 
     private Task ClearPlanAsync()
@@ -2094,6 +2148,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _activeCreativeBriefId = null;
         RebuildPlanRows();
         RebuildPromptRows();
+        RebuildWorkflowGraphRows();
         CreateSeriesCommand.NotifyCanExecuteChanged();
         AddItemCommand.NotifyCanExecuteChanged();
         CreatePromptVersionCommand.NotifyCanExecuteChanged();
@@ -2126,6 +2181,82 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 prompt.SettingsSummary,
                 prompt.CreatedAt.LocalDateTime.ToString("g")))))
             .ToArray();
+    }
+
+    private void RebuildWorkflowGraphRows()
+    {
+        var rows = new List<WorkflowGraphRowViewModel>();
+
+        if (SelectedProject is not null)
+        {
+            rows.Add(new WorkflowGraphRowViewModel(
+                Text(LocalizationKey.GraphProjectNode),
+                SelectedProject.Name,
+                $"series={Series.Count}",
+                string.Empty));
+        }
+
+        foreach (var series in Series)
+        {
+            rows.Add(new WorkflowGraphRowViewModel(
+                Text(LocalizationKey.GraphSeriesNode),
+                series.Title,
+                $"items={series.Items.Count}",
+                SelectedProject?.Name ?? string.Empty));
+
+            foreach (var item in series.Items)
+            {
+                var candidateCount = GalleryRows.Count(row =>
+                    row.SeriesItemId == item.Id
+                    || row.ItemTitle.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
+                var reviewCount = ReviewRows.Count(row =>
+                    row.ItemTitle.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
+
+                rows.Add(new WorkflowGraphRowViewModel(
+                    Text(LocalizationKey.GraphItemNode),
+                    item.Title,
+                    $"{_localizationService.GetSeriesItemStatusText(item.Status)}; prompts={item.PromptVersions.Count}; candidates={candidateCount}; reviews={reviewCount}",
+                    series.Title));
+
+                foreach (var prompt in item.PromptVersions.OrderBy(prompt => prompt.VersionNumber))
+                {
+                    rows.Add(new WorkflowGraphRowViewModel(
+                        Text(LocalizationKey.GraphPromptNode),
+                        $"v{prompt.VersionNumber}",
+                        $"{prompt.SettingsSummary}; {prompt.CreatedAt.LocalDateTime:g}",
+                        item.Title));
+                }
+            }
+        }
+
+        foreach (var candidate in GalleryRows)
+        {
+            rows.Add(new WorkflowGraphRowViewModel(
+                Text(LocalizationKey.GraphCandidateNode),
+                ShortId(candidate.CandidateImageId),
+                candidate.AssetPath,
+                candidate.ItemTitle));
+        }
+
+        foreach (var review in ReviewRows)
+        {
+            rows.Add(new WorkflowGraphRowViewModel(
+                Text(LocalizationKey.GraphReviewNode),
+                review.Decision,
+                review.ScoreText,
+                review.ItemTitle));
+        }
+
+        foreach (var delivery in DeliveryRows)
+        {
+            rows.Add(new WorkflowGraphRowViewModel(
+                Text(LocalizationKey.GraphDeliveryNode),
+                Path.GetFileName(delivery.PackageDirectory),
+                $"{delivery.FinalImageCount} {Text(LocalizationKey.GraphDeliveryImages)}",
+                SelectedProject?.Name ?? string.Empty));
+        }
+
+        WorkflowGraphRows = rows;
     }
 
     private static IReadOnlyList<PromptDirectionRowViewModel> BuildPromptDirectionRows(ImageProject project)
@@ -2182,6 +2313,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
         return string.IsNullOrWhiteSpace(sanitized) ? "image" : sanitized.Trim();
     }
 
+    private static string ShortId(Guid id)
+    {
+        return id.ToString("N")[..8];
+    }
+
     private string Text(LocalizationKey key)
     {
         return _localizationService.GetText(key);
@@ -2203,6 +2339,8 @@ public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, 
     public bool IsReview => Kind is WorkbenchTabKind.Review;
 
     public bool IsDelivery => Kind is WorkbenchTabKind.Delivery;
+
+    public bool IsGraph => Kind is WorkbenchTabKind.Graph;
 }
 
 public enum WorkbenchTabKind
@@ -2214,6 +2352,7 @@ public enum WorkbenchTabKind
     Gallery = 4,
     Review = 5,
     Delivery = 6,
+    Graph = 7,
 }
 
 public sealed record LanguageOptionViewModel(LanguagePreference Preference, string DisplayName);
@@ -2297,3 +2436,9 @@ public sealed record DeliveryRowViewModel(
     string ManifestCsvPath,
     string ReviewReportPath,
     string FinalImageCount);
+
+public sealed record WorkflowGraphRowViewModel(
+    string NodeType,
+    string Title,
+    string Summary,
+    string LinksTo);

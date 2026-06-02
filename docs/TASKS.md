@@ -99,7 +99,7 @@
 - [x] Add mask/edit workflow foundation.
 - [x] Add mask/edit UI controls.
 - [x] Add workflow export/import.
-- [ ] Add optional graph view.
+- [x] Add optional graph view.
 
 ## Phase 7: Brief-First Image Generation
 
