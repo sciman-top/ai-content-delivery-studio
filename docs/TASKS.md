@@ -99,3 +99,14 @@
 - [ ] Add mask/edit workflow.
 - [ ] Add workflow export/import.
 - [ ] Add optional graph view.
+
+## Phase 7: Brief-First Image Generation
+
+- [x] Record brief-first image generation design spec.
+- [x] Record brief-first implementation plan.
+- [ ] Add `CreativeBrief` and `PromptDirection` domain records.
+- [ ] Persist creative briefs under image series.
+- [ ] Add fake-first prompt direction planning.
+- [ ] Add application service workflow to create briefs, generate directions, and promote directions.
+- [ ] Add minimal Brief tab UI and localization.
+- [ ] Run full build, test, and format gates for the implementation slice.
