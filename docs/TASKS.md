@@ -109,7 +109,7 @@
 - [x] Add fake-first prompt direction planning.
 - [x] Add application service workflow to create briefs, generate directions, and promote directions.
 - [x] Add minimal Brief tab UI and localization.
-- [ ] Run full build, test, and format gates for the implementation slice.
+- [x] Run full build, test, and format gates for the implementation slice.
 
 ## Phase 7A: Preset Governance
 
