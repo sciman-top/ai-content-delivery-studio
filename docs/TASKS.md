@@ -120,7 +120,7 @@
 - [x] Add fake-first recommendation output.
 - [x] Persist recommendations through the application service.
 - [x] Add catalog invariant tests.
-- [ ] Run full build, test, and format gates for the preset governance slice.
+- [x] Run full build, test, and format gates for the preset governance slice.
 
 ## Phase 8: Document Illustration Workflow
 
