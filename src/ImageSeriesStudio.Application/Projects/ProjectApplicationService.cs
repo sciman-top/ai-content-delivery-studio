@@ -207,23 +207,49 @@ public sealed class ProjectApplicationService
         Guid seriesItemId,
         Guid creativeBriefId,
         string directionKey,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var (item, direction) = ResolvePromptDirectionTarget(
+            project,
+            seriesItemId,
+            creativeBriefId,
+            directionKey);
+        var settings = direction.Recommendation is { } recommendation
+            ? CreateGenerationSettings(recommendation)
+            : CreateDefaultGenerationSettings();
+
+        return await PromotePromptDirectionAsync(project, item, direction, settings, timestamp, cancellationToken);
+    }
+
+    public async Task<PromptVersion> PromotePromptDirectionAsync(
+        Guid projectId,
+        Guid seriesItemId,
+        Guid creativeBriefId,
+        string directionKey,
         GenerationSettings settings,
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
         var project = await RequireProjectAsync(projectId, cancellationToken);
-        var item = project.Series
-            .SelectMany(series => series.Items)
-            .SingleOrDefault(item => item.Id == seriesItemId)
-            ?? throw new InvalidOperationException($"Series item not found: {seriesItemId}");
-        var brief = project.Series
-            .SelectMany(series => series.CreativeBriefs)
-            .SingleOrDefault(brief => brief.Id == creativeBriefId)
-            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
-        var direction = brief.PromptDirections.SingleOrDefault(direction =>
-            direction.Key.Equals(directionKey, StringComparison.OrdinalIgnoreCase))
-            ?? throw new InvalidOperationException($"Prompt direction not found: {directionKey}");
+        var (item, direction) = ResolvePromptDirectionTarget(
+            project,
+            seriesItemId,
+            creativeBriefId,
+            directionKey);
 
+        return await PromotePromptDirectionAsync(project, item, direction, settings, timestamp, cancellationToken);
+    }
+
+    private async Task<PromptVersion> PromotePromptDirectionAsync(
+        ImageProject project,
+        SeriesItem item,
+        PromptDirection direction,
+        GenerationSettings settings,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
         var providerProfile = ResolveProviderProfile(project, providerProfileId: null, timestamp);
         var prompt = item.AddPromptVersion(direction.PromptText, settings, providerProfile.Id, timestamp);
         await _repository.SaveAsync(project, cancellationToken);
@@ -411,6 +437,36 @@ public sealed class ProjectApplicationService
     private static GenerationSettings CreateDefaultGenerationSettings()
     {
         return new GenerationSettings(1024, 1024, "standard", "png");
+    }
+
+    private static GenerationSettings CreateGenerationSettings(PromptDirectionRecommendation recommendation)
+    {
+        return new GenerationSettings(
+            recommendation.Width,
+            recommendation.Height,
+            recommendation.QualityBand,
+            recommendation.OutputFormat);
+    }
+
+    private static (SeriesItem Item, PromptDirection Direction) ResolvePromptDirectionTarget(
+        ImageProject project,
+        Guid seriesItemId,
+        Guid creativeBriefId,
+        string directionKey)
+    {
+        var item = project.Series
+            .SelectMany(series => series.Items)
+            .SingleOrDefault(item => item.Id == seriesItemId)
+            ?? throw new InvalidOperationException($"Series item not found: {seriesItemId}");
+        var brief = project.Series
+            .SelectMany(series => series.CreativeBriefs)
+            .SingleOrDefault(brief => brief.Id == creativeBriefId)
+            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
+        var direction = brief.PromptDirections.SingleOrDefault(direction =>
+            direction.Key.Equals(directionKey, StringComparison.OrdinalIgnoreCase))
+            ?? throw new InvalidOperationException($"Prompt direction not found: {directionKey}");
+
+        return (item, direction);
     }
 
     private static string BuildDocumentTargetBrief(IllustrationTarget target)

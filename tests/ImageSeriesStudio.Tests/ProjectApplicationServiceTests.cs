@@ -354,6 +354,85 @@ public sealed class ProjectApplicationServiceTests
     }
 
     [Fact]
+    public async Task ProjectApplicationService_PromotesPromptDirectionWithRecommendedSettings()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-brief-recommendation.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(
+                new EfProjectRepository(new AppDbContext(options)),
+                new FakeTextPlanningProvider());
+            var timestamp = new DateTimeOffset(2026, 6, 2, 12, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Recommendation promotion demo", timestamp, CancellationToken.None);
+            var series = await service.AddSeriesAsync(
+                project.Id,
+                "Article images",
+                "Series",
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+            var item = await service.AddItemAsync(
+                project.Id,
+                series.Id,
+                "Opening",
+                "Opening visual",
+                timestamp.AddMinutes(2),
+                CancellationToken.None);
+            var brief = await service.CreateCreativeBriefAsync(
+                project.Id,
+                series.Id,
+                "article illustration",
+                "teachers",
+                ImageTextPolicy.Hybrid,
+                "clean editorial",
+                ["accurate visual"],
+                ["small fake text"],
+                timestamp.AddMinutes(3),
+                CancellationToken.None);
+            await service.CreatePromptDirectionsAsync(
+                project.Id,
+                brief.Id,
+                timestamp.AddMinutes(4),
+                CancellationToken.None);
+
+            var promoted = await service.PromotePromptDirectionAsync(
+                project.Id,
+                item.Id,
+                brief.Id,
+                "conservative",
+                timestamp.AddMinutes(5),
+                CancellationToken.None);
+
+            var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var loadedPrompt = loaded!.Series.Single().Items.Single().PromptVersions.Single();
+
+            Assert.Equal(promoted.Id, loadedPrompt.Id);
+            Assert.Equal(1536, loadedPrompt.Settings.Width);
+            Assert.Equal(1024, loadedPrompt.Settings.Height);
+            Assert.Equal("draft", loadedPrompt.Settings.Quality);
+            Assert.Equal("png", loadedPrompt.Settings.OutputFormat);
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ProjectApplicationService_RunsGenerationQueueWithFakeProvider()
     {
         var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
