@@ -77,6 +77,22 @@ public sealed class EfProjectRepository : IProjectRepository
                 }
             }
         }
+
+        foreach (var brief in project.DocumentBriefs)
+        {
+            if (!await _dbContext.DocumentBriefs.AnyAsync(existing => existing.Id == brief.Id, cancellationToken))
+            {
+                _dbContext.Entry(brief).State = EntityState.Added;
+            }
+        }
+
+        foreach (var plan in project.IllustrationPlans)
+        {
+            if (!await _dbContext.IllustrationPlans.AnyAsync(existing => existing.Id == plan.Id, cancellationToken))
+            {
+                _dbContext.Entry(plan).State = EntityState.Added;
+            }
+        }
     }
 
     public async Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken)

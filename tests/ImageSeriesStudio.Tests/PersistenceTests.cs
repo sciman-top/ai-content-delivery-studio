@@ -1,6 +1,9 @@
+using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Core.Styles;
+using ImageSeriesStudio.Infrastructure.Fakes;
 using ImageSeriesStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +11,83 @@ namespace ImageSeriesStudio.Tests;
 
 public sealed class PersistenceTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task EfProjectRepository_DocumentIllustrationWorkflow_PersistsProviderPlan(bool approveAllTargets)
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            var timestamp = new DateTimeOffset(2026, 6, 2, 11, 0, 0, TimeSpan.Zero);
+            DocumentIllustrationWorkflowResult result;
+            Guid projectId;
+
+            await using (var db = new AppDbContext(options))
+            {
+                await db.Database.EnsureCreatedAsync();
+
+                var repository = new EfProjectRepository(db);
+                var service = new ProjectApplicationService(repository, new FakeTextPlanningProvider());
+                var project = await service.CreateProjectAsync(
+                    "EF document illustration workflow",
+                    timestamp,
+                    CancellationToken.None);
+
+                projectId = project.Id;
+                result = await service.CreateDocumentIllustrationPlanWithProviderAsync(
+                    project.Id,
+                    CreateDocumentIllustrationRequest(),
+                    approveAllTargets,
+                    timestamp.AddMinutes(1),
+                    CancellationToken.None);
+            }
+
+            await using (var db = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(db);
+                var loaded = await repository.LoadAsync(projectId, CancellationToken.None);
+
+                var brief = Assert.Single(loaded!.DocumentBriefs);
+                var plan = Assert.Single(loaded.IllustrationPlans);
+
+                Assert.Equal(result.DocumentBriefId, brief.Id);
+                Assert.Equal(result.IllustrationPlanId, plan.Id);
+                Assert.Equal(projectId, brief.ProjectId);
+                Assert.Equal(projectId, plan.ProjectId);
+                Assert.Equal(brief.Id, plan.DocumentBriefId);
+                Assert.NotEmpty(plan.Targets);
+
+                if (approveAllTargets)
+                {
+                    Assert.True(result.SeriesId.HasValue);
+                    Assert.Equal(plan.Targets.Count, result.ApprovedTargetCount);
+                    Assert.Single(loaded.Series);
+                }
+                else
+                {
+                    Assert.Null(result.SeriesId);
+                    Assert.Equal(0, result.ApprovedTargetCount);
+                    Assert.Empty(loaded.Series);
+                }
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
     [Fact]
     public async Task PersistsDocumentBriefsAndIllustrationPlans()
     {
@@ -165,5 +245,18 @@ public sealed class PersistenceTests
 
         Assert.False(File.Exists(databasePath));
         Assert.DoesNotContain("ai-image-series-studio", databasePath, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static DocumentIllustrationPlanningRequest CreateDocumentIllustrationRequest()
+    {
+        return new DocumentIllustrationPlanningRequest(
+            "Quantum teaching note",
+            "Teachers need an intuitive explanation of superposition.",
+            "teachers",
+            DocumentFamily.Educational,
+            IllustrationStrictnessLevel.Educational,
+            ["Introduction", "Classroom analogy"],
+            ["Superposition needs a visual analogy."],
+            ["avoid fake lab data"]);
     }
 }
