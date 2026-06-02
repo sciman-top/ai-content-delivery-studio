@@ -111,6 +111,17 @@
 - [x] Add minimal Brief tab UI and localization.
 - [ ] Run full build, test, and format gates for the implementation slice.
 
+## Phase 7A: Preset Governance
+
+- [x] Record preset governance design spec.
+- [x] Record preset governance implementation plan.
+- [ ] Add governance metadata to image type presets.
+- [ ] Add structured prompt direction recommendation model.
+- [ ] Add fake-first recommendation output.
+- [ ] Persist recommendations through the application service.
+- [ ] Add catalog invariant tests.
+- [ ] Run full build, test, and format gates for the preset governance slice.
+
 ## Phase 8: Document Illustration Workflow
 
 - [x] Add document illustration design spec.
