@@ -36,8 +36,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _newPlanningAudience = string.Empty;
     private string _newPlanningItemCount = "3";
     private string _newPlanningStyleBrief = string.Empty;
-    private string _newDocumentSourceText = "Teachers need a clear concept diagram for the central idea.";
-    private string _newDocumentAudience = "teachers";
+    private string _newDocumentSourceText = string.Empty;
+    private string _newDocumentAudience = string.Empty;
+    private string _defaultDocumentSourceText = string.Empty;
+    private string _defaultDocumentAudience = string.Empty;
     private string _projectNameLabel = string.Empty;
     private string _newProjectNamePlaceholder = string.Empty;
     private string _createProjectText = string.Empty;
@@ -134,18 +136,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<ImageTypePresetOptionViewModel> _imageTypePresetOptions = [];
     private IReadOnlyList<StyleGuideOptionViewModel> _styleGuideOptions = [];
     private IReadOnlyList<GenerationRecipeOptionViewModel> _generationRecipeOptions = [];
-    private IReadOnlyList<IllustrationStrictnessLevel> _documentStrictnessOptions =
-    [
-        IllustrationStrictnessLevel.Editorial,
-        IllustrationStrictnessLevel.Educational,
-        IllustrationStrictnessLevel.ScholarlyDraft,
-    ];
+    private IReadOnlyList<DocumentStrictnessOptionViewModel> _documentStrictnessOptions = [];
     private SeriesSummaryViewModel? _selectedSeries;
     private SeriesItemViewModel? _selectedSeriesItem;
     private ImageTypePresetOptionViewModel? _selectedImageTypePresetOption;
     private StyleGuideOptionViewModel? _selectedStyleGuideOption;
     private GenerationRecipeOptionViewModel? _selectedGenerationRecipeOption;
-    private IllustrationStrictnessLevel _selectedDocumentStrictness = IllustrationStrictnessLevel.Educational;
+    private DocumentStrictnessOptionViewModel? _selectedDocumentStrictnessOption;
 
     public MainWindowViewModel(
         LocalizationService localizationService,
@@ -255,6 +252,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             GalleryRows = [];
             ReviewRows = [];
             DeliveryRows = [];
+            DocumentPlanningResultSummary = string.Empty;
             RunFakePlanningCommand.NotifyCanExecuteChanged();
             RunFakeDocumentPlanningCommand.NotifyCanExecuteChanged();
             RunFakeGenerationCommand.NotifyCanExecuteChanged();
@@ -938,16 +936,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public IReadOnlyList<IllustrationStrictnessLevel> DocumentStrictnessOptions
+    public IReadOnlyList<DocumentStrictnessOptionViewModel> DocumentStrictnessOptions
     {
         get => _documentStrictnessOptions;
         private set => SetProperty(ref _documentStrictnessOptions, value);
     }
 
-    public IllustrationStrictnessLevel SelectedDocumentStrictness
+    public DocumentStrictnessOptionViewModel? SelectedDocumentStrictnessOption
     {
-        get => _selectedDocumentStrictness;
-        set => SetProperty(ref _selectedDocumentStrictness, value);
+        get => _selectedDocumentStrictnessOption;
+        set => SetProperty(ref _selectedDocumentStrictnessOption, value);
     }
 
     public SeriesItemViewModel? SelectedSeriesItem
@@ -1077,6 +1075,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private void RefreshLocalizedText()
     {
         var previousPreference = SelectedLanguageOption?.Preference ?? _localizationService.Preference;
+        var previousDefaultDocumentSourceText = _defaultDocumentSourceText;
+        var previousDefaultDocumentAudience = _defaultDocumentAudience;
+        var previousDocumentStrictness = SelectedDocumentStrictnessOption?.Value ?? IllustrationStrictnessLevel.Educational;
 
         AppTitle = Text(LocalizationKey.AppTitle);
         ProviderMode = Text(LocalizationKey.ProviderModeFake);
@@ -1102,6 +1103,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         DocumentStrictnessLabel = Text(LocalizationKey.DocumentStrictness);
         RunFakeDocumentPlanningText = Text(LocalizationKey.RunFakeDocumentPlanning);
         DocumentPlanningResultText = Text(LocalizationKey.DocumentPlanningResult);
+        _defaultDocumentSourceText = Text(LocalizationKey.DefaultDocumentSourceText);
+        _defaultDocumentAudience = Text(LocalizationKey.DefaultDocumentAudience);
         RunFakeGenerationText = Text(LocalizationKey.RunFakeGeneration);
         QueueItemColumn = Text(LocalizationKey.QueueItemColumn);
         QueueStatusColumn = Text(LocalizationKey.QueueStatusColumn);
@@ -1160,6 +1163,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         StyleGuideLabel = Text(LocalizationKey.StyleGuide);
         GenerationRecipeLabel = Text(LocalizationKey.GenerationRecipe);
         StyleRecipeSummaryTitle = Text(LocalizationKey.StyleRecipeSummary);
+        RefreshDocumentDefaults(previousDefaultDocumentSourceText, previousDefaultDocumentAudience);
+        RefreshDocumentStrictnessOptions(previousDocumentStrictness);
         RefreshStyleRecipeOptions();
         CurrentProjectSummary = SelectedProject is null
             ? Text(LocalizationKey.NoProjectLoaded)
@@ -1208,6 +1213,34 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedSeriesItemTitleText = SelectedSeriesItem?.Title ?? NoItemSelectedForPromptText;
         RebuildPlanRows();
         RebuildPromptRows();
+    }
+
+    private void RefreshDocumentDefaults(string previousSourceTextDefault, string previousAudienceDefault)
+    {
+        if (string.IsNullOrWhiteSpace(NewDocumentSourceText)
+            || NewDocumentSourceText.Equals(previousSourceTextDefault, StringComparison.Ordinal))
+        {
+            NewDocumentSourceText = _defaultDocumentSourceText;
+        }
+
+        if (string.IsNullOrWhiteSpace(NewDocumentAudience)
+            || NewDocumentAudience.Equals(previousAudienceDefault, StringComparison.Ordinal))
+        {
+            NewDocumentAudience = _defaultDocumentAudience;
+        }
+    }
+
+    private void RefreshDocumentStrictnessOptions(IllustrationStrictnessLevel selectedStrictness)
+    {
+        DocumentStrictnessOptions =
+        [
+            new(IllustrationStrictnessLevel.Editorial, Text(LocalizationKey.DocumentStrictnessEditorial)),
+            new(IllustrationStrictnessLevel.Educational, Text(LocalizationKey.DocumentStrictnessEducational)),
+            new(IllustrationStrictnessLevel.ScholarlyDraft, Text(LocalizationKey.DocumentStrictnessScholarlyDraft)),
+        ];
+        SelectedDocumentStrictnessOption =
+            DocumentStrictnessOptions.FirstOrDefault(option => option.Value == selectedStrictness)
+            ?? DocumentStrictnessOptions.First(option => option.Value is IllustrationStrictnessLevel.Educational);
     }
 
     private void RefreshStyleRecipeOptions()
@@ -1328,19 +1361,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var projectName = SelectedProject.Name;
         var sourceText = NewDocumentSourceText.Trim();
         var audience = string.IsNullOrWhiteSpace(NewDocumentAudience)
-            ? "general audience"
+            ? _defaultDocumentAudience
             : NewDocumentAudience.Trim();
+        var strictness = SelectedDocumentStrictnessOption?.Value ?? IllustrationStrictnessLevel.Educational;
+        DocumentPlanningResultSummary = string.Empty;
         var result = await _projectService.CreateDocumentIllustrationPlanWithProviderAsync(
             projectId,
             new DocumentIllustrationPlanningRequest(
                 projectName,
                 sourceText,
                 audience,
-                MapDocumentFamily(SelectedDocumentStrictness),
-                SelectedDocumentStrictness,
-                ["Pasted source text"],
+                MapDocumentFamily(strictness),
+                strictness,
+                [Text(LocalizationKey.DocumentPastedSourceSection)],
                 [sourceText],
-                ["Use deterministic post-render text for readable labels and callouts."]),
+                [Text(LocalizationKey.DocumentReadableTextConstraint)]),
             approveAllTargets: true,
             DateTimeOffset.UtcNow,
             CancellationToken.None);
@@ -1348,7 +1383,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         await RefreshProjectsAsync(projectId);
         await LoadPlanAsync(projectId, result.SeriesId);
 
-        var resultMessage = $"{DocumentPlanningResultText}: {result.ApprovedTargetCount} approved target(s).";
+        var resultMessage = string.Format(
+            Text(LocalizationKey.DocumentPlanningResultTemplate),
+            result.ApprovedTargetCount);
         DocumentPlanningResultSummary = resultMessage;
         ActivityItems = ActivityItems.Concat([resultMessage]).ToArray();
     }
@@ -1696,6 +1733,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         GalleryRows = [];
         ReviewRows = [];
         DeliveryRows = [];
+        DocumentPlanningResultSummary = string.Empty;
         RebuildPlanRows();
         RebuildPromptRows();
         CreateSeriesCommand.NotifyCanExecuteChanged();
@@ -1782,6 +1820,8 @@ public sealed record ImageTypePresetOptionViewModel(string Id, string DisplayNam
 public sealed record StyleGuideOptionViewModel(string Id, string Name, string Summary) : IIdentifiedOption;
 
 public sealed record GenerationRecipeOptionViewModel(string Id, string DisplayName, string Summary) : IIdentifiedOption;
+
+public sealed record DocumentStrictnessOptionViewModel(IllustrationStrictnessLevel Value, string DisplayName);
 
 public sealed record SeriesItemViewModel(
     Guid Id,

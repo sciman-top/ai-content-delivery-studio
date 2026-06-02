@@ -34,6 +34,14 @@ public sealed class LocalizationTests
                 ["DocumentStrictness"] = "Strictness",
                 ["RunFakeDocumentPlanning"] = "Run fake document planning",
                 ["DocumentPlanningResult"] = "Document planning result",
+                ["DefaultDocumentSourceText"] = "Teachers need a clear concept diagram for the central idea.",
+                ["DefaultDocumentAudience"] = "teachers",
+                ["DocumentStrictnessEditorial"] = "Editorial review",
+                ["DocumentStrictnessEducational"] = "Educational use",
+                ["DocumentStrictnessScholarlyDraft"] = "Scholarly draft",
+                ["DocumentPastedSourceSection"] = "Pasted source text",
+                ["DocumentReadableTextConstraint"] = "Use deterministic post-render text for readable labels and callouts.",
+                ["DocumentPlanningResultTemplate"] = "Approved targets: {0}.",
             },
             [LanguagePreference.Chinese] = new Dictionary<string, string>
             {
@@ -43,6 +51,14 @@ public sealed class LocalizationTests
                 ["DocumentStrictness"] = "严格度",
                 ["RunFakeDocumentPlanning"] = "运行假文稿规划",
                 ["DocumentPlanningResult"] = "文稿规划结果",
+                ["DefaultDocumentSourceText"] = "教师需要一张清晰的核心概念图。",
+                ["DefaultDocumentAudience"] = "教师",
+                ["DocumentStrictnessEditorial"] = "编辑审阅",
+                ["DocumentStrictnessEducational"] = "教学使用",
+                ["DocumentStrictnessScholarlyDraft"] = "学术草稿",
+                ["DocumentPastedSourceSection"] = "粘贴来源文本",
+                ["DocumentReadableTextConstraint"] = "需要可读标签和说明时，使用确定性后期排版文字。",
+                ["DocumentPlanningResultTemplate"] = "已批准目标：{0} 个。",
             },
         };
         var definedKeys = Enum.GetNames<LocalizationKey>();

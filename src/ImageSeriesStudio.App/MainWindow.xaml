@@ -916,7 +916,8 @@
                 <TextBox Text="{Binding NewDocumentAudience, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
                 <TextBlock Text="{Binding DocumentStrictnessLabel}" Margin="0,0,0,4" />
                 <ComboBox ItemsSource="{Binding DocumentStrictnessOptions}"
-                          SelectedItem="{Binding SelectedDocumentStrictness, Mode=TwoWay}"
+                          SelectedItem="{Binding SelectedDocumentStrictnessOption, Mode=TwoWay}"
+                          DisplayMemberPath="DisplayName"
                           MinHeight="28"
                           Margin="0,0,0,8" />
                 <Button Content="{Binding RunFakeDocumentPlanningText}"
