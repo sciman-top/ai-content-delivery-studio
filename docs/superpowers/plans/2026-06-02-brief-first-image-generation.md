@@ -928,7 +928,7 @@ dotnet test --filter ProjectApplicationService_CreatesBriefDirectionsAndPromotes
 
 Expected: test passes.
 
-- [ ] **Step 5: Commit service slice**
+- [x] **Step 5: Commit service slice**
 
 Run:
 
@@ -948,7 +948,7 @@ git commit -m "feat: 串联需求设计与提示词晋级"
 - Modify: `src/ImageSeriesStudio.App/MainWindow.xaml`
 - Test: `tests/ImageSeriesStudio.Tests/LocalizationTests.cs`
 
-- [ ] **Step 1: Write localization test**
+- [x] **Step 1: Write localization test**
 
 In `tests/ImageSeriesStudio.Tests/LocalizationTests.cs`, add:
 
@@ -968,7 +968,7 @@ public void LocalizationCatalog_ContainsBriefTab(string cultureName, string expe
 }
 ```
 
-- [ ] **Step 2: Run failing localization test**
+- [x] **Step 2: Run failing localization test**
 
 Run:
 
@@ -978,7 +978,7 @@ dotnet test --filter LocalizationCatalog_ContainsBriefTab
 
 Expected: fails because localization keys do not exist.
 
-- [ ] **Step 3: Add localization keys**
+- [x] **Step 3: Add localization keys**
 
 In `src/ImageSeriesStudio.Application/Localization/LocalizationService.cs`, add enum values:
 
@@ -1019,7 +1019,7 @@ Add Chinese catalog entries:
 [LocalizationKey.PromptDirectionsHeader] = "提示词方向",
 ```
 
-- [ ] **Step 4: Add ViewModel surface**
+- [x] **Step 4: Add ViewModel surface**
 
 In `src/ImageSeriesStudio.App/ViewModels/MainWindowViewModel.cs`, extend workbench tab creation so Brief appears before Plan:
 
@@ -1053,7 +1053,7 @@ GeneratePromptDirectionsText = Text(LocalizationKey.GeneratePromptDirections);
 PromotePromptDirectionText = Text(LocalizationKey.PromotePromptDirection);
 ```
 
-- [ ] **Step 5: Add compact XAML**
+- [x] **Step 5: Add compact XAML**
 
 In `src/ImageSeriesStudio.App/MainWindow.xaml`, add an `IsBrief` visibility trigger beside the existing Plan/Prompts/Queue/Gallery/Review/Delivery triggers and add a simple Brief panel:
 
@@ -1091,7 +1091,7 @@ In `src/ImageSeriesStudio.App/MainWindow.xaml`, add an `IsBrief` visibility trig
 </Grid>
 ```
 
-- [ ] **Step 6: Verify localization test**
+- [x] **Step 6: Verify localization test**
 
 Run:
 
@@ -1101,7 +1101,7 @@ dotnet test --filter LocalizationCatalog_ContainsBriefTab
 
 Expected: test passes.
 
-- [ ] **Step 7: Verify build**
+- [x] **Step 7: Verify build**
 
 Run:
 

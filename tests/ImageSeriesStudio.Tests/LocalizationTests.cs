@@ -83,4 +83,24 @@ public sealed class LocalizationTests
         Assert.Equal("风格与配方", service.GetText(LocalizationKey.StyleRecipeInspector));
         Assert.Equal("图片类型", service.GetText(LocalizationKey.ImageTypePreset));
     }
+
+    [Fact]
+    public void LocalizationService_ReturnsBriefStudioText()
+    {
+        var service = new LocalizationService();
+
+        service.SetLanguage(LanguagePreference.English);
+        Assert.Equal("Brief", service.GetText(LocalizationKey.Brief));
+        Assert.Equal("Goal", service.GetText(LocalizationKey.BriefGoal));
+        Assert.Equal("Create brief", service.GetText(LocalizationKey.CreateBrief));
+        Assert.Equal("Generate directions", service.GetText(LocalizationKey.GeneratePromptDirections));
+        Assert.Equal("Promote direction", service.GetText(LocalizationKey.PromotePromptDirection));
+
+        service.SetLanguage(LanguagePreference.Chinese);
+        Assert.Equal("需求设计", service.GetText(LocalizationKey.Brief));
+        Assert.Equal("目标", service.GetText(LocalizationKey.BriefGoal));
+        Assert.Equal("创建设计简报", service.GetText(LocalizationKey.CreateBrief));
+        Assert.Equal("生成提示词方向", service.GetText(LocalizationKey.GeneratePromptDirections));
+        Assert.Equal("晋级为提示词版本", service.GetText(LocalizationKey.PromotePromptDirection));
+    }
 }

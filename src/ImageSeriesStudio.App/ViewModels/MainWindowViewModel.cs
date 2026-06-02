@@ -46,6 +46,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _planningAudienceLabel = string.Empty;
     private string _planningItemCountLabel = string.Empty;
     private string _planningStyleBriefLabel = string.Empty;
+    private string _briefGoalLabel = string.Empty;
+    private string _briefAudienceLabel = string.Empty;
+    private string _briefStyleIntentLabel = string.Empty;
+    private string _createBriefText = string.Empty;
+    private string _generatePromptDirectionsText = string.Empty;
+    private string _promotePromptDirectionText = string.Empty;
+    private string _promptDirectionsHeader = string.Empty;
     private string _runFakePlanningText = string.Empty;
     private string _runFakeGenerationText = string.Empty;
     private string _queueItemColumn = string.Empty;
@@ -610,6 +617,48 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _noItemsInSeriesText, value);
     }
 
+    public string BriefGoalLabel
+    {
+        get => _briefGoalLabel;
+        private set => SetProperty(ref _briefGoalLabel, value);
+    }
+
+    public string BriefAudienceLabel
+    {
+        get => _briefAudienceLabel;
+        private set => SetProperty(ref _briefAudienceLabel, value);
+    }
+
+    public string BriefStyleIntentLabel
+    {
+        get => _briefStyleIntentLabel;
+        private set => SetProperty(ref _briefStyleIntentLabel, value);
+    }
+
+    public string CreateBriefText
+    {
+        get => _createBriefText;
+        private set => SetProperty(ref _createBriefText, value);
+    }
+
+    public string GeneratePromptDirectionsText
+    {
+        get => _generatePromptDirectionsText;
+        private set => SetProperty(ref _generatePromptDirectionsText, value);
+    }
+
+    public string PromotePromptDirectionText
+    {
+        get => _promotePromptDirectionText;
+        private set => SetProperty(ref _promotePromptDirectionText, value);
+    }
+
+    public string PromptDirectionsHeader
+    {
+        get => _promptDirectionsHeader;
+        private set => SetProperty(ref _promptDirectionsHeader, value);
+    }
+
     public string PromptEditorTitle
     {
         get => _promptEditorTitle;
@@ -1005,6 +1054,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PlanningAudienceLabel = Text(LocalizationKey.PlanningAudience);
         PlanningItemCountLabel = Text(LocalizationKey.PlanningItemCount);
         PlanningStyleBriefLabel = Text(LocalizationKey.PlanningStyleBrief);
+        BriefGoalLabel = Text(LocalizationKey.BriefGoal);
+        BriefAudienceLabel = Text(LocalizationKey.BriefAudience);
+        BriefStyleIntentLabel = Text(LocalizationKey.BriefStyleIntent);
+        CreateBriefText = Text(LocalizationKey.CreateBrief);
+        GeneratePromptDirectionsText = Text(LocalizationKey.GeneratePromptDirections);
+        PromotePromptDirectionText = Text(LocalizationKey.PromotePromptDirection);
+        PromptDirectionsHeader = Text(LocalizationKey.PromptDirectionsHeader);
         RunFakePlanningText = Text(LocalizationKey.RunFakePlanning);
         RunFakeGenerationText = Text(LocalizationKey.RunFakeGeneration);
         QueueItemColumn = Text(LocalizationKey.QueueItemColumn);
@@ -1594,6 +1650,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
 public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, string EmptyState)
 {
+    public bool IsBrief => Kind is WorkbenchTabKind.Brief;
+
     public bool IsPlan => Kind is WorkbenchTabKind.Plan;
 
     public bool IsPrompts => Kind is WorkbenchTabKind.Prompts;
