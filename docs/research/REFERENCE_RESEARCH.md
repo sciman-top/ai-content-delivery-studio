@@ -141,6 +141,8 @@ Patterns to borrow:
 
 The product should treat image type, style, generation settings, reference assets, experiments, and review rubrics as linked but separate objects.
 
+Preset governance evidence is tracked in `docs/research/PRESET_GOVERNANCE_EVIDENCE.md`. That table records which official, community, trend, skill, and local-production sources can influence executable presets, flexible recommendations, and provider capability warnings.
+
 Recommended local contracts:
 
 - `ImageTypePreset`: category, aspect ratio, output format, text policy, rubric, and delivery naming policy.
