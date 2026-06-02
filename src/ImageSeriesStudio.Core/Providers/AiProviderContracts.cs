@@ -8,6 +8,10 @@ public interface ITextPlanningProvider
     IProviderCapabilities Capabilities { get; }
 
     Task<SeriesPlanResult> CreatePlanAsync(PlanningRequest request, CancellationToken cancellationToken);
+
+    Task<BriefPlanningResult> CreatePromptDirectionsAsync(
+        BriefPlanningRequest request,
+        CancellationToken cancellationToken);
 }
 
 public interface IImageGenerationProvider
@@ -127,6 +131,29 @@ public sealed record PlanningRequest(
     string Audience,
     int ItemCount,
     string StyleBrief = "");
+
+public sealed record BriefPlanningRequest(
+    string Goal,
+    string Audience,
+    string StyleIntent,
+    IReadOnlyList<string> MustInclude,
+    IReadOnlyList<string> MustAvoid,
+    int DirectionCount = 3);
+
+public sealed record BriefPlanningResult(
+    IReadOnlyList<PromptDirectionDraft> Directions,
+    IReadOnlyList<string> Assumptions,
+    IReadOnlyList<string> ClarifyingQuestions,
+    string ProviderTraceId);
+
+public sealed record PromptDirectionDraft(
+    string Key,
+    string Name,
+    string IntendedUse,
+    string PromptText,
+    string NegativePrompt,
+    string Strength,
+    string Risk);
 
 public sealed record SeriesPlanResult(
     string Summary,

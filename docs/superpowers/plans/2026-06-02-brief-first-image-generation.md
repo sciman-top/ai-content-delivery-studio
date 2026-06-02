@@ -550,7 +550,7 @@ git commit -m "feat: 持久化生图需求设计"
 - Test: `tests/ImageSeriesStudio.Tests/FakeProviderTests.cs`
 - Test: `tests/ImageSeriesStudio.Tests/OpenAiProviderContractTests.cs`
 
-- [ ] **Step 1: Write failing fake provider test**
+- [x] **Step 1: Write failing fake provider test**
 
 Add to `tests/ImageSeriesStudio.Tests/FakeProviderTests.cs`:
 
@@ -578,7 +578,7 @@ public async Task FakeTextPlanningProvider_CreatesPromptDirectionsForBrief()
 }
 ```
 
-- [ ] **Step 2: Write real provider guard test**
+- [x] **Step 2: Write real provider guard test**
 
 Add to `tests/ImageSeriesStudio.Tests/OpenAiProviderContractTests.cs`:
 
@@ -606,7 +606,7 @@ public async Task TextPlanningProvider_BlocksPromptDirectionsUntilRealImplementa
 }
 ```
 
-- [ ] **Step 3: Run failing tests**
+- [x] **Step 3: Run failing tests**
 
 Run:
 
@@ -616,7 +616,7 @@ dotnet test --filter "FakeTextPlanningProvider_CreatesPromptDirectionsForBrief|T
 
 Expected: fails because the new request/result and provider method do not exist.
 
-- [ ] **Step 4: Extend provider contract**
+- [x] **Step 4: Extend provider contract**
 
 In `src/ImageSeriesStudio.Core/Providers/AiProviderContracts.cs`, add method to `ITextPlanningProvider`:
 
@@ -651,7 +651,7 @@ public sealed record PromptDirectionDraft(
     string ExpectedRisk);
 ```
 
-- [ ] **Step 5: Implement fake directions**
+- [x] **Step 5: Implement fake directions**
 
 In `src/ImageSeriesStudio.Infrastructure/Fakes/FakeProviders.cs`, add this method to `FakeTextPlanningProvider`:
 
@@ -691,7 +691,7 @@ public Task<BriefPlanningResult> CreatePromptDirectionsAsync(
 }
 ```
 
-- [ ] **Step 6: Add OpenAI explicit guard for this slice**
+- [x] **Step 6: Add OpenAI explicit guard for this slice**
 
 In `src/ImageSeriesStudio.Infrastructure/OpenAI/OpenAiTextPlanningProvider.cs`, add:
 
@@ -704,7 +704,7 @@ public Task<BriefPlanningResult> CreatePromptDirectionsAsync(
 }
 ```
 
-- [ ] **Step 7: Verify provider tests**
+- [x] **Step 7: Verify provider tests**
 
 Run:
 

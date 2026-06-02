@@ -73,6 +73,14 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             ExtractTraceId(document.RootElement));
     }
 
+    public Task<BriefPlanningResult> CreatePromptDirectionsAsync(
+        BriefPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        throw new NotSupportedException(
+            "Brief direction planning is not implemented for OpenAI in this slice. Use FakeTextPlanningProvider first.");
+    }
+
     private Dictionary<string, object?> CreatePayload(PlanningRequest request)
     {
         return new Dictionary<string, object?>

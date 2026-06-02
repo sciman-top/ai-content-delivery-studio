@@ -25,6 +25,28 @@ public sealed class FakeProviderTests
     }
 
     [Fact]
+    public async Task FakeTextPlanningProvider_CreatesPromptDirectionsForBrief()
+    {
+        var provider = new FakeTextPlanningProvider();
+
+        var result = await provider.CreatePromptDirectionsAsync(
+            new BriefPlanningRequest(
+                "article illustration",
+                "teachers",
+                "clean editorial",
+                ["accurate subject"],
+                ["unreadable text"],
+                DirectionCount: 3),
+            CancellationToken.None);
+
+        Assert.Equal("fake-text-brief", result.ProviderTraceId);
+        Assert.Equal(3, result.Directions.Count);
+        Assert.Contains(result.Assumptions, assumption => assumption.Contains("draft", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("conservative", result.Directions[0].Key);
+        Assert.Contains("article illustration", result.Directions[0].PromptText);
+    }
+
+    [Fact]
     public async Task FakeImageGenerationProvider_WritesPlaceholderImageAndSidecarMetadata()
     {
         var outputDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));

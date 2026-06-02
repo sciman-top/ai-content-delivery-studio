@@ -106,7 +106,7 @@
 - [x] Record brief-first implementation plan.
 - [x] Add `CreativeBrief` and `PromptDirection` domain records.
 - [x] Persist creative briefs under image series.
-- [ ] Add fake-first prompt direction planning.
+- [x] Add fake-first prompt direction planning.
 - [ ] Add application service workflow to create briefs, generate directions, and promote directions.
 - [ ] Add minimal Brief tab UI and localization.
 - [ ] Run full build, test, and format gates for the implementation slice.

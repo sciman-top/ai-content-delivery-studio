@@ -117,6 +117,28 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task TextPlanningProvider_BlocksPromptDirectionsUntilRealImplementationExists()
+    {
+        using var handler = new CaptureHandler(_ => JsonResponse("{}"));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateTextProvider(httpClient);
+
+        var exception = await Assert.ThrowsAsync<NotSupportedException>(() =>
+            provider.CreatePromptDirectionsAsync(
+                new BriefPlanningRequest(
+                    "poster",
+                    "teachers",
+                    "clean style",
+                    ["accurate diagram"],
+                    ["tiny text"],
+                    DirectionCount: 2),
+                CancellationToken.None));
+
+        Assert.Contains("Brief direction planning is not implemented for OpenAI", exception.Message);
+        Assert.Equal(0, handler.CallCount);
+    }
+
+    [Fact]
     public async Task ImageGenerationProvider_PostsImageRequestAndWritesAssetAndMetadata()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));

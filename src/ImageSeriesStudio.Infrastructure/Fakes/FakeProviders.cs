@@ -35,6 +35,68 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
 
         return Task.FromResult(result);
     }
+
+    public Task<BriefPlanningResult> CreatePromptDirectionsAsync(
+        BriefPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var count = Math.Clamp(request.DirectionCount, 1, 4);
+        var templates = new[]
+        {
+            new
+            {
+                Key = "conservative",
+                Name = "Conservative faithful",
+                Use = "Safest match to the brief.",
+                Strength = "High requirement match.",
+                Risk = "Less visually dramatic.",
+            },
+            new
+            {
+                Key = "visual-impact",
+                Name = "Visual impact",
+                Use = "Stronger composition and contrast.",
+                Strength = "More engaging first impression.",
+                Risk = "May need closer factual review.",
+            },
+            new
+            {
+                Key = "minimal-clean",
+                Name = "Minimal clean",
+                Use = "Low visual noise and easy review.",
+                Strength = "Good for text composition.",
+                Risk = "May feel plain.",
+            },
+            new
+            {
+                Key = "experimental",
+                Name = "Experimental alternate",
+                Use = "Explores a less obvious direction.",
+                Strength = "Can reveal a stronger style.",
+                Risk = "Higher mismatch risk.",
+            },
+        };
+
+        var directions = templates
+            .Take(count)
+            .Select(template => new PromptDirectionDraft(
+                template.Key,
+                template.Name,
+                template.Use,
+                $"Create {request.Goal} for {request.Audience}. Style: {request.StyleIntent}. Include: {string.Join(", ", request.MustInclude)}.",
+                $"Avoid: {string.Join(", ", request.MustAvoid)}.",
+                template.Strength,
+                template.Risk))
+            .ToArray();
+
+        return Task.FromResult(new BriefPlanningResult(
+            directions,
+            ["Use draft generation before final quality."],
+            ["Confirm whether final text should be composed in app."],
+            "fake-text-brief"));
+    }
 }
 
 public sealed class FakeImageGenerationProvider : IImageGenerationProvider
