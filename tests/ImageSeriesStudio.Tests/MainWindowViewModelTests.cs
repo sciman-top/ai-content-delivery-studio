@@ -2,6 +2,7 @@ using System.Globalization;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.App.ViewModels;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Infrastructure.Fakes;
@@ -126,6 +127,38 @@ public sealed class MainWindowViewModelTests
 
         var promptRow = Assert.Single(viewModel.PromptRows);
         Assert.Equal("1536x1024 draft png", promptRow.SettingsSummary);
+    }
+
+    [Fact]
+    public async Task DocumentIllustrationWorkflow_RunsFakePlanningFromInspectorInputs()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.NewProjectName = "Document UI demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewDocumentSourceText = "Teachers need a clean visual explanation of superposition.";
+        viewModel.NewDocumentAudience = "physics teachers";
+        viewModel.SelectedDocumentStrictnessOption = viewModel.DocumentStrictnessOptions
+            .Single(option => option.Value == IllustrationStrictnessLevel.ScholarlyDraft);
+
+        Assert.True(viewModel.RunFakeDocumentPlanningCommand.CanExecute(null));
+
+        await viewModel.RunFakeDocumentPlanningCommand.ExecuteAsync(null);
+
+        Assert.NotEmpty(viewModel.DocumentPlanningResultSummary);
+        Assert.Contains("Approved targets:", viewModel.DocumentPlanningResultSummary);
+        Assert.Contains(viewModel.DocumentPlanningResultSummary, viewModel.ActivityItems);
+        Assert.Single(viewModel.Series);
+        Assert.NotEmpty(viewModel.PlanRows);
+        Assert.NotEmpty(viewModel.PromptRows);
+        Assert.Contains(
+            viewModel.PromptRows,
+            row => row.PromptText.Contains(
+                "Do not imply real experimental, clinical, archival, or field evidence",
+                StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(viewModel.WorkflowGraphRows, row => row.NodeType == "Series" && row.Title.Contains("Document illustrations"));
+        Assert.Contains(viewModel.WorkflowGraphRows, row => row.NodeType == "Prompt");
     }
 
     private static MainWindowViewModel CreateViewModel()
