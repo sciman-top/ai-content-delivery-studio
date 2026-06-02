@@ -1,52 +1,64 @@
+using System.Text.Json.Serialization;
 using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Core.Documents;
 
 public enum DocumentSourceKind
 {
-    Docx,
-    Pdf,
-    Markdown,
-    Text,
-    Paste,
+    Docx = 0,
+    Pdf = 1,
+    Markdown = 2,
+    Text = 3,
+    Paste = 4,
 }
 
 public enum DocumentFamily
 {
-    Editorial,
-    Educational,
-    ScholarlyDraft,
+    Editorial = 0,
+    Educational = 1,
+    ScholarlyDraft = 2,
 }
 
 public enum IllustrationStrictnessLevel
 {
-    Editorial,
-    Educational,
-    ScholarlyDraft,
+    Editorial = 0,
+    Educational = 1,
+    ScholarlyDraft = 2,
 }
 
 public enum IllustrationPurpose
 {
-    Cover,
-    InlineIllustration,
-    ConceptDiagram,
-    MechanismDiagram,
-    Timeline,
-    Comparison,
-    GraphicalAbstract,
-    BackgroundPlate,
-    ExperimentalEvidence,
+    Cover = 0,
+    InlineIllustration = 1,
+    ConceptDiagram = 2,
+    MechanismDiagram = 3,
+    Timeline = 4,
+    Comparison = 5,
+    GraphicalAbstract = 6,
+    BackgroundPlate = 7,
+    ExperimentalEvidence = 8,
 }
 
 public enum IllustrationTargetApprovalState
 {
-    Draft,
-    Approved,
-    Rejected,
+    Draft = 0,
+    Approved = 1,
+    Rejected = 2,
 }
 
 public sealed record DocumentBrief
 {
+    private DocumentBrief()
+    {
+        SourceDisplayName = string.Empty;
+        Title = string.Empty;
+        Audience = string.Empty;
+        Sections = [];
+        KeyClaims = [];
+        VisualOpportunities = [];
+        KnownConstraints = [];
+    }
+
     private DocumentBrief(
         Guid id,
         Guid projectId,
@@ -77,31 +89,31 @@ public sealed record DocumentBrief
         CreatedAt = createdAt;
     }
 
-    public Guid Id { get; }
+    public Guid Id { get; private set; }
 
-    public Guid ProjectId { get; }
+    public Guid ProjectId { get; private set; }
 
-    public DocumentSourceKind SourceKind { get; }
+    public DocumentSourceKind SourceKind { get; private set; }
 
-    public string SourceDisplayName { get; }
+    public string SourceDisplayName { get; private set; }
 
-    public string Title { get; }
+    public string Title { get; private set; }
 
-    public DocumentFamily DocumentFamily { get; }
+    public DocumentFamily DocumentFamily { get; private set; }
 
-    public string Audience { get; }
+    public string Audience { get; private set; }
 
-    public IReadOnlyList<string> Sections { get; }
+    public IReadOnlyList<string> Sections { get; private set; }
 
-    public IReadOnlyList<string> KeyClaims { get; }
+    public IReadOnlyList<string> KeyClaims { get; private set; }
 
-    public IReadOnlyList<string> VisualOpportunities { get; }
+    public IReadOnlyList<string> VisualOpportunities { get; private set; }
 
-    public IReadOnlyList<string> KnownConstraints { get; }
+    public IReadOnlyList<string> KnownConstraints { get; private set; }
 
-    public IllustrationStrictnessLevel StrictnessLevel { get; }
+    public IllustrationStrictnessLevel StrictnessLevel { get; private set; }
 
-    public DateTimeOffset CreatedAt { get; }
+    public DateTimeOffset CreatedAt { get; private set; }
 
     public static DocumentBrief Create(
         Guid projectId,
@@ -156,6 +168,14 @@ public sealed record DocumentBrief
 
 public sealed record IllustrationPlan
 {
+    private IllustrationPlan()
+    {
+        Summary = string.Empty;
+        Targets = [];
+        CoverageNotes = [];
+        RiskNotes = [];
+    }
+
     private IllustrationPlan(
         Guid id,
         Guid projectId,
@@ -178,28 +198,28 @@ public sealed record IllustrationPlan
         UpdatedAt = updatedAt;
     }
 
-    public Guid Id { get; }
+    public Guid Id { get; private set; }
 
-    public Guid ProjectId { get; }
+    public Guid ProjectId { get; private set; }
 
-    public Guid DocumentBriefId { get; }
+    public Guid DocumentBriefId { get; private set; }
 
-    public string Summary { get; }
+    public string Summary { get; private set; }
 
-    public IReadOnlyList<IllustrationTarget> Targets { get; }
+    public IReadOnlyList<IllustrationTarget> Targets { get; private set; }
 
     public IReadOnlyList<IllustrationTarget> ApprovedTargets =>
         Targets
             .Where(target => target.ApprovalState == IllustrationTargetApprovalState.Approved)
             .ToArray();
 
-    public IReadOnlyList<string> CoverageNotes { get; }
+    public IReadOnlyList<string> CoverageNotes { get; private set; }
 
-    public IReadOnlyList<string> RiskNotes { get; }
+    public IReadOnlyList<string> RiskNotes { get; private set; }
 
-    public DateTimeOffset CreatedAt { get; }
+    public DateTimeOffset CreatedAt { get; private set; }
 
-    public DateTimeOffset UpdatedAt { get; }
+    public DateTimeOffset UpdatedAt { get; private set; }
 
     public static IllustrationPlan Create(
         Guid projectId,
@@ -285,6 +305,7 @@ public sealed record IllustrationPlan
 
 public sealed record IllustrationTarget
 {
+    [JsonConstructor]
     private IllustrationTarget(
         Guid id,
         Guid documentBriefId,

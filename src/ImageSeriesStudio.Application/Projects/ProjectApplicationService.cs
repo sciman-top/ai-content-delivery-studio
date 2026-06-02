@@ -177,7 +177,8 @@ public sealed class ProjectApplicationService
 
         var project = await RequireProjectAsync(projectId, cancellationToken);
         var providerResult = await _textPlanningProvider.CreateDocumentIllustrationPlanAsync(request, cancellationToken);
-        var plan = providerResult.Plan;
+        var brief = RebindDocumentBrief(project.Id, providerResult.Brief, timestamp);
+        var plan = RebindIllustrationPlan(project.Id, brief.Id, providerResult.Plan, timestamp);
 
         if (approveAllTargets)
         {
@@ -187,6 +188,9 @@ public sealed class ProjectApplicationService
             }
         }
 
+        project.AddDocumentBrief(brief, timestamp);
+        project.AddIllustrationPlan(plan, timestamp);
+
         var approvedTargets = plan.ApprovedTargets;
         ImageSeries? series = null;
 
@@ -194,7 +198,7 @@ public sealed class ProjectApplicationService
         {
             var providerProfile = ResolveProviderProfile(project, providerProfileId: null, timestamp);
             series = project.AddSeries(
-                $"Document illustrations: {providerResult.Brief.Title}",
+                $"Document illustrations: {brief.Title}",
                 plan.Summary,
                 timestamp);
 
@@ -215,7 +219,7 @@ public sealed class ProjectApplicationService
         await _repository.SaveAsync(project, cancellationToken);
 
         return new DocumentIllustrationWorkflowResult(
-            providerResult.Brief.Id,
+            brief.Id,
             plan.Id,
             series?.Id,
             approvedTargets.Count);
@@ -313,6 +317,58 @@ public sealed class ProjectApplicationService
     private static GenerationSettings CreateDefaultGenerationSettings()
     {
         return new GenerationSettings(1024, 1024, "standard", "png");
+    }
+
+    private static DocumentBrief RebindDocumentBrief(
+        Guid projectId,
+        DocumentBrief source,
+        DateTimeOffset timestamp)
+    {
+        return DocumentBrief.Create(
+            projectId,
+            source.SourceKind,
+            source.SourceDisplayName,
+            source.Title,
+            source.DocumentFamily,
+            source.Audience,
+            source.Sections,
+            source.KeyClaims,
+            source.VisualOpportunities,
+            source.KnownConstraints,
+            source.StrictnessLevel,
+            timestamp);
+    }
+
+    private static IllustrationPlan RebindIllustrationPlan(
+        Guid projectId,
+        Guid documentBriefId,
+        IllustrationPlan source,
+        DateTimeOffset timestamp)
+    {
+        var targets = source.Targets
+            .Select(target => IllustrationTarget.Create(
+                documentBriefId,
+                target.Title,
+                target.DocumentLocation,
+                target.Purpose,
+                target.MustShow,
+                target.MustNotShow,
+                target.SourceEvidence,
+                target.SuggestedImageTypePresetId,
+                target.SuggestedReviewRubricTemplateId,
+                target.TextPolicy,
+                target.StrictnessNotes,
+                timestamp))
+            .ToArray();
+
+        return IllustrationPlan.Create(
+            projectId,
+            documentBriefId,
+            source.Summary,
+            targets,
+            source.CoverageNotes,
+            source.RiskNotes,
+            timestamp);
     }
 
     private static string BuildDocumentTargetBrief(IllustrationTarget target)

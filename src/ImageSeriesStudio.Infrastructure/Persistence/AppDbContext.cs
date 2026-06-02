@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,6 +34,10 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<ProviderProfile> ProviderProfiles => Set<ProviderProfile>();
 
+    public DbSet<DocumentBrief> DocumentBriefs => Set<DocumentBrief>();
+
+    public DbSet<IllustrationPlan> IllustrationPlans => Set<IllustrationPlan>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ImageProject>(entity =>
@@ -47,8 +52,20 @@ public sealed class AppDbContext : DbContext
                 .WithOne()
                 .HasForeignKey(profile => profile.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(project => project.DocumentBriefs)
+                .WithOne()
+                .HasForeignKey(brief => brief.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(project => project.IllustrationPlans)
+                .WithOne()
+                .HasForeignKey(plan => plan.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.Navigation(project => project.Series).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.ProviderProfiles).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.DocumentBriefs).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.DocumentBriefs).AutoInclude();
+            entity.Navigation(project => project.IllustrationPlans).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.IllustrationPlans).AutoInclude();
         });
 
         modelBuilder.Entity<ImageSeries>(entity =>
@@ -149,5 +166,58 @@ public sealed class AppDbContext : DbContext
             entity.HasKey(profile => profile.Id);
             entity.Property(profile => profile.DisplayName).IsRequired();
         });
+
+        modelBuilder.Entity<DocumentBrief>(entity =>
+        {
+            entity.HasKey(brief => brief.Id);
+            entity.Property(brief => brief.SourceDisplayName).IsRequired();
+            entity.Property(brief => brief.Title).IsRequired();
+            entity.Property(brief => brief.Audience).IsRequired();
+            entity.Property(brief => brief.Sections)
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            entity.Property(brief => brief.KeyClaims)
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            entity.Property(brief => brief.VisualOpportunities)
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            entity.Property(brief => brief.KnownConstraints)
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+        });
+
+        modelBuilder.Entity<IllustrationPlan>(entity =>
+        {
+            entity.HasKey(plan => plan.Id);
+            entity.Property(plan => plan.Summary).IsRequired();
+            entity.Ignore(plan => plan.ApprovedTargets);
+            entity.HasOne<DocumentBrief>()
+                .WithMany()
+                .HasForeignKey(plan => plan.DocumentBriefId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.Property(plan => plan.Targets)
+                .HasConversion(targets => SerializeTargets(targets), json => DeserializeTargets(json));
+            entity.Property(plan => plan.CoverageNotes)
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            entity.Property(plan => plan.RiskNotes)
+                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+        });
+    }
+
+    private static string SerializeStringList(IReadOnlyList<string> values)
+    {
+        return JsonSerializer.Serialize(values, JsonOptions);
+    }
+
+    private static IReadOnlyList<string> DeserializeStringList(string json)
+    {
+        return JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? [];
+    }
+
+    private static string SerializeTargets(IReadOnlyList<IllustrationTarget> targets)
+    {
+        return JsonSerializer.Serialize(targets, JsonOptions);
+    }
+
+    private static IReadOnlyList<IllustrationTarget> DeserializeTargets(string json)
+    {
+        return JsonSerializer.Deserialize<List<IllustrationTarget>>(json, JsonOptions) ?? [];
     }
 }
