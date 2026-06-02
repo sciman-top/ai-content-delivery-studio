@@ -124,11 +124,19 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _styleRecipeSummaryTitle = string.Empty;
     private string _styleRecipeSummaryText = string.Empty;
     private string _selectedSeriesItemTitleText = string.Empty;
+    private string _imageEditTitle = string.Empty;
+    private string _selectedCandidateLabel = string.Empty;
+    private string _imageEditPromptLabel = string.Empty;
+    private string _imageEditMaskPathLabel = string.Empty;
+    private string _runFakeImageEditText = string.Empty;
+    private string _imageEditResultText = string.Empty;
     private string _newSeriesTitle = string.Empty;
     private string _newSeriesDescription = string.Empty;
     private string _newItemTitle = string.Empty;
     private string _newItemBrief = string.Empty;
     private string _newPromptText = string.Empty;
+    private string _newImageEditPrompt = string.Empty;
+    private string _newImageEditMaskPath = string.Empty;
     private IReadOnlyList<SeriesSummaryViewModel> _series = [];
     private IReadOnlyList<SeriesItemViewModel> _seriesItems = [];
     private IReadOnlyList<PlanRowViewModel> _planRows = [];
@@ -148,6 +156,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private StyleGuideOptionViewModel? _selectedStyleGuideOption;
     private GenerationRecipeOptionViewModel? _selectedGenerationRecipeOption;
     private PromptDirectionRowViewModel? _selectedPromptDirection;
+    private GalleryRowViewModel? _selectedGalleryRow;
     private Guid? _activeCreativeBriefId;
 
     public MainWindowViewModel(
@@ -877,6 +886,46 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _selectedSeriesItemTitleText, value);
     }
 
+    public string ImageEditTitle
+    {
+        get => _imageEditTitle;
+        private set => SetProperty(ref _imageEditTitle, value);
+    }
+
+    public string SelectedCandidateLabel
+    {
+        get => _selectedCandidateLabel;
+        private set => SetProperty(ref _selectedCandidateLabel, value);
+    }
+
+    public string SelectedCandidateSummary => SelectedGalleryRow is null
+        ? Text(LocalizationKey.NoCandidateSelectedForEdit)
+        : $"{SelectedGalleryRow.ItemTitle} ({SelectedGalleryRow.CandidateImageId:N})";
+
+    public string ImageEditPromptLabel
+    {
+        get => _imageEditPromptLabel;
+        private set => SetProperty(ref _imageEditPromptLabel, value);
+    }
+
+    public string ImageEditMaskPathLabel
+    {
+        get => _imageEditMaskPathLabel;
+        private set => SetProperty(ref _imageEditMaskPathLabel, value);
+    }
+
+    public string RunFakeImageEditText
+    {
+        get => _runFakeImageEditText;
+        private set => SetProperty(ref _runFakeImageEditText, value);
+    }
+
+    public string ImageEditResultText
+    {
+        get => _imageEditResultText;
+        private set => SetProperty(ref _imageEditResultText, value);
+    }
+
     public string NewSeriesTitle
     {
         get => _newSeriesTitle;
@@ -923,6 +972,24 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 CreatePromptVersionCommand.NotifyCanExecuteChanged();
             }
         }
+    }
+
+    public string NewImageEditPrompt
+    {
+        get => _newImageEditPrompt;
+        set
+        {
+            if (SetProperty(ref _newImageEditPrompt, value))
+            {
+                RunFakeImageEditCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string NewImageEditMaskPath
+    {
+        get => _newImageEditMaskPath;
+        set => SetProperty(ref _newImageEditMaskPath, value);
     }
 
     public IReadOnlyList<SeriesSummaryViewModel> Series
@@ -1110,12 +1177,36 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _galleryRows, value))
             {
                 OnPropertyChanged(nameof(HasGalleryRows));
+                if (value.Count == 0)
+                {
+                    SelectedGalleryRow = null;
+                }
+                else if (SelectedGalleryRow is null
+                    || !value.Any(row => row.CandidateImageId == SelectedGalleryRow.CandidateImageId))
+                {
+                    SelectedGalleryRow = value[0];
+                }
+
                 RunFakeReviewCommand.NotifyCanExecuteChanged();
+                RunFakeImageEditCommand.NotifyCanExecuteChanged();
             }
         }
     }
 
     public bool HasGalleryRows => GalleryRows.Count > 0;
+
+    public GalleryRowViewModel? SelectedGalleryRow
+    {
+        get => _selectedGalleryRow;
+        set
+        {
+            if (SetProperty(ref _selectedGalleryRow, value))
+            {
+                OnPropertyChanged(nameof(SelectedCandidateSummary));
+                RunFakeImageEditCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
 
     public IReadOnlyList<ReviewRowViewModel> ReviewRows
     {
@@ -1254,6 +1345,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         StyleGuideLabel = Text(LocalizationKey.StyleGuide);
         GenerationRecipeLabel = Text(LocalizationKey.GenerationRecipe);
         StyleRecipeSummaryTitle = Text(LocalizationKey.StyleRecipeSummary);
+        ImageEditTitle = Text(LocalizationKey.ImageEditTitle);
+        SelectedCandidateLabel = Text(LocalizationKey.SelectedCandidate);
+        ImageEditPromptLabel = Text(LocalizationKey.ImageEditPrompt);
+        ImageEditMaskPathLabel = Text(LocalizationKey.ImageEditMaskPath);
+        RunFakeImageEditText = Text(LocalizationKey.RunFakeImageEdit);
+        ImageEditResultText = Text(LocalizationKey.ImageEditResult);
+        OnPropertyChanged(nameof(SelectedCandidateSummary));
         RefreshStyleRecipeOptions();
         CurrentProjectSummary = SelectedProject is null
             ? Text(LocalizationKey.NoProjectLoaded)
@@ -1668,11 +1766,83 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
             return new GalleryRowViewModel(
                 image.CandidateImageId,
+                task?.SeriesItemId ?? Guid.Empty,
                 itemTitle,
                 image.AssetPath,
                 image.MetadataPath,
                 promptText);
         }).ToArray();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunFakeImageEdit))]
+    private async Task RunFakeImageEditAsync()
+    {
+        if (SelectedProject is null || SelectedGalleryRow is null)
+        {
+            return;
+        }
+
+        var selectedRow = SelectedGalleryRow;
+        var editPrompt = NewImageEditPrompt.Trim();
+        var maskPath = string.IsNullOrWhiteSpace(NewImageEditMaskPath)
+            ? null
+            : NewImageEditMaskPath.Trim();
+        var outputDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ImageSeriesStudio",
+            "edited",
+            SelectedProject.Id.ToString("N"));
+
+        var result = await _projectService.RunImageEditAsync(
+            new ImageEditWorkflowRequest(
+                SelectedProject.Id,
+                selectedRow.SeriesItemId,
+                selectedRow.CandidateImageId,
+                selectedRow.AssetPath,
+                maskPath,
+                editPrompt,
+                CreateDefaultGenerationSettings(),
+                outputDirectory,
+                CreateImageEditOutputFileName(selectedRow)),
+            CancellationToken.None);
+
+        var editedRow = new GalleryRowViewModel(
+            result.CandidateImageId,
+            selectedRow.SeriesItemId,
+            $"{selectedRow.ItemTitle} (edited)",
+            result.AssetPath,
+            result.MetadataPath,
+            BuildEditedPromptText(selectedRow.PromptText, editPrompt));
+
+        GalleryRows = [.. GalleryRows, editedRow];
+        SelectedGalleryRow = editedRow;
+        ReviewRows = [];
+        DeliveryRows = [];
+        ActivityItems = [ImageEditResultText, .. ActivityItems];
+    }
+
+    private bool CanRunFakeImageEdit()
+    {
+        return SelectedProject is not null
+            && SelectedGalleryRow is not null
+            && !string.IsNullOrWhiteSpace(NewImageEditPrompt);
+    }
+
+    private static string CreateImageEditOutputFileName(GalleryRowViewModel row)
+    {
+        return $"{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{row.CandidateImageId:N}-{SanitizeFileName(row.ItemTitle)}-edited.png";
+    }
+
+    private static string BuildEditedPromptText(string sourcePrompt, string editPrompt)
+    {
+        return string.IsNullOrWhiteSpace(sourcePrompt)
+            ? editPrompt
+            : string.Join(
+                Environment.NewLine,
+                [
+                    $"Source prompt: {sourcePrompt}",
+                    $"Edit instruction: {editPrompt}",
+                ]);
     }
 
     [RelayCommand(CanExecute = nameof(CanRunFakeReview))]
@@ -2005,6 +2175,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         return $"{settings.Width}x{settings.Height} {settings.Quality} {settings.OutputFormat}";
     }
 
+    private static string SanitizeFileName(string value)
+    {
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var sanitized = new string(value.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
+        return string.IsNullOrWhiteSpace(sanitized) ? "image" : sanitized.Trim();
+    }
+
     private string Text(LocalizationKey key)
     {
         return _localizationService.GetText(key);
@@ -2101,6 +2278,7 @@ public sealed record QueueRowViewModel(
 
 public sealed record GalleryRowViewModel(
     Guid CandidateImageId,
+    Guid SeriesItemId,
     string ItemTitle,
     string AssetPath,
     string MetadataPath,

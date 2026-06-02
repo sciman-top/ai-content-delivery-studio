@@ -97,7 +97,7 @@
 - [x] Add style library and recipe inspector UI.
 - [x] Include style, recipe, reference, and experiment metadata in delivery packages.
 - [x] Add mask/edit workflow foundation.
-- [ ] Add mask/edit UI controls.
+- [x] Add mask/edit UI controls.
 - [x] Add workflow export/import.
 - [ ] Add optional graph view.
 

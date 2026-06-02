@@ -11,6 +11,50 @@ namespace ImageSeriesStudio.Tests;
 public sealed class MainWindowViewModelTests
 {
     [Fact]
+    public async Task ImageEditWorkflow_RunsFakeEditForSelectedGalleryRow()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.NewProjectName = "Edit UI demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening frame";
+        viewModel.NewItemBrief = "Opening visual for a short series.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        viewModel.NewPromptText = "Create a clean opening frame.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+
+        var sourceRow = Assert.Single(viewModel.GalleryRows);
+        Assert.Equal(sourceRow, viewModel.SelectedGalleryRow);
+
+        viewModel.NewImageEditPrompt = "Clean the label area while preserving the composition.";
+        Assert.True(viewModel.RunFakeImageEditCommand.CanExecute(null));
+
+        try
+        {
+            await viewModel.RunFakeImageEditCommand.ExecuteAsync(null);
+
+            Assert.Equal(2, viewModel.GalleryRows.Count);
+            var editedRow = viewModel.GalleryRows.Single(row => row.CandidateImageId != sourceRow.CandidateImageId);
+            Assert.Equal(sourceRow.SeriesItemId, editedRow.SeriesItemId);
+            Assert.Contains("edited", editedRow.ItemTitle, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Clean the label area", editedRow.PromptText);
+            Assert.True(File.Exists(editedRow.AssetPath));
+            Assert.True(File.Exists(editedRow.MetadataPath));
+            Assert.Contains(viewModel.ImageEditResultText, viewModel.ActivityItems);
+        }
+        finally
+        {
+            DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+        }
+    }
+
+    [Fact]
     public async Task BriefWorkflow_ShowsRecommendationRowsAndPromotesRecommendedSettings()
     {
         var viewModel = CreateViewModel();
@@ -49,11 +93,38 @@ public sealed class MainWindowViewModelTests
 
     private static MainWindowViewModel CreateViewModel()
     {
+        var fakeImageProvider = new FakeImageGenerationProvider();
+
         return new MainWindowViewModel(
             new LocalizationService(() => new CultureInfo("en-US")),
             new ProjectApplicationService(
                 new InMemoryProjectRepository(),
-                new FakeTextPlanningProvider()));
+                new FakeTextPlanningProvider(),
+                fakeImageProvider,
+                new FakeVisionReviewProvider(),
+                deliveryPackageWriter: null,
+                imageEditProvider: fakeImageProvider));
+    }
+
+    private static void DeleteProjectOutputDirectories(Guid? projectId)
+    {
+        if (projectId is null)
+        {
+            return;
+        }
+
+        var appDataDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "ImageSeriesStudio");
+
+        foreach (var folder in new[] { "generated", "edited" })
+        {
+            var directory = Path.Combine(appDataDirectory, folder, projectId.Value.ToString("N"));
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
     }
 
     private sealed class InMemoryProjectRepository : IProjectRepository

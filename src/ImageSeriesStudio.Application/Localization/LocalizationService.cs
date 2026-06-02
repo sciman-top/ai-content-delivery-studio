@@ -132,6 +132,13 @@ public sealed class LocalizationService
         [LocalizationKey.DefaultStyleGuideName] = "Default editorial guide",
         [LocalizationKey.DefaultStyleGuideSummary] = "Clean layout, controlled palette, and deterministic text-safe composition.",
         [LocalizationKey.DefaultGenerationRecipeName] = "Fake standard PNG",
+        [LocalizationKey.ImageEditTitle] = "Image edit",
+        [LocalizationKey.SelectedCandidate] = "Selected candidate",
+        [LocalizationKey.NoCandidateSelectedForEdit] = "Select a gallery candidate before editing.",
+        [LocalizationKey.ImageEditPrompt] = "Edit prompt",
+        [LocalizationKey.ImageEditMaskPath] = "Mask image path (optional)",
+        [LocalizationKey.RunFakeImageEdit] = "Run fake image edit",
+        [LocalizationKey.ImageEditResult] = "Fake image edit output was added to the gallery.",
     };
 
     private static readonly IReadOnlyDictionary<LocalizationKey, string> Chinese = new Dictionary<LocalizationKey, string>
@@ -261,6 +268,13 @@ public sealed class LocalizationService
         [LocalizationKey.DefaultStyleGuideName] = "默认编辑风格指南",
         [LocalizationKey.DefaultStyleGuideSummary] = "干净版式、受控配色，并为确定性文字合成保留安全空间。",
         [LocalizationKey.DefaultGenerationRecipeName] = "假标准 PNG",
+        [LocalizationKey.ImageEditTitle] = "图像编辑",
+        [LocalizationKey.SelectedCandidate] = "已选候选图",
+        [LocalizationKey.NoCandidateSelectedForEdit] = "请先在图库中选择候选图再编辑。",
+        [LocalizationKey.ImageEditPrompt] = "编辑提示词",
+        [LocalizationKey.ImageEditMaskPath] = "蒙版图片路径（可选）",
+        [LocalizationKey.RunFakeImageEdit] = "运行假图像编辑",
+        [LocalizationKey.ImageEditResult] = "假图像编辑输出已加入图库。",
     };
 
     private readonly Func<CultureInfo> _currentCulture;
@@ -464,4 +478,11 @@ public enum LocalizationKey
     DefaultStyleGuideName,
     DefaultStyleGuideSummary,
     DefaultGenerationRecipeName,
+    ImageEditTitle,
+    SelectedCandidate,
+    NoCandidateSelectedForEdit,
+    ImageEditPrompt,
+    ImageEditMaskPath,
+    RunFakeImageEdit,
+    ImageEditResult,
 }
