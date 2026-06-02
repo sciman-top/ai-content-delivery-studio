@@ -190,12 +190,13 @@ public sealed class ProjectApplicationService
                     direction.Name,
                     direction.IntendedUse,
                     direction.PromptText,
-                    direction.NegativePrompt,
-                    direction.Strength,
-                    direction.Risk,
-                    timestamp))
-                .ToArray(),
-            timestamp);
+                direction.NegativePrompt,
+                direction.Strength,
+                direction.Risk,
+                timestamp,
+                direction.Recommendation))
+        .ToArray(),
+    timestamp);
 
         await _repository.SaveAsync(project, cancellationToken);
         return brief;

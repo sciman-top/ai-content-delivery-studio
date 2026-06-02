@@ -332,9 +332,15 @@ public sealed class ProjectApplicationServiceTests
             var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
             var loadedBrief = loaded!.Series.Single().CreativeBriefs.Single();
             var loadedPrompt = loaded.Series.Single().Items.Single().PromptVersions.Single();
+            var loadedDirection = loadedBrief.PromptDirections.Single(direction => direction.Key == "conservative");
 
             Assert.Equal(brief.Id, loadedBrief.Id);
             Assert.Equal(3, planned.PromptDirections.Count);
+            Assert.NotNull(loadedDirection.Recommendation);
+            Assert.Equal(ImageTypePresetCatalog.ArticleInlineIllustration, loadedDirection.Recommendation.ImageTypePresetId);
+            Assert.Equal(1536, loadedDirection.Recommendation.Width);
+            Assert.Equal(1024, loadedDirection.Recommendation.Height);
+            Assert.Equal(ReviewRubricTemplateCatalog.EditorialIllustration, loadedDirection.Recommendation.ReviewRubricTemplateId);
             Assert.Equal(promoted.Id, loadedPrompt.Id);
             Assert.Contains("article illustration", loadedPrompt.PromptText);
         }
