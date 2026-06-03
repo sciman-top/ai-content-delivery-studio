@@ -56,6 +56,13 @@ public interface IOpenAiSecretStore
     Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken);
 }
 
+public interface IWritableOpenAiSecretStore : IOpenAiSecretStore
+{
+    Task SetSecretAsync(string secretName, string secretValue, CancellationToken cancellationToken);
+
+    Task DeleteSecretAsync(string secretName, CancellationToken cancellationToken);
+}
+
 public sealed class EnvironmentOpenAiSecretStore : IOpenAiSecretStore
 {
     public Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
@@ -66,6 +73,54 @@ public sealed class EnvironmentOpenAiSecretStore : IOpenAiSecretStore
             string.IsNullOrWhiteSpace(secretName)
                 ? null
                 : Environment.GetEnvironmentVariable(secretName));
+    }
+}
+
+public sealed class CompositeOpenAiSecretStore : IOpenAiSecretStore
+{
+    private readonly IReadOnlyList<IOpenAiSecretStore> _stores;
+
+    public CompositeOpenAiSecretStore(IReadOnlyList<IOpenAiSecretStore> stores)
+    {
+        if (stores.Count == 0)
+        {
+            throw new ArgumentException("At least one secret store is required.", nameof(stores));
+        }
+
+        _stores = stores;
+    }
+
+    public async Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        foreach (var store in _stores)
+        {
+            var secret = await store.GetSecretAsync(secretName, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(secret))
+            {
+                return secret;
+            }
+        }
+
+        return null;
+    }
+}
+
+public static class OpenAiSecretStores
+{
+    public static IOpenAiSecretStore CreateDefault()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return new CompositeOpenAiSecretStore(
+            [
+                new DpapiOpenAiSecretStore(),
+                new EnvironmentOpenAiSecretStore(),
+            ]);
+        }
+
+        return new EnvironmentOpenAiSecretStore();
     }
 }
 

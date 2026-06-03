@@ -7,6 +7,7 @@ using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
+using ImageSeriesStudio.Infrastructure.OpenAI;
 using ImageSeriesStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,6 +36,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<LocalizationService>();
         builder.Services.AddTransient<IProjectRepository, EfProjectRepository>();
         builder.Services.AddTransient<ProjectApplicationService>();
+        builder.Services.AddSingleton(_ => OpenAiSecretStores.CreateDefault());
         builder.Services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
         builder.Services.AddSingleton<FakeImageGenerationProvider>();
         builder.Services.AddSingleton<IImageGenerationProvider>(serviceProvider =>

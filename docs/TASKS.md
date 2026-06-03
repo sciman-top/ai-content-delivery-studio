@@ -61,8 +61,8 @@
 - [x] Record cloud-first provider hardening implementation plan.
 - [x] Record ADR for cloud-first provider and tooling strategy.
 - [x] Refresh research evidence for OpenAI Responses API, Microsoft resilience, OpenTelemetry, and Credential Locker.
-- [ ] Add Windows Credential Locker or DPAPI secret store adapter.
-- [ ] Replace environment-variable-only production secret retrieval.
+- [x] Add Windows Credential Locker or DPAPI secret store adapter.
+- [x] Replace environment-variable-only production secret retrieval.
 - [ ] Evaluate and adopt the official OpenAI .NET SDK where the API surface is stable enough.
 - [ ] Keep raw `HttpClient` fallback only for unsupported or lagging SDK surfaces.
 - [ ] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.

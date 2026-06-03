@@ -110,6 +110,94 @@ public sealed class OpenAiProviderConfigurationTests
             new EnvironmentOpenAiSecretStore().GetSecretAsync("OPENAI_API_KEY", cancellation.Token));
     }
 
+    [Fact]
+    public async Task DpapiSecretStore_RoundTripsSecretWithoutPlaintextOnDisk()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var directory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+
+        try
+        {
+            var store = new DpapiOpenAiSecretStore(directory);
+
+            await store.SetSecretAsync("OPENAI_API_KEY", "dpapi-test-secret", CancellationToken.None);
+
+            var file = Assert.Single(Directory.GetFiles(directory, "*.dpapi"));
+            var protectedBytes = await File.ReadAllBytesAsync(file);
+            var protectedText = System.Text.Encoding.UTF8.GetString(protectedBytes);
+
+            Assert.DoesNotContain("OPENAI_API_KEY", Path.GetFileName(file), StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("dpapi-test-secret", protectedText, StringComparison.Ordinal);
+            Assert.Equal("dpapi-test-secret", await store.GetSecretAsync("OPENAI_API_KEY", CancellationToken.None));
+
+            await store.DeleteSecretAsync("OPENAI_API_KEY", CancellationToken.None);
+
+            Assert.Null(await store.GetSecretAsync("OPENAI_API_KEY", CancellationToken.None));
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task CompositeSecretStore_PrefersFirstConfiguredStoreAndFallsBack()
+    {
+        var preferred = new CompositeOpenAiSecretStore(
+        [
+            new StaticSecretStore("primary-secret"),
+            new StaticSecretStore("fallback-secret"),
+        ]);
+
+        var fallback = new CompositeOpenAiSecretStore(
+        [
+            new StaticSecretStore(" "),
+            new StaticSecretStore("fallback-secret"),
+        ]);
+
+        Assert.Equal("primary-secret", await preferred.GetSecretAsync("OPENAI_API_KEY", CancellationToken.None));
+        Assert.Equal("fallback-secret", await fallback.GetSecretAsync("OPENAI_API_KEY", CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task CheckReadinessAsync_AllowsRealCallsWithDpapiSecret()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        var directory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+
+        try
+        {
+            var store = new DpapiOpenAiSecretStore(directory);
+            await store.SetSecretAsync("OPENAI_API_KEY", "dpapi-test-secret", CancellationToken.None);
+
+            var readiness = await OpenAiProviderGuard.CheckReadinessAsync(
+                new OpenAiProviderOptions { RealApiEnabled = true },
+                store,
+                CancellationToken.None);
+
+            Assert.True(readiness.CanCallRealApi);
+            Assert.Empty(readiness.Errors);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
     private sealed class StaticSecretStore(string? value) : IOpenAiSecretStore
     {
         public Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
