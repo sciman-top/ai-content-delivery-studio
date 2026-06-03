@@ -36,7 +36,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<LocalizationService>();
         builder.Services.AddTransient<IProjectRepository, EfProjectRepository>();
         builder.Services.AddTransient<ProjectApplicationService>();
-        builder.Services.AddSingleton(_ => OpenAiSecretStores.CreateDefault());
+        builder.Services.AddOpenAiProviderHttpClient(new OpenAiProviderOptions());
         builder.Services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
         builder.Services.AddSingleton<FakeImageGenerationProvider>();
         builder.Services.AddSingleton<IImageGenerationProvider>(serviceProvider =>

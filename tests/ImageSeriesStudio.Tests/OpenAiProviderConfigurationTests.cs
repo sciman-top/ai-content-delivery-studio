@@ -1,4 +1,6 @@
+using System.Net;
 using ImageSeriesStudio.Infrastructure.OpenAI;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ImageSeriesStudio.Tests;
 
@@ -198,6 +200,33 @@ public sealed class OpenAiProviderConfigurationTests
         }
     }
 
+    [Fact]
+    public async Task AddOpenAiProviderHttpClient_RegistersNamedClientAndDoesNotRetryUnsafePost()
+    {
+        var services = new ServiceCollection();
+        var handler = new CountingHandler();
+        var options = new OpenAiProviderOptions
+        {
+            BaseUri = new Uri("https://api.openai.test/v1/"),
+        };
+
+        services
+            .AddOpenAiProviderHttpClient(options)
+            .ConfigurePrimaryHttpMessageHandler(() => handler);
+
+        using var provider = services.BuildServiceProvider();
+        var factory = provider.GetRequiredService<IHttpClientFactory>();
+        var client = factory.CreateClient(OpenAiHttpClientNames.Provider);
+
+        using var response = await client.PostAsync("responses", new StringContent("{}"));
+
+        Assert.Equal("https://api.openai.test/v1/", client.BaseAddress!.ToString());
+        Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
+        Assert.Equal(1, handler.CallCount);
+        Assert.Same(options, provider.GetRequiredService<OpenAiProviderOptions>());
+        Assert.NotNull(provider.GetRequiredService<IOpenAiSecretStore>());
+    }
+
     private sealed class StaticSecretStore(string? value) : IOpenAiSecretStore
     {
         public Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
@@ -205,6 +234,21 @@ public sealed class OpenAiProviderConfigurationTests
             cancellationToken.ThrowIfCancellationRequested();
 
             return Task.FromResult(value);
+        }
+    }
+
+    private sealed class CountingHandler : HttpMessageHandler
+    {
+        public int CallCount { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            CallCount++;
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError));
         }
     }
 }

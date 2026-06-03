@@ -65,7 +65,7 @@
 - [x] Replace environment-variable-only production secret retrieval.
 - [ ] Evaluate and adopt the official OpenAI .NET SDK where the API surface is stable enough.
 - [ ] Keep raw `HttpClient` fallback only for unsupported or lagging SDK surfaces.
-- [ ] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
+- [x] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
 - [ ] Capture request IDs, token usage, latency, and cost telemetry per provider call.
 - [ ] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
 - [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits.
