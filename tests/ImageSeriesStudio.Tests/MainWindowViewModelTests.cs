@@ -13,6 +13,26 @@ namespace ImageSeriesStudio.Tests;
 public sealed class MainWindowViewModelTests
 {
     [Fact]
+    public async Task PlanRows_ShowLocalizedSeriesItemKind()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.NewProjectName = "Kind UI demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening panel";
+        viewModel.NewItemBrief = "Opening visual for a panel-like sequence.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        var row = Assert.Single(viewModel.PlanRows);
+        Assert.Equal("Kind", viewModel.PlanKindColumn);
+        Assert.Equal("Standard", row.KindText);
+    }
+
+    [Fact]
     public async Task WorkflowGraphView_ShowsPlanAndCandidateNodes()
     {
         var viewModel = CreateViewModel();

@@ -174,8 +174,8 @@
 - [x] Add `DesignBlueprint` domain record and persistence.
 - [x] Extend fake planning provider with blueprint candidates.
 - [x] Add application workflow to create, compare, and promote blueprint routes.
-- [ ] Add optional `SeriesItemKind` support for panel-like narrative items.
+- [x] Add optional `SeriesItemKind` support for panel-like narrative items.
 - [x] Expand Brief tab UI with blueprint cards and promotion actions.
 - [ ] Route review outcomes back to brief, blueprint, prompt, or settings layers.
 - [ ] Include blueprint metadata in delivery packages.
-- [ ] Run full build, test, and format gates for the implementation slice.
+- [x] Run full build, test, and format gates for the implementation slice.

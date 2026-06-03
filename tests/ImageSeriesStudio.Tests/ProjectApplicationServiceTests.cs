@@ -138,6 +138,59 @@ public sealed class ProjectApplicationServiceTests
             Assert.Equal(series.Id, loadedSeries.Id);
             Assert.Equal(item.Id, loadedItem.Id);
             Assert.Equal("Cover image", loadedItem.Title);
+            Assert.Equal(SeriesItemKind.Standard, loadedItem.Kind);
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ProjectApplicationService_AddsExplicitItemKind()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-item-kind.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(new EfProjectRepository(new AppDbContext(options)));
+            var timestamp = new DateTimeOffset(2026, 6, 3, 11, 30, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Kind demo", timestamp, CancellationToken.None);
+            var series = await service.AddSeriesAsync(
+                project.Id,
+                "Storyboard",
+                "Panel sequence",
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+
+            var item = await service.AddItemAsync(
+                project.Id,
+                series.Id,
+                "Panel 1",
+                "Opening panel.",
+                SeriesItemKind.Panel,
+                timestamp.AddMinutes(2),
+                CancellationToken.None);
+
+            var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var loadedItem = Assert.Single(loaded!.Series.Single().Items);
+
+            Assert.Equal(item.Id, loadedItem.Id);
+            Assert.Equal(SeriesItemKind.Panel, loadedItem.Kind);
         }
         finally
         {

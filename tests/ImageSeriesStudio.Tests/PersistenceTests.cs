@@ -274,7 +274,7 @@ public sealed class PersistenceTests
                         recommendation),
                 ],
                 timestamp.AddMinutes(4));
-            var item = series.AddItem("Cover", "Opening image", timestamp.AddMinutes(3));
+            var item = series.AddItem("Cover", "Opening image", SeriesItemKind.Cover, timestamp.AddMinutes(3));
             item.AddPromptVersion(
                 "A clean blue poster background",
                 new GenerationSettings(1024, 1024, "standard", "png", 42),
@@ -320,6 +320,7 @@ public sealed class PersistenceTests
                 Assert.Equal(1280, loadedDirection.Recommendation.Height);
                 Assert.Equal("model-rendered small text is risky", Assert.Single(loadedDirection.Recommendation.CapabilityWarnings));
                 Assert.Equal(SeriesItemStatus.Ready, loadedItem.Status);
+                Assert.Equal(SeriesItemKind.Cover, loadedItem.Kind);
                 Assert.Equal("A clean blue poster background", loadedPrompt.PromptText);
                 Assert.Single(loaded.ProviderProfiles);
             }

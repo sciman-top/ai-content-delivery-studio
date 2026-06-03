@@ -119,6 +119,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _planSeriesColumn = string.Empty;
     private string _planItemColumn = string.Empty;
     private string _planBriefColumn = string.Empty;
+    private string _planKindColumn = string.Empty;
     private string _planStatusColumn = string.Empty;
     private string _noPlanRowsText = string.Empty;
     private string _noItemsInSeriesText = string.Empty;
@@ -796,6 +797,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _planBriefColumn;
         private set => SetProperty(ref _planBriefColumn, value);
+    }
+
+    public string PlanKindColumn
+    {
+        get => _planKindColumn;
+        private set => SetProperty(ref _planKindColumn, value);
     }
 
     public string PlanStatusColumn
@@ -1551,6 +1558,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PlanSeriesColumn = Text(LocalizationKey.PlanSeriesColumn);
         PlanItemColumn = Text(LocalizationKey.PlanItemColumn);
         PlanBriefColumn = Text(LocalizationKey.PlanBriefColumn);
+        PlanKindColumn = Text(LocalizationKey.PlanKindColumn);
         PlanStatusColumn = Text(LocalizationKey.PlanStatusColumn);
         NoPlanRowsText = Text(LocalizationKey.NoPlanRows);
         NoItemsInSeriesText = Text(LocalizationKey.NoItemsInSeries);
@@ -2443,6 +2451,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                         item.Id,
                         item.Title,
                         item.Brief,
+                        item.Kind,
                         item.Status,
                         item.PromptVersions
                             .OrderByDescending(prompt => prompt.VersionNumber)
@@ -2509,11 +2518,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         PlanRows = Series
             .SelectMany(series => series.Items.Count == 0
-                ? new[] { new PlanRowViewModel(series.Title, NoItemsInSeriesText, string.Empty, string.Empty) }
+                ? new[] { new PlanRowViewModel(series.Title, NoItemsInSeriesText, string.Empty, string.Empty, string.Empty) }
                 : series.Items.Select(item => new PlanRowViewModel(
                     series.Title,
                     item.Title,
                     item.Brief,
+                    _localizationService.GetSeriesItemKindText(item.Kind),
                     _localizationService.GetSeriesItemStatusText(item.Status))))
             .ToArray();
     }
@@ -2751,10 +2761,11 @@ public sealed record SeriesItemViewModel(
     Guid Id,
     string Title,
     string Brief,
+    SeriesItemKind Kind,
     SeriesItemStatus Status,
     IReadOnlyList<PromptVersionViewModel> PromptVersions);
 
-public sealed record PlanRowViewModel(string SeriesTitle, string ItemTitle, string Brief, string StatusText);
+public sealed record PlanRowViewModel(string SeriesTitle, string ItemTitle, string Brief, string KindText, string StatusText);
 
 public sealed record DesignBlueprintRowViewModel(
     Guid CreativeBriefId,

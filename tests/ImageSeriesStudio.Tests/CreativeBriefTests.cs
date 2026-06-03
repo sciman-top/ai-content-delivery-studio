@@ -325,4 +325,26 @@ public sealed class CreativeBriefTests
         Assert.Equal("course poster", brief.Goal);
         Assert.Single(series.CreativeBriefs);
     }
+
+    [Fact]
+    public void ImageSeries_AddItem_WithKind_StoresPanelKindAndRejectsInvalidKind()
+    {
+        var timestamp = new DateTimeOffset(2026, 6, 3, 11, 0, 0, TimeSpan.Zero);
+        var series = ImageSeries.Create(Guid.NewGuid(), "Storyboard", "Panel sequence", timestamp);
+
+        var item = series.AddItem(
+            "Panel 1",
+            "Opening panel with the recurring subject.",
+            SeriesItemKind.Panel,
+            timestamp.AddMinutes(1));
+
+        Assert.Equal(SeriesItemKind.Panel, item.Kind);
+        Assert.Single(series.Items);
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            series.AddItem(
+                "Invalid",
+                "Unsupported kind.",
+                (SeriesItemKind)999,
+                timestamp.AddMinutes(2)));
+    }
 }

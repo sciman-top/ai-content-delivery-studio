@@ -158,6 +158,7 @@ public sealed class AppDbContext : DbContext
         {
             entity.HasKey(item => item.Id);
             entity.Property(item => item.Title).IsRequired();
+            entity.Property(item => item.Kind).HasDefaultValue(SeriesItemKind.Standard);
             entity.HasMany(item => item.PromptVersions)
                 .WithOne()
                 .HasForeignKey(prompt => prompt.SeriesItemId)

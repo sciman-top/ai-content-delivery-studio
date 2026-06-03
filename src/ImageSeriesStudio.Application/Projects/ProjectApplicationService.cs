@@ -102,10 +102,29 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
+        return await AddItemAsync(
+            projectId,
+            seriesId,
+            title,
+            brief,
+            SeriesItemKind.Standard,
+            timestamp,
+            cancellationToken);
+    }
+
+    public async Task<SeriesItem> AddItemAsync(
+        Guid projectId,
+        Guid seriesId,
+        string title,
+        string brief,
+        SeriesItemKind kind,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
         var project = await RequireProjectAsync(projectId, cancellationToken);
         var series = project.Series.SingleOrDefault(series => series.Id == seriesId)
             ?? throw new InvalidOperationException($"Series not found: {seriesId}");
-        var item = series.AddItem(title, brief, timestamp);
+        var item = series.AddItem(title, brief, kind, timestamp);
         await _repository.SaveAsync(project, cancellationToken);
         return item;
     }

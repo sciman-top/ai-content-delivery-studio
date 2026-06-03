@@ -5,6 +5,37 @@ namespace ImageSeriesStudio.Tests;
 public sealed class ProjectModelTests
 {
     [Fact]
+    public void SeriesItem_DefaultsToStandardKind()
+    {
+        var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+
+        var item = SeriesItem.Create("cover", "Opening image", timestamp);
+
+        Assert.Equal(SeriesItemKind.Standard, item.Kind);
+    }
+
+    [Fact]
+    public void ImageSeries_AddItemStoresExplicitKind()
+    {
+        var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+        var series = ImageSeries.Create(Guid.NewGuid(), "Storyboard", "Panel sequence", timestamp);
+
+        var item = series.AddItem("Panel 1", "First narrative panel", SeriesItemKind.Panel, timestamp.AddMinutes(1));
+
+        Assert.Equal(SeriesItemKind.Panel, item.Kind);
+        Assert.Same(item, Assert.Single(series.Items));
+    }
+
+    [Fact]
+    public void SeriesItem_RejectsUndefinedKind()
+    {
+        var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);
+
+        Assert.Throws<ArgumentOutOfRangeException>(
+            () => SeriesItem.Create("cover", "Opening image", (SeriesItemKind)999, timestamp));
+    }
+
+    [Fact]
     public void SeriesItem_ProgressesThroughApprovedDeliveryWorkflow()
     {
         var timestamp = new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero);

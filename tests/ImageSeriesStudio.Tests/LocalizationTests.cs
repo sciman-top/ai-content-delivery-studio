@@ -132,6 +132,20 @@ public sealed class LocalizationTests
     }
 
     [Fact]
+    public void LocalizationService_ReturnsLocalizedSeriesItemKindText()
+    {
+        var service = new LocalizationService();
+
+        service.SetLanguage(LanguagePreference.Chinese);
+        Assert.Equal("类型", service.GetText(LocalizationKey.PlanKindColumn));
+        Assert.Equal("面板", service.GetSeriesItemKindText(SeriesItemKind.Panel));
+
+        service.SetLanguage(LanguagePreference.English);
+        Assert.Equal("Kind", service.GetText(LocalizationKey.PlanKindColumn));
+        Assert.Equal("Keyframe", service.GetSeriesItemKindText(SeriesItemKind.Keyframe));
+    }
+
+    [Fact]
     public void LocalizationService_ReturnsStyleRecipeInspectorText()
     {
         var service = new LocalizationService();

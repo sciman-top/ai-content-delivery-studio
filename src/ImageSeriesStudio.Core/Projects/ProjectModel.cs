@@ -163,7 +163,12 @@ public sealed class ImageSeries
 
     public SeriesItem AddItem(string title, string brief, DateTimeOffset timestamp)
     {
-        var item = SeriesItem.Create(Id, title, brief, timestamp);
+        return AddItem(title, brief, SeriesItemKind.Standard, timestamp);
+    }
+
+    public SeriesItem AddItem(string title, string brief, SeriesItemKind kind, DateTimeOffset timestamp)
+    {
+        var item = SeriesItem.Create(Id, title, brief, kind, timestamp);
         _items.Add(item);
         UpdatedAt = timestamp;
         return item;
@@ -215,12 +220,13 @@ public sealed class SeriesItem
         Brief = string.Empty;
     }
 
-    private SeriesItem(Guid id, Guid? seriesId, string title, string brief, DateTimeOffset createdAt)
+    private SeriesItem(Guid id, Guid? seriesId, string title, string brief, SeriesItemKind kind, DateTimeOffset createdAt)
     {
         Id = id;
         SeriesId = seriesId;
         Title = RequireText(title, nameof(title));
         Brief = brief.Trim();
+        Kind = RequireDefinedKind(kind);
         Status = SeriesItemStatus.Draft;
         CreatedAt = createdAt;
         UpdatedAt = createdAt;
@@ -233,6 +239,8 @@ public sealed class SeriesItem
     public string Title { get; private set; }
 
     public string Brief { get; private set; }
+
+    public SeriesItemKind Kind { get; private set; }
 
     public SeriesItemStatus Status { get; private set; }
 
@@ -250,12 +258,22 @@ public sealed class SeriesItem
 
     public static SeriesItem Create(string title, string brief, DateTimeOffset createdAt)
     {
-        return new SeriesItem(Guid.NewGuid(), null, title, brief, createdAt);
+        return Create(title, brief, SeriesItemKind.Standard, createdAt);
+    }
+
+    public static SeriesItem Create(string title, string brief, SeriesItemKind kind, DateTimeOffset createdAt)
+    {
+        return new SeriesItem(Guid.NewGuid(), null, title, brief, kind, createdAt);
     }
 
     public static SeriesItem Create(Guid seriesId, string title, string brief, DateTimeOffset createdAt)
     {
-        return new SeriesItem(Guid.NewGuid(), seriesId, title, brief, createdAt);
+        return Create(seriesId, title, brief, SeriesItemKind.Standard, createdAt);
+    }
+
+    public static SeriesItem Create(Guid seriesId, string title, string brief, SeriesItemKind kind, DateTimeOffset createdAt)
+    {
+        return new SeriesItem(Guid.NewGuid(), seriesId, title, brief, kind, createdAt);
     }
 
     public void MarkReady(DateTimeOffset timestamp)
@@ -349,6 +367,13 @@ public sealed class SeriesItem
 
         return value.Trim();
     }
+
+    private static SeriesItemKind RequireDefinedKind(SeriesItemKind kind)
+    {
+        return Enum.IsDefined(typeof(SeriesItemKind), kind)
+            ? kind
+            : throw new ArgumentOutOfRangeException(nameof(kind), kind, "Series item kind is not supported.");
+    }
 }
 
 public sealed class InvalidSeriesItemStateTransitionException : InvalidOperationException
@@ -373,6 +398,15 @@ public enum SeriesItemStatus
     NeedsReview = 3,
     Approved = 4,
     Delivered = 5,
+}
+
+public enum SeriesItemKind
+{
+    Standard = 0,
+    Panel = 1,
+    Diagram = 2,
+    Keyframe = 3,
+    Cover = 4,
 }
 
 public sealed class PromptVersion

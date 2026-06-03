@@ -364,8 +364,9 @@
                                 <Grid Margin="12,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1.2*" />
-                                        <ColumnDefinition Width="1.2*" />
+                                        <ColumnDefinition Width="1.1*" />
                                         <ColumnDefinition Width="2.1*" />
+                                        <ColumnDefinition Width="100" />
                                         <ColumnDefinition Width="110" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
@@ -383,6 +384,11 @@
                                                FontWeight="SemiBold"
                                                Margin="10,0,0,0" />
                                     <TextBlock Grid.Column="3"
+                                               Text="{Binding DataContext.PlanKindColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Margin="10,0,0,0" />
+                                    <TextBlock Grid.Column="4"
                                                Text="{Binding DataContext.PlanStatusColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                                                VerticalAlignment="Center"
                                                FontWeight="SemiBold"
@@ -430,8 +436,9 @@
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="1.2*" />
-                                                            <ColumnDefinition Width="1.2*" />
+                                                            <ColumnDefinition Width="1.1*" />
                                                             <ColumnDefinition Width="2.1*" />
+                                                            <ColumnDefinition Width="100" />
                                                             <ColumnDefinition Width="110" />
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock Grid.Column="0"
@@ -448,6 +455,11 @@
                                                                    Foreground="#4B5563"
                                                                    Margin="10,0,0,0" />
                                                         <TextBlock Grid.Column="3"
+                                                                   Text="{Binding KindText}"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   Foreground="#4B5563"
+                                                                   Margin="10,0,0,0" />
+                                                        <TextBlock Grid.Column="4"
                                                                    Text="{Binding StatusText}"
                                                                    TextTrimming="CharacterEllipsis"
                                                                    Foreground="#4B5563"

@@ -72,9 +72,15 @@ public sealed class LocalizationService
         [LocalizationKey.PlanSeriesColumn] = "Series",
         [LocalizationKey.PlanItemColumn] = "Item",
         [LocalizationKey.PlanBriefColumn] = "Brief",
+        [LocalizationKey.PlanKindColumn] = "Kind",
         [LocalizationKey.PlanStatusColumn] = "Status",
         [LocalizationKey.NoPlanRows] = "Create a project, then add a series and items from the inspector.",
         [LocalizationKey.NoItemsInSeries] = "No items in this series yet.",
+        [LocalizationKey.KindStandard] = "Standard",
+        [LocalizationKey.KindPanel] = "Panel",
+        [LocalizationKey.KindDiagram] = "Diagram",
+        [LocalizationKey.KindKeyframe] = "Keyframe",
+        [LocalizationKey.KindCover] = "Cover",
         [LocalizationKey.StatusDraft] = "Draft",
         [LocalizationKey.StatusReady] = "Ready",
         [LocalizationKey.StatusGenerating] = "Generating",
@@ -244,9 +250,15 @@ public sealed class LocalizationService
         [LocalizationKey.PlanSeriesColumn] = "系列",
         [LocalizationKey.PlanItemColumn] = "条目",
         [LocalizationKey.PlanBriefColumn] = "简述",
+        [LocalizationKey.PlanKindColumn] = "类型",
         [LocalizationKey.PlanStatusColumn] = "状态",
         [LocalizationKey.NoPlanRows] = "先创建项目，再从检查器添加系列和条目。",
         [LocalizationKey.NoItemsInSeries] = "该系列尚未添加条目。",
+        [LocalizationKey.KindStandard] = "标准",
+        [LocalizationKey.KindPanel] = "面板",
+        [LocalizationKey.KindDiagram] = "图解",
+        [LocalizationKey.KindKeyframe] = "关键帧",
+        [LocalizationKey.KindCover] = "封面",
         [LocalizationKey.StatusDraft] = "草稿",
         [LocalizationKey.StatusReady] = "就绪",
         [LocalizationKey.StatusGenerating] = "生成中",
@@ -392,6 +404,19 @@ public sealed class LocalizationService
         };
     }
 
+    public string GetSeriesItemKindText(SeriesItemKind kind)
+    {
+        return kind switch
+        {
+            SeriesItemKind.Standard => GetText(LocalizationKey.KindStandard),
+            SeriesItemKind.Panel => GetText(LocalizationKey.KindPanel),
+            SeriesItemKind.Diagram => GetText(LocalizationKey.KindDiagram),
+            SeriesItemKind.Keyframe => GetText(LocalizationKey.KindKeyframe),
+            SeriesItemKind.Cover => GetText(LocalizationKey.KindCover),
+            _ => kind.ToString(),
+        };
+    }
+
     private SupportedLanguage ResolveLanguage(LanguagePreference preference)
     {
         return preference switch
@@ -490,9 +515,15 @@ public enum LocalizationKey
     PlanSeriesColumn,
     PlanItemColumn,
     PlanBriefColumn,
+    PlanKindColumn,
     PlanStatusColumn,
     NoPlanRows,
     NoItemsInSeries,
+    KindStandard,
+    KindPanel,
+    KindDiagram,
+    KindKeyframe,
+    KindCover,
     StatusDraft,
     StatusReady,
     StatusGenerating,
