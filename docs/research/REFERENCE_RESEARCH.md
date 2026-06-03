@@ -52,6 +52,8 @@ Key findings:
 Sources:
 
 - https://developers.openai.com/api/docs/guides/tools
+- https://developers.openai.com/api/docs/guides/tools-computer-use
+- https://developers.openai.com/api/docs/guides/agents/guardrails-approvals
 - https://developers.openai.com/api/reference/responses/overview
 
 Key findings:
@@ -61,6 +63,11 @@ Key findings:
 - Image generation in Responses can expose `revised_prompt`, which is useful provenance for review and delivery metadata.
 - Partial images can be streamed for more interactive generation UX.
 - Function tools are a good fit for local operations such as saving project files, creating queue items, validating manifests, or exporting delivery packages.
+- OpenAI's tool guidance supports built-in tools, custom function tools, remote MCP tools, file search, image generation, shell-like tools, and computer use surfaces. This supports a product architecture where AI plans and selects tools while local adapters execute controlled operations.
+- Computer use should be implemented through an isolated browser, VM, or custom harness when possible. Screenshots and third-party content must be treated as untrusted input, and risky actions need human confirmation at the point of risk.
+- Guardrails and human review are distinct controls: automatic checks validate input, output, or tool behavior, while human-in-the-loop approvals pause before side effects.
+
+AI 推荐: model `Review + Repair + Operator` as three separate product stages. Review finds issues, Repair plans the correct layer to change, and Operator executes controlled local or UI actions with risk, dry-run, approval, and audit metadata.
 
 ## Official Google Vertex AI References
 
@@ -183,6 +190,68 @@ Key findings:
 - Credential Locker APIs are available to desktop apps such as WPF and WinForms.
 - Credentials should be stored as passwords or small secret values, not arbitrary blobs.
 - Product secret storage should prefer Credential Locker or DPAPI-backed local secrets over plain environment-variable-only production flows.
+
+## Local Document, Rendering, And Automation Tool References
+
+These sources are candidates for local deterministic work. They should be wrapped by small adapters and capability records, not treated as instructions that override repository rules.
+
+### Document Conversion And Extraction
+
+Sources:
+
+- https://github.com/microsoft/markitdown
+- https://github.com/docling-project/docling
+- https://pandoc.org/
+- https://help.libreoffice.org/latest/en-US/text/shared/guide/convertfilters.html
+
+Patterns to borrow:
+
+- Convert many source formats into a normalized text or markdown representation before AI planning.
+- Preserve source metadata and page/range references so AI-generated plans can cite evidence anchors.
+- Use CLI or library outputs as deterministic extraction evidence; let AI summarize, classify, translate, rewrite, or plan from that evidence.
+- Keep binary document extraction as a module with fake fixtures first, because parser differences can otherwise leak into application logic.
+
+### OCR And PDF Repair
+
+Sources:
+
+- https://github.com/tesseract-ocr/tesseract
+- https://ocrmypdf.readthedocs.io/
+
+Patterns to borrow:
+
+- OCR is a local toolchain concern, not an AI provider contract by itself.
+- OCR results should include confidence, page, bounding-box or range data where available, and should remain reviewable by the user.
+- Low-confidence OCR should route to review or manual correction before expensive generation.
+
+### Image, Video, And Layout Processing
+
+Sources:
+
+- https://imagemagick.org/
+- https://ffmpeg.org/documentation.html
+
+Patterns to borrow:
+
+- Use deterministic local tools for resizing, format conversion, compositing, compression, thumbnails, contact sheets, and video or animated previews.
+- Keep command provenance, input/output paths, hashes, dimensions, and exit codes in operator audit records.
+- Prefer local composition for exact text, formulas, labels, callouts, and delivery-format requirements.
+
+### Browser And Desktop Automation
+
+Sources:
+
+- https://playwright.dev/
+- https://www.selenium.dev/documentation/
+- https://github.com/FlaUI/FlaUI
+- https://pywinauto.readthedocs.io/
+
+Patterns to borrow:
+
+- Prefer API and CLI integration before UI automation.
+- Browser automation is a good fit for web workflows, visual checks, screenshots, and export flows when no stable API exists.
+- Windows desktop automation is a distinct lane and should be isolated behind `IDesktopAutomationAdapter` or equivalent contracts.
+- UI automation should keep allow lists, screenshots, action logs, timeout limits, and human approval gates for high-impact actions.
 
 ## Community Projects And Best Practices
 
@@ -312,7 +381,7 @@ The strongest official and community sources converge on a few product truths:
 - workflow metadata and output provenance matter as much as the image file itself
 - review is a structured loop, not an afterthought
 
-AI 推荐: keep the product generalized as a `series image workbench` with reusable blueprint routes instead of hard-coding one topic mode such as comics, posters, or science explainers.
+AI 推荐: keep the product generalized as a multimodal content delivery workbench with image-series production as the core capability. Use reusable workflow and blueprint packs instead of hard-coding one topic mode such as comics, posters, science explainers, document review, or translation.
 
 ## Cloud-First Tooling Findings
 

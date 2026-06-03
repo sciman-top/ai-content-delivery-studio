@@ -182,3 +182,64 @@
   - [ ] Apply routed repair actions back to brief, blueprint, prompt, or settings records.
 - [x] Include blueprint metadata in delivery packages.
 - [x] Run full build, test, and format gates for the implementation slice.
+
+## Phase 10: Multimodal Source And Artifact Foundation
+
+- [ ] Record ADR for multimodal content delivery, workflow packs, and AI operator boundaries.
+- [ ] Record multimodal source/artifact implementation plan.
+- [ ] Add `SourceAsset`, `ExtractedContent`, and `EvidenceAnchor` domain records.
+- [ ] Add `OutputArtifact`, `ArtifactManifest`, and `ArtifactPackage` domain records.
+- [ ] Add fake-first source ingestion service with file metadata and text fixtures.
+- [ ] Add source evidence persistence with backward-compatible project loading.
+- [ ] Add document extraction provider boundary for PDF, DOCX, PPTX, markdown, image, and OCR results.
+- [ ] Add artifact planning use case that can plan image, PDF, DOCX, markdown, and review-report outputs from a brief.
+- [ ] Extend delivery manifest with source evidence and output artifact provenance.
+- [ ] Keep existing image-series delivery export compatible with the new artifact model.
+- [ ] Run build, test, and format gates for the implementation slice.
+
+## Phase 11: Workflow, Blueprint, And Industry Pack System
+
+- [ ] Add `WorkflowPack`, `BlueprintPack`, `IndustryPack`, `RendererPack`, and `ReviewRubricPack` metadata records.
+- [ ] Add pack semantic version, compatibility range, deprecation state, and migration notes.
+- [ ] Add local pack registry and validation service.
+- [ ] Add built-in generic image-series pack.
+- [ ] Add built-in article illustration pack.
+- [ ] Add built-in document review/translation pack.
+- [ ] Add built-in courseware visual pack.
+- [ ] Add built-in poster/report delivery pack.
+- [ ] Add pack import/export with fake execution and validation.
+- [ ] Add `WorkflowStageDefinition` metadata with stable stage IDs and completion criteria.
+- [ ] Add pack-driven UI defaults without leaking pack-specific vocabulary into core entities.
+- [ ] Add validation that packs cannot introduce permanent global tabs without an explicit shell decision.
+- [ ] Add catalog invariant tests for pack IDs, compatibility, and migrations.
+- [ ] Run build, test, and format gates for the implementation slice.
+
+## Phase 12: Modular Maintenance And Use Case Split
+
+- [ ] Define module folders for source ingestion, artifact planning, pack registry, repair routing, and tool adapters.
+- [ ] Define reusable `WorkflowViewSlot` names for source list, stage workspace, inspector, activity panel, approval panel, and artifact preview.
+- [ ] Add `FeatureViewModule` contract for WPF view, view model, localization keys, commands, and fake-service tests.
+- [ ] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
+- [ ] Split large WPF views into feature-owned user controls where needed.
+- [ ] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
+- [ ] Move provider configuration and capability validation out of UI-facing view models.
+- [ ] Move persistence configuration into infrastructure-owned modules.
+- [ ] Split EF Core mappings into `IEntityTypeConfiguration<T>` as model count grows.
+- [ ] Add focused tests for each extracted use-case service before expanding UI surface.
+- [ ] Keep each refactor slice behavior-preserving and tied to a new feature or touched old logic.
+- [ ] Run build, test, and format gates after each module split.
+
+## Phase 13: Review, Repair, And Operator Automation
+
+- [ ] Add structured `RepairPlan` model from `ReviewResult` findings.
+- [ ] Add `OperatorAction` and `OperatorRun` audit records.
+- [ ] Add tool adapter contract with risk level, dry-run support, inputs, outputs, side effects, timeout, approval requirement, and cleanup path.
+- [ ] Add SDK/CLI/local library adapter boundary for deterministic tools.
+- [ ] Add browser automation adapter boundary for web workflows.
+- [ ] Add Windows desktop automation adapter boundary for future UI automation.
+- [ ] Add computer-use provider boundary for model-guided UI action planning.
+- [ ] Add local tool registry for extraction, conversion, OCR, ImageMagick/FFmpeg processing, deterministic composition, and artifact validation.
+- [ ] Add approval gate for medium/high-risk operator actions.
+- [ ] Add low-risk auto-repair path for safe local validation or file-generation tasks.
+- [ ] Add operator audit export into diagnostics and delivery evidence where appropriate.
+- [ ] Run build, test, and format gates for the implementation slice.

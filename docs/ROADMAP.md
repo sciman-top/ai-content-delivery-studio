@@ -1,5 +1,9 @@
 # Roadmap
 
+Target upgrade: the product is moving from a generalized image-series workbench to a multimodal content delivery workbench with image-series production as the core capability. The stable architecture is `Windows local workbench + replaceable cloud AI providers + local deterministic toolchain + versioned Workflow/Blueprint packs`.
+
+AI, providers, workflow packs, and output formats can evolve quickly. Core domain models and application use cases should evolve slowly and should not be reshaped for every model release.
+
 ## Phase 0: Product And Architecture Foundation
 
 Status: complete for initial design.
@@ -183,6 +187,80 @@ Exit gate:
 - A short requirement can become a brief, then several blueprint candidates, then a promoted image-series plan, and finally the existing prompt/generation/review loop.
 - The same workflow can support at least three generalized routes such as poster series, article illustration pack, and panel narrative sequence.
 
+## Phase 10: Multimodal Source And Artifact Foundation
+
+Goal: make user files and non-image deliverables first-class without weakening the image-series core workflow.
+
+Deliverables:
+
+- `SourceAsset`, `ExtractedContent`, and `EvidenceAnchor` domain model.
+- `OutputArtifact`, `ArtifactPackage`, and artifact manifest model.
+- Source ingestion service with fake-first file metadata and text fixtures.
+- Document extraction boundary for PDF, DOCX, PPTX, markdown, images, and OCR outputs.
+- Artifact planning use case that turns a brief and evidence anchors into images, PDF, DOCX, review report, or mixed delivery package targets.
+- Delivery manifest extension for source evidence and output artifact provenance.
+
+Exit gate:
+
+- A sample source file fixture can become extracted content, a brief, an artifact plan, and a delivery package record without calling a real provider.
+- Existing image-series projects continue to load and export.
+
+## Phase 11: Workflow, Blueprint, And Industry Pack System
+
+Goal: make generalization come from versioned packs instead of hard-coded topic modes.
+
+Deliverables:
+
+- `WorkflowPack`, `BlueprintPack`, `IndustryPack`, `RendererPack`, and `ReviewRubricPack` metadata schema.
+- Local pack registry with semantic version, compatibility range, deprecation state, and migration notes.
+- Built-in starter packs for generic image series, article illustration, document review/translation, courseware visual pack, and poster/report delivery.
+- Pack import/export with validation and fake execution.
+- Pack-declared workflow stages using a small stable vocabulary: `Source`, `Brief`, `Plan`, `Produce`, `Review`, `Repair`, `Deliver`.
+- Pack-driven UI defaults that do not leak pack-specific vocabulary into core entities.
+
+Exit gate:
+
+- A new pack can be added without changing core entity types.
+- A deprecated pack can still open old projects through compatibility metadata or migration notes.
+- A pack can select visible workflow stages without adding permanent global tabs.
+
+## Phase 12: Modular Maintenance And Use Case Split
+
+Goal: prevent the app from growing a central all-knowing orchestrator as capabilities expand.
+
+Deliverables:
+
+- Split WPF tabs into feature-owned views and view models where the current shell is becoming too large.
+- Add reusable `WorkflowViewSlot` and `FeatureViewModule` concepts for source lists, stage workspace, inspector, activity panel, approval panel, and artifact preview.
+- Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
+- Split provider configuration, secret storage, capability validation, and persistence configuration away from UI code.
+- Split EF Core mappings into `IEntityTypeConfiguration<T>` as model count grows.
+- Establish module folders and tests for source ingestion, artifact planning, pack registry, repair routing, and tool adapters.
+
+Exit gate:
+
+- A new source/artifact feature can be implemented in one module with fake providers and focused tests.
+- Existing central view model or application service logic is reduced only when touched by the new slice.
+
+## Phase 13: Review, Repair, And Operator Automation
+
+Goal: let AI replace repetitive human judgment and tool operation while preserving approval and audit boundaries.
+
+Deliverables:
+
+- Structured `ReviewResult -> RepairPlan -> OperatorAction` flow.
+- Tool adapter contracts for SDK, CLI, local library, browser automation, desktop automation, and computer-use planning.
+- Risk model with dry-run support, allow lists, human approval gates, timeout, audit log, and rollback or cleanup metadata.
+- Local adapters for document conversion, OCR, ImageMagick/FFmpeg processing, deterministic text composition, and artifact validation.
+- Browser automation adapter for web-only workflows when no API/CLI path exists.
+- Desktop automation adapter boundary for future Windows UI automation.
+
+Exit gate:
+
+- Low-risk local repair actions can run automatically with audit evidence.
+- Medium/high-risk actions pause at the point of risk and require explicit approval or handoff.
+- Review no longer stops at comments; it produces a runnable or user-approvable repair path.
+
 ## Phase 7: Product Hardening
 
 Goal: make it reliable as a daily Windows tool.
@@ -206,8 +284,12 @@ Deliverables:
 - Clean application layer with command/query use cases and repository ports.
 - Cloud-first provider adapters with official SDKs where practical, resilient HTTP execution, secure local secret storage, and full request provenance.
 - Versioned design blueprints and workflow templates, then optional workflow graph import/export.
+- Versioned workflow, blueprint, industry, renderer, and review packs.
+- First-class source assets, extracted content, evidence anchors, output artifacts, and artifact packages.
+- Review, repair, and operator automation with risk-aware approval and audit records.
 - Provider plugin boundary with capability discovery and contract tests.
 - Localized prompt templates, review reports, delivery manifests, and user guide.
 - Deterministic text composition for text-heavy educational and document-oriented visuals.
+- Local deterministic extraction, conversion, rendering, validation, and packaging tool adapters.
 - Large-gallery virtualization, thumbnail cache, crash-safe queue recovery, backup/restore, and diagnostics bundle.
 - Packaged Windows release with accessibility and performance gates.
