@@ -745,6 +745,25 @@ public sealed class ProjectApplicationServiceTests
     }
 
     [Fact]
+    public void ProjectApplicationService_RoutesReviewOutcomes()
+    {
+        var service = new ProjectApplicationService(new InMemoryProjectRepository());
+        var review = new StructuredReviewOutput(
+            Guid.NewGuid(),
+            ReviewDecision.Pass,
+            [new StructuredReviewScore("settings", "Aspect ratio should match delivery.", 2, 2)],
+            [],
+            "Needs settings repair.",
+            SuggestedFix: "Adjust aspect ratio settings.");
+
+        var plan = Assert.Single(service.RouteReviewOutcomes([review]));
+
+        Assert.True(plan.RequiresRepair);
+        Assert.Equal(ReviewOutcomeTargetLayer.Settings, plan.PrimaryRoute.TargetLayer);
+        Assert.Equal(RepairSeverity.Minor, plan.PrimaryRoute.Severity);
+    }
+
+    [Fact]
     public async Task ProjectApplicationService_ExportsDeliveryPackage()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));

@@ -562,6 +562,16 @@ public sealed class ProjectApplicationService
         return results;
     }
 
+    public IReadOnlyList<ReviewOutcomeRoutingPlan> RouteReviewOutcomes(
+        IReadOnlyList<StructuredReviewOutput> reviews)
+    {
+        ArgumentNullException.ThrowIfNull(reviews);
+
+        return reviews
+            .Select(ReviewOutcomeRoutingPlan.FromReview)
+            .ToArray();
+    }
+
     public async Task<DeliveryExportResult> ExportDeliveryPackageAsync(
         DeliveryExportRequest request,
         CancellationToken cancellationToken)
