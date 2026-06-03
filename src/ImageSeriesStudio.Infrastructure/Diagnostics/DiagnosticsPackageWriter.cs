@@ -29,7 +29,8 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
             request.Machine,
             request.Projects,
             request.Providers,
-            request.Secrets);
+            request.Secrets,
+            request.OperatorRuns ?? []);
 
         var jsonPath = Path.Combine(request.OutputDirectory, "diagnostics.json");
         var markdownPath = Path.Combine(request.OutputDirectory, "diagnostics.md");
@@ -93,6 +94,15 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
             builder.AppendLine($"- {secret.Name}: configured={secret.IsConfigured}");
         }
 
+        builder.AppendLine();
+        builder.AppendLine("## Operator Runs");
+
+        foreach (var run in package.OperatorRuns)
+        {
+            builder.AppendLine(
+                $"- {run.ToolAdapterId}: actionStatus={run.ActionStatus}, runStatus={run.RunStatus}, dryRun={run.DryRun}, summary={run.OutputSummary ?? string.Empty}");
+        }
+
         return builder.ToString();
     }
 }
@@ -102,4 +112,5 @@ internal sealed record DiagnosticsPackage(
     DiagnosticsMachineSnapshot Machine,
     IReadOnlyList<DiagnosticsProjectSnapshot> Projects,
     IReadOnlyList<DiagnosticsProviderSnapshot> Providers,
-    IReadOnlyList<DiagnosticsSecretSnapshot> Secrets);
+    IReadOnlyList<DiagnosticsSecretSnapshot> Secrets,
+    IReadOnlyList<OperatorAuditSnapshot> OperatorRuns);

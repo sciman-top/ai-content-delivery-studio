@@ -31,7 +31,8 @@ public sealed record DeliveryExportItem(
     IReadOnlyList<Guid>? SourceAssetIds = null,
     IReadOnlyList<Guid>? EvidenceAnchorIds = null,
     string? ArtifactRole = null,
-    DeliveryBlueprintMetadata? Blueprint = null);
+    DeliveryBlueprintMetadata? Blueprint = null,
+    IReadOnlyList<Guid>? OperatorRunIds = null);
 
 public sealed record DeliveryBlueprintMetadata(
     Guid Id,

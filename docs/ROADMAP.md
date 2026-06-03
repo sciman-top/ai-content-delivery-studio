@@ -252,7 +252,7 @@ Exit gate:
 
 Goal: let AI replace repetitive human judgment and tool operation while preserving approval and audit boundaries.
 
-Status: started with a structured `RepairPlan` model generated from review routing evidence. Operator actions and tool adapters remain future slices.
+Status: started with a structured `RepairPlan` model generated from review routing evidence, `OperatorAction` and `OperatorRun` audit records, a provider-neutral tool adapter contract covering SDK, CLI, local library, browser automation, Windows desktop automation, and computer-use boundaries, built-in local tool descriptors for extraction, conversion, OCR, ImageMagick/FFmpeg processing, deterministic text composition, and artifact validation, an approval gate for medium/high-risk operator actions, a low-risk auto-repair path through the adapter contract, and operator audit export in diagnostics/delivery evidence. Real tool execution remains a future slice.
 
 Deliverables:
 

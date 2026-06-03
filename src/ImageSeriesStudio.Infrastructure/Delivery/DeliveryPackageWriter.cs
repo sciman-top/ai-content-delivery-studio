@@ -76,7 +76,8 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 item.SourceAssetIds ?? [],
                 item.EvidenceAnchorIds ?? [],
                 item.ArtifactRole,
-                item.Blueprint));
+                item.Blueprint,
+                item.OperatorRunIds ?? []));
         }
 
         var manifestPath = Path.Combine(request.OutputDirectory, "manifest.json");
@@ -131,7 +132,8 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                         item.SourceAssetIds,
                         item.EvidenceAnchorIds,
                         item.ArtifactRole,
-                        item.Blueprint))
+                        item.Blueprint,
+                        item.OperatorRunIds))
                     .ToArray()),
             cancellationToken);
 
@@ -164,7 +166,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
     private static string WriteManifestCsv(IReadOnlyList<DeliveryManifestItem> items)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,outputArtifactId,sourceAssetIds,evidenceAnchorIds,artifactRole,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary");
+        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,outputArtifactId,sourceAssetIds,evidenceAnchorIds,operatorRunIds,artifactRole,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary");
 
         foreach (var item in items)
         {
@@ -187,6 +189,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 EscapeCsv(item.OutputArtifactId?.ToString() ?? string.Empty),
                 EscapeCsv(string.Join(';', item.SourceAssetIds)),
                 EscapeCsv(string.Join(';', item.EvidenceAnchorIds)),
+                EscapeCsv(string.Join(';', item.OperatorRunIds)),
                 EscapeCsv(item.ArtifactRole ?? string.Empty),
                 EscapeCsv(item.Blueprint?.Id.ToString() ?? string.Empty),
                 EscapeCsv(item.Blueprint?.Key ?? string.Empty),
@@ -254,7 +257,8 @@ public sealed record DeliveryPackageItem(
     IReadOnlyList<Guid>? SourceAssetIds = null,
     IReadOnlyList<Guid>? EvidenceAnchorIds = null,
     string? ArtifactRole = null,
-    DeliveryBlueprintMetadata? Blueprint = null);
+    DeliveryBlueprintMetadata? Blueprint = null,
+    IReadOnlyList<Guid>? OperatorRunIds = null);
 
 public sealed record DeliveryPackageResult(
     string PackageDirectory,
@@ -287,4 +291,5 @@ internal sealed record DeliveryManifestItem(
     IReadOnlyList<Guid> SourceAssetIds,
     IReadOnlyList<Guid> EvidenceAnchorIds,
     string? ArtifactRole,
-    DeliveryBlueprintMetadata? Blueprint);
+    DeliveryBlueprintMetadata? Blueprint,
+    IReadOnlyList<Guid> OperatorRunIds);

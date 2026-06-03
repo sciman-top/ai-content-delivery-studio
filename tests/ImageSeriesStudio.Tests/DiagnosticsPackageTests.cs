@@ -1,4 +1,5 @@
 using ImageSeriesStudio.Application.Diagnostics;
+using ImageSeriesStudio.Core.Operators;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Infrastructure.Diagnostics;
 
@@ -22,6 +23,7 @@ public sealed class DiagnosticsPackageTests
                 new GenerationSettings(1024, 1024, "standard", "png"),
                 provider.Id,
                 DateTimeOffset.Parse("2026-06-01T08:04:00Z"));
+            var operatorAction = CreateOperatorAction();
 
             var writer = new DiagnosticsPackageWriter();
             var result = await writer.WriteAsync(
@@ -49,7 +51,20 @@ public sealed class DiagnosticsPackageTests
                             RealApiEnabled: false,
                             DryRunOnly: true),
                     ],
-                    [new DiagnosticsSecretSnapshot("OPENAI_API_KEY", IsConfigured: true)]),
+                    [new DiagnosticsSecretSnapshot("OPENAI_API_KEY", IsConfigured: true)],
+                    [
+                        OperatorAuditSnapshot.FromRun(
+                            operatorAction,
+                            OperatorRun.Start(
+                                operatorAction.Id,
+                                "artifact-validator",
+                                dryRun: true,
+                                inputSnapshot: """{"manifestPath":"delivery/manifest.json"}""",
+                                DateTimeOffset.Parse("2026-06-01T08:06:00Z"))
+                                .CompleteSucceeded(
+                                    "Manifest validation succeeded.",
+                                    DateTimeOffset.Parse("2026-06-01T08:06:05Z"))),
+                    ]),
                 CancellationToken.None);
 
             var json = await File.ReadAllTextAsync(result.JsonPath);
@@ -62,6 +77,10 @@ public sealed class DiagnosticsPackageTests
             Assert.DoesNotContain("test-openai-key", json);
             Assert.DoesNotContain("test-openai-key", markdown);
             Assert.Contains("configured=True", markdown);
+            Assert.Contains("operatorRuns", json);
+            Assert.Contains("artifact-validator", json);
+            Assert.Contains("## Operator Runs", markdown);
+            Assert.Contains("Manifest validation succeeded.", markdown);
         }
         finally
         {
@@ -93,5 +112,22 @@ public sealed class DiagnosticsPackageTests
         Assert.Equal(1, snapshot.PromptVersionCount);
         Assert.Equal(1, snapshot.ProviderProfileCount);
         Assert.Equal(timestamp.AddMinutes(4), snapshot.UpdatedAt);
+    }
+
+    private static OperatorAction CreateOperatorAction()
+    {
+        return OperatorAction.CreateDraft(
+            Guid.NewGuid(),
+            repairPlanStepOrder: 1,
+            toolAdapterId: "artifact-validator",
+            displayName: "Validate artifact manifest",
+            OperatorRiskLevel.Low,
+            dryRunSupported: true,
+            inputs: new Dictionary<string, string> { ["manifestPath"] = "delivery/manifest.json" },
+            expectedOutputs: ["validation report"],
+            sideEffects: ["Reads manifest and writes validation report."],
+            timeout: TimeSpan.FromSeconds(30),
+            cleanupPath: null,
+            DateTimeOffset.Parse("2026-06-01T08:05:30Z"));
     }
 }

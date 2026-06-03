@@ -232,14 +232,14 @@
 ## Phase 13: Review, Repair, And Operator Automation
 
 - [x] Add structured `RepairPlan` model from `ReviewResult` findings.
-- [ ] Add `OperatorAction` and `OperatorRun` audit records.
-- [ ] Add tool adapter contract with risk level, dry-run support, inputs, outputs, side effects, timeout, approval requirement, and cleanup path.
-- [ ] Add SDK/CLI/local library adapter boundary for deterministic tools.
-- [ ] Add browser automation adapter boundary for web workflows.
-- [ ] Add Windows desktop automation adapter boundary for future UI automation.
-- [ ] Add computer-use provider boundary for model-guided UI action planning.
-- [ ] Add local tool registry for extraction, conversion, OCR, ImageMagick/FFmpeg processing, deterministic composition, and artifact validation.
-- [ ] Add approval gate for medium/high-risk operator actions.
-- [ ] Add low-risk auto-repair path for safe local validation or file-generation tasks.
-- [ ] Add operator audit export into diagnostics and delivery evidence where appropriate.
-- [ ] Run build, test, and format gates for the implementation slice.
+- [x] Add `OperatorAction` and `OperatorRun` audit records.
+- [x] Add tool adapter contract with risk level, dry-run support, inputs, outputs, side effects, timeout, approval requirement, and cleanup path.
+- [x] Add SDK/CLI/local library adapter boundary for deterministic tools.
+- [x] Add browser automation adapter boundary for web workflows.
+- [x] Add Windows desktop automation adapter boundary for future UI automation.
+- [x] Add computer-use provider boundary for model-guided UI action planning.
+- [x] Add local tool registry for extraction, conversion, OCR, ImageMagick/FFmpeg processing, deterministic composition, and artifact validation.
+- [x] Add approval gate for medium/high-risk operator actions.
+- [x] Add low-risk auto-repair path for safe local validation or file-generation tasks.
+- [x] Add operator audit export into diagnostics and delivery evidence where appropriate.
+- [x] Run build, test, and format gates for the implementation slice.

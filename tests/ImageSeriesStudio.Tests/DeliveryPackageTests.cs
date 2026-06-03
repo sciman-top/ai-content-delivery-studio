@@ -36,6 +36,7 @@ public sealed class DeliveryPackageTests
             var outputArtifactId = Guid.NewGuid();
             var sourceAssetId = Guid.NewGuid();
             var evidenceAnchorId = Guid.NewGuid();
+            var operatorRunId = Guid.NewGuid();
             var result = await writer.WriteAsync(
                 new DeliveryPackageRequest(
                     "Sample project",
@@ -67,7 +68,8 @@ public sealed class DeliveryPackageTests
                                 "storyboard",
                                 "panel_sequence",
                                 "same main character; consistent scene grammar",
-                                "alternate camera distance")),
+                                "alternate camera distance"),
+                            OperatorRunIds: [operatorRunId]),
                         new DeliveryPackageItem(
                             "alt",
                             "Rejected alternate",
@@ -105,6 +107,7 @@ public sealed class DeliveryPackageTests
             Assert.Equal(outputArtifactId, items[0].GetProperty("outputArtifactId").GetGuid());
             Assert.Equal(sourceAssetId, items[0].GetProperty("sourceAssetIds")[0].GetGuid());
             Assert.Equal(evidenceAnchorId, items[0].GetProperty("evidenceAnchorIds")[0].GetGuid());
+            Assert.Equal(operatorRunId, items[0].GetProperty("operatorRunIds")[0].GetGuid());
             Assert.Equal("final-image", items[0].GetProperty("artifactRole").GetString());
             var blueprint = items[0].GetProperty("blueprint");
             Assert.Equal(blueprintId, blueprint.GetProperty("id").GetGuid());
@@ -122,6 +125,8 @@ public sealed class DeliveryPackageTests
             Assert.Contains(outputArtifactId.ToString(), manifestCsv);
             Assert.Contains(sourceAssetId.ToString(), manifestCsv);
             Assert.Contains(evidenceAnchorId.ToString(), manifestCsv);
+            Assert.Contains("operatorRunIds", manifestCsv);
+            Assert.Contains(operatorRunId.ToString(), manifestCsv);
             Assert.Contains("blueprintConsistencySummary", manifestCsv);
             Assert.Contains("panel-narrative-sequence", manifestCsv);
             Assert.Contains("same main character; consistent scene grammar", manifestCsv);
