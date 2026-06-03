@@ -71,7 +71,8 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 item.ReferenceImageSetIds ?? [],
                 item.ExperimentSlug,
                 item.ExperimentParameters ?? new Dictionary<string, string>(),
-                item.GenerationTaskId));
+                item.GenerationTaskId,
+                item.Blueprint));
         }
 
         var manifestPath = Path.Combine(request.OutputDirectory, "manifest.json");
@@ -121,7 +122,8 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                         item.ReferenceImageSetIds,
                         item.ExperimentSlug,
                         item.ExperimentParameters,
-                        item.GenerationTaskId))
+                        item.GenerationTaskId,
+                        item.Blueprint))
                     .ToArray()),
             cancellationToken);
 
@@ -154,7 +156,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
     private static string WriteManifestCsv(IReadOnlyList<DeliveryManifestItem> items)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId");
+        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary");
 
         foreach (var item in items)
         {
@@ -173,7 +175,14 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 EscapeCsv(string.Join(';', item.ReferenceImageSetIds)),
                 EscapeCsv(item.ExperimentSlug ?? string.Empty),
                 EscapeCsv(FormatExperimentParameters(item.ExperimentParameters)),
-                EscapeCsv(item.GenerationTaskId?.ToString() ?? string.Empty)));
+                EscapeCsv(item.GenerationTaskId?.ToString() ?? string.Empty),
+                EscapeCsv(item.Blueprint?.Id.ToString() ?? string.Empty),
+                EscapeCsv(item.Blueprint?.Key ?? string.Empty),
+                EscapeCsv(item.Blueprint?.DisplayName ?? string.Empty),
+                EscapeCsv(item.Blueprint?.Category ?? string.Empty),
+                EscapeCsv(item.Blueprint?.SequenceMode ?? string.Empty),
+                EscapeCsv(item.Blueprint?.ConsistencySummary ?? string.Empty),
+                EscapeCsv(item.Blueprint?.VariationSummary ?? string.Empty)));
         }
 
         return builder.ToString();
@@ -228,7 +237,8 @@ public sealed record DeliveryPackageItem(
     IReadOnlyList<Guid>? ReferenceImageSetIds = null,
     string? ExperimentSlug = null,
     IReadOnlyDictionary<string, string>? ExperimentParameters = null,
-    Guid? GenerationTaskId = null);
+    Guid? GenerationTaskId = null,
+    DeliveryBlueprintMetadata? Blueprint = null);
 
 public sealed record DeliveryPackageResult(
     string PackageDirectory,
@@ -256,4 +266,5 @@ internal sealed record DeliveryManifestItem(
     IReadOnlyList<Guid> ReferenceImageSetIds,
     string? ExperimentSlug,
     IReadOnlyDictionary<string, string> ExperimentParameters,
-    Guid? GenerationTaskId);
+    Guid? GenerationTaskId,
+    DeliveryBlueprintMetadata? Blueprint);

@@ -26,7 +26,17 @@ public sealed record DeliveryExportItem(
     IReadOnlyList<Guid>? ReferenceImageSetIds = null,
     string? ExperimentSlug = null,
     IReadOnlyDictionary<string, string>? ExperimentParameters = null,
-    Guid? GenerationTaskId = null);
+    Guid? GenerationTaskId = null,
+    DeliveryBlueprintMetadata? Blueprint = null);
+
+public sealed record DeliveryBlueprintMetadata(
+    Guid Id,
+    string Key,
+    string DisplayName,
+    string Category,
+    string SequenceMode,
+    string ConsistencySummary,
+    string VariationSummary);
 
 public sealed record DeliveryExportResult(
     string PackageDirectory,

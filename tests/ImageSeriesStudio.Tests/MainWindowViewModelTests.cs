@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.App.ViewModels;
@@ -155,6 +156,60 @@ public sealed class MainWindowViewModelTests
             await viewModel.ExportDeliveryCommand.ExecuteAsync(null);
 
             Assert.Single(viewModel.DeliveryRows);
+        }
+        finally
+        {
+            DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+        }
+    }
+
+    [Fact]
+    public async Task FinalApprovalWorkflow_ExportsPromotedBlueprintMetadata()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.NewProjectName = "Blueprint delivery demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Panel storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewPlanningGoal = "panel narrative sequence";
+        viewModel.NewPlanningAudience = "teachers";
+        viewModel.NewPlanningStyleBrief = "consistent panel storytelling";
+        await viewModel.GenerateDesignBlueprintsCommand.ExecuteAsync(null);
+
+        viewModel.SelectedDesignBlueprint = viewModel.DesignBlueprintRows
+            .Single(row => row.Key == "panel-narrative-sequence");
+        await viewModel.PromoteDesignBlueprintCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening panel";
+        viewModel.NewItemBrief = "Opening visual for a panel-like sequence.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        viewModel.NewPromptText = "Create a consistent opening panel.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+        await viewModel.RunFakeReviewCommand.ExecuteAsync(null);
+
+        try
+        {
+            viewModel.SelectedReviewRow = Assert.Single(viewModel.ReviewRows);
+            viewModel.FinalApprovalReviewer = "Teacher";
+            viewModel.FinalApprovalNotes = "Ready for package.";
+            await viewModel.ApproveSelectedReviewCommand.ExecuteAsync(null);
+            await viewModel.ExportDeliveryCommand.ExecuteAsync(null);
+
+            var delivery = Assert.Single(viewModel.DeliveryRows);
+            using var manifestStream = File.OpenRead(delivery.ManifestJsonPath);
+            using var manifest = await JsonDocument.ParseAsync(manifestStream, cancellationToken: CancellationToken.None);
+            var item = Assert.Single(manifest.RootElement.GetProperty("items").EnumerateArray());
+            var blueprint = item.GetProperty("blueprint");
+
+            Assert.Equal("panel-narrative-sequence", blueprint.GetProperty("key").GetString());
+            Assert.Equal("Panel narrative sequence", blueprint.GetProperty("displayName").GetString());
+            Assert.Equal("panel sequence", blueprint.GetProperty("sequenceMode").GetString());
+            Assert.Contains("consistent panel storytelling", blueprint.GetProperty("consistencySummary").GetString());
         }
         finally
         {

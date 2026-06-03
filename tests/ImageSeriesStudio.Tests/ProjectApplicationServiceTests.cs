@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Projects;
@@ -757,6 +758,7 @@ public sealed class ProjectApplicationServiceTests
             var metadataPath = Path.Combine(sourceDirectory, "final.json");
             await File.WriteAllBytesAsync(imagePath, [1, 2, 3], CancellationToken.None);
             await File.WriteAllTextAsync(metadataPath, """{"providerId":"fake-image"}""", CancellationToken.None);
+            var blueprintId = Guid.NewGuid();
 
             var service = new ProjectApplicationService(
                 new InMemoryProjectRepository(),
@@ -777,7 +779,15 @@ public sealed class ProjectApplicationServiceTests
                             metadataPath,
                             "A finished fake image.",
                             ReviewDecision.Pass,
-                            HumanApproved: true),
+                            HumanApproved: true,
+                            Blueprint: new DeliveryBlueprintMetadata(
+                                blueprintId,
+                                "article-illustration-pack",
+                                "Article illustration pack",
+                                "editorial",
+                                "standard items",
+                                "consistent editorial visual hierarchy",
+                                "vary section emphasis")),
                     ]),
                 CancellationToken.None);
 
@@ -785,6 +795,12 @@ public sealed class ProjectApplicationServiceTests
             Assert.True(File.Exists(result.ManifestCsvPath));
             Assert.True(File.Exists(result.ReviewReportPath));
             Assert.Single(result.FinalImagePaths);
+
+            using var manifestStream = File.OpenRead(result.ManifestJsonPath);
+            using var manifest = await JsonDocument.ParseAsync(manifestStream, cancellationToken: CancellationToken.None);
+            var blueprint = manifest.RootElement.GetProperty("items")[0].GetProperty("blueprint");
+            Assert.Equal(blueprintId, blueprint.GetProperty("id").GetGuid());
+            Assert.Equal("article-illustration-pack", blueprint.GetProperty("key").GetString());
         }
         finally
         {

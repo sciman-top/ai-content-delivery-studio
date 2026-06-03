@@ -2307,6 +2307,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             "deliveries",
             SelectedProject.Id.ToString("N"),
             DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss"));
+        var blueprint = ResolvePromotedDeliveryBlueprint();
         var items = GalleryRows
             .Where(row => reviewByCandidate.TryGetValue(row.CandidateImageId, out var review)
                 && review.HumanApproved
@@ -2319,7 +2320,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 row.MetadataPath,
                 row.PromptText,
                 ReviewDecision.Pass,
-                HumanApproved: true))
+                HumanApproved: true,
+                Blueprint: blueprint))
             .ToArray();
 
         var result = await _projectService.ExportDeliveryPackageAsync(
@@ -2338,6 +2340,25 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 result.ReviewReportPath,
                 result.FinalImagePaths.Count.ToString()),
         ];
+    }
+
+    private DeliveryBlueprintMetadata? ResolvePromotedDeliveryBlueprint()
+    {
+        var row = DesignBlueprintRows.FirstOrDefault(blueprint =>
+                blueprint.IsPromoted
+                && (_activeCreativeBriefId is null || blueprint.CreativeBriefId == _activeCreativeBriefId))
+            ?? DesignBlueprintRows.FirstOrDefault(blueprint => blueprint.IsPromoted);
+
+        return row is null
+            ? null
+            : new DeliveryBlueprintMetadata(
+                row.BlueprintId,
+                row.Key,
+                row.DisplayName,
+                row.Category,
+                row.SequenceMode,
+                row.ConsistencySummary,
+                row.VariationSummary);
     }
 
     private bool CanExportDelivery()

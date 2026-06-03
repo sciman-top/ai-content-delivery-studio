@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Infrastructure.Delivery;
 
@@ -31,6 +32,7 @@ public sealed class DeliveryPackageTests
             var recipeId = Guid.NewGuid();
             var referenceSetId = Guid.NewGuid();
             var generationTaskId = Guid.NewGuid();
+            var blueprintId = Guid.NewGuid();
             var result = await writer.WriteAsync(
                 new DeliveryPackageRequest(
                     "Sample project",
@@ -50,7 +52,15 @@ public sealed class DeliveryPackageTests
                             ReferenceImageSetIds: [referenceSetId],
                             ExperimentSlug: "001-lighting-soft",
                             ExperimentParameters: new Dictionary<string, string> { ["lighting"] = "soft" },
-                            GenerationTaskId: generationTaskId),
+                            GenerationTaskId: generationTaskId,
+                            Blueprint: new DeliveryBlueprintMetadata(
+                                blueprintId,
+                                "panel-narrative-sequence",
+                                "Panel narrative sequence",
+                                "storyboard",
+                                "panel_sequence",
+                                "same main character; consistent scene grammar",
+                                "alternate camera distance")),
                         new DeliveryPackageItem(
                             "alt",
                             "Rejected alternate",
@@ -85,6 +95,20 @@ public sealed class DeliveryPackageTests
             Assert.Equal("001-lighting-soft", items[0].GetProperty("experimentSlug").GetString());
             Assert.Equal("soft", items[0].GetProperty("experimentParameters").GetProperty("lighting").GetString());
             Assert.Equal(generationTaskId, items[0].GetProperty("generationTaskId").GetGuid());
+            var blueprint = items[0].GetProperty("blueprint");
+            Assert.Equal(blueprintId, blueprint.GetProperty("id").GetGuid());
+            Assert.Equal("panel-narrative-sequence", blueprint.GetProperty("key").GetString());
+            Assert.Equal("Panel narrative sequence", blueprint.GetProperty("displayName").GetString());
+            Assert.Equal("storyboard", blueprint.GetProperty("category").GetString());
+            Assert.Equal("panel_sequence", blueprint.GetProperty("sequenceMode").GetString());
+            Assert.Contains("same main character", blueprint.GetProperty("consistencySummary").GetString());
+            Assert.Equal("alternate camera distance", blueprint.GetProperty("variationSummary").GetString());
+
+            var manifestCsv = await File.ReadAllTextAsync(result.ManifestCsvPath, CancellationToken.None);
+            Assert.Contains("blueprintConsistencySummary", manifestCsv);
+            Assert.Contains("panel-narrative-sequence", manifestCsv);
+            Assert.Contains("same main character; consistent scene grammar", manifestCsv);
+            Assert.Contains("alternate camera distance", manifestCsv);
         }
         finally
         {

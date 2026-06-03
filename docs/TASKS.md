@@ -177,5 +177,5 @@
 - [x] Add optional `SeriesItemKind` support for panel-like narrative items.
 - [x] Expand Brief tab UI with blueprint cards and promotion actions.
 - [ ] Route review outcomes back to brief, blueprint, prompt, or settings layers.
-- [ ] Include blueprint metadata in delivery packages.
+- [x] Include blueprint metadata in delivery packages.
 - [x] Run full build, test, and format gates for the implementation slice.
