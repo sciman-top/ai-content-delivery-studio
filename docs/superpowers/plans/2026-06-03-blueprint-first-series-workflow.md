@@ -34,7 +34,7 @@ Turn the existing brief-first image workflow into a generalized blueprint-first 
 
 ## Milestone 5: Review And Delivery
 
-- Route review failures back to brief, blueprint, prompt, or settings layers.
+- Route review failures back to brief, blueprint, prompt, or settings layers, and apply approved brief/blueprint repair patches back to the records.
 - Include promoted blueprint and route metadata in delivery packages.
 - Keep human final approval unchanged.
 

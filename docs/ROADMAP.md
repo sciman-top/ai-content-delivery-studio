@@ -181,7 +181,7 @@ Deliverables:
 
 Goal: support common image-series use cases through reusable design blueprints instead of topic-specific modes.
 
-Status: started with persisted design blueprint candidates, blueprint promotion, review routing across brief/blueprint/prompt/settings layers, review-panel route visibility, routed Prompt/Settings repair application that creates a new prompt version instead of overwriting history, persisted non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation, and diagnostics evidence for those repair patch proposals. Brief/Blueprint repair application remains a later slice.
+Status: started with persisted design blueprint candidates, blueprint promotion, review routing across brief/blueprint/prompt/settings layers, review-panel route visibility, routed Prompt/Settings repair application that creates a new prompt version instead of overwriting history, persisted non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation, applied Brief/Blueprint repair records, and diagnostics evidence for those repair patch proposals.
 
 Deliverables:
 

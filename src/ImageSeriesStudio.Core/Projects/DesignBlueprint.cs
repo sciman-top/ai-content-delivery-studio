@@ -16,6 +16,7 @@ public sealed class DesignBlueprint
         ConsistencyRules = [];
         VariationRules = [];
         RiskNotes = [];
+        RepairNotesJson = "[]";
     }
 
     [JsonConstructor]
@@ -35,7 +36,8 @@ public sealed class DesignBlueprint
         IReadOnlyList<string> variationRules,
         IReadOnlyList<string> riskNotes,
         DateTimeOffset createdAt,
-        DateTimeOffset updatedAt)
+        DateTimeOffset updatedAt,
+        string repairNotesJson)
     {
         if (id == Guid.Empty)
         {
@@ -70,6 +72,7 @@ public sealed class DesignBlueprint
         ConsistencyRules = NormalizeList(consistencyRules);
         VariationRules = NormalizeList(variationRules);
         RiskNotes = NormalizeList(riskNotes);
+        RepairNotesJson = string.IsNullOrWhiteSpace(repairNotesJson) ? "[]" : repairNotesJson.Trim();
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
     }
@@ -101,6 +104,12 @@ public sealed class DesignBlueprint
     public IReadOnlyList<string> VariationRules { get; private set; }
 
     public IReadOnlyList<string> RiskNotes { get; private set; }
+
+    public string RepairNotesJson { get; private set; } = "[]";
+
+    [JsonIgnore]
+    public IReadOnlyList<RoutedRepairPatchApplicationNote> RepairNotes =>
+        RoutedRepairPatchApplicationSerialization.DeserializeNotes(RepairNotesJson);
 
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -138,7 +147,51 @@ public sealed class DesignBlueprint
             variationRules,
             riskNotes,
             timestamp,
-            timestamp);
+            timestamp,
+            "[]");
+    }
+
+    public DesignBlueprint ApplyRoutedRepairPatch(
+        IReadOnlyList<RoutedRepairPatchApplicationNote> notes,
+        DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(notes);
+
+        if (notes.Count == 0)
+        {
+            throw new ArgumentException("At least one repair note is required.", nameof(notes));
+        }
+
+        if (notes.Any(note => note.TargetLayer is not ReviewOutcomeTargetLayer.Blueprint))
+        {
+            throw new ArgumentException("Blueprint repair notes must target the blueprint layer.", nameof(notes));
+        }
+
+        var patchId = notes[0].RepairPatchId;
+        if (RepairNotes.Any(note => note.RepairPatchId == patchId))
+        {
+            throw new InvalidOperationException($"Blueprint repair patch already applied: {patchId}");
+        }
+
+        var combinedNotes = RepairNotes.Concat(notes).ToArray();
+        return new DesignBlueprint(
+            Id,
+            Key,
+            DisplayName,
+            Category,
+            Summary,
+            IntendedUse,
+            MinimumRecommendedItemCount,
+            MaximumRecommendedItemCount,
+            SupportsPanelSequence,
+            DefaultTextPolicy,
+            DefaultReviewRubricTemplateId,
+            ConsistencyRules,
+            VariationRules,
+            RiskNotes,
+            CreatedAt,
+            timestamp,
+            RoutedRepairPatchApplicationSerialization.SerializeNotes(combinedNotes));
     }
 
     private static string RequireText(string value, string parameterName)

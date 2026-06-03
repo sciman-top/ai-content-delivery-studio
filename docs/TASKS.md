@@ -184,14 +184,14 @@
 - [x] Add application workflow to create, compare, and promote blueprint routes.
 - [x] Add optional `SeriesItemKind` support for panel-like narrative items.
 - [x] Expand Brief tab UI with blueprint cards and promotion actions.
-- [ ] Route review outcomes back to brief, blueprint, prompt, or settings layers.
+- [x] Route review outcomes back to brief, blueprint, prompt, or settings layers.
   - [x] Add provider-neutral review outcome routing model and application service entrypoint.
   - [x] Surface routing decisions in review and repair UI.
   - [x] Apply routed repair actions back to prompt and settings records by creating a new prompt version.
   - [x] Add non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation.
   - [x] Persist Brief/Blueprint repair patch proposals on the project aggregate and SQLite repository.
   - [x] Include persisted repair patch proposals in diagnostics evidence.
-  - [ ] Apply routed repair actions back to brief and blueprint records.
+  - [x] Apply routed repair actions back to brief and blueprint records.
 - [x] Include blueprint metadata in delivery packages.
 - [x] Run full build, test, and format gates for the implementation slice.
 

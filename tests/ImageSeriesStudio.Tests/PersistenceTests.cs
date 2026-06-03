@@ -1,4 +1,5 @@
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.Application.RepairRouting;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
@@ -62,6 +63,123 @@ public sealed class PersistenceTests
                 Assert.Equal(ReviewOutcomeTargetLayer.Blueprint, loadedItem.TargetLayer);
                 Assert.Equal("Add a consistency rule to the promoted blueprint.", loadedItem.ProposedChanges.Single());
                 Assert.Equal(timestamp.AddMinutes(3), loaded.UpdatedAt);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task EfProjectRepository_PersistsAppliedBriefAndBlueprintRepairNotes()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            var timestamp = new DateTimeOffset(2026, 6, 3, 22, 15, 0, TimeSpan.Zero);
+            var project = ImageProject.Create("Repair patch note EF project", timestamp);
+            var series = project.AddSeries("Series", "Brief", timestamp.AddMinutes(1));
+            var brief = series.AddCreativeBrief(
+                "Clarify the route",
+                "designers",
+                ImageTextPolicy.Hybrid,
+                "clean editorial route",
+                ["clear visual hierarchy"],
+                ["unreadable labels"],
+                timestamp.AddMinutes(2));
+            var blueprint = DesignBlueprint.Create(
+                "article-illustration",
+                "Article illustration",
+                "article_illustration_pack",
+                "Keep the route grounded in the brief.",
+                "Best for short article-backed visual planning.",
+                2,
+                4,
+                supportsPanelSequence: false,
+                ImageTextPolicy.Hybrid,
+                ReviewRubricTemplateCatalog.GeneralImage,
+                ["Preserve the core claim across the set."],
+                ["Vary composition rather than premise."],
+                ["Avoid expanding beyond the article brief."],
+                timestamp.AddMinutes(2));
+            brief.ReplaceBlueprints([blueprint], timestamp.AddMinutes(3));
+            brief.PromoteBlueprint(blueprint.Id, timestamp.AddMinutes(4));
+
+            await using (var db = new AppDbContext(options))
+            {
+                await db.Database.EnsureCreatedAsync();
+                var repository = new EfProjectRepository(db);
+                await repository.SaveAsync(project, CancellationToken.None);
+            }
+
+            RoutedRepairPatch patch;
+            await using (var db = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(db);
+                var repairService = new ReviewRepairApplicationService(repository);
+                var repairPlan = new RepairPlan(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    RepairSeverity.Major,
+                    [
+                        RepairPlanStep.Create(
+                            1,
+                            ReviewOutcomeTargetLayer.Brief,
+                            RepairSeverity.Major,
+                            ["Missing a clearer audience constraint."],
+                            ["Tighten the brief before regenerating."],
+                            requiresOperator: false),
+                        RepairPlanStep.Create(
+                            2,
+                            ReviewOutcomeTargetLayer.Blueprint,
+                            RepairSeverity.Major,
+                            ["The promoted route needs stronger sequence rules."],
+                            ["Update the promoted blueprint with better panel consistency rules."],
+                            requiresOperator: false),
+                    ],
+                    timestamp.AddMinutes(5));
+
+                patch = await repairService.CreateRoutedRepairPatchAsync(
+                    new RoutedRepairPatchRequest(project.Id, repairPlan, timestamp.AddMinutes(6)),
+                    CancellationToken.None);
+
+                await repairService.ApplyRoutedRepairPatchAsync(
+                    new RoutedRepairPatchApplicationRequest(
+                        project.Id,
+                        brief.Id,
+                        patch.Id,
+                        timestamp.AddMinutes(7)),
+                    CancellationToken.None);
+
+                var tracked = await repository.LoadAsync(project.Id, CancellationToken.None);
+                var trackedBrief = Assert.Single(tracked!.Series.Single().CreativeBriefs);
+                Assert.NotEmpty(trackedBrief.RepairNotesJson);
+                Assert.Single(trackedBrief.RepairNotes);
+                var trackedBlueprint = Assert.Single(trackedBrief.DesignBlueprints);
+                Assert.NotEmpty(trackedBlueprint.RepairNotesJson);
+                Assert.Single(trackedBlueprint.RepairNotes);
+            }
+
+            await using (var db = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(db);
+                var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+                var loadedBrief = Assert.Single(loaded!.Series.Single().CreativeBriefs);
+                var loadedBlueprint = Assert.Single(loadedBrief.DesignBlueprints);
+
+                Assert.Equal(patch.Id, Assert.Single(loadedBrief.RepairNotes).RepairPatchId);
+                Assert.Equal(patch.Id, Assert.Single(loadedBlueprint.RepairNotes).RepairPatchId);
             }
         }
         finally

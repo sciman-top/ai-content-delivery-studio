@@ -31,6 +31,7 @@ public sealed class EfProjectRepository : IProjectRepository
         }
 
         await TrackNewChildrenAsync(project, cancellationToken);
+        TrackModifiedCreativeBriefs(project);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
 
@@ -139,6 +140,26 @@ public sealed class EfProjectRepository : IProjectRepository
             if (!await _dbContext.RoutedRepairPatches.AnyAsync(existing => existing.Id == patch.Id, cancellationToken))
             {
                 _dbContext.Entry(patch).State = EntityState.Added;
+            }
+        }
+    }
+
+    private void TrackModifiedCreativeBriefs(ImageProject project)
+    {
+        foreach (var brief in project.Series.SelectMany(series => series.CreativeBriefs))
+        {
+            var entry = _dbContext.Entry(brief);
+            var hasBriefNotes = brief.RepairNotes.Count > 0;
+            var hasBlueprintNotes = brief.DesignBlueprints.Any(blueprint => blueprint.RepairNotes.Count > 0);
+
+            if (hasBriefNotes || hasBlueprintNotes)
+            {
+                entry.State = EntityState.Modified;
+                entry.Property(nameof(CreativeBrief.RepairNotesJson)).IsModified = hasBriefNotes;
+                if (hasBlueprintNotes)
+                {
+                    entry.Property(nameof(CreativeBrief.DesignBlueprints)).IsModified = true;
+                }
             }
         }
     }

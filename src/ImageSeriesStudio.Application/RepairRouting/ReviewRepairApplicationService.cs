@@ -73,12 +73,59 @@ public sealed class ReviewRepairApplicationService
         return patch;
     }
 
+    public async Task<RoutedRepairPatchApplicationResult> ApplyRoutedRepairPatchAsync(
+        RoutedRepairPatchApplicationRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        var project = await RequireProjectAsync(request.ProjectId, cancellationToken);
+        var brief = RequireCreativeBrief(project, request.CreativeBriefId);
+        var patch = RequireRoutedRepairPatch(project, request.RoutedRepairPatchId);
+
+        DesignBlueprint? targetBlueprint = null;
+        if (patch.Items.Any(item => item.TargetLayer is ReviewOutcomeTargetLayer.Blueprint))
+        {
+            targetBlueprint = request.DesignBlueprintId is { } targetBlueprintId
+                ? RequireDesignBlueprint(brief, targetBlueprintId)
+                : brief.DesignBlueprints.SingleOrDefault(blueprint => blueprint.Id == brief.PromotedBlueprintId)
+                    ?? throw new InvalidOperationException("Blueprint repair patch requires a promoted blueprint or explicit target blueprint.");
+        }
+
+        var result = brief.ApplyRoutedRepairPatch(patch, targetBlueprint, request.Timestamp);
+
+        await _repository.SaveAsync(project, cancellationToken);
+        return result;
+    }
+
     private static SeriesItem RequireSeriesItem(ImageProject project, Guid seriesItemId)
     {
         return project.Series
             .SelectMany(series => series.Items)
             .SingleOrDefault(item => item.Id == seriesItemId)
             ?? throw new InvalidOperationException($"Series item not found: {seriesItemId}");
+    }
+
+    private static CreativeBrief RequireCreativeBrief(ImageProject project, Guid creativeBriefId)
+    {
+        return project.Series
+            .SelectMany(series => series.CreativeBriefs)
+            .SingleOrDefault(brief => brief.Id == creativeBriefId)
+            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
+    }
+
+    private static RoutedRepairPatch RequireRoutedRepairPatch(ImageProject project, Guid routedRepairPatchId)
+    {
+        return project.RoutedRepairPatches
+            .SingleOrDefault(patch => patch.Id == routedRepairPatchId)
+            ?? throw new InvalidOperationException($"Routed repair patch not found: {routedRepairPatchId}");
+    }
+
+    private static DesignBlueprint RequireDesignBlueprint(CreativeBrief brief, Guid designBlueprintId)
+    {
+        return brief.DesignBlueprints
+            .SingleOrDefault(blueprint => blueprint.Id == designBlueprintId)
+            ?? throw new InvalidOperationException($"Design blueprint not found: {designBlueprintId}");
     }
 
     private static IReadOnlyList<ReviewOutcomeTargetLayer> GetApplicableRepairLayers(RepairPlan repairPlan)
@@ -140,3 +187,10 @@ public sealed record RoutedRepairPatchRequest(
     Guid ProjectId,
     RepairPlan RepairPlan,
     DateTimeOffset Timestamp);
+
+public sealed record RoutedRepairPatchApplicationRequest(
+    Guid ProjectId,
+    Guid CreativeBriefId,
+    Guid RoutedRepairPatchId,
+    DateTimeOffset Timestamp,
+    Guid? DesignBlueprintId = null);

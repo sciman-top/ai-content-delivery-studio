@@ -57,6 +57,7 @@ public sealed class AppDbContext : DbContext
         modelBuilder.Ignore<ExtractedContent>();
         modelBuilder.Ignore<EvidenceAnchor>();
         modelBuilder.Ignore<IllustrationTarget>();
+        modelBuilder.Ignore<RoutedRepairPatchApplicationNote>();
         modelBuilder.Ignore<RoutedRepairPatchItem>();
 
         modelBuilder.Entity<ImageProject>(entity =>
@@ -149,6 +150,7 @@ public sealed class AppDbContext : DbContext
                 .HasConversion(
                     values => JsonSerializer.Serialize(values, JsonOptions),
                     json => JsonSerializer.Deserialize<List<DesignBlueprint>>(json, JsonOptions) ?? new List<DesignBlueprint>());
+            entity.Property(brief => brief.RepairNotesJson);
         });
 
         modelBuilder.Entity<DocumentBrief>(entity =>
@@ -420,4 +422,5 @@ public sealed class AppDbContext : DbContext
     {
         return JsonSerializer.Deserialize<List<RoutedRepairPatchItem>>(json, JsonOptions) ?? [];
     }
+
 }

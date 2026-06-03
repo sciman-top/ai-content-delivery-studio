@@ -15,6 +15,7 @@ public sealed class CreativeBrief
         StyleIntent = string.Empty;
         MustInclude = [];
         MustAvoid = [];
+        RepairNotesJson = "[]";
     }
 
     private CreativeBrief(
@@ -36,6 +37,7 @@ public sealed class CreativeBrief
         StyleIntent = styleIntent.Trim();
         MustInclude = NormalizeList(mustInclude);
         MustAvoid = NormalizeList(mustAvoid);
+        RepairNotesJson = "[]";
         CreatedAt = createdAt;
         UpdatedAt = createdAt;
     }
@@ -59,6 +61,12 @@ public sealed class CreativeBrief
     public IReadOnlyCollection<PromptDirection> PromptDirections => _promptDirections.AsReadOnly();
 
     public IReadOnlyCollection<DesignBlueprint> DesignBlueprints => _designBlueprints.AsReadOnly();
+
+    public string RepairNotesJson { get; private set; } = "[]";
+
+    [JsonIgnore]
+    public IReadOnlyList<RoutedRepairPatchApplicationNote> RepairNotes =>
+        RoutedRepairPatchApplicationSerialization.DeserializeNotes(RepairNotesJson);
 
     public Guid? PromotedBlueprintId { get; private set; }
 
@@ -136,6 +144,84 @@ public sealed class CreativeBrief
         UpdatedAt = timestamp;
     }
 
+    public RoutedRepairPatchApplicationResult ApplyRoutedRepairPatch(
+        RoutedRepairPatch patch,
+        DesignBlueprint? targetBlueprint,
+        DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(patch);
+
+        var briefItems = patch.Items
+            .Where(item => item.TargetLayer is ReviewOutcomeTargetLayer.Brief)
+            .OrderBy(item => item.Order)
+            .ToArray();
+        var blueprintItems = patch.Items
+            .Where(item => item.TargetLayer is ReviewOutcomeTargetLayer.Blueprint)
+            .OrderBy(item => item.Order)
+            .ToArray();
+
+        if (briefItems.Length == 0 && blueprintItems.Length == 0)
+        {
+            throw new InvalidOperationException("Routed repair patch must include brief or blueprint repair items.");
+        }
+
+        if (briefItems.Length > 0 && RepairNotes.Any(note => note.RepairPatchId == patch.Id && note.TargetLayer is ReviewOutcomeTargetLayer.Brief))
+        {
+            throw new InvalidOperationException($"Brief repair patch already applied: {patch.Id}");
+        }
+
+        DesignBlueprint? appliedBlueprint = null;
+        if (blueprintItems.Length > 0)
+        {
+            appliedBlueprint = targetBlueprint ?? GetPromotedBlueprint();
+            if (appliedBlueprint is null)
+            {
+                throw new InvalidOperationException("Blueprint repair patch requires a promoted blueprint or explicit target blueprint.");
+            }
+
+            if (appliedBlueprint.RepairNotes.Any(note => note.RepairPatchId == patch.Id && note.TargetLayer is ReviewOutcomeTargetLayer.Blueprint))
+            {
+                throw new InvalidOperationException($"Blueprint repair patch already applied: {patch.Id}");
+            }
+        }
+
+        if (briefItems.Length > 0)
+        {
+            var briefNotes = briefItems
+                .Select(item => RoutedRepairPatchApplicationNote.FromPatchItem(patch, item, timestamp))
+                .ToArray();
+            RepairNotesJson = RoutedRepairPatchApplicationSerialization.SerializeNotes(
+                RepairNotes.Concat(briefNotes).ToArray());
+        }
+
+        if (blueprintItems.Length > 0)
+        {
+            var blueprintNotes = blueprintItems
+                .Select(item => RoutedRepairPatchApplicationNote.FromPatchItem(patch, item, timestamp))
+                .ToArray();
+            var revisedBlueprint = appliedBlueprint!.ApplyRoutedRepairPatch(blueprintNotes, timestamp);
+            var blueprintIndex = _designBlueprints.FindIndex(blueprint => blueprint.Id == revisedBlueprint.Id);
+            if (blueprintIndex < 0)
+            {
+                throw new InvalidOperationException($"Design blueprint not found for repair patch: {revisedBlueprint.Id}");
+            }
+
+            _designBlueprints[blueprintIndex] = revisedBlueprint;
+        }
+
+        if (briefItems.Length > 0 || blueprintItems.Length > 0)
+        {
+            UpdatedAt = timestamp;
+        }
+
+        return new RoutedRepairPatchApplicationResult(
+            patch.Id,
+            Id,
+            appliedBlueprint?.Id,
+            briefItems.Length,
+            blueprintItems.Length);
+    }
+
     public DesignBlueprint PromoteBlueprint(Guid blueprintId, DateTimeOffset timestamp)
     {
         if (blueprintId == Guid.Empty)
@@ -149,6 +235,16 @@ public sealed class CreativeBrief
         PromotedBlueprintId = blueprint.Id;
         UpdatedAt = timestamp;
         return blueprint;
+    }
+
+    private DesignBlueprint? GetPromotedBlueprint()
+    {
+        if (PromotedBlueprintId is not { } promotedBlueprintId)
+        {
+            return null;
+        }
+
+        return _designBlueprints.SingleOrDefault(blueprint => blueprint.Id == promotedBlueprintId);
     }
 
     private static IReadOnlyList<string> NormalizeList(IReadOnlyList<string> values)

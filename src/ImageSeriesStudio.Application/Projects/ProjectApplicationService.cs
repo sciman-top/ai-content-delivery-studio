@@ -585,6 +585,13 @@ public sealed class ProjectApplicationService
         return await _reviewRepairApplicationService.CreateRoutedRepairPatchAsync(request, cancellationToken);
     }
 
+    public async Task<RoutedRepairPatchApplicationResult> ApplyRoutedRepairPatchAsync(
+        RoutedRepairPatchApplicationRequest request,
+        CancellationToken cancellationToken)
+    {
+        return await _reviewRepairApplicationService.ApplyRoutedRepairPatchAsync(request, cancellationToken);
+    }
+
     public async Task<DeliveryExportResult> ExportDeliveryPackageAsync(
         DeliveryExportRequest request,
         CancellationToken cancellationToken)

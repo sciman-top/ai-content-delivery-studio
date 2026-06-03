@@ -1,6 +1,7 @@
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Application.RepairRouting;
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Tests;
 
@@ -38,6 +39,108 @@ public sealed class RoutedRepairApplicationTests
         Assert.Equal(patch.Id, stored.Id);
         Assert.Equal(project.Id, stored.ProjectId);
         Assert.Equal(ReviewOutcomeTargetLayer.Blueprint, Assert.Single(stored.Items).TargetLayer);
+    }
+
+    [Fact]
+    public async Task ApplyRoutedRepairPatch_RecordsBriefAndBlueprintNotesThroughProjectFacade()
+    {
+        var timestamp = DateTimeOffset.Parse("2026-06-03T21:30:00Z");
+        var repository = new InMemoryProjectRepository();
+        var service = new ProjectApplicationService(repository);
+        var project = await service.CreateProjectAsync("Repair patch application demo", timestamp, CancellationToken.None);
+        var series = await service.AddSeriesAsync(project.Id, "Series", "Brief", timestamp.AddMinutes(1), CancellationToken.None);
+        var brief = await service.CreateCreativeBriefAsync(
+            project.Id,
+            series.Id,
+            "Improve the route",
+            "designers",
+            ImageTextPolicy.Hybrid,
+            "clean editorial route",
+            ["clear visual hierarchy"],
+            ["unreadable labels"],
+            timestamp.AddMinutes(2),
+            CancellationToken.None);
+
+        var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+        var loadedBrief = loaded!.Series.Single().CreativeBriefs.Single();
+        var firstBlueprint = DesignBlueprint.Create(
+            "article-illustration",
+            "Article illustration",
+            "article_illustration_pack",
+            "Keep the route grounded in the brief.",
+            "Best for short article-backed visual planning.",
+            2,
+            4,
+            supportsPanelSequence: false,
+            ImageTextPolicy.Hybrid,
+            ReviewRubricTemplateCatalog.GeneralImage,
+            ["Preserve the core claim across the set."],
+            ["Vary composition rather than premise."],
+            ["Avoid expanding beyond the article brief."],
+            timestamp.AddMinutes(3));
+        var secondBlueprint = DesignBlueprint.Create(
+            "panel-sequence",
+            "Panel sequence",
+            "panel_narrative_sequence",
+            "A stronger route for structured panels.",
+            "Best when the series needs explicit panel progression.",
+            3,
+            5,
+            supportsPanelSequence: true,
+            ImageTextPolicy.DeterministicPostRender,
+            ReviewRubricTemplateCatalog.GeneralImage,
+            ["Keep the recurring subject stable."],
+            ["Shift the moment from panel to panel."],
+            ["Reserve room for deterministic text composition."],
+            timestamp.AddMinutes(3));
+        loadedBrief.ReplaceBlueprints([firstBlueprint, secondBlueprint], timestamp.AddMinutes(4));
+        loadedBrief.PromoteBlueprint(secondBlueprint.Id, timestamp.AddMinutes(5));
+        await repository.SaveAsync(loaded!, CancellationToken.None);
+
+        var repairPlan = new RepairPlan(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            RepairSeverity.Major,
+            [
+                RepairPlanStep.Create(
+                    1,
+                    ReviewOutcomeTargetLayer.Brief,
+                    RepairSeverity.Major,
+                    ["Missing a clearer audience constraint."],
+                    ["Tighten the brief before regenerating."],
+                    requiresOperator: false),
+                RepairPlanStep.Create(
+                    2,
+                    ReviewOutcomeTargetLayer.Blueprint,
+                    RepairSeverity.Major,
+                    ["The promoted route needs stronger sequence rules."],
+                    ["Update the promoted blueprint with better panel consistency rules."],
+                    requiresOperator: false),
+            ],
+            timestamp.AddMinutes(6));
+
+        var patch = await service.CreateRoutedRepairPatchAsync(
+            new RoutedRepairPatchRequest(project.Id, repairPlan, timestamp.AddMinutes(7)),
+            CancellationToken.None);
+
+        var applied = await service.ApplyRoutedRepairPatchAsync(
+            new RoutedRepairPatchApplicationRequest(
+                project.Id,
+                brief.Id,
+                patch.Id,
+                timestamp.AddMinutes(8)),
+            CancellationToken.None);
+
+        var reloaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+        var reloadedBrief = reloaded!.Series.Single().CreativeBriefs.Single();
+        var promotedBlueprint = reloadedBrief.DesignBlueprints.Single(blueprint => blueprint.Id == reloadedBrief.PromotedBlueprintId);
+
+        Assert.Equal(patch.Id, applied.RoutedRepairPatchId);
+        Assert.True(applied.HasChanges);
+        Assert.Equal(1, applied.BriefNoteCount);
+        Assert.Equal(1, applied.BlueprintNoteCount);
+        Assert.Equal(patch.Id, Assert.Single(reloadedBrief.RepairNotes).RepairPatchId);
+        Assert.Equal(patch.Id, Assert.Single(promotedBlueprint.RepairNotes).RepairPatchId);
     }
 
     [Fact]
