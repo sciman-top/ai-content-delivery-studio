@@ -187,10 +187,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel(
         LocalizationService localizationService,
-        ProjectApplicationService projectService)
+        ProjectApplicationService projectService,
+        ProviderCenterViewModel providerCenter)
     {
         _localizationService = localizationService;
         _projectService = projectService;
+        ProviderCenter = providerCenter;
         RefreshLocalizedText();
         SelectedLanguageOption = LanguageOptions.First(option => option.Preference == _localizationService.Preference);
         NewProjectName = NewProjectNamePlaceholder;
@@ -198,6 +200,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         NewPlanningStyleBrief = Text(LocalizationKey.DefaultPlanningStyleBrief);
         _ = RefreshProjectsAsync();
     }
+
+    public ProviderCenterViewModel ProviderCenter { get; }
 
     public string AppTitle
     {
@@ -1752,6 +1756,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedProject = selectedProjectId is null
             ? Projects.FirstOrDefault()
             : Projects.FirstOrDefault(project => project.Id == selectedProjectId);
+    }
+
+    [RelayCommand]
+    private async Task RefreshProviderCenterAsync()
+    {
+        await ProviderCenter.RefreshAsync(CancellationToken.None);
+    }
+
+    [RelayCommand]
+    private async Task CheckProviderHealthAsync()
+    {
+        await ProviderCenter.CheckHealthAsync(CancellationToken.None);
     }
 
     [RelayCommand(CanExecute = nameof(CanRunFakePlanning))]

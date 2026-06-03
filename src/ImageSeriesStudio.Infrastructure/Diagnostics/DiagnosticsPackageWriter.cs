@@ -30,6 +30,7 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
             request.Projects,
             request.Providers,
             request.Secrets,
+            request.RepairPatches ?? [],
             request.OperatorRuns ?? []);
 
         var jsonPath = Path.Combine(request.OutputDirectory, "diagnostics.json");
@@ -95,6 +96,20 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
         }
 
         builder.AppendLine();
+        builder.AppendLine("## Repair Patches");
+
+        foreach (var patch in package.RepairPatches)
+        {
+            builder.AppendLine(
+                $"- {patch.PatchId}: project={patch.ProjectId}, candidate={patch.CandidateImageId}, items={patch.Items.Count}");
+            foreach (var item in patch.Items)
+            {
+                builder.AppendLine(
+                    $"  - {item.TargetLayer}: severity={item.Severity}, humanApproval={item.RequiresHumanApproval}, changes={string.Join("; ", item.ProposedChanges)}");
+            }
+        }
+
+        builder.AppendLine();
         builder.AppendLine("## Operator Runs");
 
         foreach (var run in package.OperatorRuns)
@@ -113,4 +128,5 @@ internal sealed record DiagnosticsPackage(
     IReadOnlyList<DiagnosticsProjectSnapshot> Projects,
     IReadOnlyList<DiagnosticsProviderSnapshot> Providers,
     IReadOnlyList<DiagnosticsSecretSnapshot> Secrets,
+    IReadOnlyList<RepairPatchDiagnosticsSnapshot> RepairPatches,
     IReadOnlyList<OperatorAuditSnapshot> OperatorRuns);

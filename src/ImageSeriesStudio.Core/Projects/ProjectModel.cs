@@ -14,6 +14,7 @@ public sealed class ImageProject
     private readonly List<ArtifactPackage> _artifactPackages = [];
     private readonly List<DocumentBrief> _documentBriefs = [];
     private readonly List<IllustrationPlan> _illustrationPlans = [];
+    private readonly List<RoutedRepairPatch> _routedRepairPatches = [];
 
     private ImageProject()
     {
@@ -49,6 +50,8 @@ public sealed class ImageProject
     public IReadOnlyCollection<DocumentBrief> DocumentBriefs => _documentBriefs.AsReadOnly();
 
     public IReadOnlyCollection<IllustrationPlan> IllustrationPlans => _illustrationPlans.AsReadOnly();
+
+    public IReadOnlyCollection<RoutedRepairPatch> RoutedRepairPatches => _routedRepairPatches.AsReadOnly();
 
     public static ImageProject Create(string name, DateTimeOffset createdAt)
     {
@@ -182,6 +185,25 @@ public sealed class ImageProject
         _illustrationPlans.Add(plan);
         UpdatedAt = timestamp;
         return plan;
+    }
+
+    public RoutedRepairPatch AddRoutedRepairPatch(RoutedRepairPatch patch, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(patch);
+
+        if (patch.ProjectId != Id)
+        {
+            throw new ArgumentException("Routed repair patch must belong to this project.", nameof(patch));
+        }
+
+        if (_routedRepairPatches.Any(existing => existing.Id == patch.Id))
+        {
+            throw new InvalidOperationException($"Routed repair patch already exists: {patch.Id}");
+        }
+
+        _routedRepairPatches.Add(patch);
+        UpdatedAt = timestamp;
+        return patch;
     }
 
     private static string RequireText(string value, string parameterName)

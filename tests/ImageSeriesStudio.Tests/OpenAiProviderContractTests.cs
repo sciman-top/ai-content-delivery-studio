@@ -51,6 +51,54 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task TextPlanningProvider_RecordsRequestUsageLatencyAndCostTelemetry()
+    {
+        var telemetrySink = new RecordingTelemetrySink();
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_plan_telemetry",
+              "output_text": "{\"summary\":\"Telemetry plan\",\"items\":[{\"title\":\"Opening\",\"brief\":\"A brief\",\"promptDraft\":\"A prompt\"}]}",
+              "usage": {
+                "input_tokens": 12,
+                "input_tokens_details": { "cached_tokens": 3 },
+                "output_tokens": 34,
+                "output_tokens_details": { "reasoning_tokens": 5 },
+                "total_tokens": 46
+              }
+            }
+            """,
+            requestId: "req_text_123"));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiTextPlanningProvider(
+            httpClient,
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            new StaticSecretStore("test-openai-key"),
+            telemetrySink,
+            new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
+
+        await provider.CreatePlanAsync(new PlanningRequest("topic", "audience", 1), CancellationToken.None);
+
+        var telemetry = Assert.Single(telemetrySink.Events);
+        Assert.Equal("openai-text", telemetry.ProviderId);
+        Assert.Equal("text-planning", telemetry.Operation);
+        Assert.Equal("gpt-5", telemetry.Model);
+        Assert.Equal("https://api.openai.com/v1/responses", telemetry.Endpoint);
+        Assert.Equal(200, telemetry.HttpStatusCode);
+        Assert.True(telemetry.Succeeded);
+        Assert.Equal("req_text_123", telemetry.RequestId);
+        Assert.Equal("resp_plan_telemetry", telemetry.ProviderTraceId);
+        Assert.Equal(12, telemetry.Usage!.InputTokens);
+        Assert.Equal(34, telemetry.Usage.OutputTokens);
+        Assert.Equal(46, telemetry.Usage.TotalTokens);
+        Assert.Equal(3, telemetry.Usage.CachedInputTokens);
+        Assert.Equal(5, telemetry.Usage.ReasoningOutputTokens);
+        Assert.True(telemetry.Latency >= TimeSpan.Zero);
+        Assert.Equal(0.03m, telemetry.EstimatedCostUsd);
+        Assert.Equal("test-card", telemetry.RateCardName);
+    }
+
+    [Fact]
     public async Task TextPlanningProvider_ParsesMessageContentFallback()
     {
         using var handler = new CaptureHandler(_ => JsonResponse(
@@ -114,6 +162,39 @@ public sealed class OpenAiProviderContractTests
 
         Assert.Contains("429", exception.Message, StringComparison.Ordinal);
         Assert.Equal(1, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task TextPlanningProvider_RecordsFailedHttpTelemetryBeforeThrowing()
+    {
+        var telemetrySink = new RecordingTelemetrySink();
+        using var handler = new CaptureHandler(_ =>
+        {
+            var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests)
+            {
+                ReasonPhrase = "Too Many Requests",
+                Content = new StringContent("""{"error":{"message":"rate limited"}}""", Encoding.UTF8, "application/json"),
+            };
+            response.Headers.TryAddWithoutValidation("x-request-id", "req_text_failed");
+            return response;
+        });
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiTextPlanningProvider(
+            httpClient,
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            new StaticSecretStore("test-openai-key"),
+            telemetrySink,
+            new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            provider.CreatePlanAsync(new PlanningRequest("topic", "audience", 1), CancellationToken.None));
+
+        var telemetry = Assert.Single(telemetrySink.Events);
+        Assert.Equal("req_text_failed", telemetry.RequestId);
+        Assert.Equal(429, telemetry.HttpStatusCode);
+        Assert.False(telemetry.Succeeded);
+        Assert.Null(telemetry.Usage);
+        Assert.Equal(0m, telemetry.EstimatedCostUsd);
     }
 
     [Fact]
@@ -191,6 +272,70 @@ public sealed class OpenAiProviderContractTests
             Assert.Equal("openai-image", metadata.RootElement.GetProperty("providerId").GetString());
             Assert.Equal("gpt-image-2", metadata.RootElement.GetProperty("model").GetString());
             Assert.Equal("img_resp_123", metadata.RootElement.GetProperty("providerTraceId").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ImageGenerationProvider_RecordsTelemetryAndWritesSafeMetadataSummary()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var imageBytes = new byte[] { 137, 80, 78, 71 };
+        var telemetrySink = new RecordingTelemetrySink();
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            $$"""
+            {
+              "id": "img_resp_telemetry",
+              "created": 1790000000,
+              "data": [
+                {
+                  "b64_json": "{{Convert.ToBase64String(imageBytes)}}"
+                }
+              ]
+            }
+            """,
+            requestId: "req_image_123"));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiImageGenerationProvider(
+            httpClient,
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            new StaticSecretStore("test-openai-key"),
+            telemetrySink,
+            new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
+
+        try
+        {
+            var result = await provider.GenerateImageAsync(
+                new ImageGenerationRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "Create a clean science poster.",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    rootDirectory,
+                    "science-poster.png"),
+                CancellationToken.None);
+
+            var telemetry = Assert.Single(telemetrySink.Events);
+            Assert.Equal("openai-image", telemetry.ProviderId);
+            Assert.Equal("image-generation", telemetry.Operation);
+            Assert.Equal("gpt-image-2", telemetry.Model);
+            Assert.Equal("req_image_123", telemetry.RequestId);
+            Assert.Equal("img_resp_telemetry", telemetry.ProviderTraceId);
+            Assert.Equal(0.20m, telemetry.EstimatedCostUsd);
+
+            using var metadata = JsonDocument.Parse(await File.ReadAllTextAsync(result.MetadataPath, CancellationToken.None));
+            var metadataTelemetry = metadata.RootElement.GetProperty("telemetry");
+            Assert.Equal("req_image_123", metadataTelemetry.GetProperty("requestId").GetString());
+            Assert.Equal(200, metadataTelemetry.GetProperty("httpStatusCode").GetInt32());
+            Assert.True(metadataTelemetry.GetProperty("succeeded").GetBoolean());
+            Assert.Equal(0.20m, metadataTelemetry.GetProperty("estimatedCostUsd").GetDecimal());
+            Assert.Equal("test-card", metadataTelemetry.GetProperty("rateCardName").GetString());
         }
         finally
         {
@@ -319,6 +464,59 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task VisionReviewProvider_RecordsRequestUsageLatencyAndCostTelemetry()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var imagePath = Path.Combine(rootDirectory, "candidate.png");
+        await File.WriteAllBytesAsync(imagePath, [1, 2, 3, 4], CancellationToken.None);
+        var telemetrySink = new RecordingTelemetrySink();
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_review_telemetry",
+              "output_text": "{\"decision\":\"pass\",\"scores\":{\"match\":5},\"hardFailures\":[],\"comments\":\"Looks aligned.\",\"suggestedFix\":null}",
+              "usage": {
+                "input_tokens": 22,
+                "output_tokens": 8,
+                "total_tokens": 30
+              }
+            }
+            """,
+            requestId: "req_vision_123"));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiVisionReviewProvider(
+            httpClient,
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            new StaticSecretStore("test-openai-key"),
+            telemetrySink,
+            new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
+
+        try
+        {
+            await provider.ReviewAsync(CreateVisionReviewRequest(imagePath), CancellationToken.None);
+
+            var telemetry = Assert.Single(telemetrySink.Events);
+            Assert.Equal("openai-vision", telemetry.ProviderId);
+            Assert.Equal("vision-review", telemetry.Operation);
+            Assert.Equal("gpt-5", telemetry.Model);
+            Assert.Equal("req_vision_123", telemetry.RequestId);
+            Assert.Equal("resp_review_telemetry", telemetry.ProviderTraceId);
+            Assert.Equal(22, telemetry.Usage!.InputTokens);
+            Assert.Equal(8, telemetry.Usage.OutputTokens);
+            Assert.Equal(30, telemetry.Usage.TotalTokens);
+            Assert.Equal(0.01m, telemetry.EstimatedCostUsd);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task VisionReviewProvider_DoesNotSendHttpWhenRealApiIsDisabled()
     {
         using var handler = new CaptureHandler(_ => JsonResponse("{}"));
@@ -406,12 +604,19 @@ public sealed class OpenAiProviderContractTests
             "prompt");
     }
 
-    private static HttpResponseMessage JsonResponse(string content)
+    private static HttpResponseMessage JsonResponse(string content, string? requestId = null)
     {
-        return new HttpResponseMessage(HttpStatusCode.OK)
+        var response = new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(content, Encoding.UTF8, "application/json"),
         };
+
+        if (!string.IsNullOrWhiteSpace(requestId))
+        {
+            response.Headers.TryAddWithoutValidation("x-request-id", requestId);
+        }
+
+        return response;
     }
 
     private sealed class CaptureHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler, IDisposable
@@ -443,6 +648,18 @@ public sealed class OpenAiProviderContractTests
             cancellationToken.ThrowIfCancellationRequested();
 
             return Task.FromResult(value);
+        }
+    }
+
+    private sealed class RecordingTelemetrySink : IProviderCallTelemetrySink
+    {
+        private readonly List<ProviderCallTelemetry> _events = [];
+
+        public IReadOnlyList<ProviderCallTelemetry> Events => _events;
+
+        public void Record(ProviderCallTelemetry telemetry)
+        {
+            _events.Add(telemetry);
         }
     }
 }

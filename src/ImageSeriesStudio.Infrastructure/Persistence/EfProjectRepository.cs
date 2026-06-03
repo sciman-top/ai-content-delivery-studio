@@ -43,6 +43,7 @@ public sealed class EfProjectRepository : IProjectRepository
             .Include(project => project.ArtifactPackages)
             .Include(project => project.DocumentBriefs)
             .Include(project => project.IllustrationPlans)
+            .Include(project => project.RoutedRepairPatches)
             .Include(project => project.Series)
             .ThenInclude(series => series.CreativeBriefs)
             .Include(project => project.Series)
@@ -130,6 +131,14 @@ public sealed class EfProjectRepository : IProjectRepository
             if (!await _dbContext.IllustrationPlans.AnyAsync(existing => existing.Id == plan.Id, cancellationToken))
             {
                 _dbContext.Entry(plan).State = EntityState.Added;
+            }
+        }
+
+        foreach (var patch in project.RoutedRepairPatches)
+        {
+            if (!await _dbContext.RoutedRepairPatches.AnyAsync(existing => existing.Id == patch.Id, cancellationToken))
+            {
+                _dbContext.Entry(patch).State = EntityState.Added;
             }
         }
     }

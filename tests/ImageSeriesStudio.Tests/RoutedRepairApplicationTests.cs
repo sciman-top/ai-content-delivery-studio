@@ -7,6 +7,40 @@ namespace ImageSeriesStudio.Tests;
 public sealed class RoutedRepairApplicationTests
 {
     [Fact]
+    public async Task CreateRoutedRepairPatch_PersistsPatchThroughProjectApplicationFacade()
+    {
+        var timestamp = DateTimeOffset.Parse("2026-06-03T22:00:00Z");
+        var repository = new InMemoryProjectRepository();
+        var service = new ProjectApplicationService(repository);
+        var project = await service.CreateProjectAsync("Facade repair patch demo", timestamp, CancellationToken.None);
+        var repairPlan = new RepairPlan(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            RepairSeverity.Major,
+            [
+                RepairPlanStep.Create(
+                    1,
+                    ReviewOutcomeTargetLayer.Blueprint,
+                    RepairSeverity.Major,
+                    ["Blueprint route needs stronger consistency."],
+                    ["Add a recurring subject consistency rule."],
+                    requiresOperator: false),
+            ],
+            timestamp.AddMinutes(1));
+
+        var patch = await service.CreateRoutedRepairPatchAsync(
+            new RoutedRepairPatchRequest(project.Id, repairPlan, timestamp.AddMinutes(2)),
+            CancellationToken.None);
+
+        var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+        var stored = Assert.Single(loaded!.RoutedRepairPatches);
+
+        Assert.Equal(patch.Id, stored.Id);
+        Assert.Equal(project.Id, stored.ProjectId);
+        Assert.Equal(ReviewOutcomeTargetLayer.Blueprint, Assert.Single(stored.Items).TargetLayer);
+    }
+
+    [Fact]
     public async Task ApplyRoutedRepair_CreatesNewPromptVersionWithPromptAndSettingsRepairs()
     {
         var timestamp = DateTimeOffset.Parse("2026-06-03T19:00:00Z");

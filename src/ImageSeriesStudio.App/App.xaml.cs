@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net.Http;
 using ImageSeriesStudio.Application.Delivery;
 using System.Windows;
 using ImageSeriesStudio.Application.Projects;
@@ -36,7 +37,12 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<LocalizationService>();
         builder.Services.AddTransient<IProjectRepository, EfProjectRepository>();
         builder.Services.AddTransient<ProjectApplicationService>();
+        builder.Services.AddSingleton<IProviderCenterConfigurationService, DotEnvProviderCenterConfigurationService>();
         builder.Services.AddOpenAiProviderHttpClient(new OpenAiProviderOptions());
+        builder.Services.AddTransient(serviceProvider => new ProviderHealthCheckService(
+            serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(OpenAiHttpClientNames.Provider),
+            serviceProvider.GetRequiredService<IOpenAiSecretStore>()));
+        builder.Services.AddSingleton<IProviderCenterHealthCheckService, DotEnvProviderCenterHealthCheckService>();
         builder.Services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
         builder.Services.AddSingleton<FakeImageGenerationProvider>();
         builder.Services.AddSingleton<IImageGenerationProvider>(serviceProvider =>
@@ -45,6 +51,7 @@ public partial class App : System.Windows.Application
             serviceProvider.GetRequiredService<FakeImageGenerationProvider>());
         builder.Services.AddSingleton<IVisionReviewProvider, FakeVisionReviewProvider>();
         builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
+        builder.Services.AddTransient<ProviderCenterViewModel>();
         builder.Services.AddTransient<MainWindowViewModel>();
         builder.Services.AddTransient<MainWindow>();
 

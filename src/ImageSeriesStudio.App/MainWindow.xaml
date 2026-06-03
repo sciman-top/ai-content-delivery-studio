@@ -1246,6 +1246,53 @@
 
                 <Separator Margin="0,18,0,14" />
 
+                <TextBlock Text="Provider Center" FontWeight="SemiBold" Margin="0,0,0,6" />
+                <TextBlock Text="{Binding ProviderCenter.SummaryText}"
+                           TextWrapping="Wrap"
+                           Foreground="#4B5563"
+                           Margin="0,0,0,8" />
+                <UniformGrid Columns="2" Margin="0,0,0,8">
+                    <Button Content="Refresh"
+                            Command="{Binding RefreshProviderCenterCommand}"
+                            Margin="0,0,4,0" />
+                    <Button Content="Test"
+                            Command="{Binding CheckProviderHealthCommand}"
+                            Margin="4,0,0,0" />
+                </UniformGrid>
+                <ItemsControl ItemsSource="{Binding ProviderCenter.ProviderRows}" Margin="0,0,0,2">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="#D9DEE8"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="8"
+                                    Margin="0,0,0,6">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Model}"
+                                               Foreground="#4B5563"
+                                               TextTrimming="CharacterEllipsis"
+                                               Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding SecretSummary}"
+                                               Foreground="#4B5563"
+                                               TextWrapping="Wrap"
+                                               Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding ConcurrencySummary}"
+                                               Foreground="#4B5563"
+                                               TextWrapping="Wrap"
+                                               Margin="0,2,0,0" />
+                                    <TextBlock Text="{Binding HealthSummary}"
+                                               Foreground="#4B5563"
+                                               TextWrapping="Wrap"
+                                               Margin="0,2,0,0" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <Separator Margin="0,12,0,14" />
+
                 <TextBlock Text="{Binding ProjectNameLabel}" FontWeight="SemiBold" Margin="0,0,0,6" />
                 <TextBox Text="{Binding NewProjectName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
                 <Button Content="{Binding CreateProjectText}"

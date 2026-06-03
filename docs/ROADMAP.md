@@ -82,11 +82,19 @@ Exit gate:
 
 Goal: make the real-provider path robust on low-hardware Windows machines without requiring local model installs.
 
+Status: started with DPAPI and `.env` secret resolution, split text/image provider profiles, image key-pool validation, role-scoped provider operation guards, non-generating provider health checks, Provider Center summaries, operation-scoped provider options, resilient HTTP clients, and safe provider call telemetry capture for request IDs, token usage, latency, and configured cost estimates. Full OpenTelemetry/Aspire dashboard integration remains a later slice.
+
 Deliverables:
 
 - Cloud-first provider strategy recorded in ADR and implementation plan.
 - Official OpenAI workflow split between direct Image API and stateful Responses API where appropriate.
 - Windows Credential Locker or DPAPI-backed secret storage for production paths.
+- Local `.env` fallback and separated text/image provider environment profiles for official, OpenAI-compatible, and third-party image-only services.
+- Image provider key-pool concurrency validation for multi-key batch generation.
+- Role-scoped provider operation guards so image-only keys cannot be used for text or vision calls.
+- Non-generating `/v1/models` health checks for text providers and image key pools.
+- Provider Center configuration summary model/view-model that redacts secret values before UI binding.
+- Provider Center manual health summary state for text providers and mixed image key-pool results.
 - `Microsoft.Extensions.Http.Resilience` integration for named provider clients.
 - Provider request ID, latency, token, and cost telemetry capture.
 - OpenTelemetry-based traces and metrics for provider calls and queue execution.
@@ -173,7 +181,7 @@ Deliverables:
 
 Goal: support common image-series use cases through reusable design blueprints instead of topic-specific modes.
 
-Status: started with persisted design blueprint candidates, blueprint promotion, review routing across brief/blueprint/prompt/settings layers, review-panel route visibility, routed Prompt/Settings repair application that creates a new prompt version instead of overwriting history, and non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation. Brief/Blueprint repair application remains a later slice.
+Status: started with persisted design blueprint candidates, blueprint promotion, review routing across brief/blueprint/prompt/settings layers, review-panel route visibility, routed Prompt/Settings repair application that creates a new prompt version instead of overwriting history, persisted non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation, and diagnostics evidence for those repair patch proposals. Brief/Blueprint repair application remains a later slice.
 
 Deliverables:
 

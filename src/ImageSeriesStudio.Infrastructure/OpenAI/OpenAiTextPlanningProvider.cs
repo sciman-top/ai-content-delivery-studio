@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -13,15 +14,22 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
     private readonly HttpClient _httpClient;
     private readonly OpenAiProviderOptions _options;
     private readonly IOpenAiSecretStore _secretStore;
+    private readonly IProviderCallTelemetrySink _telemetrySink;
+    private readonly OpenAiCostRateCard _rateCard;
 
     public OpenAiTextPlanningProvider(
         HttpClient httpClient,
         OpenAiProviderOptions options,
-        IOpenAiSecretStore secretStore)
+        IOpenAiSecretStore secretStore,
+        IProviderCallTelemetrySink? telemetrySink = null,
+        OpenAiCostRateCard? rateCard = null)
     {
         _httpClient = httpClient;
         _options = options;
         _secretStore = secretStore;
+        _telemetrySink = telemetrySink ?? NullProviderCallTelemetrySink.Instance;
+        _rateCard = rateCard ?? OpenAiCostRateCard.Unpriced;
+        OpenAiProviderGuard.EnsureAllowsOperation(_options, OpenAiProviderOperation.TextPlanning);
 
         Capabilities = new ProviderCapabilities(
             "openai-text",
@@ -40,23 +48,33 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         PlanningRequest request,
         CancellationToken cancellationToken)
     {
-        await OpenAiProviderGuard.EnsureCanCallRealApiAsync(_options, _secretStore, cancellationToken);
+        await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
+            _options,
+            _secretStore,
+            OpenAiProviderOperation.TextPlanning,
+            cancellationToken);
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(_options.BaseUri, "responses"));
+        var endpoint = new Uri(_options.BaseUri, "responses");
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         httpRequest.Content = JsonContent.Create(CreatePayload(request), options: JsonOptions);
 
+        var stopwatch = Stopwatch.StartNew();
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        stopwatch.Stop();
         if (!response.IsSuccessStatusCode)
         {
+            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed);
             throw new HttpRequestException(
                 $"OpenAI text planning request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        var providerTraceId = ExtractTraceId(document.RootElement);
+        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
         var outputText = ExtractOutputText(document.RootElement);
         var plan = JsonSerializer.Deserialize<OpenAiPlanResponse>(outputText, JsonOptions)
             ?? throw new InvalidOperationException("OpenAI text planning response was empty.");
@@ -71,7 +89,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             plan.Items
                 .Select(item => new SeriesPlanItem(item.Title, item.Brief, item.PromptDraft))
                 .ToArray(),
-            ExtractTraceId(document.RootElement));
+            providerTraceId);
     }
 
     public Task<BriefPlanningResult> CreatePromptDirectionsAsync(
@@ -216,6 +234,26 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         return root.TryGetProperty("id", out var idElement) && idElement.ValueKind is JsonValueKind.String
             ? idElement.GetString()!
             : "openai-text-plan";
+    }
+
+    private void RecordTelemetry(
+        Uri endpoint,
+        HttpResponseMessage response,
+        JsonElement? body,
+        string? providerTraceId,
+        TimeSpan latency)
+    {
+        _telemetrySink.Record(OpenAiProviderTelemetry.Create(
+            Capabilities.ProviderId,
+            "text-planning",
+            _options.TextPlanningModel,
+            endpoint,
+            response,
+            body,
+            providerTraceId,
+            latency,
+            _rateCard.TextPlanningRequestUsd,
+            _rateCard.Name));
     }
 
     private sealed record OpenAiPlanResponse(string Summary, IReadOnlyList<OpenAiPlanItem> Items);

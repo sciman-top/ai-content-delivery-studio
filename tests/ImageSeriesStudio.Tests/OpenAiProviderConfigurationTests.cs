@@ -7,6 +7,229 @@ namespace ImageSeriesStudio.Tests;
 public sealed class OpenAiProviderConfigurationTests
 {
     [Fact]
+    public async Task DotEnvSecretStore_ReadsDotEnvValuesWithoutPersistingSecrets()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var envPath = Path.Combine(directory, ".env");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            await File.WriteAllLinesAsync(
+                envPath,
+                [
+                    "# local provider secrets",
+                    "TEXT_PROVIDER_API_KEY=sk-text-test",
+                    "IMAGE_PROVIDER_APP_SECRET=\"as-image-test\"",
+                    "EMPTY_VALUE=",
+                ]);
+
+            var store = new DotEnvSecretStore(envPath);
+
+            Assert.Equal("sk-text-test", await store.GetSecretAsync("TEXT_PROVIDER_API_KEY", CancellationToken.None));
+            Assert.Equal("as-image-test", await store.GetSecretAsync("IMAGE_PROVIDER_APP_SECRET", CancellationToken.None));
+            Assert.Null(await store.GetSecretAsync("EMPTY_VALUE", CancellationToken.None));
+            Assert.Null(await store.GetSecretAsync("MISSING_SECRET", CancellationToken.None));
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_LoadsSeparatedTextAndImageProviderProfiles()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_KIND"] = "openai_compatible",
+                ["TEXT_PROVIDER_BASE_URL"] = "https://text.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_KIND"] = "openai_compatible_image_only",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://image.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "image-model",
+                ["IMAGE_PROVIDER_API_KEY_1"] = "sk-image-1",
+                ["IMAGE_PROVIDER_API_KEY_2"] = "sk-image-2",
+                ["IMAGE_PROVIDER_API_KEY_3"] = "sk-image-3",
+                ["IMAGE_PROVIDER_API_KEY_4"] = "sk-image-4",
+                ["IMAGE_PROVIDER_APP_ID"] = "app-id",
+                ["IMAGE_PROVIDER_APP_SECRET"] = "as-secret",
+                ["IMAGE_PROVIDER_CONCURRENCY_PER_KEY"] = "10",
+                ["IMAGE_PROVIDER_TOTAL_CONCURRENCY"] = "40",
+            });
+
+        Assert.Empty(configuration.Validate());
+        Assert.Equal("gpt-5.5", configuration.Text.Model);
+        Assert.Equal("TEXT_PROVIDER_API_KEY", configuration.Text.ApiKeySecretName);
+        Assert.Equal(4, configuration.Image.ApiKeySecretNames.Count);
+        Assert.Equal(10, configuration.Image.ConcurrencyPerKey);
+        Assert.Equal(40, configuration.Image.TotalConcurrency);
+        Assert.Equal("IMAGE_PROVIDER_APP_ID", configuration.Image.AppIdSecretName);
+        Assert.Equal("IMAGE_PROVIDER_APP_SECRET", configuration.Image.AppSecretSecretName);
+    }
+
+    [Fact]
+    public async Task ProviderEnvironmentConfiguration_LoadsProviderProfilesFromDotEnvFile()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var envPath = Path.Combine(directory, ".env");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            await File.WriteAllLinesAsync(
+                envPath,
+                [
+                    "TEXT_PROVIDER_BASE_URL=https://text.example/v1",
+                    "TEXT_PROVIDER_API_KEY=sk-text",
+                    "TEXT_PROVIDER_MODEL=gpt-5.5",
+                    "IMAGE_PROVIDER_BASE_URL=https://image.example/v1",
+                    "IMAGE_PROVIDER_MODEL=image-model",
+                    "IMAGE_PROVIDER_API_KEY_1=sk-image-1",
+                    "IMAGE_PROVIDER_API_KEY_2=sk-image-2",
+                    "IMAGE_PROVIDER_API_KEY_3=sk-image-3",
+                    "IMAGE_PROVIDER_API_KEY_4=sk-image-4",
+                    "IMAGE_PROVIDER_CONCURRENCY_PER_KEY=10",
+                    "IMAGE_PROVIDER_TOTAL_CONCURRENCY=40",
+                ]);
+
+            var configuration = await ProviderEnvironmentConfiguration.FromDotEnvFileAsync(
+                envPath,
+                CancellationToken.None);
+
+            Assert.Empty(configuration.Validate());
+            Assert.Equal("gpt-5.5", configuration.Text.Model);
+            Assert.Equal(4, configuration.Image.ApiKeySecretNames.Count);
+            Assert.Equal(40, configuration.Image.TotalConcurrency);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_ReportsMissingModelsAndConcurrencyMismatch()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://text.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_MODEL"] = "",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://image.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "image-model",
+                ["IMAGE_PROVIDER_API_KEY_1"] = "sk-image-1",
+                ["IMAGE_PROVIDER_API_KEY_2"] = "sk-image-2",
+                ["IMAGE_PROVIDER_CONCURRENCY_PER_KEY"] = "10",
+                ["IMAGE_PROVIDER_TOTAL_CONCURRENCY"] = "30",
+            });
+
+        var errors = configuration.Validate();
+
+        Assert.Contains(errors, error => error.Contains("Text provider model", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(errors, error => error.Contains("total concurrency", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void OpenAiProviderOptions_CreatesSeparateTextAndImageOptionsFromProviderEnvironment()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://text.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://image.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "image-model",
+                ["IMAGE_PROVIDER_API_KEY_1"] = "sk-image-1",
+                ["IMAGE_PROVIDER_API_KEY_2"] = "sk-image-2",
+                ["IMAGE_PROVIDER_CONCURRENCY_PER_KEY"] = "10",
+                ["IMAGE_PROVIDER_TOTAL_CONCURRENCY"] = "20",
+            });
+
+        var textOptions = OpenAiProviderOptions.FromTextProviderEnvironment(configuration, realApiEnabled: true);
+        var imageOptions = OpenAiProviderOptions.FromImageProviderEnvironment(configuration, realApiEnabled: true);
+
+        Assert.Equal("https://text.example/v1", textOptions.BaseUri.ToString().TrimEnd('/'));
+        Assert.Equal("TEXT_PROVIDER_API_KEY", textOptions.ApiKeySecretName);
+        Assert.Equal("gpt-5.5", textOptions.TextPlanningModel);
+        Assert.Equal("https://image.example/v1", imageOptions.BaseUri.ToString().TrimEnd('/'));
+        Assert.Equal("IMAGE_PROVIDER_API_KEY_1", imageOptions.ApiKeySecretName);
+        Assert.Equal("image-model", imageOptions.ImageGenerationModel);
+        Assert.True(textOptions.RealApiEnabled);
+        Assert.True(imageOptions.RealApiEnabled);
+        Assert.True(textOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.TextPlanning));
+        Assert.True(textOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.VisionReview));
+        Assert.False(textOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.ImageGeneration));
+        Assert.True(imageOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.ImageGeneration));
+        Assert.False(imageOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.TextPlanning));
+        Assert.False(imageOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.VisionReview));
+    }
+
+    [Fact]
+    public void OpenAiProviders_FailClosedWhenOptionsAreUsedForWrongOperation()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://text.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://image.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "image-model",
+                ["IMAGE_PROVIDER_API_KEY_1"] = "sk-image",
+            });
+        var textOptions = OpenAiProviderOptions.FromTextProviderEnvironment(configuration, realApiEnabled: true);
+        var imageOptions = OpenAiProviderOptions.FromImageProviderEnvironment(configuration, realApiEnabled: true);
+
+        var textException = Assert.Throws<InvalidOperationException>(() =>
+            new OpenAiTextPlanningProvider(new HttpClient(), imageOptions, new StaticSecretStore("image-secret")));
+        var visionException = Assert.Throws<InvalidOperationException>(() =>
+            new OpenAiVisionReviewProvider(new HttpClient(), imageOptions, new StaticSecretStore("image-secret")));
+        var imageException = Assert.Throws<InvalidOperationException>(() =>
+            new OpenAiImageGenerationProvider(new HttpClient(), textOptions, new StaticSecretStore("text-secret")));
+
+        Assert.Contains("TextPlanning", textException.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("VisionReview", visionException.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ImageGeneration", imageException.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void OpenAiProviderGuard_RejectsPurposePrefixedSecretNamesForWrongOperation()
+    {
+        var imageKeyOptions = new OpenAiProviderOptions
+        {
+            ApiKeySecretName = "IMAGE_PROVIDER_API_KEY_1",
+            AllowedOperations = OpenAiProviderOperation.All,
+        };
+        var textKeyOptions = new OpenAiProviderOptions
+        {
+            ApiKeySecretName = "TEXT_PROVIDER_API_KEY",
+            AllowedOperations = OpenAiProviderOperation.All,
+        };
+
+        var textException = Assert.Throws<InvalidOperationException>(() =>
+            OpenAiProviderGuard.EnsureAllowsOperation(imageKeyOptions, OpenAiProviderOperation.TextPlanning));
+        var visionException = Assert.Throws<InvalidOperationException>(() =>
+            OpenAiProviderGuard.EnsureAllowsOperation(imageKeyOptions, OpenAiProviderOperation.VisionReview));
+        var imageException = Assert.Throws<InvalidOperationException>(() =>
+            OpenAiProviderGuard.EnsureAllowsOperation(textKeyOptions, OpenAiProviderOperation.ImageGeneration));
+
+        Assert.Contains("IMAGE_PROVIDER_API_KEY", textException.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("IMAGE_PROVIDER_API_KEY", visionException.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("TEXT_PROVIDER_API_KEY", imageException.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Defaults_KeepRealApiDisabledAndValidateCleanly()
     {
         var options = new OpenAiProviderOptions();

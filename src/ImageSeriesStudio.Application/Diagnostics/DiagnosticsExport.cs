@@ -15,6 +15,7 @@ public sealed record DiagnosticsExportRequest(
     IReadOnlyList<DiagnosticsProjectSnapshot> Projects,
     IReadOnlyList<DiagnosticsProviderSnapshot> Providers,
     IReadOnlyList<DiagnosticsSecretSnapshot> Secrets,
+    IReadOnlyList<RepairPatchDiagnosticsSnapshot>? RepairPatches = null,
     IReadOnlyList<OperatorAuditSnapshot>? OperatorRuns = null);
 
 public sealed record DiagnosticsApplicationSnapshot(
@@ -77,6 +78,50 @@ public sealed record DiagnosticsProviderSnapshot(
 public sealed record DiagnosticsSecretSnapshot(
     string Name,
     bool IsConfigured);
+
+public sealed record RepairPatchDiagnosticsSnapshot(
+    Guid PatchId,
+    Guid ProjectId,
+    Guid RepairPlanId,
+    Guid CandidateImageId,
+    DateTimeOffset CreatedAt,
+    IReadOnlyList<RepairPatchItemDiagnosticsSnapshot> Items)
+{
+    public static RepairPatchDiagnosticsSnapshot FromPatch(RoutedRepairPatch patch)
+    {
+        ArgumentNullException.ThrowIfNull(patch);
+
+        return new RepairPatchDiagnosticsSnapshot(
+            patch.Id,
+            patch.ProjectId,
+            patch.RepairPlanId,
+            patch.CandidateImageId,
+            patch.CreatedAt,
+            patch.Items.Select(RepairPatchItemDiagnosticsSnapshot.FromItem).ToArray());
+    }
+}
+
+public sealed record RepairPatchItemDiagnosticsSnapshot(
+    int Order,
+    string TargetLayer,
+    string Severity,
+    IReadOnlyList<string> Evidence,
+    IReadOnlyList<string> ProposedChanges,
+    bool RequiresHumanApproval)
+{
+    public static RepairPatchItemDiagnosticsSnapshot FromItem(RoutedRepairPatchItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+
+        return new RepairPatchItemDiagnosticsSnapshot(
+            item.Order,
+            item.TargetLayer.ToString(),
+            item.Severity.ToString(),
+            item.Evidence,
+            item.ProposedChanges,
+            item.RequiresHumanApproval);
+    }
+}
 
 public sealed record OperatorAuditSnapshot(
     Guid OperatorActionId,

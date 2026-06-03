@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -15,15 +16,22 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
     private readonly HttpClient _httpClient;
     private readonly OpenAiProviderOptions _options;
     private readonly IOpenAiSecretStore _secretStore;
+    private readonly IProviderCallTelemetrySink _telemetrySink;
+    private readonly OpenAiCostRateCard _rateCard;
 
     public OpenAiImageGenerationProvider(
         HttpClient httpClient,
         OpenAiProviderOptions options,
-        IOpenAiSecretStore secretStore)
+        IOpenAiSecretStore secretStore,
+        IProviderCallTelemetrySink? telemetrySink = null,
+        OpenAiCostRateCard? rateCard = null)
     {
         _httpClient = httpClient;
         _options = options;
         _secretStore = secretStore;
+        _telemetrySink = telemetrySink ?? NullProviderCallTelemetrySink.Instance;
+        _rateCard = rateCard ?? OpenAiCostRateCard.Unpriced;
+        OpenAiProviderGuard.EnsureAllowsOperation(_options, OpenAiProviderOperation.ImageGeneration);
 
         Capabilities = new ProviderCapabilities(
             "openai-image",
@@ -53,17 +61,25 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         ImageGenerationRequest request,
         CancellationToken cancellationToken)
     {
-        await OpenAiProviderGuard.EnsureCanCallRealApiAsync(_options, _secretStore, cancellationToken);
+        await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
+            _options,
+            _secretStore,
+            OpenAiProviderOperation.ImageGeneration,
+            cancellationToken);
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
 
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(_options.BaseUri, "images/generations"));
+        var endpoint = new Uri(_options.BaseUri, "images/generations");
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         httpRequest.Content = JsonContent.Create(CreatePayload(request), options: JsonOptions);
 
+        var stopwatch = Stopwatch.StartNew();
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        stopwatch.Stop();
         if (!response.IsSuccessStatusCode)
         {
+            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed);
             throw new HttpRequestException(
                 $"OpenAI image generation request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
         }
@@ -74,6 +90,9 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         var imageBytes = Convert.FromBase64String(imageBase64);
         var generatedAt = DateTimeOffset.UtcNow;
         var outputFormat = NormalizeOutputFormat(request.Settings.OutputFormat);
+        var providerTraceId = ExtractTraceId(document.RootElement);
+        var telemetry = CreateTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
+        _telemetrySink.Record(telemetry);
 
         Directory.CreateDirectory(request.OutputDirectory);
 
@@ -81,7 +100,6 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             request.OutputDirectory,
             EnsureOutputFileName(request.OutputFileName, outputFormat, request.SeriesItemId, request.PromptVersionId));
         var metadataPath = Path.ChangeExtension(assetPath, ".json");
-        var providerTraceId = ExtractTraceId(document.RootElement);
 
         await File.WriteAllBytesAsync(assetPath, imageBytes, cancellationToken);
         await File.WriteAllTextAsync(
@@ -101,6 +119,16 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
                         quality = NormalizeQuality(request.Settings.Quality),
                         outputFormat,
                         seed = request.Settings.Seed,
+                    },
+                    telemetry = new
+                    {
+                        telemetry.RequestId,
+                        telemetry.HttpStatusCode,
+                        telemetry.Succeeded,
+                        telemetry.Latency,
+                        usage = telemetry.Usage,
+                        telemetry.EstimatedCostUsd,
+                        telemetry.RateCardName,
                     },
                     generatedAt,
                 },
@@ -200,5 +228,35 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         return root.TryGetProperty("created", out var createdElement)
             ? $"openai-image-{createdElement}"
             : "openai-image-generate";
+    }
+
+    private void RecordTelemetry(
+        Uri endpoint,
+        HttpResponseMessage response,
+        JsonElement? body,
+        string? providerTraceId,
+        TimeSpan latency)
+    {
+        _telemetrySink.Record(CreateTelemetry(endpoint, response, body, providerTraceId, latency));
+    }
+
+    private ProviderCallTelemetry CreateTelemetry(
+        Uri endpoint,
+        HttpResponseMessage response,
+        JsonElement? body,
+        string? providerTraceId,
+        TimeSpan latency)
+    {
+        return OpenAiProviderTelemetry.Create(
+            Capabilities.ProviderId,
+            "image-generation",
+            _options.ImageGenerationModel,
+            endpoint,
+            response,
+            body,
+            providerTraceId,
+            latency,
+            _rateCard.ImageGenerationRequestUsd,
+            _rateCard.Name);
     }
 }

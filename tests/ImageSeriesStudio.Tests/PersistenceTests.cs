@@ -11,6 +11,68 @@ namespace ImageSeriesStudio.Tests;
 
 public sealed class PersistenceTests
 {
+    [Fact]
+    public async Task EfProjectRepository_PersistsRoutedRepairPatches()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            var timestamp = new DateTimeOffset(2026, 6, 3, 21, 30, 0, TimeSpan.Zero);
+            var project = ImageProject.Create("Repair patch EF project", timestamp);
+            var repairPlan = new RepairPlan(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                RepairSeverity.Major,
+                [
+                    RepairPlanStep.Create(
+                        1,
+                        ReviewOutcomeTargetLayer.Blueprint,
+                        RepairSeverity.Major,
+                        ["Series style drift."],
+                        ["Add a consistency rule to the promoted blueprint."],
+                        requiresOperator: false),
+                ],
+                timestamp.AddMinutes(1));
+            var patch = RoutedRepairPatch.FromRepairPlan(project.Id, repairPlan, timestamp.AddMinutes(2));
+            project.AddRoutedRepairPatch(patch, timestamp.AddMinutes(3));
+
+            await using (var db = new AppDbContext(options))
+            {
+                await db.Database.EnsureCreatedAsync();
+                var repository = new EfProjectRepository(db);
+                await repository.SaveAsync(project, CancellationToken.None);
+            }
+
+            await using (var db = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(db);
+                var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+                var loadedPatch = Assert.Single(loaded!.RoutedRepairPatches);
+                var loadedItem = Assert.Single(loadedPatch.Items);
+
+                Assert.Equal(project.Id, loadedPatch.ProjectId);
+                Assert.Equal(repairPlan.Id, loadedPatch.RepairPlanId);
+                Assert.Equal(ReviewOutcomeTargetLayer.Blueprint, loadedItem.TargetLayer);
+                Assert.Equal("Add a consistency rule to the promoted blueprint.", loadedItem.ProposedChanges.Single());
+                Assert.Equal(timestamp.AddMinutes(3), loaded.UpdatedAt);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

@@ -23,6 +23,25 @@ public sealed class DiagnosticsPackageTests
                 new GenerationSettings(1024, 1024, "standard", "png"),
                 provider.Id,
                 DateTimeOffset.Parse("2026-06-01T08:04:00Z"));
+            var repairPlan = new RepairPlan(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                RepairSeverity.Major,
+                [
+                    RepairPlanStep.Create(
+                        1,
+                        ReviewOutcomeTargetLayer.Blueprint,
+                        RepairSeverity.Major,
+                        ["Style drift across candidates."],
+                        ["Add a stronger blueprint consistency rule."],
+                        requiresOperator: false),
+                ],
+                DateTimeOffset.Parse("2026-06-01T08:04:30Z"));
+            var repairPatch = RoutedRepairPatch.FromRepairPlan(
+                project.Id,
+                repairPlan,
+                DateTimeOffset.Parse("2026-06-01T08:04:45Z"));
+            project.AddRoutedRepairPatch(repairPatch, DateTimeOffset.Parse("2026-06-01T08:04:50Z"));
             var operatorAction = CreateOperatorAction();
 
             var writer = new DiagnosticsPackageWriter();
@@ -52,6 +71,7 @@ public sealed class DiagnosticsPackageTests
                             DryRunOnly: true),
                     ],
                     [new DiagnosticsSecretSnapshot("OPENAI_API_KEY", IsConfigured: true)],
+                    [RepairPatchDiagnosticsSnapshot.FromPatch(repairPatch)],
                     [
                         OperatorAuditSnapshot.FromRun(
                             operatorAction,
@@ -81,6 +101,10 @@ public sealed class DiagnosticsPackageTests
             Assert.Contains("artifact-validator", json);
             Assert.Contains("## Operator Runs", markdown);
             Assert.Contains("Manifest validation succeeded.", markdown);
+            Assert.Contains("repairPatches", json);
+            Assert.Contains("Add a stronger blueprint consistency rule.", json);
+            Assert.Contains("## Repair Patches", markdown);
+            Assert.Contains("Blueprint", markdown);
         }
         finally
         {

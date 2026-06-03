@@ -63,10 +63,16 @@
 - [x] Refresh research evidence for OpenAI Responses API, Microsoft resilience, OpenTelemetry, and Credential Locker.
 - [x] Add Windows Credential Locker or DPAPI secret store adapter.
 - [x] Replace environment-variable-only production secret retrieval.
+- [x] Add `.env` secret store fallback for local provider credentials.
+- [x] Add separated text/image provider environment configuration with image key-pool concurrency validation.
+- [x] Enforce role-scoped provider options so image-only keys cannot be used for text or vision calls.
+- [x] Add non-generating `/v1/models` health checks for text providers and image key pools.
+- [x] Add Provider Center configuration summary model/view-model without exposing secret values.
+- [x] Add Provider Center manual health summary state for mixed text/image key-pool results.
 - [ ] Evaluate and adopt the official OpenAI .NET SDK where the API surface is stable enough.
 - [ ] Keep raw `HttpClient` fallback only for unsupported or lagging SDK surfaces.
 - [x] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
-- [ ] Capture request IDs, token usage, latency, and cost telemetry per provider call.
+- [x] Capture request IDs, token usage, latency, and cost telemetry per provider call.
 - [ ] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
 - [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits.
 - [ ] Add a remote workflow-engine adapter boundary without requiring local model installs.
@@ -181,6 +187,8 @@
   - [x] Surface routing decisions in review and repair UI.
   - [x] Apply routed repair actions back to prompt and settings records by creating a new prompt version.
   - [x] Add non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation.
+  - [x] Persist Brief/Blueprint repair patch proposals on the project aggregate and SQLite repository.
+  - [x] Include persisted repair patch proposals in diagnostics evidence.
   - [ ] Apply routed repair actions back to brief and blueprint records.
 - [x] Include blueprint metadata in delivery packages.
 - [x] Run full build, test, and format gates for the implementation slice.

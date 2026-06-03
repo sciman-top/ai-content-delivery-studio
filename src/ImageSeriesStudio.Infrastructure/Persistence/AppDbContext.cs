@@ -48,6 +48,8 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<ArtifactPackage> ArtifactPackages => Set<ArtifactPackage>();
 
+    public DbSet<RoutedRepairPatch> RoutedRepairPatches => Set<RoutedRepairPatch>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Ignore<ArtifactManifest>();
@@ -55,6 +57,7 @@ public sealed class AppDbContext : DbContext
         modelBuilder.Ignore<ExtractedContent>();
         modelBuilder.Ignore<EvidenceAnchor>();
         modelBuilder.Ignore<IllustrationTarget>();
+        modelBuilder.Ignore<RoutedRepairPatchItem>();
 
         modelBuilder.Entity<ImageProject>(entity =>
         {
@@ -88,6 +91,10 @@ public sealed class AppDbContext : DbContext
                 .WithOne()
                 .HasForeignKey(plan => plan.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(project => project.RoutedRepairPatches)
+                .WithOne()
+                .HasForeignKey(patch => patch.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.Navigation(project => project.Series).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.ProviderProfiles).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.SourceAssets).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -100,6 +107,8 @@ public sealed class AppDbContext : DbContext
             entity.Navigation(project => project.DocumentBriefs).AutoInclude();
             entity.Navigation(project => project.IllustrationPlans).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.IllustrationPlans).AutoInclude();
+            entity.Navigation(project => project.RoutedRepairPatches).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.RoutedRepairPatches).AutoInclude();
         });
 
         modelBuilder.Entity<ImageSeries>(entity =>
@@ -308,6 +317,14 @@ public sealed class AppDbContext : DbContext
                 .HasConversion(manifest => SerializeArtifactManifest(manifest), json => DeserializeArtifactManifest(json));
         });
 
+        modelBuilder.Entity<RoutedRepairPatch>(entity =>
+        {
+            entity.HasKey(patch => patch.Id);
+            entity.Property(patch => patch.ProjectId);
+            entity.Property(patch => patch.Items)
+                .HasConversion(items => SerializeRoutedRepairPatchItems(items), json => DeserializeRoutedRepairPatchItems(json));
+        });
+
         modelBuilder.Entity<DeliveryPackage>(entity =>
         {
             entity.HasKey(package => package.Id);
@@ -392,5 +409,15 @@ public sealed class AppDbContext : DbContext
     {
         return JsonSerializer.Deserialize<ArtifactManifest>(json, JsonOptions)
             ?? throw new InvalidOperationException("Artifact manifest JSON could not be deserialized.");
+    }
+
+    private static string SerializeRoutedRepairPatchItems(IReadOnlyList<RoutedRepairPatchItem> items)
+    {
+        return JsonSerializer.Serialize(items, JsonOptions);
+    }
+
+    private static IReadOnlyList<RoutedRepairPatchItem> DeserializeRoutedRepairPatchItems(string json)
+    {
+        return JsonSerializer.Deserialize<List<RoutedRepairPatchItem>>(json, JsonOptions) ?? [];
     }
 }

@@ -7,6 +7,41 @@ namespace ImageSeriesStudio.Tests;
 public sealed class ReviewRepairApplicationServiceTests
 {
     [Fact]
+    public async Task CreateRoutedRepairPatchAsync_PersistsPatchOnProject()
+    {
+        var timestamp = DateTimeOffset.Parse("2026-06-03T21:00:00Z");
+        var repository = new InMemoryProjectRepository();
+        var projectService = new ProjectApplicationService(repository);
+        var repairService = new ReviewRepairApplicationService(repository);
+        var project = await projectService.CreateProjectAsync("Repair patch persistence demo", timestamp, CancellationToken.None);
+        var repairPlan = new RepairPlan(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            RepairSeverity.Major,
+            [
+                RepairPlanStep.Create(
+                    1,
+                    ReviewOutcomeTargetLayer.Brief,
+                    RepairSeverity.Major,
+                    ["Missing factual requirement."],
+                    ["Add the requirement to the creative brief before regenerating."],
+                    requiresOperator: false),
+            ],
+            timestamp.AddMinutes(1));
+
+        var patch = await repairService.CreateRoutedRepairPatchAsync(
+            new RoutedRepairPatchRequest(project.Id, repairPlan, timestamp.AddMinutes(2)),
+            CancellationToken.None);
+
+        var loaded = await projectService.LoadProjectAsync(project.Id, CancellationToken.None);
+        var stored = Assert.Single(loaded!.RoutedRepairPatches);
+
+        Assert.Equal(project.Id, patch.ProjectId);
+        Assert.Equal(patch.Id, stored.Id);
+        Assert.Equal(ReviewOutcomeTargetLayer.Brief, Assert.Single(stored.Items).TargetLayer);
+    }
+
+    [Fact]
     public void CreateRoutedRepairPatch_CapturesBriefAndBlueprintRoutesAsHumanApprovedProposals()
     {
         var timestamp = DateTimeOffset.Parse("2026-06-03T20:30:00Z");

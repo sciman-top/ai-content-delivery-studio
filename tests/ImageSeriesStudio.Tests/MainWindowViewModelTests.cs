@@ -407,7 +407,49 @@ public sealed class MainWindowViewModelTests
         Assert.Contains(viewModel.WorkflowGraphRows, row => row.NodeType == "Prompt");
     }
 
-    private static MainWindowViewModel CreateViewModel(bool reviewPasses = true)
+    [Fact]
+    public async Task ProviderCenter_CanRefreshConfigurationFromMainWindow()
+    {
+        var providerCenter = new ProviderCenterViewModel(
+            new StaticProviderCenterConfigurationService(
+                new ProviderCenterSnapshot(
+                    new ProviderEndpointConfigurationSnapshot(
+                        "Text provider",
+                        "TEXT_PROVIDER",
+                        "openai_compatible",
+                        "https://text.example/v1",
+                        "gpt-5.5",
+                        1,
+                        UsesAppCredentials: false,
+                        ConcurrencyPerKey: 1,
+                        TotalConcurrency: 1),
+                    new ProviderEndpointConfigurationSnapshot(
+                        "Image provider",
+                        "IMAGE_PROVIDER",
+                        "openai_compatible_image_only",
+                        "https://image.example/v1",
+                        "image-model",
+                        4,
+                        UsesAppCredentials: true,
+                        ConcurrencyPerKey: 10,
+                        TotalConcurrency: 40),
+                    [])));
+        var viewModel = CreateViewModel(providerCenter: providerCenter);
+
+        await viewModel.RefreshProviderCenterCommand.ExecuteAsync(null);
+
+        Assert.Same(providerCenter, viewModel.ProviderCenter);
+        Assert.Equal(
+            "Providers ready: text key configured; image keys 4; total image concurrency 40.",
+            viewModel.ProviderCenter.SummaryText);
+        Assert.Contains(
+            viewModel.ProviderCenter.ProviderRows,
+            row => row.Title == "Image provider" && row.SecretSummary == "4 keys + app credentials");
+    }
+
+    private static MainWindowViewModel CreateViewModel(
+        bool reviewPasses = true,
+        ProviderCenterViewModel? providerCenter = null)
     {
         var fakeImageProvider = new FakeImageGenerationProvider();
 
@@ -419,7 +461,21 @@ public sealed class MainWindowViewModelTests
                 fakeImageProvider,
                 new FakeVisionReviewProvider(defaultPasses: reviewPasses),
                 deliveryPackageWriter: new DeliveryPackageWriter(),
-                imageEditProvider: fakeImageProvider));
+                imageEditProvider: fakeImageProvider),
+            providerCenter ?? new ProviderCenterViewModel(
+                new StaticProviderCenterConfigurationService(
+                    ProviderCenterSnapshot.MissingEnvironmentFile(".env"))));
+    }
+
+    private sealed class StaticProviderCenterConfigurationService(ProviderCenterSnapshot snapshot)
+        : IProviderCenterConfigurationService
+    {
+        public Task<ProviderCenterSnapshot> LoadAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return Task.FromResult(snapshot);
+        }
     }
 
     private static void DeleteProjectOutputDirectories(Guid? projectId)

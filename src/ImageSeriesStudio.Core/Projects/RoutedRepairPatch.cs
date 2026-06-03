@@ -2,14 +2,39 @@ namespace ImageSeriesStudio.Core.Projects;
 
 public sealed record RoutedRepairPatch(
     Guid Id,
+    Guid ProjectId,
     Guid RepairPlanId,
     Guid CandidateImageId,
     IReadOnlyList<RoutedRepairPatchItem> Items,
     DateTimeOffset CreatedAt)
 {
+    public static RoutedRepairPatch FromRepairPlan(Guid projectId, RepairPlan repairPlan, DateTimeOffset createdAt)
+    {
+        if (projectId == Guid.Empty)
+        {
+            throw new ArgumentException("Project id cannot be empty.", nameof(projectId));
+        }
+
+        return FromRepairPlan(projectId, repairPlan, createdAt, allowEmptyProjectId: false);
+    }
+
     public static RoutedRepairPatch FromRepairPlan(RepairPlan repairPlan, DateTimeOffset createdAt)
     {
+        return FromRepairPlan(Guid.Empty, repairPlan, createdAt, allowEmptyProjectId: true);
+    }
+
+    private static RoutedRepairPatch FromRepairPlan(
+        Guid projectId,
+        RepairPlan repairPlan,
+        DateTimeOffset createdAt,
+        bool allowEmptyProjectId)
+    {
         ArgumentNullException.ThrowIfNull(repairPlan);
+
+        if (!allowEmptyProjectId && projectId == Guid.Empty)
+        {
+            throw new ArgumentException("Project id cannot be empty.", nameof(projectId));
+        }
 
         var items = repairPlan.Steps
             .Where(step => step.TargetLayer is ReviewOutcomeTargetLayer.Brief or ReviewOutcomeTargetLayer.Blueprint)
@@ -29,6 +54,7 @@ public sealed record RoutedRepairPatch(
 
         return new RoutedRepairPatch(
             Guid.NewGuid(),
+            projectId,
             repairPlan.Id,
             repairPlan.CandidateImageId,
             items,

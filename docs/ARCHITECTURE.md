@@ -295,6 +295,7 @@ Migration limits:
 - Keep `.env`, SQLite databases, workspaces, and outputs ignored by git.
 - Redact secrets from logs and exported manifests.
 - Record provider profile and model settings without exposing credentials.
+- Treat provider credentials as role-scoped. `TEXT_PROVIDER_API_KEY` is for text/vision only, while `IMAGE_PROVIDER_API_KEY*` is for image generation only; see `docs/PROVIDER_CONFIGURATION.md`.
 
 ## Diagnostics Export
 

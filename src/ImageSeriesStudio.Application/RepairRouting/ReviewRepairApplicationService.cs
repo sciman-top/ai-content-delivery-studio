@@ -58,6 +58,21 @@ public sealed class ReviewRepairApplicationService
         return RoutedRepairPatch.FromRepairPlan(repairPlan, createdAt);
     }
 
+    public async Task<RoutedRepairPatch> CreateRoutedRepairPatchAsync(
+        RoutedRepairPatchRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.RepairPlan);
+
+        var project = await RequireProjectAsync(request.ProjectId, cancellationToken);
+        var patch = RoutedRepairPatch.FromRepairPlan(project.Id, request.RepairPlan, request.Timestamp);
+        project.AddRoutedRepairPatch(patch, request.Timestamp);
+
+        await _repository.SaveAsync(project, cancellationToken);
+        return patch;
+    }
+
     private static SeriesItem RequireSeriesItem(ImageProject project, Guid seriesItemId)
     {
         return project.Series
@@ -120,3 +135,8 @@ public sealed record RoutedRepairApplicationRequest(
 public sealed record RoutedRepairApplicationResult(
     PromptVersion PromptVersion,
     IReadOnlyList<ReviewOutcomeTargetLayer> AppliedLayers);
+
+public sealed record RoutedRepairPatchRequest(
+    Guid ProjectId,
+    RepairPlan RepairPlan,
+    DateTimeOffset Timestamp);
