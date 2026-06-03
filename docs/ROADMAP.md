@@ -191,6 +191,8 @@ Exit gate:
 
 Goal: make user files and non-image deliverables first-class without weakening the image-series core workflow.
 
+Status: started with source assets, extracted content, evidence anchors, fake ingestion, and SQLite persistence.
+
 Deliverables:
 
 - `SourceAsset`, `ExtractedContent`, and `EvidenceAnchor` domain model.

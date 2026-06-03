@@ -1,4 +1,5 @@
 using ImageSeriesStudio.Core.Documents;
+using ImageSeriesStudio.Core.Sources;
 using ImageSeriesStudio.Core.Styles;
 
 namespace ImageSeriesStudio.Core.Projects;
@@ -7,6 +8,7 @@ public sealed class ImageProject
 {
     private readonly List<ImageSeries> _series = [];
     private readonly List<ProviderProfile> _providerProfiles = [];
+    private readonly List<SourceAsset> _sourceAssets = [];
     private readonly List<DocumentBrief> _documentBriefs = [];
     private readonly List<IllustrationPlan> _illustrationPlans = [];
 
@@ -35,6 +37,8 @@ public sealed class ImageProject
 
     public IReadOnlyCollection<ProviderProfile> ProviderProfiles => _providerProfiles.AsReadOnly();
 
+    public IReadOnlyCollection<SourceAsset> SourceAssets => _sourceAssets.AsReadOnly();
+
     public IReadOnlyCollection<DocumentBrief> DocumentBriefs => _documentBriefs.AsReadOnly();
 
     public IReadOnlyCollection<IllustrationPlan> IllustrationPlans => _illustrationPlans.AsReadOnly();
@@ -58,6 +62,25 @@ public sealed class ImageProject
         _providerProfiles.Add(profile);
         UpdatedAt = timestamp;
         return profile;
+    }
+
+    public SourceAsset AddSourceAsset(SourceAsset asset, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(asset);
+
+        if (asset.ProjectId != Id)
+        {
+            throw new ArgumentException("Source asset must belong to this project.", nameof(asset));
+        }
+
+        if (_sourceAssets.Any(existing => existing.Id == asset.Id))
+        {
+            throw new InvalidOperationException($"Source asset already exists: {asset.Id}");
+        }
+
+        _sourceAssets.Add(asset);
+        UpdatedAt = timestamp;
+        return asset;
     }
 
     public DocumentBrief AddDocumentBrief(DocumentBrief brief, DateTimeOffset timestamp)

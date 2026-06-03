@@ -38,6 +38,7 @@ public sealed class EfProjectRepository : IProjectRepository
     {
         return _dbContext.Projects
             .Include(project => project.ProviderProfiles)
+            .Include(project => project.SourceAssets)
             .Include(project => project.DocumentBriefs)
             .Include(project => project.IllustrationPlans)
             .Include(project => project.Series)
@@ -55,6 +56,14 @@ public sealed class EfProjectRepository : IProjectRepository
             if (!await _dbContext.ProviderProfiles.AnyAsync(existing => existing.Id == profile.Id, cancellationToken))
             {
                 _dbContext.Entry(profile).State = EntityState.Added;
+            }
+        }
+
+        foreach (var asset in project.SourceAssets)
+        {
+            if (!await _dbContext.SourceAssets.AnyAsync(existing => existing.Id == asset.Id, cancellationToken))
+            {
+                _dbContext.Entry(asset).State = EntityState.Added;
             }
         }
 

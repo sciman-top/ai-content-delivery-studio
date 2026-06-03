@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Sources;
 using Microsoft.EntityFrameworkCore;
 
 namespace ImageSeriesStudio.Infrastructure.Persistence;
@@ -40,8 +41,12 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<ProviderProfile> ProviderProfiles => Set<ProviderProfile>();
 
+    public DbSet<SourceAsset> SourceAssets => Set<SourceAsset>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Ignore<ExtractedContent>();
+        modelBuilder.Ignore<EvidenceAnchor>();
         modelBuilder.Ignore<IllustrationTarget>();
 
         modelBuilder.Entity<ImageProject>(entity =>
@@ -56,6 +61,10 @@ public sealed class AppDbContext : DbContext
                 .WithOne()
                 .HasForeignKey(profile => profile.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(project => project.SourceAssets)
+                .WithOne()
+                .HasForeignKey(asset => asset.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.HasMany(project => project.DocumentBriefs)
                 .WithOne()
                 .HasForeignKey(brief => brief.ProjectId)
@@ -66,6 +75,8 @@ public sealed class AppDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
             entity.Navigation(project => project.Series).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.ProviderProfiles).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.SourceAssets).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.SourceAssets).AutoInclude();
             entity.Navigation(project => project.DocumentBriefs).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.DocumentBriefs).AutoInclude();
             entity.Navigation(project => project.IllustrationPlans).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -229,6 +240,24 @@ public sealed class AppDbContext : DbContext
                     json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
         });
 
+        modelBuilder.Entity<SourceAsset>(entity =>
+        {
+            entity.HasKey(asset => asset.Id);
+            entity.Property(asset => asset.ProjectId);
+            entity.Property(asset => asset.Kind);
+            entity.Property(asset => asset.DisplayName).IsRequired();
+            entity.Property(asset => asset.OriginalPath);
+            entity.Property(asset => asset.MimeType);
+            entity.Property(asset => asset.SizeBytes);
+            entity.Property(asset => asset.Sha256);
+            entity.Property(asset => asset.CreatedAt);
+            entity.Property(asset => asset.UpdatedAt);
+            entity.Property(asset => asset.ExtractedContents)
+                .HasConversion(contents => SerializeExtractedContents(contents), json => DeserializeExtractedContents(json));
+            entity.Property(asset => asset.EvidenceAnchors)
+                .HasConversion(anchors => SerializeEvidenceAnchors(anchors), json => DeserializeEvidenceAnchors(json));
+        });
+
         modelBuilder.Entity<DeliveryPackage>(entity =>
         {
             entity.HasKey(package => package.Id);
@@ -262,5 +291,25 @@ public sealed class AppDbContext : DbContext
     private static IReadOnlyList<IllustrationTarget> DeserializeTargets(string json)
     {
         return JsonSerializer.Deserialize<List<IllustrationTarget>>(json, JsonOptions) ?? [];
+    }
+
+    private static string SerializeExtractedContents(IReadOnlyCollection<ExtractedContent> contents)
+    {
+        return JsonSerializer.Serialize(contents, JsonOptions);
+    }
+
+    private static IReadOnlyCollection<ExtractedContent> DeserializeExtractedContents(string json)
+    {
+        return JsonSerializer.Deserialize<List<ExtractedContent>>(json, JsonOptions) ?? [];
+    }
+
+    private static string SerializeEvidenceAnchors(IReadOnlyCollection<EvidenceAnchor> anchors)
+    {
+        return JsonSerializer.Serialize(anchors, JsonOptions);
+    }
+
+    private static IReadOnlyCollection<EvidenceAnchor> DeserializeEvidenceAnchors(string json)
+    {
+        return JsonSerializer.Deserialize<List<EvidenceAnchor>>(json, JsonOptions) ?? [];
     }
 }

@@ -185,17 +185,17 @@
 
 ## Phase 10: Multimodal Source And Artifact Foundation
 
-- [ ] Record ADR for multimodal content delivery, workflow packs, and AI operator boundaries.
-- [ ] Record multimodal source/artifact implementation plan.
-- [ ] Add `SourceAsset`, `ExtractedContent`, and `EvidenceAnchor` domain records.
+- [x] Record ADR for multimodal content delivery, workflow packs, and AI operator boundaries.
+- [x] Record multimodal source/artifact implementation plan.
+- [x] Add `SourceAsset`, `ExtractedContent`, and `EvidenceAnchor` domain records.
 - [ ] Add `OutputArtifact`, `ArtifactManifest`, and `ArtifactPackage` domain records.
-- [ ] Add fake-first source ingestion service with file metadata and text fixtures.
-- [ ] Add source evidence persistence with backward-compatible project loading.
+- [x] Add fake-first source ingestion service with file metadata and text fixtures.
+- [x] Add source evidence persistence with backward-compatible project loading.
 - [ ] Add document extraction provider boundary for PDF, DOCX, PPTX, markdown, image, and OCR results.
 - [ ] Add artifact planning use case that can plan image, PDF, DOCX, markdown, and review-report outputs from a brief.
 - [ ] Extend delivery manifest with source evidence and output artifact provenance.
 - [ ] Keep existing image-series delivery export compatible with the new artifact model.
-- [ ] Run build, test, and format gates for the implementation slice.
+- [x] Run build, test, and format gates for the implementation slice.
 
 ## Phase 11: Workflow, Blueprint, And Industry Pack System
 
