@@ -866,12 +866,13 @@
                             <Border Grid.Row="0" Background="#E9EDF3" BorderBrush="#D4DAE5" BorderThickness="1">
                                 <Grid Margin="12,0">
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1.2*" />
-                                        <ColumnDefinition Width="110" />
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="90" />
+                                        <ColumnDefinition Width="1.1*" />
+                                        <ColumnDefinition Width="1.7*" />
                                         <ColumnDefinition Width="1.4*" />
-                                        <ColumnDefinition Width="2*" />
-                                        <ColumnDefinition Width="1.6*" />
-                                        <ColumnDefinition Width="1.3*" />
+                                        <ColumnDefinition Width="1.5*" />
+                                        <ColumnDefinition Width="1.2*" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
                                                Text="{Binding DataContext.ReviewItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
@@ -898,6 +899,11 @@
                                                FontWeight="SemiBold"
                                                Margin="10,0,0,0" />
                                     <TextBlock Grid.Column="5"
+                                               Text="{Binding DataContext.ReviewRouteColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                                               VerticalAlignment="Center"
+                                               FontWeight="SemiBold"
+                                               Margin="10,0,0,0" />
+                                    <TextBlock Grid.Column="6"
                                                Text="{Binding DataContext.HumanApprovalColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                                                VerticalAlignment="Center"
                                                FontWeight="SemiBold"
@@ -947,12 +953,13 @@
                                             <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="1.2*" />
-                                                        <ColumnDefinition Width="110" />
+                                                        <ColumnDefinition Width="1.1*" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="1.1*" />
+                                                        <ColumnDefinition Width="1.7*" />
                                                         <ColumnDefinition Width="1.4*" />
-                                                        <ColumnDefinition Width="2*" />
-                                                        <ColumnDefinition Width="1.6*" />
-                                                        <ColumnDefinition Width="1.3*" />
+                                                        <ColumnDefinition Width="1.5*" />
+                                                        <ColumnDefinition Width="1.2*" />
                                                     </Grid.ColumnDefinitions>
                                                     <TextBlock Grid.Column="0"
                                                                Text="{Binding ItemTitle}"
@@ -978,6 +985,11 @@
                                                                Foreground="#4B5563"
                                                                Margin="10,0,0,0" />
                                                     <TextBlock Grid.Column="5"
+                                                               Text="{Binding RouteSummary}"
+                                                               TextWrapping="Wrap"
+                                                               Foreground="#4B5563"
+                                                               Margin="10,0,0,0" />
+                                                    <TextBlock Grid.Column="6"
                                                                Text="{Binding HumanApprovalStatus}"
                                                                TextWrapping="Wrap"
                                                                Foreground="#4B5563"

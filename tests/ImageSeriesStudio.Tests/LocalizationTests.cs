@@ -146,6 +146,18 @@ public sealed class LocalizationTests
     }
 
     [Fact]
+    public void LocalizationService_ReturnsReviewRouteColumnText()
+    {
+        var service = new LocalizationService();
+
+        service.SetLanguage(LanguagePreference.English);
+        Assert.Equal("Repair route", service.GetText(LocalizationKey.ReviewRouteColumn));
+
+        service.SetLanguage(LanguagePreference.Chinese);
+        Assert.Equal("修复路由", service.GetText(LocalizationKey.ReviewRouteColumn));
+    }
+
+    [Fact]
     public void LocalizationService_ReturnsStyleRecipeInspectorText()
     {
         var service = new LocalizationService();

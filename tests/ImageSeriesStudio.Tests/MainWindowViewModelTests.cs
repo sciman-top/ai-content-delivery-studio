@@ -138,6 +138,7 @@ public sealed class MainWindowViewModelTests
         {
             var reviewRow = Assert.Single(viewModel.ReviewRows);
             Assert.False(reviewRow.HumanApproved);
+            Assert.Equal("None", reviewRow.RouteSummary);
             Assert.False(viewModel.ExportDeliveryCommand.CanExecute(null));
 
             viewModel.SelectedReviewRow = reviewRow;
@@ -156,6 +157,40 @@ public sealed class MainWindowViewModelTests
             await viewModel.ExportDeliveryCommand.ExecuteAsync(null);
 
             Assert.Single(viewModel.DeliveryRows);
+        }
+        finally
+        {
+            DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+        }
+    }
+
+    [Fact]
+    public async Task ReviewWorkflow_ShowsRepairRouteSummary()
+    {
+        var viewModel = CreateViewModel(reviewPasses: false);
+
+        viewModel.NewProjectName = "Review route UI demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Repair storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening frame";
+        viewModel.NewItemBrief = "Opening visual that will fail fake review.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        viewModel.NewPromptText = "Create a frame that will be routed for repair.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+
+        try
+        {
+            await viewModel.RunFakeReviewCommand.ExecuteAsync(null);
+
+            var reviewRow = Assert.Single(viewModel.ReviewRows);
+            Assert.Equal("Repair route", viewModel.ReviewRouteColumn);
+            Assert.Contains("Brief", reviewRow.RouteSummary);
+            Assert.Contains("Regenerate", reviewRow.RouteSummary);
         }
         finally
         {
@@ -372,7 +407,7 @@ public sealed class MainWindowViewModelTests
         Assert.Contains(viewModel.WorkflowGraphRows, row => row.NodeType == "Prompt");
     }
 
-    private static MainWindowViewModel CreateViewModel()
+    private static MainWindowViewModel CreateViewModel(bool reviewPasses = true)
     {
         var fakeImageProvider = new FakeImageGenerationProvider();
 
@@ -382,7 +417,7 @@ public sealed class MainWindowViewModelTests
                 new InMemoryProjectRepository(),
                 new FakeTextPlanningProvider(),
                 fakeImageProvider,
-                new FakeVisionReviewProvider(),
+                new FakeVisionReviewProvider(defaultPasses: reviewPasses),
                 deliveryPackageWriter: new DeliveryPackageWriter(),
                 imageEditProvider: fakeImageProvider));
     }

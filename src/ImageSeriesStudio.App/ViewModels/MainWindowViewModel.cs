@@ -90,6 +90,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _reviewScoreColumn = string.Empty;
     private string _reviewCommentsColumn = string.Empty;
     private string _reviewFixColumn = string.Empty;
+    private string _reviewRouteColumn = string.Empty;
     private string _noReviewRowsText = string.Empty;
     private string _humanApprovalColumn = string.Empty;
     private string _finalApprovalReviewerLabel = string.Empty;
@@ -623,6 +624,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _reviewFixColumn;
         private set => SetProperty(ref _reviewFixColumn, value);
+    }
+
+    public string ReviewRouteColumn
+    {
+        get => _reviewRouteColumn;
+        private set => SetProperty(ref _reviewRouteColumn, value);
     }
 
     public string HumanApprovalColumn
@@ -1529,6 +1536,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ReviewScoreColumn = Text(LocalizationKey.ReviewScoreColumn);
         ReviewCommentsColumn = Text(LocalizationKey.ReviewCommentsColumn);
         ReviewFixColumn = Text(LocalizationKey.ReviewFixColumn);
+        ReviewRouteColumn = Text(LocalizationKey.ReviewRouteColumn);
         HumanApprovalColumn = Text(LocalizationKey.HumanApprovalColumn);
         NoReviewRowsText = Text(LocalizationKey.NoReviewRows);
         FinalApprovalReviewerLabel = Text(LocalizationKey.FinalApprovalReviewer);
@@ -2198,9 +2206,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 .ToArray(),
             CancellationToken.None);
 
+        var routesByCandidate = _projectService.RouteReviewOutcomes(reviews)
+            .ToDictionary(plan => plan.CandidateImageId);
+
         ReviewRows = reviews.Zip(GalleryRows).Select(pair =>
         {
             var scoreText = string.Join(", ", pair.First.Scores.Select(score => $"{score.Name}:{score.Score}"));
+            var routeSummary = routesByCandidate.TryGetValue(pair.First.CandidateImageId, out var plan)
+                ? FormatReviewRoute(plan)
+                : string.Empty;
+
             return new ReviewRowViewModel(
                 pair.First.CandidateImageId,
                 pair.Second.ItemTitle,
@@ -2208,6 +2223,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 scoreText,
                 pair.First.Comments,
                 pair.First.SuggestedFix ?? string.Empty,
+                routeSummary,
                 HumanApproved: false,
                 Text(LocalizationKey.HumanApprovalPending),
                 string.Empty,
@@ -2216,6 +2232,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }).ToArray();
         DeliveryRows = [];
         ExportDeliveryCommand.NotifyCanExecuteChanged();
+    }
+
+    private static string FormatReviewRoute(ReviewOutcomeRoutingPlan plan)
+    {
+        var route = plan.PrimaryRoute;
+        if (route.TargetLayer is ReviewOutcomeTargetLayer.None)
+        {
+            return ReviewOutcomeTargetLayer.None.ToString();
+        }
+
+        var firstAction = route.Actions.FirstOrDefault() ?? string.Empty;
+        return string.IsNullOrWhiteSpace(firstAction)
+            ? $"{route.TargetLayer} / {route.Severity}"
+            : $"{route.TargetLayer} / {route.Severity}: {firstAction}";
     }
 
     private bool CanRunFakeReview()
@@ -2855,6 +2885,7 @@ public sealed record ReviewRowViewModel(
     string ScoreText,
     string Comments,
     string SuggestedFix,
+    string RouteSummary,
     bool HumanApproved,
     string HumanApprovalStatus,
     string FinalReviewer,
