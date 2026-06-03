@@ -20,7 +20,7 @@ public static class OpenAiServiceCollectionExtensions
 
         services.AddSingleton(providerOptions);
         services.TryAddSingleton(_ => OpenAiSecretStores.CreateDefault());
-        services.TryAddSingleton<IProviderCallTelemetrySink>(_ => NullProviderCallTelemetrySink.Instance);
+        services.TryAddSingleton<IProviderCallTelemetrySink, DiagnosticProviderCallTelemetrySink>();
 
         var builder = services.AddHttpClient(
             OpenAiHttpClientNames.Provider,
