@@ -179,7 +179,9 @@
 - [ ] Route review outcomes back to brief, blueprint, prompt, or settings layers.
   - [x] Add provider-neutral review outcome routing model and application service entrypoint.
   - [x] Surface routing decisions in review and repair UI.
-  - [ ] Apply routed repair actions back to brief, blueprint, prompt, or settings records.
+  - [x] Apply routed repair actions back to prompt and settings records by creating a new prompt version.
+  - [x] Add non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation.
+  - [ ] Apply routed repair actions back to brief and blueprint records.
 - [x] Include blueprint metadata in delivery packages.
 - [x] Run full build, test, and format gates for the implementation slice.
 
@@ -222,6 +224,7 @@
 - [ ] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
 - [ ] Split large WPF views into feature-owned user controls where needed.
 - [ ] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
+  - [x] Extract review/repair routing and Prompt/Settings repair application into `ReviewRepairApplicationService` while preserving the existing facade entrypoints.
 - [ ] Move provider configuration and capability validation out of UI-facing view models.
 - [ ] Move persistence configuration into infrastructure-owned modules.
 - [ ] Split EF Core mappings into `IEntityTypeConfiguration<T>` as model count grows.

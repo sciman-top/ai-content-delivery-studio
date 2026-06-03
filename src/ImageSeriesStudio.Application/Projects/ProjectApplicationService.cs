@@ -4,12 +4,14 @@ using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Core.Styles;
 using ImageSeriesStudio.Application.Delivery;
+using ImageSeriesStudio.Application.RepairRouting;
 
 namespace ImageSeriesStudio.Application.Projects;
 
 public sealed class ProjectApplicationService
 {
     private readonly IProjectRepository _repository;
+    private readonly ReviewRepairApplicationService _reviewRepairApplicationService;
     private readonly ITextPlanningProvider? _textPlanningProvider;
     private readonly IImageGenerationProvider? _imageGenerationProvider;
     private readonly IImageEditProvider? _imageEditProvider;
@@ -54,6 +56,7 @@ public sealed class ProjectApplicationService
         IImageEditProvider? imageEditProvider = null)
     {
         _repository = repository;
+        _reviewRepairApplicationService = new ReviewRepairApplicationService(repository);
         _textPlanningProvider = textPlanningProvider;
         _imageGenerationProvider = imageGenerationProvider;
         _imageEditProvider = imageEditProvider;
@@ -565,11 +568,14 @@ public sealed class ProjectApplicationService
     public IReadOnlyList<ReviewOutcomeRoutingPlan> RouteReviewOutcomes(
         IReadOnlyList<StructuredReviewOutput> reviews)
     {
-        ArgumentNullException.ThrowIfNull(reviews);
+        return _reviewRepairApplicationService.RouteReviewOutcomes(reviews);
+    }
 
-        return reviews
-            .Select(ReviewOutcomeRoutingPlan.FromReview)
-            .ToArray();
+    public async Task<RoutedRepairApplicationResult> ApplyRoutedRepairAsync(
+        RoutedRepairApplicationRequest request,
+        CancellationToken cancellationToken)
+    {
+        return await _reviewRepairApplicationService.ApplyRoutedRepairAsync(request, cancellationToken);
     }
 
     public async Task<DeliveryExportResult> ExportDeliveryPackageAsync(

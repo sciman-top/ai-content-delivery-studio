@@ -173,6 +173,8 @@ Deliverables:
 
 Goal: support common image-series use cases through reusable design blueprints instead of topic-specific modes.
 
+Status: started with persisted design blueprint candidates, blueprint promotion, review routing across brief/blueprint/prompt/settings layers, review-panel route visibility, routed Prompt/Settings repair application that creates a new prompt version instead of overwriting history, and non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation. Brief/Blueprint repair application remains a later slice.
+
 Deliverables:
 
 - Design blueprint domain model and persistence.
@@ -232,7 +234,7 @@ Exit gate:
 
 Goal: prevent the app from growing a central all-knowing orchestrator as capabilities expand.
 
-Status: started with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters, stable workflow view slot names for reusable shell placement, and a `FeatureViewModule` contract for future WPF view/view model splits.
+Status: started with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters, stable workflow view slot names for reusable shell placement, a `FeatureViewModule` contract for future WPF view/view model splits, and the first `ProjectApplicationService` extraction for review/repair routing while preserving facade compatibility.
 
 Deliverables:
 
