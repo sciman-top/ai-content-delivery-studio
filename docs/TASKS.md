@@ -235,7 +235,7 @@
 - [ ] Split large WPF views into feature-owned user controls where needed.
 - [ ] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
   - [x] Extract review/repair routing and Prompt/Settings repair application into `ReviewRepairApplicationService` while preserving the existing facade entrypoints.
-- [ ] Move provider configuration and capability validation out of UI-facing view models.
+- [x] Move provider configuration and capability validation out of UI-facing view models.
 - [ ] Move persistence configuration into infrastructure-owned modules.
 - [ ] Split EF Core mappings into `IEntityTypeConfiguration<T>` as model count grows.
 - [ ] Add focused tests for each extracted use-case service before expanding UI surface.

@@ -3,6 +3,7 @@ using System.Net.Http;
 using ImageSeriesStudio.Application.Delivery;
 using System.Windows;
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.App.Services;
 using ImageSeriesStudio.App.ViewModels;
 using ImageSeriesStudio.App.Telemetry;
 using ImageSeriesStudio.Application.Localization;

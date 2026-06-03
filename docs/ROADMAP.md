@@ -242,7 +242,7 @@ Exit gate:
 
 Goal: prevent the app from growing a central all-knowing orchestrator as capabilities expand.
 
-Status: started with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters, stable workflow view slot names for reusable shell placement, a `FeatureViewModule` contract for future WPF view/view model splits, and the first `ProjectApplicationService` extraction for review/repair routing while preserving facade compatibility.
+Status: started with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters, stable workflow view slot names for reusable shell placement, a `FeatureViewModule` contract for future WPF view/view model splits, the first `ProjectApplicationService` extraction for review/repair routing while preserving facade compatibility, and a follow-up provider center configuration/health service split out of the UI view model.
 
 Deliverables:
 

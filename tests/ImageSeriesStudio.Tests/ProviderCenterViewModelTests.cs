@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ImageSeriesStudio.App.Services;
 using ImageSeriesStudio.App.ViewModels;
 
 namespace ImageSeriesStudio.Tests;
