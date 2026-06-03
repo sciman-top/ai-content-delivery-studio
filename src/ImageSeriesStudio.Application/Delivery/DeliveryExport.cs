@@ -27,6 +27,10 @@ public sealed record DeliveryExportItem(
     string? ExperimentSlug = null,
     IReadOnlyDictionary<string, string>? ExperimentParameters = null,
     Guid? GenerationTaskId = null,
+    Guid? OutputArtifactId = null,
+    IReadOnlyList<Guid>? SourceAssetIds = null,
+    IReadOnlyList<Guid>? EvidenceAnchorIds = null,
+    string? ArtifactRole = null,
     DeliveryBlueprintMetadata? Blueprint = null);
 
 public sealed record DeliveryBlueprintMetadata(

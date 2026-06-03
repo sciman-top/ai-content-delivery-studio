@@ -1,3 +1,4 @@
+using ImageSeriesStudio.Core.Artifacts;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Sources;
 using ImageSeriesStudio.Core.Styles;
@@ -9,6 +10,8 @@ public sealed class ImageProject
     private readonly List<ImageSeries> _series = [];
     private readonly List<ProviderProfile> _providerProfiles = [];
     private readonly List<SourceAsset> _sourceAssets = [];
+    private readonly List<OutputArtifact> _outputArtifacts = [];
+    private readonly List<ArtifactPackage> _artifactPackages = [];
     private readonly List<DocumentBrief> _documentBriefs = [];
     private readonly List<IllustrationPlan> _illustrationPlans = [];
 
@@ -38,6 +41,10 @@ public sealed class ImageProject
     public IReadOnlyCollection<ProviderProfile> ProviderProfiles => _providerProfiles.AsReadOnly();
 
     public IReadOnlyCollection<SourceAsset> SourceAssets => _sourceAssets.AsReadOnly();
+
+    public IReadOnlyCollection<OutputArtifact> OutputArtifacts => _outputArtifacts.AsReadOnly();
+
+    public IReadOnlyCollection<ArtifactPackage> ArtifactPackages => _artifactPackages.AsReadOnly();
 
     public IReadOnlyCollection<DocumentBrief> DocumentBriefs => _documentBriefs.AsReadOnly();
 
@@ -81,6 +88,52 @@ public sealed class ImageProject
         _sourceAssets.Add(asset);
         UpdatedAt = timestamp;
         return asset;
+    }
+
+    public OutputArtifact AddOutputArtifact(OutputArtifact artifact, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(artifact);
+
+        if (artifact.ProjectId != Id)
+        {
+            throw new ArgumentException("Output artifact must belong to this project.", nameof(artifact));
+        }
+
+        if (_outputArtifacts.Any(existing => existing.Id == artifact.Id))
+        {
+            throw new InvalidOperationException($"Output artifact already exists: {artifact.Id}");
+        }
+
+        _outputArtifacts.Add(artifact);
+        UpdatedAt = timestamp;
+        return artifact;
+    }
+
+    public ArtifactPackage AddArtifactPackage(ArtifactPackage package, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(package);
+
+        if (package.ProjectId != Id)
+        {
+            throw new ArgumentException("Artifact package must belong to this project.", nameof(package));
+        }
+
+        if (_artifactPackages.Any(existing => existing.Id == package.Id))
+        {
+            throw new InvalidOperationException($"Artifact package already exists: {package.Id}");
+        }
+
+        foreach (var item in package.Manifest.Items)
+        {
+            if (_outputArtifacts.All(artifact => artifact.Id != item.OutputArtifactId))
+            {
+                throw new InvalidOperationException($"Output artifact not found for artifact package: {item.OutputArtifactId}");
+            }
+        }
+
+        _artifactPackages.Add(package);
+        UpdatedAt = timestamp;
+        return package;
     }
 
     public DocumentBrief AddDocumentBrief(DocumentBrief brief, DateTimeOffset timestamp)

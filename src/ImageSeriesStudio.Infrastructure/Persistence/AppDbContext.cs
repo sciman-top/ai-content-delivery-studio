@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ImageSeriesStudio.Core.Artifacts;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Sources;
@@ -43,8 +44,14 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<SourceAsset> SourceAssets => Set<SourceAsset>();
 
+    public DbSet<OutputArtifact> OutputArtifacts => Set<OutputArtifact>();
+
+    public DbSet<ArtifactPackage> ArtifactPackages => Set<ArtifactPackage>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Ignore<ArtifactManifest>();
+        modelBuilder.Ignore<ArtifactManifestItem>();
         modelBuilder.Ignore<ExtractedContent>();
         modelBuilder.Ignore<EvidenceAnchor>();
         modelBuilder.Ignore<IllustrationTarget>();
@@ -65,6 +72,14 @@ public sealed class AppDbContext : DbContext
                 .WithOne()
                 .HasForeignKey(asset => asset.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(project => project.OutputArtifacts)
+                .WithOne()
+                .HasForeignKey(artifact => artifact.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(project => project.ArtifactPackages)
+                .WithOne()
+                .HasForeignKey(package => package.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
             entity.HasMany(project => project.DocumentBriefs)
                 .WithOne()
                 .HasForeignKey(brief => brief.ProjectId)
@@ -77,6 +92,10 @@ public sealed class AppDbContext : DbContext
             entity.Navigation(project => project.ProviderProfiles).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.SourceAssets).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.SourceAssets).AutoInclude();
+            entity.Navigation(project => project.OutputArtifacts).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.OutputArtifacts).AutoInclude();
+            entity.Navigation(project => project.ArtifactPackages).UsePropertyAccessMode(PropertyAccessMode.Field);
+            entity.Navigation(project => project.ArtifactPackages).AutoInclude();
             entity.Navigation(project => project.DocumentBriefs).UsePropertyAccessMode(PropertyAccessMode.Field);
             entity.Navigation(project => project.DocumentBriefs).AutoInclude();
             entity.Navigation(project => project.IllustrationPlans).UsePropertyAccessMode(PropertyAccessMode.Field);
@@ -258,6 +277,37 @@ public sealed class AppDbContext : DbContext
                 .HasConversion(anchors => SerializeEvidenceAnchors(anchors), json => DeserializeEvidenceAnchors(json));
         });
 
+        modelBuilder.Entity<OutputArtifact>(entity =>
+        {
+            entity.HasKey(artifact => artifact.Id);
+            entity.Property(artifact => artifact.ProjectId);
+            entity.Property(artifact => artifact.Kind);
+            entity.Property(artifact => artifact.Status);
+            entity.Property(artifact => artifact.DisplayName).IsRequired();
+            entity.Property(artifact => artifact.RelativePath).IsRequired();
+            entity.Property(artifact => artifact.MimeType).IsRequired();
+            entity.Property(artifact => artifact.Role).IsRequired();
+            entity.Property(artifact => artifact.CreatedAt);
+            entity.Property(artifact => artifact.UpdatedAt);
+            entity.Property(artifact => artifact.SourceAssetIds)
+                .HasConversion(values => SerializeGuidList(values), json => DeserializeGuidList(json));
+            entity.Property(artifact => artifact.EvidenceAnchorIds)
+                .HasConversion(values => SerializeGuidList(values), json => DeserializeGuidList(json));
+            entity.Property(artifact => artifact.Metadata)
+                .HasConversion(values => SerializeStringDictionary(values), json => DeserializeStringDictionary(json));
+        });
+
+        modelBuilder.Entity<ArtifactPackage>(entity =>
+        {
+            entity.HasKey(package => package.Id);
+            entity.Property(package => package.ProjectId);
+            entity.Property(package => package.Name).IsRequired();
+            entity.Property(package => package.OutputDirectory).IsRequired();
+            entity.Property(package => package.CreatedAt);
+            entity.Property(package => package.Manifest)
+                .HasConversion(manifest => SerializeArtifactManifest(manifest), json => DeserializeArtifactManifest(json));
+        });
+
         modelBuilder.Entity<DeliveryPackage>(entity =>
         {
             entity.HasKey(package => package.Id);
@@ -311,5 +361,36 @@ public sealed class AppDbContext : DbContext
     private static IReadOnlyCollection<EvidenceAnchor> DeserializeEvidenceAnchors(string json)
     {
         return JsonSerializer.Deserialize<List<EvidenceAnchor>>(json, JsonOptions) ?? [];
+    }
+
+    private static string SerializeGuidList(IReadOnlyList<Guid> values)
+    {
+        return JsonSerializer.Serialize(values, JsonOptions);
+    }
+
+    private static IReadOnlyList<Guid> DeserializeGuidList(string json)
+    {
+        return JsonSerializer.Deserialize<List<Guid>>(json, JsonOptions) ?? [];
+    }
+
+    private static string SerializeStringDictionary(IReadOnlyDictionary<string, string> values)
+    {
+        return JsonSerializer.Serialize(values, JsonOptions);
+    }
+
+    private static IReadOnlyDictionary<string, string> DeserializeStringDictionary(string json)
+    {
+        return JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions) ?? new Dictionary<string, string>();
+    }
+
+    private static string SerializeArtifactManifest(ArtifactManifest manifest)
+    {
+        return JsonSerializer.Serialize(manifest, JsonOptions);
+    }
+
+    private static ArtifactManifest DeserializeArtifactManifest(string json)
+    {
+        return JsonSerializer.Deserialize<ArtifactManifest>(json, JsonOptions)
+            ?? throw new InvalidOperationException("Artifact manifest JSON could not be deserialized.");
     }
 }

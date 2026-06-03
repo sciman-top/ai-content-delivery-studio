@@ -191,7 +191,7 @@ Exit gate:
 
 Goal: make user files and non-image deliverables first-class without weakening the image-series core workflow.
 
-Status: started with source assets, extracted content, evidence anchors, fake ingestion, and SQLite persistence.
+Status: started with source assets, extracted content, evidence anchors, output artifacts, artifact packages, fake ingestion, fake extraction, fake artifact planning, delivery provenance metadata, and SQLite persistence.
 
 Deliverables:
 
@@ -210,6 +210,8 @@ Exit gate:
 ## Phase 11: Workflow, Blueprint, And Industry Pack System
 
 Goal: make generalization come from versioned packs instead of hard-coded topic modes.
+
+Status: complete for the local pack foundation: provider-neutral pack metadata, semantic version, compatibility range, lifecycle state, migration notes, local registry validation, built-in starter packs, workflow stage definitions with completion criteria, pack-driven UI defaults using stable view slots, catalog invariant tests, and validated local JSON pack import/export.
 
 Deliverables:
 
@@ -230,6 +232,8 @@ Exit gate:
 
 Goal: prevent the app from growing a central all-knowing orchestrator as capabilities expand.
 
+Status: started with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters, stable workflow view slot names for reusable shell placement, and a `FeatureViewModule` contract for future WPF view/view model splits.
+
 Deliverables:
 
 - Split WPF tabs into feature-owned views and view models where the current shell is becoming too large.
@@ -247,6 +251,8 @@ Exit gate:
 ## Phase 13: Review, Repair, And Operator Automation
 
 Goal: let AI replace repetitive human judgment and tool operation while preserving approval and audit boundaries.
+
+Status: started with a structured `RepairPlan` model generated from review routing evidence. Operator actions and tool adapters remain future slices.
 
 Deliverables:
 

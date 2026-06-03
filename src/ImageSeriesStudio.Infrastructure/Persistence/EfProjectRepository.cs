@@ -39,6 +39,8 @@ public sealed class EfProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(project => project.ProviderProfiles)
             .Include(project => project.SourceAssets)
+            .Include(project => project.OutputArtifacts)
+            .Include(project => project.ArtifactPackages)
             .Include(project => project.DocumentBriefs)
             .Include(project => project.IllustrationPlans)
             .Include(project => project.Series)
@@ -64,6 +66,22 @@ public sealed class EfProjectRepository : IProjectRepository
             if (!await _dbContext.SourceAssets.AnyAsync(existing => existing.Id == asset.Id, cancellationToken))
             {
                 _dbContext.Entry(asset).State = EntityState.Added;
+            }
+        }
+
+        foreach (var artifact in project.OutputArtifacts)
+        {
+            if (!await _dbContext.OutputArtifacts.AnyAsync(existing => existing.Id == artifact.Id, cancellationToken))
+            {
+                _dbContext.Entry(artifact).State = EntityState.Added;
+            }
+        }
+
+        foreach (var package in project.ArtifactPackages)
+        {
+            if (!await _dbContext.ArtifactPackages.AnyAsync(existing => existing.Id == package.Id, cancellationToken))
+            {
+                _dbContext.Entry(package).State = EntityState.Added;
             }
         }
 
