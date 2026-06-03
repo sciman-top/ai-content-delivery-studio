@@ -64,6 +64,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _briefAudienceLabel = string.Empty;
     private string _briefStyleIntentLabel = string.Empty;
     private string _createBriefText = string.Empty;
+    private string _generateDesignBlueprintsText = string.Empty;
+    private string _promoteDesignBlueprintText = string.Empty;
+    private string _blueprintRoutesHeader = string.Empty;
+    private string _noBlueprintRowsText = string.Empty;
     private string _generatePromptDirectionsText = string.Empty;
     private string _promotePromptDirectionText = string.Empty;
     private string _promptDirectionsHeader = string.Empty;
@@ -157,6 +161,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<SeriesItemViewModel> _seriesItems = [];
     private IReadOnlyList<PlanRowViewModel> _planRows = [];
     private IReadOnlyList<PromptVersionViewModel> _promptVersions = [];
+    private IReadOnlyList<DesignBlueprintRowViewModel> _designBlueprintRows = [];
     private IReadOnlyList<PromptDirectionRowViewModel> _promptDirectionRows = [];
     private IReadOnlyList<PromptRowViewModel> _promptRows = [];
     private IReadOnlyList<QueueRowViewModel> _queueRows = [];
@@ -172,6 +177,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private ImageTypePresetOptionViewModel? _selectedImageTypePresetOption;
     private StyleGuideOptionViewModel? _selectedStyleGuideOption;
     private GenerationRecipeOptionViewModel? _selectedGenerationRecipeOption;
+    private DesignBlueprintRowViewModel? _selectedDesignBlueprint;
     private PromptDirectionRowViewModel? _selectedPromptDirection;
     private GalleryRowViewModel? _selectedGalleryRow;
     private ReviewRowViewModel? _selectedReviewRow;
@@ -285,12 +291,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
             GalleryRows = [];
             ReviewRows = [];
             DeliveryRows = [];
+            DesignBlueprintRows = [];
             PromptDirectionRows = [];
             DocumentPlanningResultSummary = string.Empty;
+            SelectedDesignBlueprint = null;
             SelectedPromptDirection = null;
             _activeCreativeBriefId = null;
             RebuildWorkflowGraphRows();
             CreateBriefCommand.NotifyCanExecuteChanged();
+            GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
+            PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
             GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
             PromotePromptDirectionCommand.NotifyCanExecuteChanged();
             RunFakePlanningCommand.NotifyCanExecuteChanged();
@@ -321,6 +331,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 RunFakePlanningCommand.NotifyCanExecuteChanged();
                 CreateBriefCommand.NotifyCanExecuteChanged();
+                GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
                 GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
             }
         }
@@ -335,6 +346,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             {
                 RunFakePlanningCommand.NotifyCanExecuteChanged();
                 CreateBriefCommand.NotifyCanExecuteChanged();
+                GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
                 GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
             }
         }
@@ -360,6 +372,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (SetProperty(ref _newPlanningStyleBrief, value))
             {
                 CreateBriefCommand.NotifyCanExecuteChanged();
+                GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
                 GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
             }
         }
@@ -827,6 +840,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _createBriefText, value);
     }
 
+    public string GenerateDesignBlueprintsText
+    {
+        get => _generateDesignBlueprintsText;
+        private set => SetProperty(ref _generateDesignBlueprintsText, value);
+    }
+
+    public string PromoteDesignBlueprintText
+    {
+        get => _promoteDesignBlueprintText;
+        private set => SetProperty(ref _promoteDesignBlueprintText, value);
+    }
+
+    public string BlueprintRoutesHeader
+    {
+        get => _blueprintRoutesHeader;
+        private set => SetProperty(ref _blueprintRoutesHeader, value);
+    }
+
+    public string NoBlueprintRowsText
+    {
+        get => _noBlueprintRowsText;
+        private set => SetProperty(ref _noBlueprintRowsText, value);
+    }
+
     public string GeneratePromptDirectionsText
     {
         get => _generatePromptDirectionsText;
@@ -1122,6 +1159,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             SelectedSeriesItem = SeriesItems.FirstOrDefault();
             AddItemCommand.NotifyCanExecuteChanged();
             CreateBriefCommand.NotifyCanExecuteChanged();
+            GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
+            PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
             GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
         }
     }
@@ -1216,6 +1255,33 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     public bool HasPlanRows => PlanRows.Count > 0;
+
+    public IReadOnlyList<DesignBlueprintRowViewModel> DesignBlueprintRows
+    {
+        get => _designBlueprintRows;
+        private set
+        {
+            if (SetProperty(ref _designBlueprintRows, value))
+            {
+                OnPropertyChanged(nameof(HasDesignBlueprintRows));
+                GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool HasDesignBlueprintRows => DesignBlueprintRows.Count > 0;
+
+    public DesignBlueprintRowViewModel? SelectedDesignBlueprint
+    {
+        get => _selectedDesignBlueprint;
+        set
+        {
+            if (SetProperty(ref _selectedDesignBlueprint, value))
+            {
+                PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
 
     public IReadOnlyList<PromptDirectionRowViewModel> PromptDirectionRows
     {
@@ -1430,6 +1496,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         BriefAudienceLabel = Text(LocalizationKey.BriefAudience);
         BriefStyleIntentLabel = Text(LocalizationKey.BriefStyleIntent);
         CreateBriefText = Text(LocalizationKey.CreateBrief);
+        GenerateDesignBlueprintsText = Text(LocalizationKey.GenerateDesignBlueprints);
+        PromoteDesignBlueprintText = Text(LocalizationKey.PromoteDesignBlueprint);
+        BlueprintRoutesHeader = Text(LocalizationKey.BlueprintRoutesHeader);
+        NoBlueprintRowsText = Text(LocalizationKey.NoBlueprintRows);
         GeneratePromptDirectionsText = Text(LocalizationKey.GeneratePromptDirections);
         PromotePromptDirectionText = Text(LocalizationKey.PromotePromptDirection);
         PromptDirectionsHeader = Text(LocalizationKey.PromptDirectionsHeader);
@@ -1805,6 +1875,60 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private bool CanGeneratePromptDirections()
     {
         return CanCreateBrief();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanGenerateDesignBlueprints))]
+    private async Task GenerateDesignBlueprintsAsync()
+    {
+        if (SelectedProject is null || SelectedSeries is null)
+        {
+            return;
+        }
+
+        var briefId = await EnsureActiveCreativeBriefIdAsync();
+        var brief = await _projectService.CreateDesignBlueprintsAsync(
+            SelectedProject.Id,
+            briefId,
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        _activeCreativeBriefId = brief.Id;
+        await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id, SelectedSeriesItem?.Id);
+        _activeCreativeBriefId = brief.Id;
+        SelectedDesignBlueprint = DesignBlueprintRows.FirstOrDefault(blueprint => blueprint.CreativeBriefId == brief.Id)
+            ?? DesignBlueprintRows.FirstOrDefault();
+    }
+
+    private bool CanGenerateDesignBlueprints()
+    {
+        return CanCreateBrief();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPromoteDesignBlueprint))]
+    private async Task PromoteDesignBlueprintAsync()
+    {
+        if (SelectedProject is null || SelectedDesignBlueprint is null)
+        {
+            return;
+        }
+
+        var promoted = await _projectService.PromoteDesignBlueprintAsync(
+            SelectedProject.Id,
+            SelectedDesignBlueprint.CreativeBriefId,
+            SelectedDesignBlueprint.BlueprintId,
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        _activeCreativeBriefId = SelectedDesignBlueprint.CreativeBriefId;
+        await LoadPlanAsync(SelectedProject.Id, SelectedSeries?.Id, SelectedSeriesItem?.Id);
+        SelectedDesignBlueprint = DesignBlueprintRows.FirstOrDefault(blueprint => blueprint.BlueprintId == promoted.Id)
+            ?? DesignBlueprintRows.FirstOrDefault();
+    }
+
+    private bool CanPromoteDesignBlueprint()
+    {
+        return SelectedProject is not null
+            && SelectedDesignBlueprint is not null;
     }
 
     [RelayCommand(CanExecute = nameof(CanPromotePromptDirection))]
@@ -2331,6 +2455,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                             .ToArray()))
                     .ToArray()))
             .ToArray();
+        DesignBlueprintRows = BuildDesignBlueprintRows(project, Text(LocalizationKey.BlueprintPromoted), Text(LocalizationKey.BlueprintCandidate));
         PromptDirectionRows = BuildPromptDirectionRows(project);
         RebuildPlanRows();
         RebuildPromptRows();
@@ -2345,6 +2470,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         SelectedPromptDirection = PromptDirectionRows.FirstOrDefault(direction =>
             _activeCreativeBriefId is null || direction.CreativeBriefId == _activeCreativeBriefId);
+        SelectedDesignBlueprint = DesignBlueprintRows.FirstOrDefault(blueprint =>
+            _activeCreativeBriefId is null || blueprint.CreativeBriefId == _activeCreativeBriefId);
         CreateSeriesCommand.NotifyCanExecuteChanged();
         RebuildWorkflowGraphRows();
     }
@@ -2359,6 +2486,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         GalleryRows = [];
         ReviewRows = [];
         DeliveryRows = [];
+        DesignBlueprintRows = [];
+        SelectedDesignBlueprint = null;
         PromptDirectionRows = [];
         SelectedPromptDirection = null;
         _activeCreativeBriefId = null;
@@ -2369,6 +2498,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         AddItemCommand.NotifyCanExecuteChanged();
         CreatePromptVersionCommand.NotifyCanExecuteChanged();
         CreateBriefCommand.NotifyCanExecuteChanged();
+        GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
+        PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
         GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
         PromotePromptDirectionCommand.NotifyCanExecuteChanged();
         return Task.CompletedTask;
@@ -2473,6 +2604,32 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         WorkflowGraphRows = rows;
+    }
+
+    private static IReadOnlyList<DesignBlueprintRowViewModel> BuildDesignBlueprintRows(
+        ImageProject project,
+        string promotedText,
+        string candidateText)
+    {
+        return project.Series
+            .SelectMany(series => series.CreativeBriefs.SelectMany(brief => brief.DesignBlueprints.Select(blueprint => new DesignBlueprintRowViewModel(
+                brief.Id,
+                blueprint.Id,
+                blueprint.Key,
+                blueprint.DisplayName,
+                blueprint.Category,
+                blueprint.Summary,
+                blueprint.IntendedUse,
+                $"{blueprint.MinimumRecommendedItemCount}-{blueprint.MaximumRecommendedItemCount}",
+                blueprint.SupportsPanelSequence ? "panel sequence" : "standard items",
+                blueprint.DefaultTextPolicy.ToString(),
+                blueprint.DefaultReviewRubricTemplateId,
+                FormatList(blueprint.ConsistencyRules),
+                FormatList(blueprint.VariationRules),
+                FormatList(blueprint.RiskNotes),
+                blueprint.Id == brief.PromotedBlueprintId,
+                blueprint.Id == brief.PromotedBlueprintId ? promotedText : candidateText))))
+            .ToArray();
     }
 
     private static IReadOnlyList<PromptDirectionRowViewModel> BuildPromptDirectionRows(ImageProject project)
@@ -2598,6 +2755,24 @@ public sealed record SeriesItemViewModel(
     IReadOnlyList<PromptVersionViewModel> PromptVersions);
 
 public sealed record PlanRowViewModel(string SeriesTitle, string ItemTitle, string Brief, string StatusText);
+
+public sealed record DesignBlueprintRowViewModel(
+    Guid CreativeBriefId,
+    Guid BlueprintId,
+    string Key,
+    string DisplayName,
+    string Category,
+    string Summary,
+    string IntendedUse,
+    string ItemCountRange,
+    string SequenceMode,
+    string TextPolicy,
+    string ReviewRubricTemplateId,
+    string ConsistencySummary,
+    string VariationSummary,
+    string RiskSummary,
+    bool IsPromoted,
+    string PromotionStatus);
 
 public sealed record PromptDirectionRowViewModel(
     Guid CreativeBriefId,

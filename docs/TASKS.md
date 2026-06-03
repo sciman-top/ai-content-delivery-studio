@@ -70,7 +70,7 @@
 - [ ] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
 - [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits.
 - [ ] Add a remote workflow-engine adapter boundary without requiring local model installs.
-- [ ] Run full build, test, and format gates for the implementation slice.
+- [x] Run full build, test, and format gates for the implementation slice.
 
 ## Phase 4: Quality Loop
 
@@ -171,11 +171,11 @@
 
 - [x] Record blueprint-first generalized series design spec.
 - [x] Record blueprint-first implementation plan.
-- [ ] Add `DesignBlueprint` domain record and persistence.
-- [ ] Extend fake planning provider with blueprint candidates.
-- [ ] Add application workflow to create, compare, and promote blueprint routes.
+- [x] Add `DesignBlueprint` domain record and persistence.
+- [x] Extend fake planning provider with blueprint candidates.
+- [x] Add application workflow to create, compare, and promote blueprint routes.
 - [ ] Add optional `SeriesItemKind` support for panel-like narrative items.
-- [ ] Expand Brief tab UI with blueprint cards and promotion actions.
+- [x] Expand Brief tab UI with blueprint cards and promotion actions.
 - [ ] Route review outcomes back to brief, blueprint, prompt, or settings layers.
 - [ ] Include blueprint metadata in delivery packages.
 - [ ] Run full build, test, and format gates for the implementation slice.

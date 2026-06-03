@@ -222,6 +222,50 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task BriefWorkflow_ShowsBlueprintRowsAndPromotesSelectedBlueprint()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.NewProjectName = "Blueprint UI demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Storyboard images";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening";
+        viewModel.NewItemBrief = "Opening visual with the same main character.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        viewModel.NewPlanningGoal = "panel story sequence";
+        viewModel.NewPlanningAudience = "students";
+        viewModel.NewPlanningStyleBrief = "clear visual storytelling";
+
+        await viewModel.CreateBriefCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.GenerateDesignBlueprintsCommand.CanExecute(null));
+        await viewModel.GenerateDesignBlueprintsCommand.ExecuteAsync(null);
+
+        var row = Assert.Single(
+            viewModel.DesignBlueprintRows,
+            blueprint => blueprint.Key == "panel-narrative-sequence");
+        Assert.True(viewModel.HasDesignBlueprintRows);
+        Assert.True(row.SequenceMode.Contains("panel", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("same main character", row.ConsistencySummary, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("Candidate", row.PromotionStatus);
+
+        viewModel.SelectedDesignBlueprint = row;
+        Assert.True(viewModel.PromoteDesignBlueprintCommand.CanExecute(null));
+        await viewModel.PromoteDesignBlueprintCommand.ExecuteAsync(null);
+
+        var promotedRow = Assert.Single(
+            viewModel.DesignBlueprintRows,
+            blueprint => blueprint.Key == "panel-narrative-sequence");
+        Assert.True(promotedRow.IsPromoted);
+        Assert.Equal("Promoted", promotedRow.PromotionStatus);
+        Assert.Equal(promotedRow.BlueprintId, viewModel.SelectedDesignBlueprint?.BlueprintId);
+    }
+
+    [Fact]
     public async Task DocumentIllustrationWorkflow_RunsFakePlanningFromInspectorInputs()
     {
         var viewModel = CreateViewModel();

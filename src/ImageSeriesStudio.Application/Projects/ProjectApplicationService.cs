@@ -205,6 +205,76 @@ public sealed class ProjectApplicationService
         return brief;
     }
 
+    public async Task<CreativeBrief> CreateDesignBlueprintsAsync(
+        Guid projectId,
+        Guid creativeBriefId,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        if (_textPlanningProvider is null)
+        {
+            throw new InvalidOperationException("Text planning provider is not registered.");
+        }
+
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var brief = project.Series
+            .SelectMany(series => series.CreativeBriefs)
+            .SingleOrDefault(candidate => candidate.Id == creativeBriefId)
+            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
+
+        var result = await _textPlanningProvider.CreateDesignBlueprintsAsync(
+            new BlueprintPlanningRequest(
+                brief.Goal,
+                brief.Audience,
+                brief.StyleIntent,
+                brief.MustInclude,
+                brief.MustAvoid,
+                brief.TextPolicy,
+                CandidateCount: 3),
+            cancellationToken);
+
+        brief.ReplaceBlueprints(
+            result.Blueprints
+                .Select(blueprint => DesignBlueprint.Create(
+                    blueprint.Key,
+                    blueprint.DisplayName,
+                    blueprint.Category,
+                    blueprint.Summary,
+                    blueprint.IntendedUse,
+                    blueprint.MinimumRecommendedItemCount,
+                    blueprint.MaximumRecommendedItemCount,
+                    blueprint.SupportsPanelSequence,
+                    blueprint.DefaultTextPolicy,
+                    blueprint.DefaultReviewRubricTemplateId,
+                    blueprint.ConsistencyRules,
+                    blueprint.VariationRules,
+                    blueprint.RiskNotes,
+                    timestamp))
+                .ToArray(),
+            timestamp);
+
+        await _repository.SaveAsync(project, cancellationToken);
+        return brief;
+    }
+
+    public async Task<DesignBlueprint> PromoteDesignBlueprintAsync(
+        Guid projectId,
+        Guid creativeBriefId,
+        Guid blueprintId,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var brief = project.Series
+            .SelectMany(series => series.CreativeBriefs)
+            .SingleOrDefault(candidate => candidate.Id == creativeBriefId)
+            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
+
+        var blueprint = brief.PromoteBlueprint(blueprintId, timestamp);
+        await _repository.SaveAsync(project, cancellationToken);
+        return blueprint;
+    }
+
     public async Task<PromptVersion> PromotePromptDirectionAsync(
         Guid projectId,
         Guid seriesItemId,

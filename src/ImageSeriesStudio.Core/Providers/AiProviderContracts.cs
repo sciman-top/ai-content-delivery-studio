@@ -14,6 +14,10 @@ public interface ITextPlanningProvider
         BriefPlanningRequest request,
         CancellationToken cancellationToken);
 
+    Task<BlueprintPlanningResult> CreateDesignBlueprintsAsync(
+        BlueprintPlanningRequest request,
+        CancellationToken cancellationToken);
+
     Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
         DocumentIllustrationPlanningRequest request,
         CancellationToken cancellationToken);
@@ -153,8 +157,23 @@ public sealed record BriefPlanningRequest(
     int DirectionCount = 3,
     ImageTextPolicy TextPolicy = ImageTextPolicy.Hybrid);
 
+public sealed record BlueprintPlanningRequest(
+    string Goal,
+    string Audience,
+    string StyleIntent,
+    IReadOnlyList<string> MustInclude,
+    IReadOnlyList<string> MustAvoid,
+    ImageTextPolicy TextPolicy = ImageTextPolicy.Hybrid,
+    int CandidateCount = 3);
+
 public sealed record BriefPlanningResult(
     IReadOnlyList<PromptDirectionDraft> Directions,
+    IReadOnlyList<string> Assumptions,
+    IReadOnlyList<string> ClarifyingQuestions,
+    string ProviderTraceId);
+
+public sealed record BlueprintPlanningResult(
+    IReadOnlyList<DesignBlueprintDraft> Blueprints,
     IReadOnlyList<string> Assumptions,
     IReadOnlyList<string> ClarifyingQuestions,
     string ProviderTraceId);
@@ -168,6 +187,21 @@ public sealed record PromptDirectionDraft(
     string Strength,
     string Risk,
     PromptDirectionRecommendation? Recommendation = null);
+
+public sealed record DesignBlueprintDraft(
+    string Key,
+    string DisplayName,
+    string Category,
+    string Summary,
+    string IntendedUse,
+    int MinimumRecommendedItemCount,
+    int MaximumRecommendedItemCount,
+    bool SupportsPanelSequence,
+    ImageTextPolicy DefaultTextPolicy,
+    string DefaultReviewRubricTemplateId,
+    IReadOnlyList<string> ConsistencyRules,
+    IReadOnlyList<string> VariationRules,
+    IReadOnlyList<string> RiskNotes);
 
 public sealed record DocumentIllustrationPlanningRequest(
     string Title,

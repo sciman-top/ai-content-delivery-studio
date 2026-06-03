@@ -208,6 +208,41 @@ public sealed class PersistenceTests
                 ["accurate formula area"],
                 ["model-rendered small text"],
                 timestamp.AddMinutes(2));
+            DesignBlueprint[] blueprints =
+            [
+                DesignBlueprint.Create(
+                    "poster-series",
+                    "Poster series",
+                    "poster_series",
+                    "Use a stable teaching-poster route across the set.",
+                    "Best for text-heavy educational image series.",
+                    3,
+                    6,
+                    supportsPanelSequence: false,
+                    ImageTextPolicy.DeterministicPostRender,
+                    ReviewRubricTemplateCatalog.TextHeavyPoster,
+                    ["keep the same visual grammar"],
+                    ["change the key concept per item"],
+                    ["reserve deterministic text zones"],
+                    timestamp.AddMinutes(2)),
+                DesignBlueprint.Create(
+                    "concept-sequence",
+                    "Concept explainer sequence",
+                    "concept_explainer_sequence",
+                    "Use a lighter explanatory route with clearer concept progression.",
+                    "Best for article-backed or slide-backed concept teaching.",
+                    2,
+                    5,
+                    supportsPanelSequence: false,
+                    ImageTextPolicy.DeterministicPostRender,
+                    ReviewRubricTemplateCatalog.EducationalAccuracy,
+                    ["preserve the same concept vocabulary"],
+                    ["let each frame introduce one new relation"],
+                    ["avoid text baked into the model image"],
+                    timestamp.AddMinutes(2)),
+            ];
+            brief.ReplaceBlueprints(blueprints, timestamp.AddMinutes(2));
+            brief.PromoteBlueprint(blueprints[0].Id, timestamp.AddMinutes(2));
             var recommendation = PromptDirectionRecommendation.Create(
                 ImageTypePresetCatalog.EducationalPoster,
                 ImageTextPolicy.DeterministicPostRender,
@@ -273,6 +308,10 @@ public sealed class PersistenceTests
                 Assert.Equal("Physics posters", loadedSeries.Title);
                 var loadedBrief = Assert.Single(loadedSeries.CreativeBriefs);
                 Assert.Equal("Physics classroom poster", loadedBrief.Goal);
+                Assert.Equal(2, loadedBrief.DesignBlueprints.Count);
+                Assert.Equal(
+                    "poster-series",
+                    loadedBrief.DesignBlueprints.Single(blueprint => blueprint.Id == loadedBrief.PromotedBlueprintId).Key);
                 var loadedDirection = Assert.Single(loadedBrief.PromptDirections);
                 Assert.Equal("conservative", loadedDirection.Key);
                 Assert.NotNull(loadedDirection.Recommendation);

@@ -64,6 +64,32 @@ public sealed class FakeProviderTests
     }
 
     [Fact]
+    public async Task FakeTextPlanningProvider_CreatesDesignBlueprintsForBrief()
+    {
+        var provider = new FakeTextPlanningProvider();
+
+        var result = await provider.CreateDesignBlueprintsAsync(
+            new BlueprintPlanningRequest(
+                "panel story sequence",
+                "students",
+                "clear visual storytelling",
+                ["same main character"],
+                ["wall of unreadable text"],
+                ImageTextPolicy.DeterministicPostRender,
+                CandidateCount: 3),
+            CancellationToken.None);
+
+        Assert.Equal("fake-text-blueprint", result.ProviderTraceId);
+        Assert.Equal(3, result.Blueprints.Count);
+        Assert.Contains(result.Assumptions, assumption => assumption.Contains("compare", StringComparison.OrdinalIgnoreCase));
+        Assert.Equal("panel-narrative-sequence", result.Blueprints[0].Key);
+        Assert.True(result.Blueprints[0].SupportsPanelSequence);
+        Assert.Equal(ImageTextPolicy.DeterministicPostRender, result.Blueprints[0].DefaultTextPolicy);
+        Assert.Contains(result.Blueprints[0].ConsistencyRules, value => value.Contains("same main character", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(result.Blueprints[0].RiskNotes, value => value.Contains("unreadable text", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task FakeTextPlanningProvider_CreatesDocumentIllustrationPlan()
     {
         var provider = new FakeTextPlanningProvider();

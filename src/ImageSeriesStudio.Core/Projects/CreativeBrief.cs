@@ -6,6 +6,7 @@ namespace ImageSeriesStudio.Core.Projects;
 public sealed class CreativeBrief
 {
     private readonly List<PromptDirection> _promptDirections = [];
+    private readonly List<DesignBlueprint> _designBlueprints = [];
 
     private CreativeBrief()
     {
@@ -57,6 +58,10 @@ public sealed class CreativeBrief
 
     public IReadOnlyCollection<PromptDirection> PromptDirections => _promptDirections.AsReadOnly();
 
+    public IReadOnlyCollection<DesignBlueprint> DesignBlueprints => _designBlueprints.AsReadOnly();
+
+    public Guid? PromotedBlueprintId { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
@@ -90,6 +95,8 @@ public sealed class CreativeBrief
 
     public void ReplaceDirections(IReadOnlyList<PromptDirection> directions, DateTimeOffset timestamp)
     {
+        ArgumentNullException.ThrowIfNull(directions);
+
         var duplicateKey = directions
             .GroupBy(direction => direction.Key, StringComparer.OrdinalIgnoreCase)
             .FirstOrDefault(group => group.Count() > 1)
@@ -104,8 +111,50 @@ public sealed class CreativeBrief
         UpdatedAt = timestamp;
     }
 
+    public void ReplaceBlueprints(IReadOnlyList<DesignBlueprint> blueprints, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(blueprints);
+
+        var duplicateKey = blueprints
+            .GroupBy(blueprint => blueprint.Key, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(group => group.Count() > 1)
+            ?.Key;
+        if (duplicateKey is not null)
+        {
+            throw new ArgumentException($"Duplicate design blueprint key: {duplicateKey}", nameof(blueprints));
+        }
+
+        _designBlueprints.Clear();
+        _designBlueprints.AddRange(blueprints);
+
+        if (PromotedBlueprintId is { } promotedBlueprintId
+            && _designBlueprints.All(blueprint => blueprint.Id != promotedBlueprintId))
+        {
+            PromotedBlueprintId = null;
+        }
+
+        UpdatedAt = timestamp;
+    }
+
+    public DesignBlueprint PromoteBlueprint(Guid blueprintId, DateTimeOffset timestamp)
+    {
+        if (blueprintId == Guid.Empty)
+        {
+            throw new ArgumentException("Blueprint id cannot be empty.", nameof(blueprintId));
+        }
+
+        var blueprint = _designBlueprints.SingleOrDefault(candidate => candidate.Id == blueprintId)
+            ?? throw new InvalidOperationException($"Design blueprint not found: {blueprintId}");
+
+        PromotedBlueprintId = blueprint.Id;
+        UpdatedAt = timestamp;
+        return blueprint;
+    }
+
     private static IReadOnlyList<string> NormalizeList(IReadOnlyList<string> values)
     {
+        ArgumentNullException.ThrowIfNull(values);
+
         return values
             .Select(value => value.Trim())
             .Where(value => value.Length > 0)

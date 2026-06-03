@@ -101,6 +101,40 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
             "fake-text-brief"));
     }
 
+    public Task<BlueprintPlanningResult> CreateDesignBlueprintsAsync(
+        BlueprintPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var count = Math.Clamp(request.CandidateCount, 1, 4);
+        var blueprints = GetBlueprintTemplates()
+            .OrderByDescending(template => ScoreBlueprintTemplate(template, request.Goal))
+            .ThenBy(template => template.Key, StringComparer.OrdinalIgnoreCase)
+            .Take(count)
+            .Select(template => new DesignBlueprintDraft(
+                template.Key,
+                template.DisplayName,
+                template.Category,
+                $"Fake blueprint for {request.Goal}: {template.Summary}",
+                $"{template.IntendedUse} Audience: {request.Audience}.",
+                template.MinimumRecommendedItemCount,
+                template.MaximumRecommendedItemCount,
+                template.SupportsPanelSequence,
+                request.TextPolicy,
+                template.DefaultReviewRubricTemplateId,
+                BuildConsistencyRules(request, template),
+                BuildVariationRules(request, template),
+                BuildRiskNotes(request, template)))
+            .ToArray();
+
+        return Task.FromResult(new BlueprintPlanningResult(
+            blueprints,
+            ["Compare at least two blueprint routes before spending on generation."],
+            ["Does this series need standalone items or a panel-style progression?"],
+            "fake-text-blueprint"));
+    }
+
     private static PromptDirectionRecommendation CreateRecommendation(
         BriefPlanningRequest request,
         string directionKey)
@@ -168,6 +202,141 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
         return aspectRatio.WidthUnits > aspectRatio.HeightUnits
             ? (1536, 1024)
             : (1024, 1280);
+    }
+
+    private static IReadOnlyList<BlueprintTemplate> GetBlueprintTemplates()
+    {
+        return
+        [
+            new BlueprintTemplate(
+                "poster-series",
+                "Poster series",
+                "poster_series",
+                "Use a stable poster route with one teaching objective per item.",
+                "Best for classroom or educational poster sets.",
+                3,
+                6,
+                false,
+                ReviewRubricTemplateCatalog.TextHeavyPoster),
+            new BlueprintTemplate(
+                "article-illustration-pack",
+                "Article illustration pack",
+                "article_illustration_pack",
+                "Use a document-backed editorial route with consistent visual hierarchy.",
+                "Best for articles, reports, and editorial explainers.",
+                3,
+                8,
+                false,
+                ReviewRubricTemplateCatalog.EditorialIllustration),
+            new BlueprintTemplate(
+                "concept-explainer-sequence",
+                "Concept explainer sequence",
+                "concept_explainer_sequence",
+                "Use a progressive concept route that introduces one relation per image.",
+                "Best for diagrams, concept teaching, and explanation-first series.",
+                2,
+                5,
+                false,
+                ReviewRubricTemplateCatalog.EducationalAccuracy),
+            new BlueprintTemplate(
+                "panel-narrative-sequence",
+                "Panel narrative sequence",
+                "panel_narrative_sequence",
+                "Use a scene-to-scene route where each panel advances the narrative.",
+                "Best for story-like, sequential, or storyboard-adjacent image packs.",
+                4,
+                8,
+                true,
+                ReviewRubricTemplateCatalog.SeriesConsistency),
+        ];
+    }
+
+    private static int ScoreBlueprintTemplate(BlueprintTemplate template, string goal)
+    {
+        var score = 0;
+
+        if (goal.Contains("poster", StringComparison.OrdinalIgnoreCase)
+            && template.Key.Equals("poster-series", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 10;
+        }
+
+        if ((goal.Contains("article", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("editorial", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("illustration", StringComparison.OrdinalIgnoreCase))
+            && template.Key.Equals("article-illustration-pack", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 10;
+        }
+
+        if ((goal.Contains("concept", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("diagram", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("teach", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("explain", StringComparison.OrdinalIgnoreCase))
+            && template.Key.Equals("concept-explainer-sequence", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 10;
+        }
+
+        if ((goal.Contains("panel", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("story", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("sequence", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("comic", StringComparison.OrdinalIgnoreCase))
+            && template.Key.Equals("panel-narrative-sequence", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 10;
+        }
+
+        return score;
+    }
+
+    private static IReadOnlyList<string> BuildConsistencyRules(
+        BlueprintPlanningRequest request,
+        BlueprintTemplate template)
+    {
+        var mustInclude = request.MustInclude.Count > 0
+            ? $"Carry these required anchors across the route: {string.Join(", ", request.MustInclude)}."
+            : "Carry the same high-level visual grammar across the route.";
+
+        return
+        [
+            $"Style anchor: {EnsureText(request.StyleIntent, "keep the route visually coherent")}.",
+            mustInclude,
+            template.SupportsPanelSequence
+                ? "Keep recurring subjects readable from panel to panel."
+                : "Keep the same visual system readable from item to item.",
+        ];
+    }
+
+    private static IReadOnlyList<string> BuildVariationRules(
+        BlueprintPlanningRequest request,
+        BlueprintTemplate template)
+    {
+        var primaryRule = template.SupportsPanelSequence
+            ? "Advance the scene or action in each panel without resetting continuity."
+            : "Change the focal message in each item without losing route coherence.";
+
+        return
+        [
+            primaryRule,
+            $"Audience emphasis: {EnsureText(request.Audience, "general audience")}.",
+        ];
+    }
+
+    private static IReadOnlyList<string> BuildRiskNotes(
+        BlueprintPlanningRequest request,
+        BlueprintTemplate template)
+    {
+        var risks = new List<string>
+        {
+            "Fake provider output still needs human route review before prompt generation.",
+            template.SupportsPanelSequence
+                ? "Panel rhythm may need manual adjustment after promotion."
+                : "Item count and grouping may need manual adjustment after promotion.",
+        };
+
+        risks.AddRange(request.MustAvoid.Select(value => $"Avoid: {value}."));
+        return risks;
     }
 
     public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
@@ -258,6 +427,17 @@ public sealed class FakeTextPlanningProvider : ITextPlanningProvider
     {
         return values.Count > 0 ? values[0] : fallback;
     }
+
+    private sealed record BlueprintTemplate(
+        string Key,
+        string DisplayName,
+        string Category,
+        string Summary,
+        string IntendedUse,
+        int MinimumRecommendedItemCount,
+        int MaximumRecommendedItemCount,
+        bool SupportsPanelSequence,
+        string DefaultReviewRubricTemplateId);
 }
 
 public sealed class FakeImageGenerationProvider : IImageGenerationProvider, IImageEditProvider

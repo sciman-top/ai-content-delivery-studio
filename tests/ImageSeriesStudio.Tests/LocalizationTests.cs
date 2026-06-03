@@ -154,6 +154,11 @@ public sealed class LocalizationTests
         Assert.Equal("Brief", service.GetText(LocalizationKey.Brief));
         Assert.Equal("Goal", service.GetText(LocalizationKey.BriefGoal));
         Assert.Equal("Create brief", service.GetText(LocalizationKey.CreateBrief));
+        Assert.Equal("Generate blueprints", service.GetText(LocalizationKey.GenerateDesignBlueprints));
+        Assert.Equal("Promote blueprint", service.GetText(LocalizationKey.PromoteDesignBlueprint));
+        Assert.Equal("Blueprint routes", service.GetText(LocalizationKey.BlueprintRoutesHeader));
+        Assert.Contains("blueprint routes", service.GetText(LocalizationKey.NoBlueprintRows));
+        Assert.Equal("Promoted", service.GetText(LocalizationKey.BlueprintPromoted));
         Assert.Equal("Generate directions", service.GetText(LocalizationKey.GeneratePromptDirections));
         Assert.Equal("Promote direction", service.GetText(LocalizationKey.PromotePromptDirection));
         Assert.Contains("recommendation warnings", service.GetText(LocalizationKey.NoPromptDirectionRows));
@@ -162,6 +167,11 @@ public sealed class LocalizationTests
         Assert.Equal("需求设计", service.GetText(LocalizationKey.Brief));
         Assert.Equal("目标", service.GetText(LocalizationKey.BriefGoal));
         Assert.Equal("创建设计简报", service.GetText(LocalizationKey.CreateBrief));
+        Assert.Equal("生成蓝图候选", service.GetText(LocalizationKey.GenerateDesignBlueprints));
+        Assert.Equal("晋级为蓝图路线", service.GetText(LocalizationKey.PromoteDesignBlueprint));
+        Assert.Equal("蓝图路线", service.GetText(LocalizationKey.BlueprintRoutesHeader));
+        Assert.Contains("蓝图路线", service.GetText(LocalizationKey.NoBlueprintRows));
+        Assert.Equal("已晋级", service.GetText(LocalizationKey.BlueprintPromoted));
         Assert.Equal("生成提示词方向", service.GetText(LocalizationKey.GeneratePromptDirections));
         Assert.Equal("晋级为提示词版本", service.GetText(LocalizationKey.PromotePromptDirection));
         Assert.Contains("推荐风险", service.GetText(LocalizationKey.NoPromptDirectionRows));

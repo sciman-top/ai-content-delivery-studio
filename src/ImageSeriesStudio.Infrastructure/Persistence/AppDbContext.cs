@@ -106,6 +106,10 @@ public sealed class AppDbContext : DbContext
                 .HasConversion(
                     values => JsonSerializer.Serialize(values, JsonOptions),
                     json => JsonSerializer.Deserialize<List<PromptDirection>>(json, JsonOptions) ?? new List<PromptDirection>());
+            entity.Property(brief => brief.DesignBlueprints)
+                .HasConversion(
+                    values => JsonSerializer.Serialize(values, JsonOptions),
+                    json => JsonSerializer.Deserialize<List<DesignBlueprint>>(json, JsonOptions) ?? new List<DesignBlueprint>());
         });
 
         modelBuilder.Entity<DocumentBrief>(entity =>

@@ -178,6 +178,135 @@ public sealed class CreativeBriefTests
     }
 
     [Fact]
+    public void DesignBlueprint_CreateAndPromote_StoresStructuredBlueprints()
+    {
+        var timestamp = new DateTimeOffset(2026, 6, 3, 8, 0, 0, TimeSpan.Zero);
+        var brief = CreativeBrief.Create(
+            Guid.NewGuid(),
+            " poster sequence ",
+            " teachers ",
+            ImageTextPolicy.DeterministicPostRender,
+            "clean educational style",
+            ["legend area"],
+            ["tiny unreadable labels"],
+            timestamp);
+
+        var blueprint = DesignBlueprint.Create(
+            "poster-series",
+            " Poster series ",
+            " poster_series ",
+            " Build a coherent classroom poster route. ",
+            "Use when one topic needs several coordinated teaching images.",
+            3,
+            6,
+            supportsPanelSequence: false,
+            ImageTextPolicy.DeterministicPostRender,
+            ReviewRubricTemplateCatalog.TextHeavyPoster,
+            ["repeat the same visual grammar", "repeat the same visual grammar"],
+            ["change the focal concept per item"],
+            ["leave label placement for deterministic composition"],
+            timestamp.AddMinutes(1));
+
+        brief.ReplaceBlueprints([blueprint], timestamp.AddMinutes(2));
+        var promoted = brief.PromoteBlueprint(blueprint.Id, timestamp.AddMinutes(3));
+
+        var stored = Assert.Single(brief.DesignBlueprints);
+        Assert.Equal("poster-series", stored.Key);
+        Assert.Equal("Poster series", stored.DisplayName);
+        Assert.Equal("poster_series", stored.Category);
+        Assert.Equal(3, stored.MinimumRecommendedItemCount);
+        Assert.Equal(6, stored.MaximumRecommendedItemCount);
+        Assert.Equal("repeat the same visual grammar", Assert.Single(stored.ConsistencyRules));
+        Assert.Equal(blueprint.Id, brief.PromotedBlueprintId);
+        Assert.Equal(blueprint.Id, promoted.Id);
+        Assert.Equal(timestamp.AddMinutes(3), brief.UpdatedAt);
+    }
+
+    [Fact]
+    public void DesignBlueprint_RejectsInvalidValuesAndDuplicateKeys()
+    {
+        var timestamp = DateTimeOffset.UtcNow;
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DesignBlueprint.Create(
+                "timeline",
+                "Timeline",
+                "timeline_sequence",
+                "Summary",
+                "Use",
+                0,
+                4,
+                supportsPanelSequence: false,
+                ImageTextPolicy.Hybrid,
+                ReviewRubricTemplateCatalog.GeneralImage,
+                [],
+                [],
+                [],
+                timestamp));
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DesignBlueprint.Create(
+                "timeline",
+                "Timeline",
+                "timeline_sequence",
+                "Summary",
+                "Use",
+                5,
+                4,
+                supportsPanelSequence: false,
+                ImageTextPolicy.Hybrid,
+                ReviewRubricTemplateCatalog.GeneralImage,
+                [],
+                [],
+                [],
+                timestamp));
+
+        var brief = CreativeBrief.Create(
+            Guid.NewGuid(),
+            "series",
+            "designers",
+            ImageTextPolicy.Hybrid,
+            "style",
+            [],
+            [],
+            timestamp);
+
+        var first = DesignBlueprint.Create(
+            "timeline",
+            "Timeline A",
+            "timeline_sequence",
+            "Summary",
+            "Use",
+            3,
+            4,
+            supportsPanelSequence: false,
+            ImageTextPolicy.Hybrid,
+            ReviewRubricTemplateCatalog.GeneralImage,
+            [],
+            [],
+            [],
+            timestamp);
+        var second = DesignBlueprint.Create(
+            "Timeline",
+            "Timeline B",
+            "timeline_sequence",
+            "Summary",
+            "Use",
+            3,
+            4,
+            supportsPanelSequence: false,
+            ImageTextPolicy.Hybrid,
+            ReviewRubricTemplateCatalog.GeneralImage,
+            [],
+            [],
+            [],
+            timestamp);
+
+        Assert.Throws<ArgumentException>(() => brief.ReplaceBlueprints([first, second], timestamp.AddMinutes(1)));
+        Assert.Throws<InvalidOperationException>(() => brief.PromoteBlueprint(Guid.NewGuid(), timestamp.AddMinutes(2)));
+    }
+
+    [Fact]
     public void ImageSeries_AddCreativeBrief_AttachesBriefToSeries()
     {
         var timestamp = new DateTimeOffset(2026, 6, 2, 9, 0, 0, TimeSpan.Zero);

@@ -354,6 +354,78 @@ public sealed class ProjectApplicationServiceTests
     }
 
     [Fact]
+    public async Task ProjectApplicationService_CreatesAndPromotesDesignBlueprints()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-blueprint.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(
+                new EfProjectRepository(new AppDbContext(options)),
+                new FakeTextPlanningProvider());
+            var timestamp = new DateTimeOffset(2026, 6, 3, 9, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Blueprint demo", timestamp, CancellationToken.None);
+            var series = await service.AddSeriesAsync(
+                project.Id,
+                "Narrative images",
+                "Series",
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+            var brief = await service.CreateCreativeBriefAsync(
+                project.Id,
+                series.Id,
+                "panel story sequence",
+                "students",
+                ImageTextPolicy.DeterministicPostRender,
+                "clear visual storytelling",
+                ["same main character"],
+                ["wall of unreadable text"],
+                timestamp.AddMinutes(2),
+                CancellationToken.None);
+
+            var planned = await service.CreateDesignBlueprintsAsync(
+                project.Id,
+                brief.Id,
+                timestamp.AddMinutes(3),
+                CancellationToken.None);
+
+            var firstBlueprint = planned.DesignBlueprints.First();
+            var promoted = await service.PromoteDesignBlueprintAsync(
+                project.Id,
+                brief.Id,
+                firstBlueprint.Id,
+                timestamp.AddMinutes(4),
+                CancellationToken.None);
+
+            var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var loadedBrief = loaded!.Series.Single().CreativeBriefs.Single();
+
+            Assert.Equal(3, planned.DesignBlueprints.Count);
+            Assert.Equal("panel-narrative-sequence", firstBlueprint.Key);
+            Assert.Equal(promoted.Id, loadedBrief.PromotedBlueprintId);
+            Assert.Equal(promoted.Id, loadedBrief.DesignBlueprints.First().Id);
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ProjectApplicationService_PromotesPromptDirectionWithRecommendedSettings()
     {
         var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
@@ -672,19 +744,32 @@ public sealed class ProjectApplicationServiceTests
 
     private sealed class InMemoryProjectRepository : IProjectRepository
     {
+        private readonly Dictionary<Guid, ImageProject> _projects = new();
+
         public Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
         {
+            _projects[project.Id] = project;
             return Task.CompletedTask;
         }
 
         public Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken)
         {
-            return Task.FromResult<ImageProject?>(null);
+            _projects.TryGetValue(projectId, out var project);
+            return Task.FromResult(project);
         }
 
         public Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken)
         {
-            return Task.FromResult<IReadOnlyList<ProjectSummary>>([]);
+            IReadOnlyList<ProjectSummary> summaries = _projects.Values
+                .Select(project => new ProjectSummary(
+                    project.Id,
+                    project.Name,
+                    project.CreatedAt,
+                    project.UpdatedAt))
+                .OrderByDescending(project => project.UpdatedAt)
+                .ToArray();
+
+            return Task.FromResult(summaries);
         }
     }
 }

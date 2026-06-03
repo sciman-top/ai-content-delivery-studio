@@ -82,6 +82,14 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             "Brief direction planning is not implemented for OpenAI in this slice. Use FakeTextPlanningProvider first.");
     }
 
+    public Task<BlueprintPlanningResult> CreateDesignBlueprintsAsync(
+        BlueprintPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        throw new NotSupportedException(
+            "Blueprint planning is not implemented for OpenAI in this slice. Use FakeTextPlanningProvider first.");
+    }
+
     public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
         DocumentIllustrationPlanningRequest request,
         CancellationToken cancellationToken)
