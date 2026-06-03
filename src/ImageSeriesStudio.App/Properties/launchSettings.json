@@ -1,0 +1,16 @@
+{
+  "profiles": {
+    "ImageSeriesStudio.App": {
+      "commandName": "Project",
+      "dotnetRunMessages": true
+    },
+    "AspireDashboard": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "environmentVariables": {
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+        "OTEL_SERVICE_NAME": "ImageSeriesStudio.App"
+      }
+    }
+  }
+}

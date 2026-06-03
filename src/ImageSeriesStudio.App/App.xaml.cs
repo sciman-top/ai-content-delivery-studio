@@ -4,6 +4,7 @@ using ImageSeriesStudio.Application.Delivery;
 using System.Windows;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.App.ViewModels;
+using ImageSeriesStudio.App.Telemetry;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Infrastructure.Delivery;
@@ -39,6 +40,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddTransient<ProjectApplicationService>();
         builder.Services.AddSingleton<IProviderCenterConfigurationService, DotEnvProviderCenterConfigurationService>();
         builder.Services.AddOpenAiProviderHttpClient(new OpenAiProviderOptions());
+        builder.AddImageSeriesStudioOpenTelemetry();
         builder.Services.AddTransient(serviceProvider => new ProviderHealthCheckService(
             serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(OpenAiHttpClientNames.Provider),
             serviceProvider.GetRequiredService<IOpenAiSecretStore>()));

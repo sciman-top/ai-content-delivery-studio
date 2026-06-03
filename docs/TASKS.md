@@ -73,9 +73,9 @@
 - [ ] Keep raw `HttpClient` fallback only for unsupported or lagging SDK surfaces.
 - [x] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
 - [x] Capture request IDs, token usage, latency, and cost telemetry per provider call.
-- [ ] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
+- [x] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
   - [x] Add .NET `ActivitySource` and `Meter` instrumentation for provider calls.
-  - [ ] Add local OTLP/Aspire dashboard profile.
+  - [x] Add local OTLP/Aspire dashboard profile.
 - [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits.
 - [ ] Add a remote workflow-engine adapter boundary without requiring local model installs.
 - [x] Run full build, test, and format gates for the implementation slice.

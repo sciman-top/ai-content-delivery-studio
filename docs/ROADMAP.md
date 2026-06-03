@@ -82,7 +82,7 @@ Exit gate:
 
 Goal: make the real-provider path robust on low-hardware Windows machines without requiring local model installs.
 
-Status: started with DPAPI and `.env` secret resolution, split text/image provider profiles, image key-pool validation, role-scoped provider operation guards, non-generating provider health checks, Provider Center summaries, operation-scoped provider options, resilient HTTP clients, safe provider call telemetry capture for request IDs, token usage, latency, and configured cost estimates, plus .NET `ActivitySource`/`Meter` instrumentation hooks for provider tracing and metrics. Full OTLP/Aspire dashboard integration remains a later slice.
+Status: started with DPAPI and `.env` secret resolution, split text/image provider profiles, image key-pool validation, role-scoped provider operation guards, non-generating provider health checks, Provider Center summaries, operation-scoped provider options, resilient HTTP clients, safe provider call telemetry capture for request IDs, token usage, latency, and configured cost estimates, plus .NET `ActivitySource`/`Meter` instrumentation hooks for provider tracing and metrics and a local Aspire Dashboard launch profile for OTLP export.
 
 Deliverables:
 
