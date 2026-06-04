@@ -242,7 +242,7 @@ Exit gate:
 
 Goal: prevent the app from growing a central all-knowing orchestrator as capabilities expand.
 
-Status: started with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters with repository-folder existence guards, stable workflow view slot names for reusable shell placement, a `FeatureViewModule` contract for future WPF view/view model splits, the first `ProjectApplicationService` extraction for review/repair routing while preserving facade compatibility, a follow-up provider center configuration/health service split out of the UI view model, and early `IEntityTypeConfiguration<T>` persistence mapping splits for repair patches, creative briefs, document illustration, source assets, artifact packaging, and review quality-loop records.
+Status: started with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters with repository-folder existence guards, stable workflow view slot names for reusable shell placement, a `FeatureViewModule` contract for future WPF view/view model splits, focused `ProjectApplicationService` extractions for review/repair routing, delivery export, and document illustration planning while preserving facade compatibility, a follow-up provider center configuration/health service split out of the UI view model, and completed `IEntityTypeConfiguration<T>` persistence mapping splits so `AppDbContext` no longer carries inline entity mapping blocks.
 
 Deliverables:
 

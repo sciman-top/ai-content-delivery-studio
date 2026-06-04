@@ -12,9 +12,10 @@ public sealed class DocumentIllustrationWorkflowTests
     public async Task CreateDocumentIllustrationPlanWithProvider_AddsApprovedTargetsToProject()
     {
         var repository = new InMemoryProjectRepository();
-        var service = new ProjectApplicationService(repository, new FakeTextPlanningProvider());
+        var projectService = new ProjectApplicationService(repository);
+        var service = new DocumentIllustrationApplicationService(repository, new FakeTextPlanningProvider());
         var timestamp = new DateTimeOffset(2026, 6, 2, 9, 0, 0, TimeSpan.Zero);
-        var project = await service.CreateProjectAsync("Document illustration demo", timestamp, CancellationToken.None);
+        var project = await projectService.CreateProjectAsync("Document illustration demo", timestamp, CancellationToken.None);
         var request = CreateRequest();
 
         var result = await service.CreateDocumentIllustrationPlanWithProviderAsync(

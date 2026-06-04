@@ -236,19 +236,25 @@
 - [ ] Split large WPF views into feature-owned user controls where needed.
 - [ ] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
   - [x] Extract review/repair routing and Prompt/Settings repair application into `ReviewRepairApplicationService` while preserving the existing facade entrypoints.
+  - [x] Extract delivery export into `DeliveryApplicationService` while preserving the existing facade entrypoint.
+  - [x] Extract document illustration planning into `DocumentIllustrationApplicationService` while preserving the existing facade entrypoint.
 - [x] Move provider configuration and capability validation out of UI-facing view models.
-- [ ] Move persistence configuration into infrastructure-owned modules.
+- [x] Move persistence configuration into infrastructure-owned modules.
   - [x] Move `RoutedRepairPatch` persistence mapping into an infrastructure configuration class.
   - [x] Move `CreativeBrief` persistence mapping into an infrastructure configuration class.
   - [x] Move `DocumentBrief` and `IllustrationPlan` persistence mappings into infrastructure configuration classes.
   - [x] Move `SourceAsset`, `OutputArtifact`, and `ArtifactPackage` persistence mappings into infrastructure configuration classes.
   - [x] Move `ReviewRubric` and `ReviewResult` persistence mappings into infrastructure configuration classes.
-- [ ] Split EF Core mappings into `IEntityTypeConfiguration<T>` as model count grows.
+  - [x] Move project, series, item, prompt, generation, candidate, delivery, and provider mappings into infrastructure configuration classes.
+- [x] Split EF Core mappings into `IEntityTypeConfiguration<T>` as model count grows.
   - [x] Extract the first `IEntityTypeConfiguration<T>` slice for `RoutedRepairPatch`.
   - [x] Extract the `CreativeBrief` `IEntityTypeConfiguration<T>` slice while preserving prompt direction and blueprint JSON reload behavior.
   - [x] Extract document illustration, source asset, and artifact packaging `IEntityTypeConfiguration<T>` slices with focused SQLite reload tests.
   - [x] Add a focused SQLite reload test before extracting quality-loop review rubric/result mappings.
+  - [x] Remove inline `modelBuilder.Entity<T>` mapping blocks from `AppDbContext`.
 - [ ] Add focused tests for each extracted use-case service before expanding UI surface.
+  - [x] Add focused delivery application service tests for registered and missing writer paths.
+  - [x] Cover `DocumentIllustrationApplicationService` directly while keeping facade workflow tests.
 - [ ] Keep each refactor slice behavior-preserving and tied to a new feature or touched old logic.
 - [ ] Run build, test, and format gates after each module split.
 

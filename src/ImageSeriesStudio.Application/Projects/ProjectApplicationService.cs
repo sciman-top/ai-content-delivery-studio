@@ -1,5 +1,4 @@
 using ImageSeriesStudio.Core.Generation;
-using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Core.Styles;
@@ -16,7 +15,8 @@ public sealed class ProjectApplicationService
     private readonly IImageGenerationProvider? _imageGenerationProvider;
     private readonly IImageEditProvider? _imageEditProvider;
     private readonly IVisionReviewProvider? _visionReviewProvider;
-    private readonly IDeliveryPackageWriter? _deliveryPackageWriter;
+    private readonly DeliveryApplicationService _deliveryApplicationService;
+    private readonly DocumentIllustrationApplicationService _documentIllustrationApplicationService;
 
     public ProjectApplicationService(IProjectRepository repository)
         : this(repository, textPlanningProvider: null, imageGenerationProvider: null, visionReviewProvider: null, deliveryPackageWriter: null)
@@ -61,7 +61,8 @@ public sealed class ProjectApplicationService
         _imageGenerationProvider = imageGenerationProvider;
         _imageEditProvider = imageEditProvider;
         _visionReviewProvider = visionReviewProvider;
-        _deliveryPackageWriter = deliveryPackageWriter;
+        _deliveryApplicationService = new DeliveryApplicationService(deliveryPackageWriter);
+        _documentIllustrationApplicationService = new DocumentIllustrationApplicationService(repository, textPlanningProvider);
     }
 
     public async Task<ImageProject> CreateProjectAsync(
@@ -389,68 +390,12 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        if (_textPlanningProvider is null)
-        {
-            throw new InvalidOperationException("Text planning provider is not registered.");
-        }
-
-        if (!_textPlanningProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("Real document illustration planning requires explicit approval.");
-        }
-
-        if (request.DocumentFamily is DocumentFamily.ScholarlyDraft
-            && request.KnownConstraints.Any(value => value.Contains("fake evidence", StringComparison.OrdinalIgnoreCase)))
-        {
-            throw new InvalidOperationException("Scholarly draft planning cannot request fake evidence imagery.");
-        }
-
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var providerResult = await _textPlanningProvider.CreateDocumentIllustrationPlanAsync(request, cancellationToken);
-        var brief = RebindDocumentBrief(project.Id, providerResult.Brief, timestamp);
-        var plan = RebindIllustrationPlan(project.Id, brief.Id, providerResult.Plan, timestamp);
-
-        if (approveAllTargets)
-        {
-            foreach (var target in plan.Targets)
-            {
-                plan = plan.ApproveTarget(target.Id, timestamp);
-            }
-        }
-
-        project.AddDocumentBrief(brief, timestamp);
-        project.AddIllustrationPlan(plan, timestamp);
-
-        var approvedTargets = plan.ApprovedTargets;
-        ImageSeries? series = null;
-        if (approvedTargets.Count > 0)
-        {
-            var providerProfile = ResolveProviderProfile(project, providerProfileId: null, timestamp);
-            series = project.AddSeries(
-                $"Document illustrations: {brief.Title}",
-                plan.Summary,
-                timestamp);
-
-            foreach (var target in approvedTargets)
-            {
-                var item = series.AddItem(
-                    target.Title,
-                    BuildDocumentTargetBrief(target),
-                    timestamp);
-                item.AddPromptVersion(
-                    BuildDocumentTargetPrompt(target),
-                    CreateDefaultGenerationSettings(),
-                    providerProfile.Id,
-                    timestamp);
-            }
-        }
-
-        await _repository.SaveAsync(project, cancellationToken);
-        return new DocumentIllustrationWorkflowResult(
-            brief.Id,
-            plan.Id,
-            series?.Id,
-            approvedTargets.Count);
+        return await _documentIllustrationApplicationService.CreateDocumentIllustrationPlanWithProviderAsync(
+            projectId,
+            request,
+            approveAllTargets,
+            timestamp,
+            cancellationToken);
     }
 
     public async Task<GenerationQueueRun> RunGenerationQueueAsync(
@@ -596,12 +541,7 @@ public sealed class ProjectApplicationService
         DeliveryExportRequest request,
         CancellationToken cancellationToken)
     {
-        if (_deliveryPackageWriter is null)
-        {
-            throw new InvalidOperationException("Delivery package writer is not registered.");
-        }
-
-        return await _deliveryPackageWriter.WriteAsync(request, cancellationToken);
+        return await _deliveryApplicationService.ExportDeliveryPackageAsync(request, cancellationToken);
     }
 
     private static GenerationSettings CreateDefaultGenerationSettings()
@@ -616,58 +556,6 @@ public sealed class ProjectApplicationService
             recommendation.Height,
             recommendation.QualityBand,
             recommendation.OutputFormat);
-    }
-
-    private static DocumentBrief RebindDocumentBrief(
-        Guid projectId,
-        DocumentBrief source,
-        DateTimeOffset timestamp)
-    {
-        return DocumentBrief.Create(
-            projectId,
-            source.SourceKind,
-            source.SourceDisplayName,
-            source.Title,
-            source.DocumentFamily,
-            source.Audience,
-            source.Sections,
-            source.KeyClaims,
-            source.VisualOpportunities,
-            source.KnownConstraints,
-            source.StrictnessLevel,
-            timestamp);
-    }
-
-    private static IllustrationPlan RebindIllustrationPlan(
-        Guid projectId,
-        Guid documentBriefId,
-        IllustrationPlan source,
-        DateTimeOffset timestamp)
-    {
-        var targets = source.Targets
-            .Select(target => IllustrationTarget.Create(
-                documentBriefId,
-                target.Title,
-                target.DocumentLocation,
-                target.Purpose,
-                target.MustShow,
-                target.MustNotShow,
-                target.SourceEvidence,
-                target.SuggestedImageTypePresetId,
-                target.SuggestedReviewRubricTemplateId,
-                target.TextPolicy,
-                target.StrictnessNotes,
-                timestamp))
-            .ToArray();
-
-        return IllustrationPlan.Create(
-            projectId,
-            documentBriefId,
-            source.Summary,
-            targets,
-            source.CoverageNotes,
-            source.RiskNotes,
-            timestamp);
     }
 
     private static (SeriesItem Item, PromptDirection Direction) ResolvePromptDirectionTarget(
@@ -689,50 +577,6 @@ public sealed class ProjectApplicationService
             ?? throw new InvalidOperationException($"Prompt direction not found: {directionKey}");
 
         return (item, direction);
-    }
-
-    private static string BuildDocumentTargetBrief(IllustrationTarget target)
-    {
-        return string.Join(
-            Environment.NewLine,
-            [
-                $"Purpose: {target.Purpose}",
-                $"Location: {target.DocumentLocation}",
-                "Must show:",
-                FormatList(target.MustShow),
-                "Must not show:",
-                FormatList(target.MustNotShow),
-                "Source evidence:",
-                FormatList(target.SourceEvidence),
-                "Strictness:",
-                FormatList(target.StrictnessNotes),
-                $"Text policy: {target.TextPolicy}",
-            ]);
-    }
-
-    private static string BuildDocumentTargetPrompt(IllustrationTarget target)
-    {
-        return string.Join(
-            Environment.NewLine,
-            [
-                $"Create a document illustration titled \"{target.Title}\" for {target.DocumentLocation}.",
-                $"Purpose: {target.Purpose}.",
-                "Must show:",
-                FormatList(target.MustShow),
-                "Must not show:",
-                FormatList(target.MustNotShow),
-                "Source evidence:",
-                FormatList(target.SourceEvidence),
-                $"Text policy: {target.TextPolicy}. Use deterministic post-render text when required for labels, captions, or callouts.",
-                "Do not imply real experimental, clinical, archival, or field evidence unless the user provided that evidence explicitly.",
-            ]);
-    }
-
-    private static string FormatList(IReadOnlyList<string> values)
-    {
-        return values.Count == 0
-            ? "- None specified."
-            : string.Join(Environment.NewLine, values.Select(value => $"- {value}"));
     }
 
     private static IReadOnlyList<ImageGenerationRequest> CreateGenerationRequests(

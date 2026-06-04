@@ -429,6 +429,14 @@ public sealed class PersistenceTests
                 "Use post-render labels.",
                 humanApproved: false,
                 timestamp.AddMinutes(9));
+            var deliveryPackage = new DeliveryPackage(
+                Guid.NewGuid(),
+                project.Id,
+                version: 3,
+                "outputs/delivery/package",
+                "outputs/delivery/manifest.json",
+                "outputs/delivery/manifest.csv",
+                timestamp.AddMinutes(10));
 
             await using (var db = new AppDbContext(options))
             {
@@ -438,14 +446,26 @@ public sealed class PersistenceTests
                 db.CandidateImages.Add(candidate);
                 db.ReviewRubrics.Add(rubric);
                 db.ReviewResults.Add(review);
+                db.DeliveryPackages.Add(deliveryPackage);
                 await db.SaveChangesAsync();
             }
 
             await using (var db = new AppDbContext(options))
             {
+                var loadedTask = await db.GenerationTasks.SingleAsync();
+                var loadedCandidate = await db.CandidateImages.SingleAsync();
                 var loadedRubric = await db.ReviewRubrics.SingleAsync();
                 var loadedReview = await db.ReviewResults.SingleAsync();
+                var loadedDeliveryPackage = await db.DeliveryPackages.SingleAsync();
 
+                Assert.Equal(prompt.Id, loadedTask.PromptVersionId);
+                Assert.Equal(GenerationTaskStatus.Succeeded, loadedTask.Status);
+                Assert.Equal(1, loadedTask.AttemptCount);
+                Assert.Equal(2, loadedTask.MaxRetries);
+                Assert.Equal(task.Id, loadedCandidate.GenerationTaskId);
+                Assert.Equal(CandidateImageStatus.ReviewPending, loadedCandidate.Status);
+                Assert.Equal("outputs/review/candidate.png", loadedCandidate.AssetPath);
+                Assert.Equal("outputs/review/candidate.json", loadedCandidate.MetadataPath);
                 Assert.Equal("Delivery review", loadedRubric.Name);
                 Assert.Equal(2, loadedRubric.Dimensions.Count);
                 Assert.Equal("match", loadedRubric.Dimensions[0].Name);
@@ -458,6 +478,11 @@ public sealed class PersistenceTests
                 Assert.Equal("text-rendering-risk", Assert.Single(loadedReview.HardFailures));
                 Assert.Equal("Use post-render labels.", loadedReview.SuggestedFix);
                 Assert.False(loadedReview.HumanApproved);
+                Assert.Equal(project.Id, loadedDeliveryPackage.ProjectId);
+                Assert.Equal(3, loadedDeliveryPackage.Version);
+                Assert.Equal("outputs/delivery/package", loadedDeliveryPackage.OutputPath);
+                Assert.Equal("outputs/delivery/manifest.json", loadedDeliveryPackage.ManifestJsonPath);
+                Assert.Equal("outputs/delivery/manifest.csv", loadedDeliveryPackage.ManifestCsvPath);
             }
         }
         finally
