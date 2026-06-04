@@ -1,16 +1,14 @@
-using System.Text.Json;
 using ImageSeriesStudio.Core.Artifacts;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Sources;
+using ImageSeriesStudio.Infrastructure.Persistence.Configurations;
 using Microsoft.EntityFrameworkCore;
 
 namespace ImageSeriesStudio.Infrastructure.Persistence;
 
 public sealed class AppDbContext : DbContext
 {
-    private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
     {
@@ -128,72 +126,11 @@ public sealed class AppDbContext : DbContext
             entity.Navigation(series => series.CreativeBriefs).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
 
-        modelBuilder.Entity<CreativeBrief>(entity =>
-        {
-            entity.HasKey(brief => brief.Id);
-            entity.Property(brief => brief.Goal).IsRequired();
-            entity.Property(brief => brief.Audience).IsRequired();
-            entity.Property(brief => brief.StyleIntent).IsRequired();
-            entity.Property(brief => brief.MustInclude)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
-            entity.Property(brief => brief.MustAvoid)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
-            entity.Property(brief => brief.PromptDirections)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<PromptDirection>>(json, JsonOptions) ?? new List<PromptDirection>());
-            entity.Property(brief => brief.DesignBlueprints)
-                .HasConversion(
-                    values => JsonSerializer.Serialize(values, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<DesignBlueprint>>(json, JsonOptions) ?? new List<DesignBlueprint>());
-            entity.Property(brief => brief.RepairNotesJson);
-        });
+        modelBuilder.ApplyConfiguration(new CreativeBriefConfiguration());
 
-        modelBuilder.Entity<DocumentBrief>(entity =>
-        {
-            entity.HasKey(brief => brief.Id);
-            entity.Property(brief => brief.ProjectId);
-            entity.Property(brief => brief.SourceKind);
-            entity.Property(brief => brief.SourceDisplayName).IsRequired();
-            entity.Property(brief => brief.Title).IsRequired();
-            entity.Property(brief => brief.DocumentFamily);
-            entity.Property(brief => brief.Audience).IsRequired();
-            entity.Property(brief => brief.StrictnessLevel);
-            entity.Property(brief => brief.CreatedAt);
-            entity.Property(brief => brief.Sections)
-                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
-            entity.Property(brief => brief.KeyClaims)
-                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
-            entity.Property(brief => brief.VisualOpportunities)
-                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
-            entity.Property(brief => brief.KnownConstraints)
-                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
-        });
+        modelBuilder.ApplyConfiguration(new DocumentBriefConfiguration());
 
-        modelBuilder.Entity<IllustrationPlan>(entity =>
-        {
-            entity.HasKey(plan => plan.Id);
-            entity.Property(plan => plan.ProjectId);
-            entity.Property(plan => plan.DocumentBriefId);
-            entity.Property(plan => plan.Summary).IsRequired();
-            entity.Property(plan => plan.CreatedAt);
-            entity.Property(plan => plan.UpdatedAt);
-            entity.Ignore(plan => plan.ApprovedTargets);
-            entity.HasOne<DocumentBrief>()
-                .WithMany()
-                .HasForeignKey(plan => plan.DocumentBriefId)
-                .OnDelete(DeleteBehavior.Restrict);
-            entity.Property(plan => plan.Targets)
-                .HasConversion(targets => SerializeTargets(targets), json => DeserializeTargets(json));
-            entity.Property(plan => plan.CoverageNotes)
-                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
-            entity.Property(plan => plan.RiskNotes)
-                .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
-        });
+        modelBuilder.ApplyConfiguration(new IllustrationPlanConfiguration());
 
         modelBuilder.Entity<SeriesItem>(entity =>
         {
@@ -243,89 +180,17 @@ public sealed class AppDbContext : DbContext
             entity.Property(candidate => candidate.MetadataPath).IsRequired();
         });
 
-        modelBuilder.Entity<ReviewRubric>(entity =>
-        {
-            entity.HasKey(rubric => rubric.Id);
-            entity.Property(rubric => rubric.Name).IsRequired();
-            entity.Property(rubric => rubric.Dimensions)
-                .HasConversion(
-                    dimensions => JsonSerializer.Serialize(dimensions, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<ReviewRubricDimension>>(json, JsonOptions) ?? new List<ReviewRubricDimension>());
-        });
+        modelBuilder.ApplyConfiguration(new ReviewRubricConfiguration());
 
-        modelBuilder.Entity<ReviewResult>(entity =>
-        {
-            entity.HasKey(review => review.Id);
-            entity.HasOne<CandidateImage>()
-                .WithMany()
-                .HasForeignKey(review => review.CandidateImageId)
-                .OnDelete(DeleteBehavior.Cascade);
-            entity.Property(review => review.Scores)
-                .HasConversion(
-                    scores => JsonSerializer.Serialize(scores, JsonOptions),
-                    json => JsonSerializer.Deserialize<Dictionary<string, int>>(json, JsonOptions) ?? new Dictionary<string, int>());
-            entity.Property(review => review.HardFailures)
-                .HasConversion(
-                    failures => JsonSerializer.Serialize(failures, JsonOptions),
-                    json => JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? new List<string>());
-        });
+        modelBuilder.ApplyConfiguration(new ReviewResultConfiguration());
 
-        modelBuilder.Entity<SourceAsset>(entity =>
-        {
-            entity.HasKey(asset => asset.Id);
-            entity.Property(asset => asset.ProjectId);
-            entity.Property(asset => asset.Kind);
-            entity.Property(asset => asset.DisplayName).IsRequired();
-            entity.Property(asset => asset.OriginalPath);
-            entity.Property(asset => asset.MimeType);
-            entity.Property(asset => asset.SizeBytes);
-            entity.Property(asset => asset.Sha256);
-            entity.Property(asset => asset.CreatedAt);
-            entity.Property(asset => asset.UpdatedAt);
-            entity.Property(asset => asset.ExtractedContents)
-                .HasConversion(contents => SerializeExtractedContents(contents), json => DeserializeExtractedContents(json));
-            entity.Property(asset => asset.EvidenceAnchors)
-                .HasConversion(anchors => SerializeEvidenceAnchors(anchors), json => DeserializeEvidenceAnchors(json));
-        });
+        modelBuilder.ApplyConfiguration(new SourceAssetConfiguration());
 
-        modelBuilder.Entity<OutputArtifact>(entity =>
-        {
-            entity.HasKey(artifact => artifact.Id);
-            entity.Property(artifact => artifact.ProjectId);
-            entity.Property(artifact => artifact.Kind);
-            entity.Property(artifact => artifact.Status);
-            entity.Property(artifact => artifact.DisplayName).IsRequired();
-            entity.Property(artifact => artifact.RelativePath).IsRequired();
-            entity.Property(artifact => artifact.MimeType).IsRequired();
-            entity.Property(artifact => artifact.Role).IsRequired();
-            entity.Property(artifact => artifact.CreatedAt);
-            entity.Property(artifact => artifact.UpdatedAt);
-            entity.Property(artifact => artifact.SourceAssetIds)
-                .HasConversion(values => SerializeGuidList(values), json => DeserializeGuidList(json));
-            entity.Property(artifact => artifact.EvidenceAnchorIds)
-                .HasConversion(values => SerializeGuidList(values), json => DeserializeGuidList(json));
-            entity.Property(artifact => artifact.Metadata)
-                .HasConversion(values => SerializeStringDictionary(values), json => DeserializeStringDictionary(json));
-        });
+        modelBuilder.ApplyConfiguration(new OutputArtifactConfiguration());
 
-        modelBuilder.Entity<ArtifactPackage>(entity =>
-        {
-            entity.HasKey(package => package.Id);
-            entity.Property(package => package.ProjectId);
-            entity.Property(package => package.Name).IsRequired();
-            entity.Property(package => package.OutputDirectory).IsRequired();
-            entity.Property(package => package.CreatedAt);
-            entity.Property(package => package.Manifest)
-                .HasConversion(manifest => SerializeArtifactManifest(manifest), json => DeserializeArtifactManifest(json));
-        });
+        modelBuilder.ApplyConfiguration(new ArtifactPackageConfiguration());
 
-        modelBuilder.Entity<RoutedRepairPatch>(entity =>
-        {
-            entity.HasKey(patch => patch.Id);
-            entity.Property(patch => patch.ProjectId);
-            entity.Property(patch => patch.Items)
-                .HasConversion(items => SerializeRoutedRepairPatchItems(items), json => DeserializeRoutedRepairPatchItems(json));
-        });
+        modelBuilder.ApplyConfiguration(new RoutedRepairPatchConfiguration());
 
         modelBuilder.Entity<DeliveryPackage>(entity =>
         {
@@ -340,87 +205,6 @@ public sealed class AppDbContext : DbContext
             entity.HasKey(profile => profile.Id);
             entity.Property(profile => profile.DisplayName).IsRequired();
         });
-    }
-
-    private static string SerializeStringList(IReadOnlyList<string> values)
-    {
-        return JsonSerializer.Serialize(values, JsonOptions);
-    }
-
-    private static IReadOnlyList<string> DeserializeStringList(string json)
-    {
-        return JsonSerializer.Deserialize<List<string>>(json, JsonOptions) ?? [];
-    }
-
-    private static string SerializeTargets(IReadOnlyList<IllustrationTarget> targets)
-    {
-        return JsonSerializer.Serialize(targets, JsonOptions);
-    }
-
-    private static IReadOnlyList<IllustrationTarget> DeserializeTargets(string json)
-    {
-        return JsonSerializer.Deserialize<List<IllustrationTarget>>(json, JsonOptions) ?? [];
-    }
-
-    private static string SerializeExtractedContents(IReadOnlyCollection<ExtractedContent> contents)
-    {
-        return JsonSerializer.Serialize(contents, JsonOptions);
-    }
-
-    private static IReadOnlyCollection<ExtractedContent> DeserializeExtractedContents(string json)
-    {
-        return JsonSerializer.Deserialize<List<ExtractedContent>>(json, JsonOptions) ?? [];
-    }
-
-    private static string SerializeEvidenceAnchors(IReadOnlyCollection<EvidenceAnchor> anchors)
-    {
-        return JsonSerializer.Serialize(anchors, JsonOptions);
-    }
-
-    private static IReadOnlyCollection<EvidenceAnchor> DeserializeEvidenceAnchors(string json)
-    {
-        return JsonSerializer.Deserialize<List<EvidenceAnchor>>(json, JsonOptions) ?? [];
-    }
-
-    private static string SerializeGuidList(IReadOnlyList<Guid> values)
-    {
-        return JsonSerializer.Serialize(values, JsonOptions);
-    }
-
-    private static IReadOnlyList<Guid> DeserializeGuidList(string json)
-    {
-        return JsonSerializer.Deserialize<List<Guid>>(json, JsonOptions) ?? [];
-    }
-
-    private static string SerializeStringDictionary(IReadOnlyDictionary<string, string> values)
-    {
-        return JsonSerializer.Serialize(values, JsonOptions);
-    }
-
-    private static IReadOnlyDictionary<string, string> DeserializeStringDictionary(string json)
-    {
-        return JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonOptions) ?? new Dictionary<string, string>();
-    }
-
-    private static string SerializeArtifactManifest(ArtifactManifest manifest)
-    {
-        return JsonSerializer.Serialize(manifest, JsonOptions);
-    }
-
-    private static ArtifactManifest DeserializeArtifactManifest(string json)
-    {
-        return JsonSerializer.Deserialize<ArtifactManifest>(json, JsonOptions)
-            ?? throw new InvalidOperationException("Artifact manifest JSON could not be deserialized.");
-    }
-
-    private static string SerializeRoutedRepairPatchItems(IReadOnlyList<RoutedRepairPatchItem> items)
-    {
-        return JsonSerializer.Serialize(items, JsonOptions);
-    }
-
-    private static IReadOnlyList<RoutedRepairPatchItem> DeserializeRoutedRepairPatchItems(string json)
-    {
-        return JsonSerializer.Deserialize<List<RoutedRepairPatchItem>>(json, JsonOptions) ?? [];
     }
 
 }

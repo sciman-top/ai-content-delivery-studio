@@ -364,6 +364,112 @@ public sealed class PersistenceTests
     }
 
     [Fact]
+    public async Task AppDbContext_PersistsReviewRubricsAndReviewResults()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            var timestamp = new DateTimeOffset(2026, 6, 4, 11, 30, 0, TimeSpan.Zero);
+            var project = ImageProject.Create("Review persistence project", timestamp);
+            var profile = project.AddProviderProfile("Fake provider", ProviderKind.Fake, timestamp.AddMinutes(1));
+            var series = project.AddSeries("Review series", "Review persistence coverage.", timestamp.AddMinutes(2));
+            var item = series.AddItem("Opening", "Opening review candidate.", timestamp.AddMinutes(3));
+            var prompt = item.AddPromptVersion(
+                "A reviewable candidate image.",
+                new GenerationSettings(1024, 1024, "standard", "png", 7),
+                profile.Id,
+                timestamp.AddMinutes(4));
+            var task = new GenerationTask(
+                Guid.NewGuid(),
+                item.Id,
+                prompt.Id,
+                profile.Id,
+                GenerationTaskStatus.Succeeded,
+                attemptCount: 1,
+                maxRetries: 2,
+                timestamp.AddMinutes(5),
+                timestamp.AddMinutes(6));
+            var candidate = new CandidateImage(
+                Guid.NewGuid(),
+                item.Id,
+                prompt.Id,
+                task.Id,
+                profile.Id,
+                CandidateImageStatus.ReviewPending,
+                "outputs/review/candidate.png",
+                "outputs/review/candidate.json",
+                timestamp.AddMinutes(7));
+            var rubric = new ReviewRubric(
+                Guid.NewGuid(),
+                project.Id,
+                "Delivery review",
+                [
+                    new ReviewRubricDimension("match", "Image should match the prompt.", 3),
+                    new ReviewRubricDimension("text", "Text should be deterministic.", 2),
+                ],
+                timestamp.AddMinutes(8));
+            var review = new ReviewResult(
+                Guid.NewGuid(),
+                candidate.Id,
+                ReviewDecision.Fail,
+                new Dictionary<string, int>
+                {
+                    ["match"] = 4,
+                    ["text"] = 1,
+                },
+                ["text-rendering-risk"],
+                "Text needs deterministic composition.",
+                "Use post-render labels.",
+                humanApproved: false,
+                timestamp.AddMinutes(9));
+
+            await using (var db = new AppDbContext(options))
+            {
+                await db.Database.EnsureCreatedAsync();
+                db.Projects.Add(project);
+                db.GenerationTasks.Add(task);
+                db.CandidateImages.Add(candidate);
+                db.ReviewRubrics.Add(rubric);
+                db.ReviewResults.Add(review);
+                await db.SaveChangesAsync();
+            }
+
+            await using (var db = new AppDbContext(options))
+            {
+                var loadedRubric = await db.ReviewRubrics.SingleAsync();
+                var loadedReview = await db.ReviewResults.SingleAsync();
+
+                Assert.Equal("Delivery review", loadedRubric.Name);
+                Assert.Equal(2, loadedRubric.Dimensions.Count);
+                Assert.Equal("match", loadedRubric.Dimensions[0].Name);
+                Assert.Equal("Image should match the prompt.", loadedRubric.Dimensions[0].Requirement);
+                Assert.Equal(3, loadedRubric.Dimensions[0].Weight);
+                Assert.Equal(candidate.Id, loadedReview.CandidateImageId);
+                Assert.Equal(ReviewDecision.Fail, loadedReview.Decision);
+                Assert.Equal(4, loadedReview.Scores["match"]);
+                Assert.Equal(1, loadedReview.Scores["text"]);
+                Assert.Equal("text-rendering-risk", Assert.Single(loadedReview.HardFailures));
+                Assert.Equal("Use post-render labels.", loadedReview.SuggestedFix);
+                Assert.False(loadedReview.HumanApproved);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task AppDbContext_SavesAndLoadsCompleteFakeProject()
     {
         var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));

@@ -229,6 +229,7 @@
 ## Phase 12: Modular Maintenance And Use Case Split
 
 - [x] Define module folders for source ingestion, artifact planning, pack registry, repair routing, and tool adapters.
+  - [x] Guard built-in module folder declarations against stale repository paths.
 - [x] Define reusable `WorkflowViewSlot` names for source list, stage workspace, inspector, activity panel, approval panel, and artifact preview.
 - [x] Add `FeatureViewModule` contract for WPF view, view model, localization keys, commands, and fake-service tests.
 - [ ] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
@@ -237,7 +238,16 @@
   - [x] Extract review/repair routing and Prompt/Settings repair application into `ReviewRepairApplicationService` while preserving the existing facade entrypoints.
 - [x] Move provider configuration and capability validation out of UI-facing view models.
 - [ ] Move persistence configuration into infrastructure-owned modules.
+  - [x] Move `RoutedRepairPatch` persistence mapping into an infrastructure configuration class.
+  - [x] Move `CreativeBrief` persistence mapping into an infrastructure configuration class.
+  - [x] Move `DocumentBrief` and `IllustrationPlan` persistence mappings into infrastructure configuration classes.
+  - [x] Move `SourceAsset`, `OutputArtifact`, and `ArtifactPackage` persistence mappings into infrastructure configuration classes.
+  - [x] Move `ReviewRubric` and `ReviewResult` persistence mappings into infrastructure configuration classes.
 - [ ] Split EF Core mappings into `IEntityTypeConfiguration<T>` as model count grows.
+  - [x] Extract the first `IEntityTypeConfiguration<T>` slice for `RoutedRepairPatch`.
+  - [x] Extract the `CreativeBrief` `IEntityTypeConfiguration<T>` slice while preserving prompt direction and blueprint JSON reload behavior.
+  - [x] Extract document illustration, source asset, and artifact packaging `IEntityTypeConfiguration<T>` slices with focused SQLite reload tests.
+  - [x] Add a focused SQLite reload test before extracting quality-loop review rubric/result mappings.
 - [ ] Add focused tests for each extracted use-case service before expanding UI surface.
 - [ ] Keep each refactor slice behavior-preserving and tied to a new feature or touched old logic.
 - [ ] Run build, test, and format gates after each module split.

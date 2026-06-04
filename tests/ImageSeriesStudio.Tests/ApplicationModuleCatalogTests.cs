@@ -34,16 +34,21 @@ public sealed class ApplicationModuleCatalogTests
         AssertModule(
             ApplicationModuleCatalog.GetRequired("repair-routing"),
             "repair-routing",
-            "src/ImageSeriesStudio.Application/Repairs",
+            "src/ImageSeriesStudio.Application/RepairRouting",
             "src/ImageSeriesStudio.Core/Projects",
             null,
-            ["ReviewOutcomeRouting", "PromptRepairSuggestion"]);
+            [
+                "ReviewOutcomeRouting",
+                "PromptRepairSuggestion",
+                "RoutedRepairPatchProposal",
+                "RoutedRepairPatchApplication",
+            ]);
         AssertModule(
             ApplicationModuleCatalog.GetRequired("tool-adapters"),
             "tool-adapters",
             "src/ImageSeriesStudio.Application/ToolAdapters",
             null,
-            "src/ImageSeriesStudio.Infrastructure/ToolAdapters",
+            null,
             ["ToolAdapterRegistry"]);
     }
 
@@ -69,6 +74,27 @@ public sealed class ApplicationModuleCatalogTests
                 ["BadUseCase"]));
     }
 
+    [Fact]
+    public void ApplicationModuleCatalog_BuiltInModuleFoldersExist()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+
+        foreach (var module in ApplicationModuleCatalog.BuiltInModules)
+        {
+            AssertFolderExists(repositoryRoot, module.ApplicationFolder);
+
+            if (module.CoreFolder is not null)
+            {
+                AssertFolderExists(repositoryRoot, module.CoreFolder);
+            }
+
+            if (module.InfrastructureFolder is not null)
+            {
+                AssertFolderExists(repositoryRoot, module.InfrastructureFolder);
+            }
+        }
+    }
+
     private static void AssertModule(
         ApplicationModuleDefinition module,
         string id,
@@ -82,5 +108,30 @@ public sealed class ApplicationModuleCatalogTests
         Assert.Equal(coreFolder, module.CoreFolder);
         Assert.Equal(infrastructureFolder, module.InfrastructureFolder);
         Assert.Equal(useCaseNames, module.UseCaseNames);
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "ImageSeriesStudio.sln")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new DirectoryNotFoundException("Could not find ImageSeriesStudio.sln from the test output path.");
+    }
+
+    private static void AssertFolderExists(string repositoryRoot, string repositoryRelativeFolder)
+    {
+        var folderPath = Path.Combine(
+            repositoryRoot,
+            repositoryRelativeFolder.Replace('/', Path.DirectorySeparatorChar));
+
+        Assert.True(Directory.Exists(folderPath), $"Expected module folder to exist: {repositoryRelativeFolder}");
     }
 }

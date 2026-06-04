@@ -215,16 +215,21 @@ public static class ApplicationModuleCatalog
             ApplicationModuleDefinition.Create(
                 "repair-routing",
                 "Repair Routing",
-                "src/ImageSeriesStudio.Application/Repairs",
+                "src/ImageSeriesStudio.Application/RepairRouting",
                 "src/ImageSeriesStudio.Core/Projects",
                 null,
-                ["ReviewOutcomeRouting", "PromptRepairSuggestion"]),
+                [
+                    "ReviewOutcomeRouting",
+                    "PromptRepairSuggestion",
+                    "RoutedRepairPatchProposal",
+                    "RoutedRepairPatchApplication",
+                ]),
             ApplicationModuleDefinition.Create(
                 "tool-adapters",
                 "Tool Adapters",
                 "src/ImageSeriesStudio.Application/ToolAdapters",
                 null,
-                "src/ImageSeriesStudio.Infrastructure/ToolAdapters",
+                null,
                 ["ToolAdapterRegistry"]),
         ]);
 
