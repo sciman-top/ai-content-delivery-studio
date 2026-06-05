@@ -2,7 +2,7 @@
 
 ## Product Thesis
 
-AI Image Series Studio is evolving into a Windows desktop multimodal content delivery workbench with coherent image series as its core production capability. It is not a single-image prompt toy and not a one-purpose comic generator. It helps users move from vague intent and source files to structured understanding, planned visual/content deliverables, generated candidates, reviewed repairs, and clean delivery packages.
+AI Content Delivery Studio is a Windows desktop multimodal content delivery workbench with coherent image series as its core production capability. The original working name was AI Image Series Studio; that remains a legacy code/repository identity until the planned migration is complete. The product is not a single-image prompt toy and not a one-purpose comic generator. It helps users move from vague intent and source files to structured understanding, planned visual/content deliverables, generated candidates, reviewed repairs, and clean delivery packages.
 
 The first target user is a power user creating educational posters, article illustrations, social image sets, courseware visuals, product concept boards, visual storyboards, themed image packs, or multi-frame narrative image sequences.
 

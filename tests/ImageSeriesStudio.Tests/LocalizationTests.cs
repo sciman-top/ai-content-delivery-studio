@@ -12,11 +12,11 @@ public sealed class LocalizationTests
         var service = new LocalizationService();
 
         service.SetLanguage(LanguagePreference.Chinese);
-        Assert.Equal("AI 图像系列工作台", service.GetText(LocalizationKey.AppTitle));
+        Assert.Equal("AI 内容交付工作台", service.GetText(LocalizationKey.AppTitle));
         Assert.Equal("假 Provider", service.GetText(LocalizationKey.ProviderModeFake));
 
         service.SetLanguage(LanguagePreference.English);
-        Assert.Equal("AI Image Series Studio", service.GetText(LocalizationKey.AppTitle));
+        Assert.Equal("AI Content Delivery Studio", service.GetText(LocalizationKey.AppTitle));
         Assert.Equal("Fake providers", service.GetText(LocalizationKey.ProviderModeFake));
     }
 

@@ -1,12 +1,14 @@
-# AI Image Series Studio
+# AI Content Delivery Studio
 
-Windows-first AI image series production studio.
+Windows-first AI content delivery studio with image-series production as the core capability.
 
 This repository is intentionally separate from `D:\CODE\physicist_chinese_poster_batch_tool`. The physics poster project remains a real production sample and migration source. This repository owns the general-purpose product design, architecture, roadmap, and future implementation.
 
+The original working name was `AI Image Series Studio`. The codebase and active local checkout still use `ImageSeriesStudio` / `ai-image-series-studio` until the planned repository and namespace migration is completed.
+
 ## Product Goal
 
-Help a user turn an idea into a complete image series:
+Help a user turn an idea, source file, or draft into a reviewed delivery package. The first production path remains complete image-series creation:
 
 1. Discuss goal, audience, constraints, style, references, and quality standards with AI.
 2. Produce a series plan, item list, prompt set, and review rubric.
@@ -37,6 +39,7 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/PRODUCT_DESIGN.md](do
 - [Reference Research](docs/research/REFERENCE_RESEARCH.md)
 - [ADR 0001: Independent Repo And Stack](docs/adr/0001-independent-repo-and-stack.md)
 - [ADR 0002: API Boundaries And Review Loop](docs/adr/0002-api-boundaries-and-review-loop.md)
+- [ADR 0008: Product Identity And Repository Rename Path](docs/adr/0008-product-identity-and-repository-rename.md)
 - [Superpowers Spec](docs/superpowers/specs/2026-05-31-ai-image-series-studio-design.md)
 - [Implementation Plan](docs/superpowers/plans/2026-05-31-ai-image-series-studio-implementation.md)
 

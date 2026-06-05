@@ -1,6 +1,6 @@
 # Roadmap
 
-Target upgrade: the product is moving from a generalized image-series workbench to a multimodal content delivery workbench with image-series production as the core capability. The stable architecture is `Windows local workbench + replaceable cloud AI providers + local deterministic toolchain + versioned Workflow/Blueprint packs`.
+Target upgrade: the product is now positioned as AI Content Delivery Studio, a multimodal content delivery workbench with image-series production as the core capability. The stable architecture is `Windows local workbench + replaceable cloud AI providers + local deterministic toolchain + versioned Workflow/Blueprint packs`.
 
 AI, providers, workflow packs, and output formats can evolve quickly. Core domain models and application use cases should evolve slowly and should not be reshaped for every model release.
 
@@ -279,6 +279,26 @@ Exit gate:
 - Medium/high-risk actions pause at the point of risk and require explicit approval or handoff.
 - Review no longer stops at comments; it produces a runnable or user-approvable repair path.
 
+## Phase 14: Product Identity And Repository Rename
+
+Goal: align product-facing naming, local repository identity, and code namespace with the multimodal content delivery end state without breaking existing workspaces or active tools.
+
+Status: started with ADR 0008 and product-facing title updates. The active checkout remains `D:\CODE\ai-image-series-studio`; the intended medium-term root is `D:\CODE\ai-content-delivery-studio`.
+
+Deliverables:
+
+- Product-facing name: `AI Content Delivery Studio` / `AI 内容交付工作台`.
+- Medium-term local root and repository name: `ai-content-delivery-studio`.
+- Medium-term solution, project, assembly, namespace, tests, scripts, and publish output rename from `ImageSeriesStudio.*` to `ContentDeliveryStudio.*`.
+- Compatibility notes for historical workspaces, diagnostics packages, and docs that still contain `ImageSeriesStudio`.
+- Clean rename gate with build, test, format, search, and rollback evidence.
+
+Exit gate:
+
+- The physical root rename is run from a clean worktree with no active process depending on the old path.
+- After reopening from the new root, `git status --short`, `dotnet build`, `dotnet test`, and `dotnet format --verify-no-changes` pass.
+- A repository search shows `ImageSeriesStudio` only in historical ADRs, migration notes, compatibility tests, or intentionally preserved aliases.
+
 ## Phase 7: Product Hardening
 
 Goal: make it reliable as a daily Windows tool.
@@ -305,6 +325,7 @@ Deliverables:
 - Versioned workflow, blueprint, industry, renderer, and review packs.
 - First-class source assets, extracted content, evidence anchors, output artifacts, and artifact packages.
 - Review, repair, and operator automation with risk-aware approval and audit records.
+- Product/repository identity aligned to `AI Content Delivery Studio` / `ai-content-delivery-studio`, with `ImageSeriesStudio` kept only as documented historical or compatibility text.
 - Provider plugin boundary with capability discovery and contract tests.
 - Localized prompt templates, review reports, delivery manifests, and user guide.
 - Deterministic text composition for text-heavy educational and document-oriented visuals.

@@ -1,11 +1,12 @@
 # AGENTS.md - ai-image-series-studio
 
-This repository is the general-purpose successor product planning and implementation home for the image-series generation workflow. Communicate in Chinese by default. Keep code identifiers, commands, API names, and error strings in English.
+This repository is the active implementation home for AI Content Delivery Studio, with image-series generation as the core production path. Communicate in Chinese by default. Keep code identifiers, commands, API names, and error strings in English.
 
 ## 1. Current Landing And Target
 
 - Current landing: `D:\CODE\ai-image-series-studio`
-- Target: Windows-first desktop app for AI-assisted image series planning, batch generation, review, iteration, and delivery.
+- Target: AI Content Delivery Studio, a Windows-first desktop app for AI-assisted source understanding, image-series planning, artifact generation, review, repair, operator automation, and delivery packaging.
+- Intended medium-term local root name: `D:\CODE\ai-content-delivery-studio`; keep the current root until the rename gate in `docs/adr/0008-product-identity-and-repository-rename.md` is executed.
 - Source sample: `D:\CODE\physicist_chinese_poster_batch_tool` is a production case study, not the implementation root.
 
 ## A. Module Boundaries

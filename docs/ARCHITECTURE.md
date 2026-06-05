@@ -6,12 +6,12 @@ Build an independent Windows-first desktop app using WPF on .NET 10 for the MVP,
 
 Microsoft recommends WinUI for new modern Windows apps. For this product, WPF is still the better MVP choice because it is mature, actively maintained, strong for local data-heavy workbenches, supports XAML/MVVM well, and can use .NET Generic Host for DI, logging, configuration, and background services. The architecture must keep UI-specific code outside the domain core so a later WinUI shell remains possible.
 
-The target is now a multimodal content delivery studio with image-series production as the core capability. AI providers, model families, workflow packs, and artifact types must be swappable. Core domain records and application use cases should not need a major rewrite for every provider release or new industry pack.
+The target product is now AI Content Delivery Studio: a multimodal content delivery studio with image-series production as the core capability. AI providers, model families, workflow packs, and artifact types must be swappable. Core domain records and application use cases should not need a major rewrite for every provider release or new industry pack.
 
 ## Target Solution Layout
 
 ```text
-ai-image-series-studio/
+ai-image-series-studio/              active checkout, pending medium-term rename to ai-content-delivery-studio
   src/
     ImageSeriesStudio.App/              WPF shell, views, view models
     ImageSeriesStudio.Application/      use cases, localization, workflow orchestration
@@ -29,6 +29,8 @@ ai-image-series-studio/
   workspace/                            ignored local user data
   outputs/                              ignored generated outputs
 ```
+
+`ImageSeriesStudio` remains the internal solution and namespace root until the dedicated migration in ADR 0008 renames the local root, solution, project folders, assemblies, namespaces, scripts, and tests in a gated slice.
 
 ## Logical Layers
 

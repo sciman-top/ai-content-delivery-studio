@@ -49,7 +49,7 @@ public sealed class DiagnosticsPackageTests
                 new DiagnosticsExportRequest(
                     tempRoot,
                     new DiagnosticsApplicationSnapshot(
-                        "AI Image Series Studio",
+                        "AI Content Delivery Studio",
                         "0.1.0-test",
                         "Debug",
                         DateTimeOffset.Parse("2026-06-01T08:05:00Z")),

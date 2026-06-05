@@ -7,6 +7,7 @@
 - [x] Record architecture and stack decision.
 - [x] Record official and community references.
 - [x] Record roadmap and implementation plan.
+- [x] Record product identity and repository rename path.
 
 ## Phase 1: Core Model
 
@@ -272,3 +273,14 @@
 - [x] Add low-risk auto-repair path for safe local validation or file-generation tasks.
 - [x] Add operator audit export into diagnostics and delivery evidence where appropriate.
 - [x] Run build, test, and format gates for the implementation slice.
+
+## Phase 14: Product Identity And Repository Rename
+
+- [x] Record ADR for `AI Content Delivery Studio` product identity and staged rename path.
+- [x] Update product-facing README, product design, architecture, roadmap, and user guide naming.
+- [x] Update WPF app title localization to `AI Content Delivery Studio` / `AI 内容交付工作台`.
+- [ ] Rename local root directory from `D:\CODE\ai-image-series-studio` to `D:\CODE\ai-content-delivery-studio` after confirming a clean worktree and no active tools depend on the old path.
+- [ ] Reopen the workspace from `D:\CODE\ai-content-delivery-studio` and verify `git status --short`.
+- [ ] Rename solution, project folders, project names, assemblies, namespaces, tests, scripts, and publish output from `ImageSeriesStudio.*` to `ContentDeliveryStudio.*`.
+- [ ] Preserve compatibility notes for existing workspaces, diagnostics packages, and historical documents that still mention `ImageSeriesStudio`.
+- [ ] Run full rename gate: `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes`, and a targeted search for unintended old-name references.

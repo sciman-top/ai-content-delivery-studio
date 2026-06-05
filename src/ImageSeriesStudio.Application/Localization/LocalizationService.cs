@@ -7,7 +7,7 @@ public sealed class LocalizationService
 {
     private static readonly IReadOnlyDictionary<LocalizationKey, string> English = new Dictionary<LocalizationKey, string>
     {
-        [LocalizationKey.AppTitle] = "AI Image Series Studio",
+        [LocalizationKey.AppTitle] = "AI Content Delivery Studio",
         [LocalizationKey.ProviderModeFake] = "Fake providers",
         [LocalizationKey.Workspace] = "Workspace",
         [LocalizationKey.Workspaces] = "Workspaces",
@@ -186,7 +186,7 @@ public sealed class LocalizationService
 
     private static readonly IReadOnlyDictionary<LocalizationKey, string> Chinese = new Dictionary<LocalizationKey, string>
     {
-        [LocalizationKey.AppTitle] = "AI 图像系列工作台",
+        [LocalizationKey.AppTitle] = "AI 内容交付工作台",
         [LocalizationKey.ProviderModeFake] = "假 Provider",
         [LocalizationKey.Workspace] = "工作区",
         [LocalizationKey.Workspaces] = "工作区",

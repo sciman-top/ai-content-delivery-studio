@@ -1,6 +1,6 @@
 # User Guide
 
-AI Image Series Studio is a Windows desktop workbench for planning, generating, reviewing, and delivering image series. The current implementation uses fake providers by default, so the end-to-end flow can be tested without paid API calls.
+AI Content Delivery Studio is a Windows desktop workbench for planning, generating, reviewing, repairing, and delivering content packages. Image-series production is the current core workflow. The current implementation uses fake providers by default, so the end-to-end flow can be tested without paid API calls.
 
 ## Language
 
