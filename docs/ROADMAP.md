@@ -4,6 +4,31 @@ Target upgrade: the product is now positioned as AI Content Delivery Studio, a m
 
 AI, providers, workflow packs, and output formats can evolve quickly. Core domain models and application use cases should evolve slowly and should not be reshaped for every model release.
 
+## Planning Readout
+
+- Historical phase numbers capture how major slices were introduced. They are not the recommended remaining execution order.
+- `Status: complete for initial design` or `complete for the local pack foundation` means the design baseline or fake-first/local foundation exists.
+- A workflow is user-visible complete only when it can run end-to-end in the workbench with review and delivery.
+- A workflow is production-ready only when approval evidence, deterministic rendering or composition where required, and real-provider behavior are verified.
+
+## Now
+
+- Harden three golden paths before widening scope: requirement-to-image-series delivery, article-to-illustration delivery, and text-heavy educational poster delivery.
+- Elevate Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export into the next hardening slice.
+- Finish the most valuable unresolved Phase 3A items: official OpenAI .NET SDK adoption where stable, plus Responses API multi-turn image state where it materially improves provenance, revision loops, or partial preview UX.
+- Run the first real low-risk operator execution slice with audit evidence, using deterministic local tools before broader automation.
+
+## Next
+
+- Add real-provider execution and binary extraction follow-through for document illustration after the fake-first planning path is hardened.
+- Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
+- Expand mixed artifact delivery and pack coverage only after the golden paths are reliable.
+
+## Later
+
+- Broaden advanced workflow coverage, optional graph-style workflow views, and optional remote workflow-engine integrations.
+- Run the medium-term physical repository and namespace rename only through the dedicated gate in ADR 0008.
+
 ## Phase 0: Product And Architecture Foundation
 
 Status: complete for initial design.
@@ -82,7 +107,7 @@ Exit gate:
 
 Goal: make the real-provider path robust on low-hardware Windows machines without requiring local model installs.
 
-Status: started with DPAPI and `.env` secret resolution, split text/image provider profiles, image key-pool validation, role-scoped provider operation guards, non-generating provider health checks, Provider Center summaries, operation-scoped provider options, resilient HTTP clients, safe provider call telemetry capture for request IDs, token usage, latency, and configured cost estimates, plus .NET `ActivitySource`/`Meter` instrumentation hooks for provider tracing and metrics and a local Aspire Dashboard launch profile for OTLP export.
+Status: started with DPAPI and `.env` secret resolution, split text/image provider profiles, image key-pool validation, role-scoped provider operation guards, non-generating provider health checks, Provider Center summaries, operation-scoped provider options, resilient HTTP clients, safe provider call telemetry capture for request IDs, token usage, latency, and configured cost estimates, plus .NET `ActivitySource`/`Meter` instrumentation hooks for provider tracing and metrics and a local Aspire Dashboard launch profile for OTLP export. User-visible real-provider hardening is not complete yet.
 
 Deliverables:
 
@@ -98,7 +123,7 @@ Deliverables:
 - `Microsoft.Extensions.Http.Resilience` integration for named provider clients.
 - Provider request ID, latency, token, and cost telemetry capture.
 - OpenTelemetry-based traces and metrics for provider calls and queue execution.
-- Streaming and multi-turn image workflow support where provider capabilities allow it.
+- Responses API streaming and multi-turn image workflow support where provider capabilities allow it and where the extra state improves review or revision loops.
 - Remote workflow-engine adapter boundary for optional managed or hosted integrations.
 
 Exit gate:
@@ -127,6 +152,8 @@ Exit gate:
 ## Phase 4A: Deterministic Text Composition And Delivery Assurance
 
 Goal: make text-heavy educational, document, and poster outputs reliable even when image-model text rendering is imperfect.
+
+Status: elevated as a current near-term hardening priority because text fidelity and approval evidence are required for credible delivery.
 
 Deliverables:
 
@@ -221,7 +248,7 @@ Exit gate:
 
 Goal: make generalization come from versioned packs instead of hard-coded topic modes.
 
-Status: complete for the local pack foundation: provider-neutral pack metadata, semantic version, compatibility range, lifecycle state, migration notes, local registry validation, built-in starter packs, workflow stage definitions with completion criteria, pack-driven UI defaults using stable view slots, catalog invariant tests, and validated local JSON pack import/export.
+Status: complete for the local pack foundation: provider-neutral pack metadata, semantic version, compatibility range, lifecycle state, migration notes, local registry validation, built-in starter packs, workflow stage definitions with completion criteria, pack-driven UI defaults using stable view slots, catalog invariant tests, and validated local JSON pack import/export. This does not by itself mean every pack-driven workflow is production-ready.
 
 Deliverables:
 
@@ -299,9 +326,11 @@ Exit gate:
 - After reopening from the new root, `git status --short`, `dotnet build`, `dotnet test`, and `dotnet format --verify-no-changes` pass.
 - A repository search shows `ImageSeriesStudio` only in historical ADRs, migration notes, compatibility tests, or intentionally preserved aliases.
 
-## Phase 7: Product Hardening
+## Phase 7: Product Hardening (cross-cutting)
 
 Goal: make it reliable as a daily Windows tool.
+
+Status: partially complete through release-readiness work. Remaining hardening continues alongside active feature slices instead of after every other phase is finished.
 
 Deliverables:
 

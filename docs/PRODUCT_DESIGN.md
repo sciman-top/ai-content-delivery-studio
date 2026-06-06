@@ -67,6 +67,25 @@ The workbench should also support versioned packs that make this workflow reusab
 
 Packs are product configuration and workflow knowledge. Core domain models and application use cases should not be rewritten every time a new AI model, provider, industry, or artifact type is added.
 
+## Golden Scenarios
+
+The next product slices should harden a small number of representative end-to-end routes before widening the pack catalog or automation surface.
+
+- Requirement to image-series delivery: short requirement -> `CreativeBrief` -> 2 to 4 `DesignBlueprint` candidates -> promoted blueprint -> series plan -> prompts -> generation -> review/repair -> approved `DeliveryPackage`.
+- Article or note to illustration pack: markdown, pasted article, or extracted text -> evidence anchors -> illustration brief -> blueprint or illustration targets -> promoted series workflow -> review report -> delivery package.
+- Text-heavy educational poster: requirement or source material -> generated background plate -> deterministic text, formula, and label composition -> readability review -> approval evidence -> final export with provenance.
+
+Until there is stronger production evidence, new workflow ideas should be explainable as variants or combinations of these routes instead of becoming separate product modes.
+
+## Near-Term Focus
+
+Near-term success means reliable golden paths, not maximum feature breadth.
+
+- Prioritize deterministic text composition and approval evidence for text-heavy outputs.
+- Keep the provider split explicit: use the direct Image API for single-shot generate/edit work, and use the Responses API for stateful multi-turn image workflows when the added state or provenance is useful.
+- Prefer one audited low-risk operator path before broad browser or desktop automation.
+- Treat already-landed foundation slices as reusable infrastructure, then prove them through user-visible end-to-end flows.
+
 ## Main Personas
 
 - Solo creator: wants fast, controlled image sets with clear output folders.

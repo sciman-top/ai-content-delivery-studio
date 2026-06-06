@@ -13,6 +13,16 @@ Windows local workbench
   + versioned Workflow/Blueprint packs
 ```
 
+## Current Hardening Focus
+
+Before widening workflow breadth, harden three representative delivery routes:
+
+- short requirement -> brief -> blueprint -> series -> review -> delivery
+- plain text or article -> evidence anchors -> illustration targets -> promoted series workflow -> delivery
+- text-heavy educational poster -> generated background plate -> deterministic text composition -> readability review -> delivery
+
+These routes should drive the next product-slice priorities for Phase 4A, document illustration follow-through, and the first real operator execution path.
+
 ## Architecture Decisions
 
 - Source files and generated outputs become first-class domain objects through `SourceAsset`, `ExtractedContent`, `EvidenceAnchor`, `OutputArtifact`, and `ArtifactPackage`.

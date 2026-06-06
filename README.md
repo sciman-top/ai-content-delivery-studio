@@ -43,6 +43,27 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/PRODUCT_DESIGN.md](do
 - [Superpowers Spec](docs/superpowers/specs/2026-05-31-ai-image-series-studio-design.md)
 - [Implementation Plan](docs/superpowers/plans/2026-05-31-ai-image-series-studio-implementation.md)
 
+## Local Reference Shelf
+
+A local external reference shelf is available at:
+
+`D:\CODE\external\ai-content-delivery-studio-references`
+
+Its index lives at:
+
+`D:\CODE\external\ai-content-delivery-studio-references\README.md`
+
+Use it for quick local lookup of:
+
+- official OpenAI .NET SDK and selected OpenAI cookbook examples
+- WPF, Generic Host, MVVM, and desktop app samples
+- EF Core and SQLite documentation sources
+- document extraction and deterministic rendering tools such as MarkItDown, Docling, PdfPig, and QuestPDF
+- browser and Windows desktop automation references such as Playwright .NET and FlaUI
+- image workflow architecture references such as ComfyUI, InvokeAI, and Diffusers
+
+These repositories are reference material only. They do not override this repository's `AGENTS.md`, source code, tests, ADRs, or product direction.
+
 ## First Implementation Slice
 
 Build the domain model, local project file format, fake AI providers, and a minimal WPF shell before calling any paid image API. This keeps the core workflow testable without API cost.

@@ -1,5 +1,16 @@
 # Task Checklist
 
+## Current Focus
+
+The next autonomous delivery priority is to harden a small number of user-visible golden paths before widening scope.
+
+- [ ] Harden the short requirement -> brief -> blueprint -> series -> review -> delivery path as the default image-series golden path.
+- [ ] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path without requiring real providers by default.
+- [ ] Complete Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export.
+- [ ] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
+- [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
+- [ ] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
+
 ## Foundation
 
 - [x] Create independent repository under `D:\CODE`.
@@ -92,6 +103,8 @@
 - [x] Add final approval workflow.
 
 ## Phase 4A: Deterministic Text Composition And Delivery Assurance
+
+Priority note: this phase is now part of the near-term golden-path hardening slice, not a distant quality add-on.
 
 - [ ] Add deterministic post-render text composition service for educational or text-heavy visuals.
 - [ ] Add readability, label, and callout-specific review checks.
@@ -272,6 +285,7 @@
 - [x] Add approval gate for medium/high-risk operator actions.
 - [x] Add low-risk auto-repair path for safe local validation or file-generation tasks.
 - [x] Add operator audit export into diagnostics and delivery evidence where appropriate.
+- [ ] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
 - [x] Run build, test, and format gates for the implementation slice.
 
 ## Phase 14: Product Identity And Repository Rename

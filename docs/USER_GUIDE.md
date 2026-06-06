@@ -15,11 +15,17 @@ Domain identifiers, provider IDs, model IDs, and error strings remain in English
 ## Basic Workflow
 
 1. Create or select a project.
-2. Add a series and its items in the Plan area or right inspector.
-3. Add prompt versions for selected items.
-4. Run fake planning, queue, generation, and review actions to exercise the workflow.
-5. Compare candidates and repair prompts when review output indicates a problem.
+2. Start from a short requirement in the Brief area, or use the document illustration entry for plain-text source material.
+3. Compare prompt directions or blueprint candidates, then promote the chosen route into the normal Plan and Prompts workflow.
+4. Run fake planning, queue, generation, and review actions to exercise the workflow before enabling paid providers.
+5. Compare candidates, apply repair guidance, and regenerate where review output indicates a problem.
 6. Export a delivery package only after final human approval.
+
+## Strongest Supported Paths
+
+- Requirement-first image series: the strongest current end-to-end path.
+- Plain-text or article illustration planning: a fake-first path that promotes approved targets into the existing image-series workflow.
+- Text-heavy educational or poster output: a near-term hardening path. When readable labels, formulas, or callouts matter, treat generated visuals as background plates and use deterministic post-render composition plus separate readability review.
 
 ## Document Illustration
 
@@ -30,6 +36,7 @@ Use the document illustration entry when you want to turn pasted text into illus
 - Input supports pasted draft text or plain text content.
 - The current slice is designed for concept illustrations and graphical abstract drafts.
 - Approved targets are promoted into the existing plan structure instead of creating a separate downstream pipeline.
+- Source text should be treated as planning evidence, not as permission to skip review or provenance tracking.
 - Real provider execution and binary document extraction are reserved for later slices.
 
 Recommended flow:
