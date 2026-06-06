@@ -4,12 +4,50 @@
 
 The next autonomous delivery priority is to harden a small number of user-visible golden paths before widening scope.
 
-- [ ] Harden the short requirement -> brief -> blueprint -> series -> review -> delivery path as the default image-series golden path.
-- [ ] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path without requiring real providers by default.
+- [ ] Harden the short requirement -> brief -> blueprint -> series -> review -> delivery path as the primary V1 launch route.
+- [ ] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path as a supporting validation route without requiring real providers by default.
 - [ ] Complete Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export.
+- [ ] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [ ] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
 - [ ] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
+- [ ] Capture V1 launch evidence against the explicit launch metrics.
+
+## V1 Documentation And Policy Alignment
+
+- [x] Record V1 launch PRD.
+- [x] Record provider routing policy.
+- [x] Record operator risk policy.
+- [x] Record source and artifact support matrix.
+- [x] Record target engineering state.
+- [x] Record external reference strategy.
+- [x] Record V1 launch hardening implementation plan.
+- [x] Align product design, roadmap, and task checklist to the V1 launch boundary.
+
+## V1 Clarifications
+
+- [x] Reconfirm the primary V1 audience as solo creator or teacher-like power user.
+- [x] Reconfirm the short requirement -> image-series route as the only primary launch workflow.
+- [x] Lock the first real operator slice to an additive local validation action.
+- [x] Choose the deterministic text composition implementation library: `SkiaSharp`.
+- [x] Keep packs internal-only for V1 and defer public sharing behavior.
+- [ ] Reflect the locked V1 defaults in implementation-facing code comments, options, and operator descriptors where relevant.
+
+## Reference Governance
+
+- [x] Record external reference strategy in project docs.
+- [x] Establish `_shared` reference governance with manifest, update script, and duplicate audit script.
+- [x] Add machine-readable manifest and update flow for `ai-content-delivery-studio-references`.
+- [x] Extend `ai-coding-runtime-references` update flow to export a manifest.
+- [ ] Decide whether `Cockpit-Tools-Local-references` should gain a machine-readable manifest next.
+
+## Frozen Until Post-V1
+
+- Physical repository and namespace rename work beyond documentation and planning.
+- Broad pack-catalog widening beyond launch routes.
+- Remote workflow-engine integrations beyond contract-boundary planning.
+- Broad binary document automation beyond the support matrix.
+- Browser or desktop operator flows that change third-party system state.
 
 ## Foundation
 
@@ -88,7 +126,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
   - [x] Add .NET `ActivitySource` and `Meter` instrumentation for provider calls.
   - [x] Add local OTLP/Aspire dashboard profile.
-- [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits.
+- [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits and where the provider routing policy calls for it.
 - [ ] Add a remote workflow-engine adapter boundary without requiring local model installs.
 - [x] Run full build, test, and format gates for the implementation slice.
 
@@ -106,6 +144,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 
 Priority note: this phase is now part of the near-term golden-path hardening slice, not a distant quality add-on.
 
+- [ ] Add `SkiaSharp`-based deterministic composition foundation for labels, formulas, legends, and callouts.
 - [ ] Add deterministic post-render text composition service for educational or text-heavy visuals.
 - [ ] Add readability, label, and callout-specific review checks.
 - [ ] Persist human approval decisions and reviewer notes.
@@ -187,7 +226,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Add document illustration UI entry, localization, and draft-mode guidance.
 - [x] Add user documentation for document illustration workflow safety boundaries and first-run fake-provider behavior.
 - [x] Run full build, test, and format gates for the implementation slice.
-- [ ] Add real provider integration and binary document extraction in later slices.
+- [ ] Add real provider integration and support-matrix-approved binary document extraction in later slices.
 
 ## Phase 9: Blueprint-First Generalized Series Workflow
 
@@ -286,6 +325,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Add low-risk auto-repair path for safe local validation or file-generation tasks.
 - [x] Add operator audit export into diagnostics and delivery evidence where appropriate.
 - [ ] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
+  - [ ] Recommended first slice: local delivery or artifact validation report generation into a new diagnostics folder.
 - [x] Run build, test, and format gates for the implementation slice.
 
 ## Phase 14: Product Identity And Repository Rename
@@ -293,8 +333,8 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Record ADR for `AI Content Delivery Studio` product identity and staged rename path.
 - [x] Update product-facing README, product design, architecture, roadmap, and user guide naming.
 - [x] Update WPF app title localization to `AI Content Delivery Studio` / `AI 内容交付工作台`.
-- [ ] Rename local root directory from `D:\CODE\ai-image-series-studio` to `D:\CODE\ai-content-delivery-studio` after confirming a clean worktree and no active tools depend on the old path.
-- [ ] Reopen the workspace from `D:\CODE\ai-content-delivery-studio` and verify `git status --short`.
-- [ ] Rename solution, project folders, project names, assemblies, namespaces, tests, scripts, and publish output from `ImageSeriesStudio.*` to `ContentDeliveryStudio.*`.
-- [ ] Preserve compatibility notes for existing workspaces, diagnostics packages, and historical documents that still mention `ImageSeriesStudio`.
-- [ ] Run full rename gate: `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes`, and a targeted search for unintended old-name references.
+- [ ] Post-V1: rename local root directory from `D:\CODE\ai-image-series-studio` to `D:\CODE\ai-content-delivery-studio` after confirming a clean worktree and no active tools depend on the old path.
+- [ ] Post-V1: reopen the workspace from `D:\CODE\ai-content-delivery-studio` and verify `git status --short`.
+- [ ] Post-V1: rename solution, project folders, project names, assemblies, namespaces, tests, scripts, and publish output from `ImageSeriesStudio.*` to `ContentDeliveryStudio.*`.
+- [ ] Post-V1: preserve compatibility notes for existing workspaces, diagnostics packages, and historical documents that still mention `ImageSeriesStudio`.
+- [ ] Post-V1: run full rename gate: `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes`, and a targeted search for unintended old-name references.

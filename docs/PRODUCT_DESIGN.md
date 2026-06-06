@@ -2,13 +2,33 @@
 
 ## Product Thesis
 
-AI Content Delivery Studio is a Windows desktop multimodal content delivery workbench with coherent image series as its core production capability. The original working name was AI Image Series Studio; that remains a legacy code/repository identity until the planned migration is complete. The product is not a single-image prompt toy and not a one-purpose comic generator. It helps users move from vague intent and source files to structured understanding, planned visual/content deliverables, generated candidates, reviewed repairs, and clean delivery packages.
+AI Content Delivery Studio is a Windows desktop multimodal content delivery workbench with coherent image series as its core production capability. The original working name was AI Image Series Studio; that remains a legacy code or repository identity until the planned migration is complete. The product is not a single-image prompt toy and not a one-purpose comic generator. It helps users move from vague intent and source files to structured understanding, planned visual or content deliverables, generated candidates, reviewed repairs, and clean delivery packages.
 
 The first target user is a power user creating educational posters, article illustrations, social image sets, courseware visuals, product concept boards, visual storyboards, themed image packs, or multi-frame narrative image sequences.
 
 The product must stay domain-neutral. Science communication, comics, historical image series, courseware figures, and branded campaign packs are all important examples, but none of them should hard-code the core workflow. The core product should help users turn a requirement into a reusable visual strategy, then into a reproducible image series.
 
-The next product boundary is broader than image generation. Users often bring PDFs, DOCX files, slides, spreadsheets, screenshots, reference images, datasets, notes, or drafts. The workbench should use those files as context and evidence, then produce the right artifact package: images, prompt packs, PDF reports, DOCX reviews, slide-ready visuals, delivery manifests, or other generated files. Image series remain the first-class path, but the workbench should be able to organize content and visual delivery around user-supplied files.
+The long-term product boundary is broader than image generation. Users often bring PDFs, DOCX files, slides, spreadsheets, screenshots, reference images, datasets, notes, or drafts. The workbench should eventually use those files as context and evidence, then produce the right artifact package: images, prompt packs, PDF reports, DOCX reviews, slide-ready visuals, delivery manifests, or other generated files. Image series remain the first-class path, but the workbench should be able to organize content and visual delivery around user-supplied files.
+
+The launch boundary is intentionally narrower than the long-term vision. V1 should ship one primary workflow, one supporting validation workflow, and one proof path rather than trying to launch every multimodal route at once. The authoritative launch frame lives in [PRD_V1.md](./PRD_V1.md).
+
+## V1 Release Boundary
+
+AI 推荐: treat V1 as a launch-focused image-series product with two supporting validation routes.
+
+- Primary launch route: short requirement -> `CreativeBrief` -> `DesignBlueprint` candidates -> promoted blueprint -> series plan -> prompts -> generation -> review -> approved `DeliveryPackage`.
+- Supporting validation route: article or plain text -> evidence anchors -> illustration targets -> promoted plan -> same downstream review and delivery flow.
+- Proof path: text-heavy educational poster -> generated background plate -> deterministic text, formula, and label composition -> approval evidence export.
+
+These routes are not equal in release priority. The short requirement to image-series path is the product spine. The other two routes exist to prove that document-derived planning and high-trust text composition can feed the same spine without forcing a second product mode.
+
+Locked V1 defaults:
+
+- Primary audience: solo creator or teacher-like power user.
+- Primary workflow: short requirement -> image-series.
+- First real operator slice: additive local validation or diagnostics generation.
+- Deterministic composition implementation choice: `SkiaSharp`.
+- Packs remain internal reusable configuration in V1.
 
 ## Core Workflow
 
@@ -67,22 +87,26 @@ The workbench should also support versioned packs that make this workflow reusab
 
 Packs are product configuration and workflow knowledge. Core domain models and application use cases should not be rewritten every time a new AI model, provider, industry, or artifact type is added.
 
+In V1, packs are internal reusable configuration and migration-friendly metadata. They are not yet a public marketplace, public sharing feature, or a reason to widen launch scope.
+
 ## Golden Scenarios
 
 The next product slices should harden a small number of representative end-to-end routes before widening the pack catalog or automation surface.
 
-- Requirement to image-series delivery: short requirement -> `CreativeBrief` -> 2 to 4 `DesignBlueprint` candidates -> promoted blueprint -> series plan -> prompts -> generation -> review/repair -> approved `DeliveryPackage`.
-- Article or note to illustration pack: markdown, pasted article, or extracted text -> evidence anchors -> illustration brief -> blueprint or illustration targets -> promoted series workflow -> review report -> delivery package.
-- Text-heavy educational poster: requirement or source material -> generated background plate -> deterministic text, formula, and label composition -> readability review -> approval evidence -> final export with provenance.
+- Primary launch route: short requirement -> `CreativeBrief` -> 2 to 4 `DesignBlueprint` candidates -> promoted blueprint -> series plan -> prompts -> generation -> review or repair -> approved `DeliveryPackage`.
+- Supporting validation route: markdown, pasted article, or plain text -> evidence anchors -> illustration brief -> illustration targets -> promoted series workflow -> review report -> delivery package.
+- Proof path: requirement or source material -> generated background plate -> deterministic text, formula, and label composition -> readability review -> approval evidence -> final export with provenance.
 
 Until there is stronger production evidence, new workflow ideas should be explainable as variants or combinations of these routes instead of becoming separate product modes.
 
 ## Near-Term Focus
 
-Near-term success means reliable golden paths, not maximum feature breadth.
+Near-term success means one reliable launch spine, not maximum feature breadth.
 
+- Prioritize the requirement-first image-series route above every other user-visible workflow.
+- Use the article or plain-text route to validate evidence-backed planning, not to create a second first-class launch mode.
 - Prioritize deterministic text composition and approval evidence for text-heavy outputs.
-- Keep the provider split explicit: use the direct Image API for single-shot generate/edit work, and use the Responses API for stateful multi-turn image workflows when the added state or provenance is useful.
+- Keep the provider split explicit: use the direct Image API for single-shot generate or edit work, and use the Responses API for stateful multi-turn image workflows only when added state, revised prompts, or partial streaming provide clear product value.
 - Prefer one audited low-risk operator path before broad browser or desktop automation.
 - Treat already-landed foundation slices as reusable infrastructure, then prove them through user-visible end-to-end flows.
 
@@ -120,33 +144,51 @@ Near-term success means reliable golden paths, not maximum feature breadth.
 
 ## MVP Scope
 
-The MVP must support:
+The V1 release must support:
 
-- Multi-turn planning chat.
+- Multi-turn planning chat for the primary requirement-first route.
 - Requirement-first brief capture.
-- Two to four prompt directions or blueprint routes before paid generation.
+- Two to four blueprint or prompt-direction routes before paid generation.
 - Series plan and item list editing.
 - Prompt generation and manual prompt editing.
-- Queue-based batch generation using fake providers first, then OpenAI.
+- Queue-based batch generation using fake providers first, then opt-in OpenAI.
 - Candidate gallery with side-by-side prompt, metadata, and review state.
-- Structured AI-assisted review using a rubric.
+- Structured AI-assisted review using a rubric plus human final approval.
 - Prompt revision loop and regeneration history.
-- Final delivery export with manifest.
+- Final delivery export with manifest and approval evidence.
+- Article or plain-text illustration planning that promotes approved targets into the same downstream workflow.
+- Deterministic text composition for text-heavy educational or poster-style outputs.
+- One real low-risk operator action with audit output.
 - Import of the physics poster project as a sample migration.
 
-The MVP remains image-series-first. Multimodal work should enter through stable source, evidence, artifact, and pack models before the app attempts to be a complete all-format automation suite.
+The release remains image-series-first. Multimodal work should enter through stable source, evidence, artifact, and pack models before the app attempts to be a complete all-format automation suite.
 
-The MVP excludes:
+The V1 release excludes:
 
 - Multi-user collaboration.
 - Cloud sync.
 - Marketplace plugins.
+- Public pack-sharing ecosystem.
 - Full node-graph editor.
 - In-app pixel painting.
+- Broad high-fidelity binary extraction across office and PDF formats.
+- PDF, DOCX, or slide publishing as first-class launch outputs.
+- Broad browser or desktop automation with side effects.
 - Real API calls by default in tests.
 - Full comic page editor or desktop publishing suite.
 - Fully autonomous operation on third-party accounts without explicit user approval.
 - A required local GPU model runtime.
+- Physical repository and namespace rename as a launch gate.
+
+## Launch Metrics
+
+V1 is not complete just because the relevant entities and tabs exist. The release is ready only when:
+
+- The primary route passes three consecutive fake-first end-to-end runs.
+- A 2-item sample series completes through the opt-in OpenAI path with provenance and redaction verified.
+- The article or plain-text route can create and promote approved illustration targets without requiring paid APIs by default.
+- The text-heavy educational proof path exports deterministic text-composition provenance and human approval evidence.
+- The first real low-risk operator action writes an audit-friendly validation result without destructive side effects.
 
 ## UI Structure
 

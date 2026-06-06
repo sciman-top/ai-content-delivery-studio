@@ -11,23 +11,81 @@ AI, providers, workflow packs, and output formats can evolve quickly. Core domai
 - A workflow is user-visible complete only when it can run end-to-end in the workbench with review and delivery.
 - A workflow is production-ready only when approval evidence, deterministic rendering or composition where required, and real-provider behavior are verified.
 
+## V1 Release Frame
+
+The launch boundary is narrower than the long-term multimodal product boundary.
+
+- Primary launch route: short requirement -> brief -> blueprint -> series -> review -> delivery.
+- Supporting validation route: article or plain text -> evidence anchors -> illustration targets -> promoted plan -> same downstream delivery flow.
+- Proof path: text-heavy educational poster -> deterministic text composition -> approval evidence export.
+
+V1 should ship these routes well before it widens the public pack surface, binary document ambitions, remote workflow integrations, or rename program.
+
+Authoritative launch-boundary docs:
+
+- [PRD_V1.md](./PRD_V1.md)
+- [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md)
+- [OPERATOR_RISK_POLICY.md](./OPERATOR_RISK_POLICY.md)
+- [SOURCE_ARTIFACT_SUPPORT_MATRIX.md](./SOURCE_ARTIFACT_SUPPORT_MATRIX.md)
+- [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md)
+- [EXTERNAL_REFERENCE_STRATEGY.md](./EXTERNAL_REFERENCE_STRATEGY.md)
+- [docs/superpowers/plans/2026-06-07-v1-launch-hardening.md](./superpowers/plans/2026-06-07-v1-launch-hardening.md)
+
+## Main Issues To Control
+
+- Product scope can widen faster than launch evidence.
+- Provider routing can drift unless the policy is implemented, not only documented.
+- Deterministic text composition is still a required but unfinished proof path.
+- Operator execution needs one real low-risk proof before broader automation ambition resumes.
+- Reference shelf growth needs lightweight governance so research does not become maintenance drag.
+
+## Locked V1 Decisions
+
+- Primary V1 audience: solo creator or teacher-like power user.
+- Primary launch workflow: short requirement -> image-series.
+- First real operator slice: additive local validation or diagnostics generation.
+- Deterministic composition implementation path: `SkiaSharp`.
+- Pack posture in V1: internal reusable configuration only.
+
+## Launch Gate
+
+V1 is ready only when all of these are true:
+
+- The primary launch route passes three consecutive fake-first end-to-end runs.
+- A 2-item sample series completes through the opt-in OpenAI path with provenance, redaction, and approval evidence verified.
+- Article or plain-text planning can produce and promote approved illustration targets without requiring real providers by default.
+- The educational poster proof path exports deterministic text-composition provenance and human approval evidence.
+- The first real low-risk operator action runs end-to-end and writes audit output plus rollback or cleanup notes.
+
+## Frozen Until Post-V1
+
+- Physical repository and namespace rename.
+- Broad pack-catalog growth beyond launch routes.
+- Remote workflow-engine integration beyond a contract boundary.
+- Browser or desktop operator flows that change third-party system state.
+- Broad high-fidelity binary document automation across office and PDF formats.
+
 ## Now
 
-- Harden three golden paths before widening scope: requirement-to-image-series delivery, article-to-illustration delivery, and text-heavy educational poster delivery.
+- Harden the short requirement -> brief -> blueprint -> series -> review -> delivery route as the primary launch workflow.
+- Keep the article or plain-text route focused on evidence-backed planning that promotes into the same downstream workflow.
 - Elevate Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export into the next hardening slice.
-- Finish the most valuable unresolved Phase 3A items: official OpenAI .NET SDK adoption where stable, plus Responses API multi-turn image state where it materially improves provenance, revision loops, or partial preview UX.
-- Run the first real low-risk operator execution slice with audit evidence, using deterministic local tools before broader automation.
+- Finish the most valuable unresolved Phase 3A items: official OpenAI .NET SDK adoption where stable, plus Responses API routing and multi-turn image state only where it materially improves provenance, revision loops, or partial preview UX.
+- Run the first real low-risk operator execution slice with audit evidence, using additive deterministic local tools before broader automation.
+- Record launch evidence against the V1 release metrics instead of treating every completed foundation slice as launch-complete by default.
+- Keep the external reference system focused, deduplicated, and machine-readable instead of widening it ad hoc.
 
 ## Next
 
-- Add real-provider execution and binary extraction follow-through for document illustration after the fake-first planning path is hardened.
+- Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
+- Add targeted binary extraction hardening only for formats promoted by the support matrix.
 - Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
-- Expand mixed artifact delivery and pack coverage only after the golden paths are reliable.
+- Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.
 
 ## Later
 
 - Broaden advanced workflow coverage, optional graph-style workflow views, and optional remote workflow-engine integrations.
-- Run the medium-term physical repository and namespace rename only through the dedicated gate in ADR 0008.
+- Run the medium-term physical repository and namespace rename only through the dedicated gate in ADR 0008 and only after V1 launch hardening is complete.
 
 ## Phase 0: Product And Architecture Foundation
 

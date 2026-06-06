@@ -1,5 +1,7 @@
 # Provider Configuration
 
+This file defines credential naming and role boundaries. Request routing, statefulness defaults, and surface-selection rules live in [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md).
+
 This project treats provider credentials as role-scoped, not just vendor-scoped. A key that is licensed only for image generation must never be used for text planning or vision review.
 
 ## Role-Scoped `.env` Format
@@ -37,6 +39,10 @@ IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 Some official or full OpenAI-compatible providers may license the same key for text, vision, and image operations. In split environment profiles, duplicate the same secret value under the role-specific names only when the provider contract explicitly permits both roles.
 
 Do not put an image-only merchant key under `TEXT_PROVIDER_API_KEY` or generic `OPENAI_API_KEY`. That bypasses the user's license intent and should be treated as misconfiguration.
+
+## Statefulness Reminder
+
+Credential placement does not decide whether a workflow should use remote retained state. The V1 default remains `store: false` unless the provider routing policy explicitly allows a stateful workflow.
 
 ## Health Checks
 

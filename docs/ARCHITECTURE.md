@@ -99,6 +99,8 @@ The generalized design workflow should treat provider adapters as execution and 
 
 Provider contracts should return structured provenance: model, provider profile, capability warnings, request ID where available, input references, output references, token/cost hints, latency, and redacted errors.
 
+The detailed routing policy for choosing between the Images API and the Responses API, plus `store` and `previous_response_id` defaults, lives in [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md).
+
 ## Multimodal Source And Artifact Model
 
 The core model needs stable records for user files and generated deliverables:
@@ -111,6 +113,8 @@ The core model needs stable records for user files and generated deliverables:
 - `ArtifactPackage`: delivery bundle with manifest, provenance, review, repair, approval, and source-evidence traceability.
 
 These records should live in `Core` and be persisted through provider-neutral repositories. Extraction and rendering tools translate files into and out of this model; they do not define the model.
+
+The launch-capable combinations of source inputs and output artifacts are intentionally narrower than the long-term model boundary and are tracked in [SOURCE_ARTIFACT_SUPPORT_MATRIX.md](./SOURCE_ARTIFACT_SUPPORT_MATRIX.md).
 
 ## Versioned Workflow And Blueprint Packs
 
@@ -277,6 +281,8 @@ Operator surfaces must be small and auditable:
 - `IComputerUseProvider` for model-guided UI action planning.
 
 Every operator action should declare risk level, dry-run support, input files, output files, side effects, required approvals, timeout, and rollback or cleanup path.
+
+The execution boundary and first real low-risk operator slice are defined in [OPERATOR_RISK_POLICY.md](./OPERATOR_RISK_POLICY.md).
 
 ## Physics Project Migration Limits
 
