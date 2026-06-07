@@ -34,6 +34,25 @@ IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 - `OpenAiProviderOptions.FromTextProviderEnvironment(...)` creates options for `TextPlanning | VisionReview` only.
 - `OpenAiProviderOptions.FromImageProviderEnvironment(...)` creates options for `ImageGeneration` only.
 
+## Vision Review Runtime Defaults
+
+For visual review, the preferred runtime shape is:
+
+- local direct provider call from the desktop app
+- dedicated `TEXT_PROVIDER_API_KEY`
+- bounded batch request
+- `store: false` by default
+- no default `previous_response_id` chaining
+
+Recommended implementation-facing defaults:
+
+- review batch items: `3` to `6`
+- high-risk review batch items: `2` to `4`
+- split the batch before dispatch when a configured threshold is exceeded
+- prepare compact local review artifacts first, such as thumbnail grids, candidate manifests, prompt summaries, and selected evidence anchors
+
+Credential placement alone does not justify stateful review. If a workflow later enables retained remote state, that decision must still follow [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md).
+
 ## Same-Key Providers
 
 Some official or full OpenAI-compatible providers may license the same key for text, vision, and image operations. In split environment profiles, duplicate the same secret value under the role-specific names only when the provider contract explicitly permits both roles.

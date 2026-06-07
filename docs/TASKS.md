@@ -10,6 +10,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [x] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
+- [ ] Add bounded local review-prep artifacts and review-batch thresholds before expanding multi-turn image-state review.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
 - [ ] Capture V1 launch evidence against the explicit launch metrics.
 
@@ -32,6 +33,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Choose the deterministic text composition implementation library: `SkiaSharp`.
 - [x] Keep packs internal-only for V1 and defer public sharing behavior.
 - [ ] Reflect the locked V1 defaults in implementation-facing code comments, options, and operator descriptors where relevant.
+- [ ] Reflect stateless local-direct visual review defaults in implementation-facing options and review operator descriptors.
 
 ## Reference Governance
 
@@ -295,6 +297,11 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract plan editor command orchestration into `PlanEditorWorkflowCoordinator` while preserving existing bindings and commands.
   - [x] Extract workflow graph row construction into `WorkflowGraphCoordinator` while preserving existing bindings and graph output.
 - [ ] Split large WPF views into feature-owned user controls where needed.
+  - [x] Extract the workflow graph tab content into `WorkflowGraphView` while preserving existing bindings and graph output.
+  - [x] Extract the delivery tab content into `DeliveryView` while preserving existing bindings and delivery output.
+  - [x] Extract the review tab content into `ReviewView` while preserving existing bindings and review output.
+  - [x] Extract the queue tab content into `QueueView` while preserving existing bindings and queue output.
+  - [x] Extract the gallery tab content into `GalleryView` while preserving existing bindings and gallery selection output.
 - [x] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
   - [x] Extract project create/load/list workflow methods into `ProjectWorkspaceApplicationService` while preserving the existing facade entrypoints.
   - [x] Extract series, item, prompt, and fake planning workflow methods into `SeriesWorkflowApplicationService` while preserving the existing facade entrypoints.

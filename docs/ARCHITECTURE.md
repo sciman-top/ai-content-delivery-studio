@@ -233,6 +233,7 @@ Generation and review run through a bounded local queue:
 - Cost and quota budget.
 - Run log and request ID capture.
 - Dry-run mode.
+- Review-batch thresholds so one remote vision request does not silently grow into a large multi-item review session.
 
 Extraction, rendering, repair, and operator tasks use the same queue discipline. Long-running local tools must support cancellation where possible and must write progress, command provenance, stdout/stderr summaries, output paths, and exit codes into structured audit records.
 
@@ -243,6 +244,12 @@ For image series with important text, especially educational posters and infogra
 1. Generate visual scene or background.
 2. Compose required text, formulas, legends, and labels deterministically in-app.
 3. Review the combined image.
+
+For image review at scale, the preferred path is similarly staged:
+
+1. Prepare compact local review artifacts such as thumbnail grids, candidate manifests, prompt summaries, and selected evidence anchors.
+2. Run remote vision review only on a bounded batch.
+3. Persist structured findings locally and route repair from local project state rather than from remote chained conversation history.
 
 This avoids over-reliance on image model text rendering.
 
