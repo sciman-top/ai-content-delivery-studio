@@ -315,8 +315,8 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Cover `DocumentIllustrationApplicationService` directly while keeping facade workflow tests.
   - [x] Cover `ReviewRepairApplicationService` directly while keeping facade workflow tests.
   - [x] Cover source ingestion and artifact planning use-case services with fake-first workflow tests.
-- [ ] Keep each refactor slice behavior-preserving and tied to a new feature or touched old logic.
-- [ ] Run build, test, and format gates after each module split.
+- [x] Keep each refactor slice behavior-preserving and tied to a new feature or touched old logic.
+- [x] Run build, test, and format gates after each module split.
 
 ## Phase 13: Review, Repair, And Operator Automation
 
