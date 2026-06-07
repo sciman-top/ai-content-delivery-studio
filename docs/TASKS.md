@@ -10,7 +10,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [ ] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [ ] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
-- [ ] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
+- [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
 - [ ] Capture V1 launch evidence against the explicit launch metrics.
 
 ## V1 Documentation And Policy Alignment
@@ -324,8 +324,8 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Add approval gate for medium/high-risk operator actions.
 - [x] Add low-risk auto-repair path for safe local validation or file-generation tasks.
 - [x] Add operator audit export into diagnostics and delivery evidence where appropriate.
-- [ ] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
-  - [ ] Recommended first slice: local delivery or artifact validation report generation into a new diagnostics folder.
+- [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
+  - [x] Recommended first slice: local delivery or artifact validation report generation into a new diagnostics folder.
 - [x] Run build, test, and format gates for the implementation slice.
 
 ## Phase 14: Product Identity And Repository Rename
