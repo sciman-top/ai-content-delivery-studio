@@ -57,7 +57,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
         var imageDataUrl = await CreateImageDataUrlAsync(request.AssetPath, cancellationToken);
 
-        var endpoint = new Uri(_options.BaseUri, "responses");
+        var endpoint = new Uri(_options.BaseUri, OpenAiRoutingDefaults.VisionReviewEndpointPath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         httpRequest.Content = JsonContent.Create(CreatePayload(request, imageDataUrl), options: JsonOptions);
@@ -116,7 +116,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
                     },
                 },
             },
-            ["store"] = false,
+            ["store"] = OpenAiRoutingDefaults.StoreRemoteStateByDefault,
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = new Dictionary<string, object?>

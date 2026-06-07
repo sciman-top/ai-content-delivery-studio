@@ -69,7 +69,7 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
 
-        var endpoint = new Uri(_options.BaseUri, "images/generations");
+        var endpoint = new Uri(_options.BaseUri, OpenAiRoutingDefaults.SingleShotImageGenerationEndpointPath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         httpRequest.Content = JsonContent.Create(CreatePayload(request), options: JsonOptions);

@@ -31,7 +31,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Lock the first real operator slice to an additive local validation action.
 - [x] Choose the deterministic text composition implementation library: `SkiaSharp`.
 - [x] Keep packs internal-only for V1 and defer public sharing behavior.
-- [ ] Reflect the locked V1 defaults in implementation-facing code comments, options, and operator descriptors where relevant.
+- [x] Reflect the locked V1 defaults in implementation-facing code comments, options, and operator descriptors where relevant.
 
 ## Reference Governance
 
