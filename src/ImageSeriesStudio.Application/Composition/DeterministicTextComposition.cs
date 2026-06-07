@@ -18,7 +18,16 @@ public sealed record DeterministicTextOverlay(
     float X,
     float Y,
     float FontSize,
-    string HexColor);
+    string HexColor,
+    DeterministicTextOverlayKind Kind = DeterministicTextOverlayKind.Label);
+
+public enum DeterministicTextOverlayKind
+{
+    Label = 0,
+    Formula = 1,
+    Legend = 2,
+    Callout = 3,
+}
 
 public sealed record DeterministicTextCompositionResult(
     string ComposedImagePath,

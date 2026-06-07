@@ -64,6 +64,7 @@ public sealed class SkiaDeterministicTextComposer : IDeterministicTextComposer
             canvas.DrawText(text, overlay.X, baselineY, SKTextAlign.Left, font, paint);
 
             layoutEntries.Add(new DeterministicTextOverlayReport(
+                FormatKind(overlay.Kind),
                 text,
                 overlay.X,
                 overlay.Y,
@@ -146,6 +147,18 @@ public sealed class SkiaDeterministicTextComposer : IDeterministicTextComposer
             (byte)((rgb >> 8) & 0xFF),
             (byte)(rgb & 0xFF));
     }
+
+    private static string FormatKind(DeterministicTextOverlayKind kind)
+    {
+        return kind switch
+        {
+            DeterministicTextOverlayKind.Label => "label",
+            DeterministicTextOverlayKind.Formula => "formula",
+            DeterministicTextOverlayKind.Legend => "legend",
+            DeterministicTextOverlayKind.Callout => "callout",
+            _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "Overlay kind is not supported."),
+        };
+    }
 }
 
 internal sealed record DeterministicTextCompositionReport(
@@ -159,6 +172,7 @@ internal sealed record DeterministicTextCompositionReport(
 }
 
 internal sealed record DeterministicTextOverlayReport(
+    string Kind,
     string Text,
     float X,
     float Y,
