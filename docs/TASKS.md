@@ -288,9 +288,13 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [ ] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
 - [ ] Split large WPF views into feature-owned user controls where needed.
 - [ ] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
+  - [x] Extract series, item, prompt, and fake planning workflow methods into `SeriesWorkflowApplicationService` while preserving the existing facade entrypoints.
   - [x] Extract review/repair routing and Prompt/Settings repair application into `ReviewRepairApplicationService` while preserving the existing facade entrypoints.
   - [x] Extract delivery export into `DeliveryApplicationService` while preserving the existing facade entrypoint.
   - [x] Extract document illustration planning into `DocumentIllustrationApplicationService` while preserving the existing facade entrypoint.
+  - [x] Extract brief, prompt-direction, and design-blueprint workflow methods into `BriefWorkflowApplicationService` while preserving the existing facade entrypoints.
+  - [x] Extract generation queue and fake image-edit workflow methods into `GenerationWorkflowApplicationService` while preserving the existing facade entrypoints.
+  - [x] Extract fake vision review and final approval workflow methods into `ReviewWorkflowApplicationService` while preserving the existing facade entrypoints.
 - [x] Move provider configuration and capability validation out of UI-facing view models.
 - [x] Move persistence configuration into infrastructure-owned modules.
   - [x] Move `RoutedRepairPatch` persistence mapping into an infrastructure configuration class.
@@ -306,8 +310,12 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Add a focused SQLite reload test before extracting quality-loop review rubric/result mappings.
   - [x] Remove inline `modelBuilder.Entity<T>` mapping blocks from `AppDbContext`.
 - [ ] Add focused tests for each extracted use-case service before expanding UI surface.
+  - [x] Cover `SeriesWorkflowApplicationService` directly while keeping facade workflow tests.
   - [x] Add focused delivery application service tests for registered and missing writer paths.
   - [x] Cover `DocumentIllustrationApplicationService` directly while keeping facade workflow tests.
+  - [x] Cover `BriefWorkflowApplicationService` directly while keeping facade workflow tests.
+  - [x] Cover `GenerationWorkflowApplicationService` directly while keeping facade workflow tests.
+  - [x] Cover `ReviewWorkflowApplicationService` directly while keeping facade workflow tests.
 - [ ] Keep each refactor slice behavior-preserving and tied to a new feature or touched old logic.
 - [ ] Run build, test, and format gates after each module split.
 

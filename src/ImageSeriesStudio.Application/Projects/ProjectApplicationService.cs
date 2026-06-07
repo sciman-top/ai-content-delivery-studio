@@ -17,6 +17,10 @@ public sealed class ProjectApplicationService
     private readonly IVisionReviewProvider? _visionReviewProvider;
     private readonly DeliveryApplicationService _deliveryApplicationService;
     private readonly DocumentIllustrationApplicationService _documentIllustrationApplicationService;
+    private readonly SeriesWorkflowApplicationService _seriesWorkflowApplicationService;
+    private readonly BriefWorkflowApplicationService _briefWorkflowApplicationService;
+    private readonly GenerationWorkflowApplicationService _generationWorkflowApplicationService;
+    private readonly ReviewWorkflowApplicationService _reviewWorkflowApplicationService;
 
     public ProjectApplicationService(IProjectRepository repository)
         : this(repository, textPlanningProvider: null, imageGenerationProvider: null, visionReviewProvider: null, deliveryPackageWriter: null)
@@ -63,6 +67,10 @@ public sealed class ProjectApplicationService
         _visionReviewProvider = visionReviewProvider;
         _deliveryApplicationService = new DeliveryApplicationService(deliveryPackageWriter);
         _documentIllustrationApplicationService = new DocumentIllustrationApplicationService(repository, textPlanningProvider);
+        _seriesWorkflowApplicationService = new SeriesWorkflowApplicationService(repository, textPlanningProvider);
+        _briefWorkflowApplicationService = new BriefWorkflowApplicationService(repository, textPlanningProvider);
+        _generationWorkflowApplicationService = new GenerationWorkflowApplicationService(repository, imageGenerationProvider, imageEditProvider);
+        _reviewWorkflowApplicationService = new ReviewWorkflowApplicationService(repository, visionReviewProvider);
     }
 
     public async Task<ImageProject> CreateProjectAsync(
@@ -92,10 +100,12 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var series = project.AddSeries(title, description, timestamp);
-        await _repository.SaveAsync(project, cancellationToken);
-        return series;
+        return await _seriesWorkflowApplicationService.AddSeriesAsync(
+            projectId,
+            title,
+            description,
+            timestamp,
+            cancellationToken);
     }
 
     public async Task<SeriesItem> AddItemAsync(
@@ -125,12 +135,14 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var series = project.Series.SingleOrDefault(series => series.Id == seriesId)
-            ?? throw new InvalidOperationException($"Series not found: {seriesId}");
-        var item = series.AddItem(title, brief, kind, timestamp);
-        await _repository.SaveAsync(project, cancellationToken);
-        return item;
+        return await _seriesWorkflowApplicationService.AddItemAsync(
+            projectId,
+            seriesId,
+            title,
+            brief,
+            kind,
+            timestamp,
+            cancellationToken);
     }
 
     public async Task<PromptVersion> AddPromptVersionAsync(
@@ -142,16 +154,14 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var item = project.Series
-            .SelectMany(series => series.Items)
-            .SingleOrDefault(item => item.Id == seriesItemId)
-            ?? throw new InvalidOperationException($"Series item not found: {seriesItemId}");
-        var providerProfile = ResolveProviderProfile(project, providerProfileId, timestamp);
-        var prompt = item.AddPromptVersion(promptText, settings, providerProfile.Id, timestamp);
-
-        await _repository.SaveAsync(project, cancellationToken);
-        return prompt;
+        return await _seriesWorkflowApplicationService.AddPromptVersionAsync(
+            projectId,
+            seriesItemId,
+            promptText,
+            settings,
+            providerProfileId,
+            timestamp,
+            cancellationToken);
     }
 
     public async Task<CreativeBrief> CreateCreativeBriefAsync(
@@ -166,20 +176,17 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var series = project.Series.SingleOrDefault(series => series.Id == seriesId)
-            ?? throw new InvalidOperationException($"Series not found: {seriesId}");
-        var brief = series.AddCreativeBrief(
+        return await _briefWorkflowApplicationService.CreateCreativeBriefAsync(
+            projectId,
+            seriesId,
             goal,
             audience,
             textPolicy,
             styleIntent,
             mustInclude,
             mustAvoid,
-            timestamp);
-
-        await _repository.SaveAsync(project, cancellationToken);
-        return brief;
+            timestamp,
+            cancellationToken);
     }
 
     public async Task<CreativeBrief> CreatePromptDirectionsAsync(
@@ -188,44 +195,11 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        if (_textPlanningProvider is null)
-        {
-            throw new InvalidOperationException("Text planning provider is not registered.");
-        }
-
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var brief = project.Series
-            .SelectMany(series => series.CreativeBriefs)
-            .SingleOrDefault(brief => brief.Id == creativeBriefId)
-            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
-
-        var result = await _textPlanningProvider.CreatePromptDirectionsAsync(
-            new BriefPlanningRequest(
-                brief.Goal,
-                brief.Audience,
-                brief.StyleIntent,
-                brief.MustInclude,
-                brief.MustAvoid,
-                DirectionCount: 3),
+        return await _briefWorkflowApplicationService.CreatePromptDirectionsAsync(
+            projectId,
+            creativeBriefId,
+            timestamp,
             cancellationToken);
-
-        brief.ReplaceDirections(
-            result.Directions
-                .Select(direction => PromptDirection.Create(
-                    direction.Key,
-                    direction.Name,
-                    direction.IntendedUse,
-                    direction.PromptText,
-                direction.NegativePrompt,
-                direction.Strength,
-                direction.Risk,
-                timestamp,
-                direction.Recommendation))
-        .ToArray(),
-    timestamp);
-
-        await _repository.SaveAsync(project, cancellationToken);
-        return brief;
     }
 
     public async Task<CreativeBrief> CreateDesignBlueprintsAsync(
@@ -234,50 +208,11 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        if (_textPlanningProvider is null)
-        {
-            throw new InvalidOperationException("Text planning provider is not registered.");
-        }
-
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var brief = project.Series
-            .SelectMany(series => series.CreativeBriefs)
-            .SingleOrDefault(candidate => candidate.Id == creativeBriefId)
-            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
-
-        var result = await _textPlanningProvider.CreateDesignBlueprintsAsync(
-            new BlueprintPlanningRequest(
-                brief.Goal,
-                brief.Audience,
-                brief.StyleIntent,
-                brief.MustInclude,
-                brief.MustAvoid,
-                brief.TextPolicy,
-                CandidateCount: 3),
+        return await _briefWorkflowApplicationService.CreateDesignBlueprintsAsync(
+            projectId,
+            creativeBriefId,
+            timestamp,
             cancellationToken);
-
-        brief.ReplaceBlueprints(
-            result.Blueprints
-                .Select(blueprint => DesignBlueprint.Create(
-                    blueprint.Key,
-                    blueprint.DisplayName,
-                    blueprint.Category,
-                    blueprint.Summary,
-                    blueprint.IntendedUse,
-                    blueprint.MinimumRecommendedItemCount,
-                    blueprint.MaximumRecommendedItemCount,
-                    blueprint.SupportsPanelSequence,
-                    blueprint.DefaultTextPolicy,
-                    blueprint.DefaultReviewRubricTemplateId,
-                    blueprint.ConsistencyRules,
-                    blueprint.VariationRules,
-                    blueprint.RiskNotes,
-                    timestamp))
-                .ToArray(),
-            timestamp);
-
-        await _repository.SaveAsync(project, cancellationToken);
-        return brief;
     }
 
     public async Task<DesignBlueprint> PromoteDesignBlueprintAsync(
@@ -287,15 +222,12 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var brief = project.Series
-            .SelectMany(series => series.CreativeBriefs)
-            .SingleOrDefault(candidate => candidate.Id == creativeBriefId)
-            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
-
-        var blueprint = brief.PromoteBlueprint(blueprintId, timestamp);
-        await _repository.SaveAsync(project, cancellationToken);
-        return blueprint;
+        return await _briefWorkflowApplicationService.PromoteDesignBlueprintAsync(
+            projectId,
+            creativeBriefId,
+            blueprintId,
+            timestamp,
+            cancellationToken);
     }
 
     public async Task<PromptVersion> PromotePromptDirectionAsync(
@@ -306,17 +238,13 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var (item, direction) = ResolvePromptDirectionTarget(
-            project,
+        return await _briefWorkflowApplicationService.PromotePromptDirectionAsync(
+            projectId,
             seriesItemId,
             creativeBriefId,
-            directionKey);
-        var settings = direction.Recommendation is { } recommendation
-            ? CreateGenerationSettings(recommendation)
-            : CreateDefaultGenerationSettings();
-
-        return await PromotePromptDirectionAsync(project, item, direction, settings, timestamp, cancellationToken);
+            directionKey,
+            timestamp,
+            cancellationToken);
     }
 
     public async Task<PromptVersion> PromotePromptDirectionAsync(
@@ -328,28 +256,14 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var (item, direction) = ResolvePromptDirectionTarget(
-            project,
+        return await _briefWorkflowApplicationService.PromotePromptDirectionAsync(
+            projectId,
             seriesItemId,
             creativeBriefId,
-            directionKey);
-
-        return await PromotePromptDirectionAsync(project, item, direction, settings, timestamp, cancellationToken);
-    }
-
-    private async Task<PromptVersion> PromotePromptDirectionAsync(
-        ImageProject project,
-        SeriesItem item,
-        PromptDirection direction,
-        GenerationSettings settings,
-        DateTimeOffset timestamp,
-        CancellationToken cancellationToken)
-    {
-        var providerProfile = ResolveProviderProfile(project, providerProfileId: null, timestamp);
-        var prompt = item.AddPromptVersion(direction.PromptText, settings, providerProfile.Id, timestamp);
-        await _repository.SaveAsync(project, cancellationToken);
-        return prompt;
+            directionKey,
+            settings,
+            timestamp,
+            cancellationToken);
     }
 
     public async Task<ImageSeries> CreatePlanWithProviderAsync(
@@ -358,29 +272,11 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        if (_textPlanningProvider is null)
-        {
-            throw new InvalidOperationException("Text planning provider is not registered.");
-        }
-
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var plan = await _textPlanningProvider.CreatePlanAsync(request, cancellationToken);
-        var providerProfile = ResolveProviderProfile(project, providerProfileId: null, timestamp);
-        var seriesTitle = string.IsNullOrWhiteSpace(request.Goal) ? plan.Summary : request.Goal.Trim();
-        var series = project.AddSeries(seriesTitle, plan.Summary, timestamp);
-
-        foreach (var plannedItem in plan.Items)
-        {
-            var item = series.AddItem(plannedItem.Title, plannedItem.Brief, timestamp);
-            item.AddPromptVersion(
-                plannedItem.PromptDraft,
-                CreateDefaultGenerationSettings(),
-                providerProfile.Id,
-                timestamp);
-        }
-
-        await _repository.SaveAsync(project, cancellationToken);
-        return series;
+        return await _seriesWorkflowApplicationService.CreatePlanWithProviderAsync(
+            projectId,
+            request,
+            timestamp,
+            cancellationToken);
     }
 
     public async Task<DocumentIllustrationWorkflowResult> CreateDocumentIllustrationPlanWithProviderAsync(
@@ -403,61 +299,18 @@ public sealed class ProjectApplicationService
         string outputDirectory,
         CancellationToken cancellationToken)
     {
-        if (_imageGenerationProvider is null)
-        {
-            throw new InvalidOperationException("Image generation provider is not registered.");
-        }
-
-        if (!_imageGenerationProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("Real image generation requires explicit approval.");
-        }
-
-        var project = await RequireProjectAsync(projectId, cancellationToken);
-        var requests = CreateGenerationRequests(project, outputDirectory);
-        var queue = new GenerationQueue(
-            _imageGenerationProvider,
-            new GenerationQueueOptions(MaxConcurrency: 1, MaxRetries: 0));
-
-        var run = await queue.RunAsync(requests, cancellationToken);
-        PersistGenerationRun(project, run, DateTimeOffset.UtcNow);
-        await _repository.SaveAsync(project, cancellationToken);
-
-        return run;
+        return await _generationWorkflowApplicationService.RunGenerationQueueAsync(
+            projectId,
+            outputDirectory,
+            cancellationToken);
     }
 
     public async Task<ImageGenerationResult> RunImageEditAsync(
         ImageEditWorkflowRequest request,
         CancellationToken cancellationToken)
     {
-        if (_imageEditProvider is null)
-        {
-            throw new InvalidOperationException("Image edit provider is not registered.");
-        }
-
-        if (!_imageEditProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("Real image editing requires explicit approval.");
-        }
-
-        if (!_imageEditProvider.Capabilities.SupportsImageEditing)
-        {
-            throw new InvalidOperationException("Provider does not support image editing.");
-        }
-
-        _ = await RequireProjectAsync(request.ProjectId, cancellationToken);
-
-        return await _imageEditProvider.EditImageAsync(
-            new ImageEditRequest(
-                request.SeriesItemId,
-                request.SourceCandidateImageId,
-                request.SourceImagePath,
-                request.MaskImagePath,
-                request.PromptText,
-                request.Settings,
-                request.OutputDirectory,
-                request.OutputFileName,
-                request.Recipe),
+        return await _generationWorkflowApplicationService.RunImageEditAsync(
+            request,
             cancellationToken);
     }
 
@@ -466,17 +319,10 @@ public sealed class ProjectApplicationService
         IReadOnlyList<ReviewCandidateInput> candidates,
         CancellationToken cancellationToken)
     {
-        var reviews = await RunStructuredVisionReviewAsync(projectId, candidates, cancellationToken);
-
-        return reviews
-            .Select(review => new VisionReviewResult(
-                review.CandidateImageId,
-                review.Decision,
-                review.Scores.ToDictionary(score => score.Name, score => score.Score),
-                review.HardFailures,
-                review.Comments,
-                review.SuggestedFix))
-            .ToArray();
+        return await _reviewWorkflowApplicationService.RunVisionReviewAsync(
+            projectId,
+            candidates,
+            cancellationToken);
     }
 
     public async Task<IReadOnlyList<StructuredReviewOutput>> RunStructuredVisionReviewAsync(
@@ -484,34 +330,10 @@ public sealed class ProjectApplicationService
         IReadOnlyList<ReviewCandidateInput> candidates,
         CancellationToken cancellationToken)
     {
-        if (_visionReviewProvider is null)
-        {
-            throw new InvalidOperationException("Vision review provider is not registered.");
-        }
-
-        if (!_visionReviewProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException("Real vision review requires explicit approval.");
-        }
-
-        var rubric = ReviewRubricTemplateCatalog
-            .GetById(ReviewRubricTemplateCatalog.GeneralImage)
-            .CreateRubric(projectId, DateTimeOffset.UtcNow);
-
-        var results = new List<StructuredReviewOutput>();
-        foreach (var candidate in candidates)
-        {
-            var result = await _visionReviewProvider.ReviewAsync(
-                new VisionReviewRequest(
-                    candidate.CandidateImageId,
-                    candidate.AssetPath,
-                    rubric,
-                    candidate.PromptText),
-                cancellationToken);
-            results.Add(StructuredReviewOutput.FromProviderResult(result, rubric));
-        }
-
-        return results;
+        return await _reviewWorkflowApplicationService.RunStructuredVisionReviewAsync(
+            projectId,
+            candidates,
+            cancellationToken);
     }
 
     public IReadOnlyList<ReviewOutcomeRoutingPlan> RouteReviewOutcomes(
@@ -554,160 +376,11 @@ public sealed class ProjectApplicationService
         DateTimeOffset decidedAt,
         CancellationToken cancellationToken)
     {
-        _ = await RequireProjectAsync(projectId, cancellationToken);
-
-        var decision = FinalApprovalWorkflow.Decide(request, decidedAt);
-        await _repository.SaveReviewResultAsync(projectId, decision.ReviewResult, cancellationToken);
-        return decision;
-    }
-
-    private static GenerationSettings CreateDefaultGenerationSettings()
-    {
-        return new GenerationSettings(1024, 1024, "standard", "png");
-    }
-
-    private static GenerationSettings CreateGenerationSettings(PromptDirectionRecommendation recommendation)
-    {
-        return new GenerationSettings(
-            recommendation.Width,
-            recommendation.Height,
-            recommendation.QualityBand,
-            recommendation.OutputFormat);
-    }
-
-    private static (SeriesItem Item, PromptDirection Direction) ResolvePromptDirectionTarget(
-        ImageProject project,
-        Guid seriesItemId,
-        Guid creativeBriefId,
-        string directionKey)
-    {
-        var item = project.Series
-            .SelectMany(series => series.Items)
-            .SingleOrDefault(item => item.Id == seriesItemId)
-            ?? throw new InvalidOperationException($"Series item not found: {seriesItemId}");
-        var brief = project.Series
-            .SelectMany(series => series.CreativeBriefs)
-            .SingleOrDefault(brief => brief.Id == creativeBriefId)
-            ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
-        var direction = brief.PromptDirections.SingleOrDefault(direction =>
-            direction.Key.Equals(directionKey, StringComparison.OrdinalIgnoreCase))
-            ?? throw new InvalidOperationException($"Prompt direction not found: {directionKey}");
-
-        return (item, direction);
-    }
-
-    private static IReadOnlyList<ImageGenerationRequest> CreateGenerationRequests(
-        ImageProject project,
-        string outputDirectory)
-    {
-        var index = 0;
-        return project.Series
-            .SelectMany(series => series.Items)
-            .Select(item => new
-            {
-                Item = item,
-                Prompt = item.PromptVersions.OrderByDescending(prompt => prompt.VersionNumber).FirstOrDefault(),
-            })
-            .Where(value => value.Prompt is not null)
-            .Select(value =>
-            {
-                index++;
-                return new ImageGenerationRequest(
-                    value.Item.Id,
-                    value.Prompt!.Id,
-                    value.Prompt.PromptText,
-                    value.Prompt.Settings,
-                    outputDirectory,
-                    $"{index:000}-{SanitizeFileName(value.Item.Title)}.png");
-            })
-            .ToArray();
-    }
-
-    private static void PersistGenerationRun(
-        ImageProject project,
-        GenerationQueueRun run,
-        DateTimeOffset persistedAt)
-    {
-        var succeededTasks = run.Tasks
-            .Where(task => task.Status is GenerationTaskStatus.Succeeded)
-            .ToArray();
-        var imagesByTaskId = succeededTasks
-            .Zip(run.Images, (task, image) => new { task.Id, Image = image })
-            .ToDictionary(entry => entry.Id, entry => entry.Image);
-        var itemsById = project.Series
-            .SelectMany(series => series.Items)
-            .ToDictionary(item => item.Id);
-
-        foreach (var taskResult in run.Tasks)
-        {
-            if (!itemsById.TryGetValue(taskResult.SeriesItemId, out var item))
-            {
-                continue;
-            }
-
-            var prompt = item.PromptVersions.SingleOrDefault(existing => existing.Id == taskResult.PromptVersionId);
-            if (prompt is null)
-            {
-                continue;
-            }
-
-            var timestamp = imagesByTaskId.TryGetValue(taskResult.Id, out var generatedImage)
-                ? generatedImage.GeneratedAt
-                : persistedAt;
-
-            item.AddGenerationTask(
-                new GenerationTask(
-                    taskResult.Id,
-                    item.Id,
-                    prompt.Id,
-                    prompt.ProviderProfileId,
-                    taskResult.Status,
-                    taskResult.AttemptCount,
-                    maxRetries: 0,
-                    timestamp,
-                    timestamp),
-                timestamp);
-
-            if (generatedImage is null)
-            {
-                continue;
-            }
-
-            item.AddCandidateImage(
-                new CandidateImage(
-                    generatedImage.CandidateImageId,
-                    item.Id,
-                    prompt.Id,
-                    taskResult.Id,
-                    prompt.ProviderProfileId,
-                    CandidateImageStatus.ReviewPending,
-                    generatedImage.AssetPath,
-                    generatedImage.MetadataPath,
-                    generatedImage.GeneratedAt),
-                generatedImage.GeneratedAt);
-        }
-    }
-
-    private static string SanitizeFileName(string value)
-    {
-        var invalidChars = Path.GetInvalidFileNameChars();
-        var sanitized = new string(value.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
-        return string.IsNullOrWhiteSpace(sanitized) ? "image" : sanitized.Trim();
-    }
-
-    private static ProviderProfile ResolveProviderProfile(
-        ImageProject project,
-        Guid? providerProfileId,
-        DateTimeOffset timestamp)
-    {
-        if (providerProfileId is { } requestedProfileId && requestedProfileId != Guid.Empty)
-        {
-            return project.ProviderProfiles.SingleOrDefault(profile => profile.Id == requestedProfileId)
-                ?? throw new InvalidOperationException($"Provider profile not found: {requestedProfileId}");
-        }
-
-        return project.ProviderProfiles.FirstOrDefault(profile => profile.Kind is ProviderKind.Fake)
-            ?? project.AddProviderProfile("Fake provider", ProviderKind.Fake, timestamp);
+        return await _reviewWorkflowApplicationService.RecordFinalApprovalAsync(
+            projectId,
+            request,
+            decidedAt,
+            cancellationToken);
     }
 
     private async Task<ImageProject> RequireProjectAsync(Guid projectId, CancellationToken cancellationToken)
