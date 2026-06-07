@@ -146,7 +146,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 
 - [x] Add `SkiaSharp`-based deterministic composition foundation for labels, formulas, legends, and callouts.
 - [x] Add deterministic post-render text composition service for educational or text-heavy visuals.
-- [ ] Add readability, label, and callout-specific review checks.
+- [x] Add readability, label, and callout-specific review checks.
 - [x] Persist human approval decisions and reviewer notes.
 - [x] Export final approval state in delivery manifests and review reports.
 - [ ] Run full build, test, and format gates for the implementation slice.
