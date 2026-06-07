@@ -1,4 +1,5 @@
 using System.Net;
+using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Infrastructure.OpenAI;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -510,6 +511,28 @@ public sealed class OpenAiProviderConfigurationTests
             factory.CreateResponsesClientAsync(options, OpenAiProviderOperation.TextPlanning, CancellationToken.None));
 
         Assert.Contains("IMAGE_PROVIDER_API_KEY", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void OpenAiSdkResponseOptionsFactory_UsesLockedTextPlanningDefaults()
+    {
+        var options = new OpenAiProviderOptions
+        {
+            TextPlanningModel = "gpt-5.5",
+        };
+        var request = new PlanningRequest(
+            "Create a three-part poster series",
+            "Physics teachers",
+            3,
+            "Clean educational diagrams");
+
+        var sdkOptions = OpenAiSdkResponseOptionsFactory.CreateTextPlanningOptions(options, request);
+
+        Assert.Equal("gpt-5.5", sdkOptions.Model);
+        Assert.Equal(OpenAiTextPlanningRequestMapper.Instructions, sdkOptions.Instructions);
+        Assert.False(sdkOptions.StoredOutputEnabled);
+        Assert.Single(sdkOptions.InputItems);
+        Assert.NotNull(sdkOptions.TextOptions.TextFormat);
     }
 
     private sealed class StaticSecretStore(string? value) : IOpenAiSecretStore
