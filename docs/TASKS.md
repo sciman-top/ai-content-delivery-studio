@@ -310,9 +310,11 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract document illustration, source asset, and artifact packaging `IEntityTypeConfiguration<T>` slices with focused SQLite reload tests.
   - [x] Add a focused SQLite reload test before extracting quality-loop review rubric/result mappings.
   - [x] Remove inline `modelBuilder.Entity<T>` mapping blocks from `AppDbContext`.
-- [ ] Add focused tests for each extracted use-case service before expanding UI surface.
+- [x] Add focused tests for each extracted use-case service before expanding UI surface.
   - [x] Add focused delivery application service tests for registered and missing writer paths.
   - [x] Cover `DocumentIllustrationApplicationService` directly while keeping facade workflow tests.
+  - [x] Cover `ReviewRepairApplicationService` directly while keeping facade workflow tests.
+  - [x] Cover source ingestion and artifact planning use-case services with fake-first workflow tests.
 - [ ] Keep each refactor slice behavior-preserving and tied to a new feature or touched old logic.
 - [ ] Run build, test, and format gates after each module split.
 
