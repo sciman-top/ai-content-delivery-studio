@@ -46,6 +46,11 @@ public static class FinalApprovalWorkflow
             request.Reviewer.Trim(),
             request.Notes.Trim(),
             decidedAt,
-            request.Review.ToReviewResult(decidedAt, humanApproved: request.Approve));
+            request.Review.ToReviewResult(
+                decidedAt,
+                humanApproved: request.Approve,
+                humanReviewer: request.Reviewer.Trim(),
+                humanReviewNotes: request.Notes.Trim(),
+                humanReviewDecidedAt: decidedAt));
     }
 }

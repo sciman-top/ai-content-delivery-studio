@@ -17,6 +17,7 @@ public sealed class DeliveryPackageTests
 
         try
         {
+            var approvalDecidedAt = DateTimeOffset.Parse("2026-06-07T09:30:00Z");
             var approvedImage = Path.Combine(sourceDirectory, "approved.png");
             var approvedMetadata = Path.Combine(sourceDirectory, "approved.json");
             var rejectedImage = Path.Combine(sourceDirectory, "rejected.png");
@@ -61,6 +62,9 @@ public sealed class DeliveryPackageTests
                             SourceAssetIds: [sourceAssetId],
                             EvidenceAnchorIds: [evidenceAnchorId],
                             ArtifactRole: "final-image",
+                            HumanReviewer: "Teacher",
+                            HumanApprovalNotes: "Ready for classroom delivery.",
+                            HumanApprovalDecidedAt: approvalDecidedAt,
                             Blueprint: new DeliveryBlueprintMetadata(
                                 blueprintId,
                                 "panel-narrative-sequence",
@@ -109,6 +113,9 @@ public sealed class DeliveryPackageTests
             Assert.Equal(evidenceAnchorId, items[0].GetProperty("evidenceAnchorIds")[0].GetGuid());
             Assert.Equal(operatorRunId, items[0].GetProperty("operatorRunIds")[0].GetGuid());
             Assert.Equal("final-image", items[0].GetProperty("artifactRole").GetString());
+            Assert.Equal("Teacher", items[0].GetProperty("humanReviewer").GetString());
+            Assert.Equal("Ready for classroom delivery.", items[0].GetProperty("humanApprovalNotes").GetString());
+            Assert.Equal(approvalDecidedAt, items[0].GetProperty("humanApprovalDecidedAt").GetDateTimeOffset());
             var blueprint = items[0].GetProperty("blueprint");
             Assert.Equal(blueprintId, blueprint.GetProperty("id").GetGuid());
             Assert.Equal("panel-narrative-sequence", blueprint.GetProperty("key").GetString());
@@ -122,15 +129,24 @@ public sealed class DeliveryPackageTests
             Assert.Contains("outputArtifactId", manifestCsv);
             Assert.Contains("sourceAssetIds", manifestCsv);
             Assert.Contains("evidenceAnchorIds", manifestCsv);
+            Assert.Contains("humanReviewer", manifestCsv);
+            Assert.Contains("humanApprovalNotes", manifestCsv);
+            Assert.Contains("humanApprovalDecidedAt", manifestCsv);
             Assert.Contains(outputArtifactId.ToString(), manifestCsv);
             Assert.Contains(sourceAssetId.ToString(), manifestCsv);
             Assert.Contains(evidenceAnchorId.ToString(), manifestCsv);
             Assert.Contains("operatorRunIds", manifestCsv);
             Assert.Contains(operatorRunId.ToString(), manifestCsv);
+            Assert.Contains("Teacher", manifestCsv);
+            Assert.Contains("Ready for classroom delivery.", manifestCsv);
             Assert.Contains("blueprintConsistencySummary", manifestCsv);
             Assert.Contains("panel-narrative-sequence", manifestCsv);
             Assert.Contains("same main character; consistent scene grammar", manifestCsv);
             Assert.Contains("alternate camera distance", manifestCsv);
+
+            var reviewReport = await File.ReadAllTextAsync(result.ReviewReportPath, CancellationToken.None);
+            Assert.Contains("Teacher", reviewReport);
+            Assert.Contains("Ready for classroom delivery.", reviewReport);
         }
         finally
         {

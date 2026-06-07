@@ -65,6 +65,9 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 File.Exists(metadataPath) ? ToRelativePath(request.OutputDirectory, metadataPath) : null,
                 item.ReviewDecision,
                 item.HumanApproved,
+                item.HumanReviewer,
+                item.HumanApprovalNotes,
+                item.HumanApprovalDecidedAt,
                 item.StyleGuideId,
                 item.StyleGuideVersion,
                 item.RecipeId,
@@ -121,6 +124,9 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                         item.PromptText,
                         item.ReviewDecision,
                         item.HumanApproved,
+                        item.HumanReviewer,
+                        item.HumanApprovalNotes,
+                        item.HumanApprovalDecidedAt,
                         item.StyleGuideId,
                         item.StyleGuideVersion,
                         item.RecipeId,
@@ -166,7 +172,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
     private static string WriteManifestCsv(IReadOnlyList<DeliveryManifestItem> items)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,outputArtifactId,sourceAssetIds,evidenceAnchorIds,operatorRunIds,artifactRole,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary");
+        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,humanReviewer,humanApprovalNotes,humanApprovalDecidedAt,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,outputArtifactId,sourceAssetIds,evidenceAnchorIds,operatorRunIds,artifactRole,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary");
 
         foreach (var item in items)
         {
@@ -179,6 +185,9 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 EscapeCsv(item.MetadataPath ?? string.Empty),
                 EscapeCsv(item.ReviewDecision.ToString()),
                 item.HumanApproved ? "true" : "false",
+                EscapeCsv(item.HumanReviewer ?? string.Empty),
+                EscapeCsv(item.HumanApprovalNotes ?? string.Empty),
+                EscapeCsv(item.HumanApprovalDecidedAt?.ToString("O") ?? string.Empty),
                 EscapeCsv(item.StyleGuideId?.ToString() ?? string.Empty),
                 item.StyleGuideVersion?.ToString() ?? string.Empty,
                 EscapeCsv(item.RecipeId?.ToString() ?? string.Empty),
@@ -211,7 +220,11 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
 
         foreach (var item in items)
         {
-            builder.AppendLine($"- {item.Title}: {item.ReviewDecision}, humanApproved={item.HumanApproved}");
+            builder.AppendLine($"- {item.Title}: {item.ReviewDecision}, humanApproved={item.HumanApproved}, reviewer={item.HumanReviewer ?? "n/a"}, decidedAt={item.HumanApprovalDecidedAt?.ToString("O") ?? "n/a"}");
+            if (!string.IsNullOrWhiteSpace(item.HumanApprovalNotes))
+            {
+                builder.AppendLine($"  notes: {item.HumanApprovalNotes}");
+            }
         }
 
         return builder.ToString();
@@ -246,6 +259,9 @@ public sealed record DeliveryPackageItem(
     string PromptText,
     ReviewDecision ReviewDecision,
     bool HumanApproved,
+    string? HumanReviewer = null,
+    string? HumanApprovalNotes = null,
+    DateTimeOffset? HumanApprovalDecidedAt = null,
     Guid? StyleGuideId = null,
     int? StyleGuideVersion = null,
     Guid? RecipeId = null,
@@ -280,6 +296,9 @@ internal sealed record DeliveryManifestItem(
     string? MetadataPath,
     ReviewDecision ReviewDecision,
     bool HumanApproved,
+    string? HumanReviewer,
+    string? HumanApprovalNotes,
+    DateTimeOffset? HumanApprovalDecidedAt,
     Guid? StyleGuideId,
     int? StyleGuideVersion,
     Guid? RecipeId,

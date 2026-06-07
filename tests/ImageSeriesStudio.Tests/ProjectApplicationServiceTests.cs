@@ -607,6 +607,106 @@ public sealed class ProjectApplicationServiceTests
     }
 
     [Fact]
+    public async Task ProjectApplicationService_PersistsGeneratedCandidatesAndHumanReviewDecisions()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-review-persistence.sqlite");
+        var outputDirectory = Path.Combine(databaseDirectory, "generated");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var timestamp = new DateTimeOffset(2026, 6, 7, 10, 0, 0, TimeSpan.Zero);
+            Guid projectId;
+
+            await using (var db = new AppDbContext(options))
+            {
+                var service = new ProjectApplicationService(
+                    new EfProjectRepository(db),
+                    new FakeTextPlanningProvider(),
+                    new FakeImageGenerationProvider());
+                var project = await service.CreateProjectAsync("Persisted approval demo", timestamp, CancellationToken.None);
+                projectId = project.Id;
+                var series = await service.AddSeriesAsync(
+                    project.Id,
+                    "Approval series",
+                    "Series for persisted review decisions.",
+                    timestamp.AddMinutes(1),
+                    CancellationToken.None);
+                var item = await service.AddItemAsync(
+                    project.Id,
+                    series.Id,
+                    "Opening frame",
+                    "Opening visual",
+                    timestamp.AddMinutes(2),
+                    CancellationToken.None);
+                await service.AddPromptVersionAsync(
+                    project.Id,
+                    item.Id,
+                    "Create a clean opening frame.",
+                    new GenerationSettings(1024, 1024, "standard", "png", 7),
+                    providerProfileId: null,
+                    timestamp.AddMinutes(3),
+                    CancellationToken.None);
+
+                await service.RunGenerationQueueAsync(project.Id, outputDirectory, CancellationToken.None);
+
+                var generatedProject = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+                var candidate = Assert.Single(generatedProject!.Series.Single().Items.Single().CandidateImages);
+
+                await service.SaveReviewResultAsync(
+                    project.Id,
+                    new ReviewResult(
+                        Guid.NewGuid(),
+                        candidate.Id,
+                        ReviewDecision.Pass,
+                        new Dictionary<string, int> { ["match"] = 5 },
+                        [],
+                        "Looks ready.",
+                        suggestedFix: null,
+                        humanApproved: true,
+                        humanReviewer: "Teacher",
+                        humanReviewNotes: "Approved for delivery.",
+                        humanReviewDecidedAt: timestamp.AddMinutes(5),
+                        createdAt: timestamp.AddMinutes(5)),
+                    timestamp.AddMinutes(5),
+                    CancellationToken.None);
+            }
+
+            await using (var db = new AppDbContext(options))
+            {
+                var service = new ProjectApplicationService(new EfProjectRepository(db));
+                var loaded = await service.LoadProjectAsync(projectId, CancellationToken.None);
+                var loadedItem = loaded!.Series.Single().Items.Single();
+                var loadedCandidate = Assert.Single(loadedItem.CandidateImages);
+                var loadedReview = Assert.Single(loadedCandidate.ReviewResults);
+
+                Assert.True(File.Exists(loadedCandidate.AssetPath));
+                Assert.True(File.Exists(loadedCandidate.MetadataPath));
+                Assert.True(loadedReview.HumanApproved);
+                Assert.Equal("Teacher", loadedReview.HumanReviewer);
+                Assert.Equal("Approved for delivery.", loadedReview.HumanReviewNotes);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ProjectApplicationService_RunsMaskEditWithFakeProvider()
     {
         var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));

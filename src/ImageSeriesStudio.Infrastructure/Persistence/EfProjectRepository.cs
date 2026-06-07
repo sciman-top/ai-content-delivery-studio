@@ -50,6 +50,10 @@ public sealed class EfProjectRepository : IProjectRepository
             .Include(project => project.Series)
             .ThenInclude(series => series.Items)
             .ThenInclude(item => item.PromptVersions)
+            .Include(project => project.Series)
+            .ThenInclude(series => series.Items)
+            .ThenInclude(item => item.CandidateImages)
+            .ThenInclude(candidate => candidate.ReviewResults)
             .SingleOrDefaultAsync(project => project.Id == projectId, cancellationToken);
     }
 
@@ -114,6 +118,22 @@ public sealed class EfProjectRepository : IProjectRepository
                     if (!await _dbContext.PromptVersions.AnyAsync(existing => existing.Id == prompt.Id, cancellationToken))
                     {
                         _dbContext.PromptVersions.Add(prompt);
+                    }
+                }
+
+                foreach (var candidate in item.CandidateImages)
+                {
+                    if (!await _dbContext.CandidateImages.AnyAsync(existing => existing.Id == candidate.Id, cancellationToken))
+                    {
+                        _dbContext.CandidateImages.Add(candidate);
+                    }
+
+                    foreach (var review in candidate.ReviewResults)
+                    {
+                        if (!await _dbContext.ReviewResults.AnyAsync(existing => existing.Id == review.Id, cancellationToken))
+                        {
+                            _dbContext.ReviewResults.Add(review);
+                        }
                     }
                 }
             }

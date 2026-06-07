@@ -18,7 +18,12 @@ public sealed record StructuredReviewOutput(
         || Scores.Any(score => score.Score > 0 && score.Score < 3)
         || !string.IsNullOrWhiteSpace(SuggestedFix);
 
-    public ReviewResult ToReviewResult(DateTimeOffset createdAt, bool humanApproved = false)
+    public ReviewResult ToReviewResult(
+        DateTimeOffset createdAt,
+        bool humanApproved = false,
+        string? humanReviewer = null,
+        string? humanReviewNotes = null,
+        DateTimeOffset? humanReviewDecidedAt = null)
     {
         return new ReviewResult(
             Guid.NewGuid(),
@@ -29,6 +34,9 @@ public sealed record StructuredReviewOutput(
             Comments,
             SuggestedFix,
             humanApproved,
+            humanReviewer,
+            humanReviewNotes,
+            humanReviewDecidedAt,
             createdAt);
     }
 

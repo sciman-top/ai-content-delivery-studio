@@ -418,8 +418,11 @@ public sealed class ProjectApplicationService
         var queue = new GenerationQueue(
             _imageGenerationProvider,
             new GenerationQueueOptions(MaxConcurrency: 1, MaxRetries: 0));
+        var run = await queue.RunAsync(requests, cancellationToken);
 
-        return await queue.RunAsync(requests, cancellationToken);
+        PersistGeneratedCandidates(project, run);
+        await _repository.SaveAsync(project, cancellationToken);
+        return run;
     }
 
     public async Task<ImageGenerationResult> RunImageEditAsync(
@@ -516,6 +519,18 @@ public sealed class ProjectApplicationService
         return _reviewRepairApplicationService.RouteReviewOutcomes(reviews);
     }
 
+    public async Task<ReviewResult> SaveReviewResultAsync(
+        Guid projectId,
+        ReviewResult reviewResult,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var persisted = project.UpsertReviewResult(reviewResult, timestamp);
+        await _repository.SaveAsync(project, cancellationToken);
+        return persisted;
+    }
+
     public async Task<RoutedRepairApplicationResult> ApplyRoutedRepairAsync(
         RoutedRepairApplicationRequest request,
         CancellationToken cancellationToken)
@@ -604,6 +619,45 @@ public sealed class ProjectApplicationService
                     $"{index:000}-{SanitizeFileName(value.Item.Title)}.png");
             })
             .ToArray();
+    }
+
+    private static void PersistGeneratedCandidates(
+        ImageProject project,
+        GenerationQueueRun run)
+    {
+        var itemsById = project.Series
+            .SelectMany(series => series.Items)
+            .ToDictionary(item => item.Id);
+        var promptsById = project.Series
+            .SelectMany(series => series.Items)
+            .SelectMany(item => item.PromptVersions)
+            .ToDictionary(prompt => prompt.Id);
+        var succeededTasks = run.Tasks
+            .Where(task => task.Status is GenerationTaskStatus.Succeeded)
+            .ToArray();
+
+        for (var index = 0; index < run.Images.Count && index < succeededTasks.Length; index++)
+        {
+            var image = run.Images[index];
+            var task = succeededTasks[index];
+            if (!itemsById.TryGetValue(task.SeriesItemId, out var item)
+                || !promptsById.TryGetValue(task.PromptVersionId, out var prompt))
+            {
+                continue;
+            }
+
+            var candidate = new CandidateImage(
+                image.CandidateImageId,
+                item.Id,
+                task.PromptVersionId,
+                task.Id,
+                prompt.ProviderProfileId,
+                CandidateImageStatus.ReviewPending,
+                image.AssetPath,
+                image.MetadataPath,
+                image.GeneratedAt);
+            item.AddCandidateImage(candidate, image.GeneratedAt);
+        }
     }
 
     private static string SanitizeFileName(string value)

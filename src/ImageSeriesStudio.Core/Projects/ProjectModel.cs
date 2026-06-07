@@ -206,6 +206,21 @@ public sealed class ImageProject
         return patch;
     }
 
+    public ReviewResult UpsertReviewResult(ReviewResult review, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(review);
+
+        var candidate = _series
+            .SelectMany(series => series.Items)
+            .SelectMany(item => item.CandidateImages)
+            .SingleOrDefault(candidate => candidate.Id == review.CandidateImageId)
+            ?? throw new InvalidOperationException($"Candidate image not found for review result: {review.CandidateImageId}");
+
+        var persisted = candidate.UpsertReviewResult(review);
+        UpdatedAt = timestamp;
+        return persisted;
+    }
+
     private static string RequireText(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -431,6 +446,25 @@ public sealed class SeriesItem
         return promptVersion;
     }
 
+    public CandidateImage AddCandidateImage(CandidateImage candidate, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(candidate);
+
+        if (candidate.SeriesItemId != Id)
+        {
+            throw new ArgumentException("Candidate image must belong to this series item.", nameof(candidate));
+        }
+
+        if (_candidateImages.Any(existing => existing.Id == candidate.Id))
+        {
+            throw new InvalidOperationException($"Candidate image already exists: {candidate.Id}");
+        }
+
+        _candidateImages.Add(candidate);
+        UpdatedAt = timestamp;
+        return candidate;
+    }
+
     private void TransitionTo(SeriesItemStatus nextStatus, DateTimeOffset timestamp)
     {
         if (!CanTransition(Status, nextStatus))
@@ -634,6 +668,8 @@ public enum GenerationTaskStatus
 
 public sealed class CandidateImage
 {
+    private readonly List<ReviewResult> _reviewResults = [];
+
     private CandidateImage()
     {
         AssetPath = string.Empty;
@@ -678,7 +714,29 @@ public sealed class CandidateImage
 
     public string MetadataPath { get; private set; }
 
+    public IReadOnlyCollection<ReviewResult> ReviewResults => _reviewResults.AsReadOnly();
+
     public DateTimeOffset CreatedAt { get; private set; }
+
+    public ReviewResult UpsertReviewResult(ReviewResult review)
+    {
+        ArgumentNullException.ThrowIfNull(review);
+
+        if (review.CandidateImageId != Id)
+        {
+            throw new ArgumentException("Review result must belong to this candidate image.", nameof(review));
+        }
+
+        var existing = _reviewResults.SingleOrDefault();
+        if (existing is null)
+        {
+            _reviewResults.Add(review);
+            return review;
+        }
+
+        existing.UpdateFrom(review);
+        return existing;
+    }
 }
 
 public enum CandidateImageStatus
@@ -752,6 +810,9 @@ public sealed class ReviewResult
         Scores = new Dictionary<string, int>();
         HardFailures = [];
         Comments = string.Empty;
+        HumanReviewer = null;
+        HumanReviewNotes = null;
+        HumanReviewDecidedAt = null;
     }
 
     public ReviewResult(
@@ -764,6 +825,35 @@ public sealed class ReviewResult
         string? suggestedFix,
         bool humanApproved,
         DateTimeOffset createdAt)
+        : this(
+            id,
+            candidateImageId,
+            decision,
+            scores,
+            hardFailures,
+            comments,
+            suggestedFix,
+            humanApproved,
+            humanReviewer: null,
+            humanReviewNotes: null,
+            humanReviewDecidedAt: null,
+            createdAt)
+    {
+    }
+
+    public ReviewResult(
+        Guid id,
+        Guid candidateImageId,
+        ReviewDecision decision,
+        IReadOnlyDictionary<string, int> scores,
+        IReadOnlyList<string> hardFailures,
+        string comments,
+        string? suggestedFix,
+        bool humanApproved,
+        string? humanReviewer,
+        string? humanReviewNotes,
+        DateTimeOffset? humanReviewDecidedAt,
+        DateTimeOffset createdAt)
     {
         Id = id;
         CandidateImageId = candidateImageId;
@@ -773,6 +863,9 @@ public sealed class ReviewResult
         Comments = comments;
         SuggestedFix = suggestedFix;
         HumanApproved = humanApproved;
+        HumanReviewer = string.IsNullOrWhiteSpace(humanReviewer) ? null : humanReviewer.Trim();
+        HumanReviewNotes = string.IsNullOrWhiteSpace(humanReviewNotes) ? null : humanReviewNotes.Trim();
+        HumanReviewDecidedAt = humanReviewDecidedAt;
         CreatedAt = createdAt;
     }
 
@@ -792,7 +885,48 @@ public sealed class ReviewResult
 
     public bool HumanApproved { get; private set; }
 
+    public string? HumanReviewer { get; private set; }
+
+    public string? HumanReviewNotes { get; private set; }
+
+    public DateTimeOffset? HumanReviewDecidedAt { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
+
+    public StructuredReviewOutput ToStructuredReviewOutput()
+    {
+        return new StructuredReviewOutput(
+            CandidateImageId,
+            Decision,
+            Scores
+                .OrderBy(score => score.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(score => new StructuredReviewScore(score.Key, score.Key, 0, score.Value))
+                .ToArray(),
+            HardFailures.ToArray(),
+            Comments,
+            SuggestedFix);
+    }
+
+    public void UpdateFrom(ReviewResult review)
+    {
+        ArgumentNullException.ThrowIfNull(review);
+
+        if (review.CandidateImageId != CandidateImageId)
+        {
+            throw new ArgumentException("Review result candidate does not match the existing review.", nameof(review));
+        }
+
+        Decision = review.Decision;
+        Scores = new Dictionary<string, int>(review.Scores, StringComparer.OrdinalIgnoreCase);
+        HardFailures = review.HardFailures.ToArray();
+        Comments = review.Comments;
+        SuggestedFix = review.SuggestedFix;
+        HumanApproved = review.HumanApproved;
+        HumanReviewer = string.IsNullOrWhiteSpace(review.HumanReviewer) ? null : review.HumanReviewer.Trim();
+        HumanReviewNotes = string.IsNullOrWhiteSpace(review.HumanReviewNotes) ? null : review.HumanReviewNotes.Trim();
+        HumanReviewDecidedAt = review.HumanReviewDecidedAt;
+        CreatedAt = review.CreatedAt;
+    }
 }
 
 public enum ReviewDecision

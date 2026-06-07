@@ -2244,6 +2244,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 Text(LocalizationKey.HumanApprovalPending),
                 string.Empty,
                 string.Empty,
+                null,
                 pair.First);
         }).ToArray();
         DeliveryRows = [];
@@ -2270,10 +2271,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(CanApproveSelectedReview))]
-    private Task ApproveSelectedReviewAsync()
+    private async Task ApproveSelectedReviewAsync()
     {
-        ApplyFinalApproval(approve: true);
-        return Task.CompletedTask;
+        await ApplyFinalApprovalAsync(approve: true);
     }
 
     private bool CanApproveSelectedReview()
@@ -2283,10 +2283,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand(CanExecute = nameof(CanRejectSelectedReview))]
-    private Task RejectSelectedReviewAsync()
+    private async Task RejectSelectedReviewAsync()
     {
-        ApplyFinalApproval(approve: false);
-        return Task.CompletedTask;
+        await ApplyFinalApprovalAsync(approve: false);
     }
 
     private bool CanRejectSelectedReview()
@@ -2296,9 +2295,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
             && !string.IsNullOrWhiteSpace(FinalApprovalNotes);
     }
 
-    private void ApplyFinalApproval(bool approve)
+    private async Task ApplyFinalApprovalAsync(bool approve)
     {
-        if (SelectedReviewRow is null)
+        if (SelectedProject is null || SelectedReviewRow is null)
         {
             return;
         }
@@ -2319,7 +2318,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 : Text(LocalizationKey.HumanApprovalRejected),
             FinalReviewer = decision.Reviewer,
             FinalApprovalNotes = decision.Notes,
+            FinalApprovalDecidedAt = decision.DecidedAt,
         };
+
+        await _projectService.SaveReviewResultAsync(
+            SelectedProject.Id,
+            decision.ReviewResult,
+            decision.DecidedAt,
+            CancellationToken.None);
 
         ReviewRows = ReviewRows
             .Select(row => row.CandidateImageId == updated.CandidateImageId ? updated : row)
@@ -2359,14 +2365,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 && review.HumanApproved
                 && Enum.TryParse<ReviewDecision>(review.Decision, out var decision)
                 && decision is ReviewDecision.Pass)
-            .Select((row, index) => new DeliveryExportItem(
-                $"{index + 1:000}-{row.ItemTitle}",
-                row.ItemTitle,
-                row.AssetPath,
-                row.MetadataPath,
-                row.PromptText,
+            .Select(row => (Row: row, Review: reviewByCandidate[row.CandidateImageId]))
+            .Select((entry, index) => new DeliveryExportItem(
+                $"{index + 1:000}-{entry.Row.ItemTitle}",
+                entry.Row.ItemTitle,
+                entry.Row.AssetPath,
+                entry.Row.MetadataPath,
+                entry.Row.PromptText,
                 ReviewDecision.Pass,
                 HumanApproved: true,
+                HumanReviewer: entry.Review.FinalReviewer,
+                HumanApprovalNotes: entry.Review.FinalApprovalNotes,
+                HumanApprovalDecidedAt: entry.Review.FinalApprovalDecidedAt,
                 Blueprint: blueprint))
             .ToArray();
 
@@ -2535,6 +2545,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PromptDirectionRows = BuildPromptDirectionRows(project);
         RebuildPlanRows();
         RebuildPromptRows();
+        GalleryRows = BuildGalleryRows(project);
+        ReviewRows = BuildReviewRows(project);
 
         SelectedSeries = selectedSeriesId is null
             ? Series.FirstOrDefault()
@@ -2550,6 +2562,68 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _activeCreativeBriefId is null || blueprint.CreativeBriefId == _activeCreativeBriefId);
         CreateSeriesCommand.NotifyCanExecuteChanged();
         RebuildWorkflowGraphRows();
+    }
+
+    private IReadOnlyList<GalleryRowViewModel> BuildGalleryRows(ImageProject project)
+    {
+        return project.Series
+            .SelectMany(series => series.Items)
+            .SelectMany(item => item.CandidateImages
+                .OrderBy(candidate => candidate.CreatedAt)
+                .Select(candidate => new GalleryRowViewModel(
+                    candidate.Id,
+                    item.Id,
+                    item.Title,
+                    candidate.AssetPath,
+                    candidate.MetadataPath,
+                    FindPromptText(candidate.PromptVersionId))))
+            .ToArray();
+    }
+
+    private IReadOnlyList<ReviewRowViewModel> BuildReviewRows(ImageProject project)
+    {
+        var restoredReviews = project.Series
+            .SelectMany(series => series.Items)
+            .SelectMany(item => item.CandidateImages
+                .SelectMany(candidate => candidate.ReviewResults.Select(review => new
+                {
+                    ItemTitle = item.Title,
+                    Review = review,
+                    Output = review.ToStructuredReviewOutput(),
+                })))
+            .OrderBy(entry => entry.Review.CreatedAt)
+            .ToArray();
+
+        var routesByCandidate = _projectService.RouteReviewOutcomes(restoredReviews.Select(entry => entry.Output).ToArray())
+            .ToDictionary(plan => plan.CandidateImageId);
+
+        return restoredReviews.Select(entry =>
+        {
+            var scoreText = string.Join(", ", entry.Review.Scores.Select(score => $"{score.Key}:{score.Value}"));
+            var routeSummary = routesByCandidate.TryGetValue(entry.Review.CandidateImageId, out var plan)
+                ? FormatReviewRoute(plan)
+                : string.Empty;
+            var approvalStatus = entry.Review.HumanReviewDecidedAt is null
+                ? Text(LocalizationKey.HumanApprovalPending)
+                : entry.Review.HumanApproved
+                    ? Text(LocalizationKey.HumanApprovalApproved)
+                    : Text(LocalizationKey.HumanApprovalRejected);
+
+            return new ReviewRowViewModel(
+                entry.Review.CandidateImageId,
+                entry.ItemTitle,
+                entry.Review.Decision.ToString(),
+                scoreText,
+                entry.Review.Comments,
+                entry.Review.SuggestedFix ?? string.Empty,
+                routeSummary,
+                entry.Review.HumanApproved,
+                approvalStatus,
+                entry.Review.HumanReviewer ?? string.Empty,
+                entry.Review.HumanReviewNotes ?? string.Empty,
+                entry.Review.HumanReviewDecidedAt,
+                entry.Output);
+        }).ToArray();
     }
 
     private Task ClearPlanAsync()
@@ -2906,6 +2980,7 @@ public sealed record ReviewRowViewModel(
     string HumanApprovalStatus,
     string FinalReviewer,
     string FinalApprovalNotes,
+    DateTimeOffset? FinalApprovalDecidedAt,
     StructuredReviewOutput Review);
 
 public sealed record DeliveryRowViewModel(

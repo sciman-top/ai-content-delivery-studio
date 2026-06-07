@@ -68,6 +68,7 @@ public sealed class StructuredReviewOutputTests
     {
         var candidateId = Guid.NewGuid();
         var createdAt = DateTimeOffset.Parse("2026-06-01T11:00:00Z");
+        var decidedAt = DateTimeOffset.Parse("2026-06-01T11:05:00Z");
         var output = new StructuredReviewOutput(
             candidateId,
             ReviewDecision.Pass,
@@ -76,12 +77,20 @@ public sealed class StructuredReviewOutputTests
             "Approved by AI review.",
             null);
 
-        var review = output.ToReviewResult(createdAt, humanApproved: true);
+        var review = output.ToReviewResult(
+            createdAt,
+            humanApproved: true,
+            humanReviewer: "Teacher",
+            humanReviewNotes: "Ready for delivery.",
+            humanReviewDecidedAt: decidedAt);
 
         Assert.Equal(candidateId, review.CandidateImageId);
         Assert.Equal(ReviewDecision.Pass, review.Decision);
         Assert.Equal(5, review.Scores["match"]);
         Assert.True(review.HumanApproved);
+        Assert.Equal("Teacher", review.HumanReviewer);
+        Assert.Equal("Ready for delivery.", review.HumanReviewNotes);
+        Assert.Equal(decidedAt, review.HumanReviewDecidedAt);
         Assert.Equal(createdAt, review.CreatedAt);
     }
 }

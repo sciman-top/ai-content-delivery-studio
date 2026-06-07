@@ -427,8 +427,11 @@ public sealed class PersistenceTests
                 ["text-rendering-risk"],
                 "Text needs deterministic composition.",
                 "Use post-render labels.",
-                humanApproved: false,
-                timestamp.AddMinutes(9));
+                humanApproved: true,
+                humanReviewer: "Teacher",
+                humanReviewNotes: "Approved with deterministic text follow-up.",
+                humanReviewDecidedAt: timestamp.AddMinutes(9),
+                createdAt: timestamp.AddMinutes(10));
             var deliveryPackage = new DeliveryPackage(
                 Guid.NewGuid(),
                 project.Id,
@@ -477,7 +480,10 @@ public sealed class PersistenceTests
                 Assert.Equal(1, loadedReview.Scores["text"]);
                 Assert.Equal("text-rendering-risk", Assert.Single(loadedReview.HardFailures));
                 Assert.Equal("Use post-render labels.", loadedReview.SuggestedFix);
-                Assert.False(loadedReview.HumanApproved);
+                Assert.True(loadedReview.HumanApproved);
+                Assert.Equal("Teacher", loadedReview.HumanReviewer);
+                Assert.Equal("Approved with deterministic text follow-up.", loadedReview.HumanReviewNotes);
+                Assert.Equal(timestamp.AddMinutes(9), loadedReview.HumanReviewDecidedAt);
                 Assert.Equal(project.Id, loadedDeliveryPackage.ProjectId);
                 Assert.Equal(3, loadedDeliveryPackage.Version);
                 Assert.Equal("outputs/delivery/package", loadedDeliveryPackage.OutputPath);
