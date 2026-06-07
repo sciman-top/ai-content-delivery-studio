@@ -288,6 +288,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [ ] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
 - [ ] Split large WPF views into feature-owned user controls where needed.
 - [ ] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
+  - [x] Extract project create/load/list workflow methods into `ProjectWorkspaceApplicationService` while preserving the existing facade entrypoints.
   - [x] Extract series, item, prompt, and fake planning workflow methods into `SeriesWorkflowApplicationService` while preserving the existing facade entrypoints.
   - [x] Extract review/repair routing and Prompt/Settings repair application into `ReviewRepairApplicationService` while preserving the existing facade entrypoints.
   - [x] Extract delivery export into `DeliveryApplicationService` while preserving the existing facade entrypoint.
@@ -310,6 +311,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Add a focused SQLite reload test before extracting quality-loop review rubric/result mappings.
   - [x] Remove inline `modelBuilder.Entity<T>` mapping blocks from `AppDbContext`.
 - [ ] Add focused tests for each extracted use-case service before expanding UI surface.
+  - [x] Cover `ProjectWorkspaceApplicationService` directly while keeping facade workflow tests.
   - [x] Cover `SeriesWorkflowApplicationService` directly while keeping facade workflow tests.
   - [x] Add focused delivery application service tests for registered and missing writer paths.
   - [x] Cover `DocumentIllustrationApplicationService` directly while keeping facade workflow tests.

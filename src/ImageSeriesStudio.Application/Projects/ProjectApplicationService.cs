@@ -9,12 +9,8 @@ namespace ImageSeriesStudio.Application.Projects;
 
 public sealed class ProjectApplicationService
 {
-    private readonly IProjectRepository _repository;
     private readonly ReviewRepairApplicationService _reviewRepairApplicationService;
-    private readonly ITextPlanningProvider? _textPlanningProvider;
-    private readonly IImageGenerationProvider? _imageGenerationProvider;
-    private readonly IImageEditProvider? _imageEditProvider;
-    private readonly IVisionReviewProvider? _visionReviewProvider;
+    private readonly ProjectWorkspaceApplicationService _projectWorkspaceApplicationService;
     private readonly DeliveryApplicationService _deliveryApplicationService;
     private readonly DocumentIllustrationApplicationService _documentIllustrationApplicationService;
     private readonly SeriesWorkflowApplicationService _seriesWorkflowApplicationService;
@@ -59,12 +55,8 @@ public sealed class ProjectApplicationService
         IDeliveryPackageWriter? deliveryPackageWriter,
         IImageEditProvider? imageEditProvider = null)
     {
-        _repository = repository;
+        _projectWorkspaceApplicationService = new ProjectWorkspaceApplicationService(repository);
         _reviewRepairApplicationService = new ReviewRepairApplicationService(repository);
-        _textPlanningProvider = textPlanningProvider;
-        _imageGenerationProvider = imageGenerationProvider;
-        _imageEditProvider = imageEditProvider;
-        _visionReviewProvider = visionReviewProvider;
         _deliveryApplicationService = new DeliveryApplicationService(deliveryPackageWriter);
         _documentIllustrationApplicationService = new DocumentIllustrationApplicationService(repository, textPlanningProvider);
         _seriesWorkflowApplicationService = new SeriesWorkflowApplicationService(repository, textPlanningProvider);
@@ -78,19 +70,20 @@ public sealed class ProjectApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
-        var project = ImageProject.Create(name, timestamp);
-        await _repository.SaveAsync(project, cancellationToken);
-        return project;
+        return await _projectWorkspaceApplicationService.CreateProjectAsync(
+            name,
+            timestamp,
+            cancellationToken);
     }
 
     public Task<ImageProject?> LoadProjectAsync(Guid projectId, CancellationToken cancellationToken)
     {
-        return _repository.LoadAsync(projectId, cancellationToken);
+        return _projectWorkspaceApplicationService.LoadProjectAsync(projectId, cancellationToken);
     }
 
     public Task<IReadOnlyList<ProjectSummary>> ListProjectsAsync(CancellationToken cancellationToken)
     {
-        return _repository.ListAsync(cancellationToken);
+        return _projectWorkspaceApplicationService.ListProjectsAsync(cancellationToken);
     }
 
     public async Task<ImageSeries> AddSeriesAsync(
@@ -381,12 +374,6 @@ public sealed class ProjectApplicationService
             request,
             decidedAt,
             cancellationToken);
-    }
-
-    private async Task<ImageProject> RequireProjectAsync(Guid projectId, CancellationToken cancellationToken)
-    {
-        return await _repository.LoadAsync(projectId, cancellationToken)
-            ?? throw new InvalidOperationException($"Project not found: {projectId}");
     }
 }
 
