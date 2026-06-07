@@ -132,7 +132,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
   - [x] Add .NET `ActivitySource` and `Meter` instrumentation for provider calls.
   - [x] Add local OTLP/Aspire dashboard profile.
 - [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits and where the provider routing policy calls for it.
-- [ ] Add a remote workflow-engine adapter boundary without requiring local model installs.
+- [x] Add a remote workflow-engine adapter boundary without requiring local model installs.
 - [x] Run full build, test, and format gates for the implementation slice.
 
 ## Phase 4: Quality Loop

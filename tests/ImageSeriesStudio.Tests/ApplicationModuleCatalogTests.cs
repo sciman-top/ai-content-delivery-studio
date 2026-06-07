@@ -9,7 +9,7 @@ public sealed class ApplicationModuleCatalogTests
     {
         var modules = ApplicationModuleCatalog.BuiltInModules;
 
-        Assert.Equal(5, modules.Count);
+        Assert.Equal(6, modules.Count);
         AssertModule(
             ApplicationModuleCatalog.GetRequired("source-ingestion"),
             "source-ingestion",
@@ -50,6 +50,13 @@ public sealed class ApplicationModuleCatalogTests
             null,
             null,
             ["ToolAdapterRegistry"]);
+        AssertModule(
+            ApplicationModuleCatalog.GetRequired("remote-workflows"),
+            "remote-workflows",
+            "src/ImageSeriesStudio.Application/RemoteWorkflows",
+            null,
+            "src/ImageSeriesStudio.Infrastructure/RemoteWorkflows",
+            ["RemoteWorkflowEngineAdapter"]);
     }
 
     [Fact]

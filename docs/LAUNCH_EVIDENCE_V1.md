@@ -9,7 +9,7 @@ Generated on: 2026-06-07
 | Gate | Command | Result | Evidence |
 | --- | --- | --- | --- |
 | Build | `dotnet build` | Pass | 0 warnings, 0 errors on 2026-06-07. |
-| Test | `dotnet test` | Pass | 281 tests passed, 0 failed on 2026-06-07. |
+| Test | `dotnet test` | Pass | 285 tests passed, 0 failed on 2026-06-07. |
 | Format | `dotnet format --verify-no-changes` | Pass | Exit code 0 on 2026-06-07. |
 
 ## Launch Metrics
