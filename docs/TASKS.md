@@ -7,7 +7,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [ ] Harden the short requirement -> brief -> blueprint -> series -> review -> delivery path as the primary V1 launch route.
 - [ ] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path as a supporting validation route without requiring real providers by default.
 - [ ] Complete Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export.
-- [ ] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
+- [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [ ] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
