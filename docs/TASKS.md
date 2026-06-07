@@ -145,7 +145,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 Priority note: this phase is now part of the near-term golden-path hardening slice, not a distant quality add-on.
 
 - [x] Add `SkiaSharp`-based deterministic composition foundation for labels, formulas, legends, and callouts.
-- [ ] Add deterministic post-render text composition service for educational or text-heavy visuals.
+- [x] Add deterministic post-render text composition service for educational or text-heavy visuals.
 - [ ] Add readability, label, and callout-specific review checks.
 - [x] Persist human approval decisions and reviewer notes.
 - [x] Export final approval state in delivery manifests and review reports.
