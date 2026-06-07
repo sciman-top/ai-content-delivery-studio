@@ -182,18 +182,47 @@ internal static class OpenAiProviderTelemetry
     {
         ArgumentNullException.ThrowIfNull(response);
 
+        return Create(
+            providerId,
+            operation,
+            model,
+            endpoint,
+            (int)response.StatusCode,
+            response.IsSuccessStatusCode,
+            ExtractRequestId(response),
+            body,
+            providerTraceId,
+            latency,
+            estimatedCostUsd,
+            rateCardName);
+    }
+
+    public static ProviderCallTelemetry Create(
+        string providerId,
+        string operation,
+        string model,
+        Uri endpoint,
+        int statusCode,
+        bool succeeded,
+        string? requestId,
+        JsonElement? body,
+        string? providerTraceId,
+        TimeSpan latency,
+        decimal estimatedCostUsd,
+        string rateCardName)
+    {
         return new ProviderCallTelemetry(
             providerId,
             operation,
             model,
             endpoint.ToString(),
-            (int)response.StatusCode,
-            response.IsSuccessStatusCode,
-            ExtractRequestId(response),
+            statusCode,
+            succeeded,
+            requestId,
             providerTraceId,
             body is { } root ? ExtractUsage(root) : null,
             latency,
-            response.IsSuccessStatusCode ? estimatedCostUsd : 0m,
+            succeeded ? estimatedCostUsd : 0m,
             rateCardName,
             DateTimeOffset.UtcNow);
     }

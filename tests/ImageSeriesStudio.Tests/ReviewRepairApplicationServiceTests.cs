@@ -169,5 +169,15 @@ public sealed class ReviewRepairApplicationServiceTests
                 .ToArray();
             return Task.FromResult(summaries);
         }
+
+        public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<ReviewResult?>(null);
+        }
     }
 }

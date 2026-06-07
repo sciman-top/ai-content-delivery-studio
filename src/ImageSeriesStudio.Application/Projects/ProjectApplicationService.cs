@@ -419,7 +419,11 @@ public sealed class ProjectApplicationService
             _imageGenerationProvider,
             new GenerationQueueOptions(MaxConcurrency: 1, MaxRetries: 0));
 
-        return await queue.RunAsync(requests, cancellationToken);
+        var run = await queue.RunAsync(requests, cancellationToken);
+        PersistGenerationRun(project, run, DateTimeOffset.UtcNow);
+        await _repository.SaveAsync(project, cancellationToken);
+
+        return run;
     }
 
     public async Task<ImageGenerationResult> RunImageEditAsync(
@@ -544,6 +548,19 @@ public sealed class ProjectApplicationService
         return await _deliveryApplicationService.ExportDeliveryPackageAsync(request, cancellationToken);
     }
 
+    public async Task<FinalApprovalDecision> RecordFinalApprovalAsync(
+        Guid projectId,
+        FinalApprovalRequest request,
+        DateTimeOffset decidedAt,
+        CancellationToken cancellationToken)
+    {
+        _ = await RequireProjectAsync(projectId, cancellationToken);
+
+        var decision = FinalApprovalWorkflow.Decide(request, decidedAt);
+        await _repository.SaveReviewResultAsync(projectId, decision.ReviewResult, cancellationToken);
+        return decision;
+    }
+
     private static GenerationSettings CreateDefaultGenerationSettings()
     {
         return new GenerationSettings(1024, 1024, "standard", "png");
@@ -606,6 +623,71 @@ public sealed class ProjectApplicationService
             .ToArray();
     }
 
+    private static void PersistGenerationRun(
+        ImageProject project,
+        GenerationQueueRun run,
+        DateTimeOffset persistedAt)
+    {
+        var succeededTasks = run.Tasks
+            .Where(task => task.Status is GenerationTaskStatus.Succeeded)
+            .ToArray();
+        var imagesByTaskId = succeededTasks
+            .Zip(run.Images, (task, image) => new { task.Id, Image = image })
+            .ToDictionary(entry => entry.Id, entry => entry.Image);
+        var itemsById = project.Series
+            .SelectMany(series => series.Items)
+            .ToDictionary(item => item.Id);
+
+        foreach (var taskResult in run.Tasks)
+        {
+            if (!itemsById.TryGetValue(taskResult.SeriesItemId, out var item))
+            {
+                continue;
+            }
+
+            var prompt = item.PromptVersions.SingleOrDefault(existing => existing.Id == taskResult.PromptVersionId);
+            if (prompt is null)
+            {
+                continue;
+            }
+
+            var timestamp = imagesByTaskId.TryGetValue(taskResult.Id, out var generatedImage)
+                ? generatedImage.GeneratedAt
+                : persistedAt;
+
+            item.AddGenerationTask(
+                new GenerationTask(
+                    taskResult.Id,
+                    item.Id,
+                    prompt.Id,
+                    prompt.ProviderProfileId,
+                    taskResult.Status,
+                    taskResult.AttemptCount,
+                    maxRetries: 0,
+                    timestamp,
+                    timestamp),
+                timestamp);
+
+            if (generatedImage is null)
+            {
+                continue;
+            }
+
+            item.AddCandidateImage(
+                new CandidateImage(
+                    generatedImage.CandidateImageId,
+                    item.Id,
+                    prompt.Id,
+                    taskResult.Id,
+                    prompt.ProviderProfileId,
+                    CandidateImageStatus.ReviewPending,
+                    generatedImage.AssetPath,
+                    generatedImage.MetadataPath,
+                    generatedImage.GeneratedAt),
+                generatedImage.GeneratedAt);
+        }
+    }
+
     private static string SanitizeFileName(string value)
     {
         var invalidChars = Path.GetInvalidFileNameChars();
@@ -642,6 +724,10 @@ public interface IProjectRepository
     Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken);
+
+    Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken);
+
+    Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken);
 }
 
 public sealed record ProjectSummary(

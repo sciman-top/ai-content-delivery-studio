@@ -50,6 +50,9 @@ public sealed class DeliveryPackageTests
                             "A clean blue poster background",
                             ReviewDecision.Pass,
                             HumanApproved: true,
+                            FinalReviewer: "Teacher",
+                            FinalApprovalNotes: "Ready for classroom delivery.",
+                            FinalApprovalDecidedAt: DateTimeOffset.Parse("2026-06-07T09:30:00Z"),
                             StyleGuideId: styleGuideId,
                             StyleGuideVersion: 2,
                             RecipeId: recipeId,
@@ -97,6 +100,11 @@ public sealed class DeliveryPackageTests
             Assert.Equal("Sample project", manifest.RootElement.GetProperty("projectName").GetString());
             Assert.Equal(1, items.GetArrayLength());
             Assert.Equal("Cover", items[0].GetProperty("title").GetString());
+            Assert.Equal("Teacher", items[0].GetProperty("finalReviewer").GetString());
+            Assert.Equal("Ready for classroom delivery.", items[0].GetProperty("finalApprovalNotes").GetString());
+            Assert.Equal(
+                DateTimeOffset.Parse("2026-06-07T09:30:00Z"),
+                items[0].GetProperty("finalApprovalDecidedAt").GetDateTimeOffset());
             Assert.Equal(styleGuideId, items[0].GetProperty("styleGuideId").GetGuid());
             Assert.Equal(2, items[0].GetProperty("styleGuideVersion").GetInt32());
             Assert.Equal(recipeId, items[0].GetProperty("recipeId").GetGuid());
@@ -127,10 +135,16 @@ public sealed class DeliveryPackageTests
             Assert.Contains(evidenceAnchorId.ToString(), manifestCsv);
             Assert.Contains("operatorRunIds", manifestCsv);
             Assert.Contains(operatorRunId.ToString(), manifestCsv);
+            Assert.Contains("finalReviewer", manifestCsv);
+            Assert.Contains("Ready for classroom delivery.", manifestCsv);
             Assert.Contains("blueprintConsistencySummary", manifestCsv);
             Assert.Contains("panel-narrative-sequence", manifestCsv);
             Assert.Contains("same main character; consistent scene grammar", manifestCsv);
             Assert.Contains("alternate camera distance", manifestCsv);
+
+            var reviewReport = await File.ReadAllTextAsync(result.ReviewReportPath, CancellationToken.None);
+            Assert.Contains("reviewer=Teacher", reviewReport);
+            Assert.Contains("notes=Ready for classroom delivery.", reviewReport);
         }
         finally
         {

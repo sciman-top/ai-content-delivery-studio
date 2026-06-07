@@ -289,7 +289,10 @@ public sealed class PhysicsPosterImportService
                     humanApproved ? "Imported finalized physics delivery image." : "Imported alternate physics delivery image.",
                     suggestedFix: null,
                     humanApproved,
-                    timestamp);
+                    timestamp,
+                    finalReviewer: humanApproved ? "Imported delivery" : null,
+                    finalApprovalNotes: humanApproved ? "Imported finalized delivery." : null,
+                    finalApprovalDecidedAt: humanApproved ? timestamp : null);
 
                 return new PhysicsImportedCandidate(candidate, review);
             })

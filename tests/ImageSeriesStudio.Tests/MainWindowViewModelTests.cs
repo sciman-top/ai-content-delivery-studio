@@ -246,6 +246,9 @@ public sealed class MainWindowViewModelTests
             Assert.Equal("Panel narrative sequence", blueprint.GetProperty("displayName").GetString());
             Assert.Equal("panel sequence", blueprint.GetProperty("sequenceMode").GetString());
             Assert.Contains("consistent panel storytelling", blueprint.GetProperty("consistencySummary").GetString());
+            Assert.Equal("Teacher", item.GetProperty("finalReviewer").GetString());
+            Assert.Equal("Ready for package.", item.GetProperty("finalApprovalNotes").GetString());
+            Assert.True(item.GetProperty("finalApprovalDecidedAt").GetDateTimeOffset() > DateTimeOffset.MinValue);
         }
         finally
         {
@@ -528,6 +531,16 @@ public sealed class MainWindowViewModelTests
                 .ToArray();
 
             return Task.FromResult<IReadOnlyList<ProjectSummary>>(summaries);
+        }
+
+        public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<ReviewResult?>(null);
         }
     }
 }

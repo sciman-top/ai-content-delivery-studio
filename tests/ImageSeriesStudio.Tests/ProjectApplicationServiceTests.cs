@@ -596,6 +596,10 @@ public sealed class ProjectApplicationServiceTests
             Assert.Equal(2, run.Images.Count);
             Assert.All(run.Images, image => Assert.True(File.Exists(image.AssetPath)));
             Assert.All(run.Images, image => Assert.True(File.Exists(image.MetadataPath)));
+
+            await using var verification = new AppDbContext(options);
+            Assert.Equal(2, await verification.GenerationTasks.CountAsync());
+            Assert.Equal(2, await verification.CandidateImages.CountAsync());
         }
         finally
         {
@@ -830,9 +834,110 @@ public sealed class ProjectApplicationServiceTests
         }
     }
 
+    [Fact]
+    public async Task ProjectApplicationService_RecordsFinalApprovalDecision()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project-final-approval.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            var timestamp = new DateTimeOffset(2026, 6, 7, 10, 0, 0, TimeSpan.Zero);
+            Guid projectId;
+            Guid candidateId;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+
+                var project = ImageProject.Create("Approval persistence demo", timestamp);
+                var profile = project.AddProviderProfile("Fake provider", ProviderKind.Fake, timestamp.AddMinutes(1));
+                var series = project.AddSeries("Approval series", "Series", timestamp.AddMinutes(2));
+                var item = series.AddItem("Opening", "Opening candidate.", timestamp.AddMinutes(3));
+                var prompt = item.AddPromptVersion(
+                    "Create an approval-ready image.",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    profile.Id,
+                    timestamp.AddMinutes(4));
+                var task = new GenerationTask(
+                    Guid.NewGuid(),
+                    item.Id,
+                    prompt.Id,
+                    profile.Id,
+                    GenerationTaskStatus.Succeeded,
+                    attemptCount: 1,
+                    maxRetries: 1,
+                    timestamp.AddMinutes(5),
+                    timestamp.AddMinutes(6));
+                var candidate = new CandidateImage(
+                    Guid.NewGuid(),
+                    item.Id,
+                    prompt.Id,
+                    task.Id,
+                    profile.Id,
+                    CandidateImageStatus.ReviewPending,
+                    "outputs/review/final.png",
+                    "outputs/review/final.json",
+                    timestamp.AddMinutes(7));
+
+                setup.Projects.Add(project);
+                setup.GenerationTasks.Add(task);
+                setup.CandidateImages.Add(candidate);
+                await setup.SaveChangesAsync();
+
+                projectId = project.Id;
+                candidateId = candidate.Id;
+            }
+
+            await using (var db = new AppDbContext(options))
+            {
+                var service = new ProjectApplicationService(new EfProjectRepository(db));
+                await service.RecordFinalApprovalAsync(
+                    projectId,
+                    new FinalApprovalRequest(
+                        new StructuredReviewOutput(
+                            candidateId,
+                            ReviewDecision.Pass,
+                            [new StructuredReviewScore("match", "Match prompt.", 3, 5)],
+                            [],
+                            "Looks correct.",
+                            null),
+                        Approve: true,
+                        Reviewer: "Teacher",
+                        Notes: "Ready for package."),
+                    timestamp.AddMinutes(8),
+                    CancellationToken.None);
+            }
+
+            await using (var db = new AppDbContext(options))
+            {
+                var review = await db.ReviewResults.SingleAsync();
+
+                Assert.Equal(candidateId, review.CandidateImageId);
+                Assert.True(review.HumanApproved);
+                Assert.Equal("Teacher", review.FinalReviewer);
+                Assert.Equal("Ready for package.", review.FinalApprovalNotes);
+                Assert.Equal(timestamp.AddMinutes(8), review.FinalApprovalDecidedAt);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
     private sealed class InMemoryProjectRepository : IProjectRepository
     {
         private readonly Dictionary<Guid, ImageProject> _projects = new();
+        private readonly Dictionary<Guid, ReviewResult> _reviewResultsByCandidateId = new();
 
         public Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
         {
@@ -858,6 +963,18 @@ public sealed class ProjectApplicationServiceTests
                 .ToArray();
 
             return Task.FromResult(summaries);
+        }
+
+        public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
+        {
+            _reviewResultsByCandidateId[reviewResult.CandidateImageId] = reviewResult;
+            return Task.CompletedTask;
+        }
+
+        public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
+        {
+            _reviewResultsByCandidateId.TryGetValue(candidateImageId, out var review);
+            return Task.FromResult(review);
         }
     }
 }

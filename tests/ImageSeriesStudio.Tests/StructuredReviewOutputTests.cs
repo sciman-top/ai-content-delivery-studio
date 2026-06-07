@@ -76,12 +76,20 @@ public sealed class StructuredReviewOutputTests
             "Approved by AI review.",
             null);
 
-        var review = output.ToReviewResult(createdAt, humanApproved: true);
+        var review = output.ToReviewResult(
+            createdAt,
+            humanApproved: true,
+            finalReviewer: "Teacher",
+            finalApprovalNotes: "Ready for package.",
+            finalApprovalDecidedAt: createdAt);
 
         Assert.Equal(candidateId, review.CandidateImageId);
         Assert.Equal(ReviewDecision.Pass, review.Decision);
         Assert.Equal(5, review.Scores["match"]);
         Assert.True(review.HumanApproved);
         Assert.Equal(createdAt, review.CreatedAt);
+        Assert.Equal("Teacher", review.FinalReviewer);
+        Assert.Equal("Ready for package.", review.FinalApprovalNotes);
+        Assert.Equal(createdAt, review.FinalApprovalDecidedAt);
     }
 }

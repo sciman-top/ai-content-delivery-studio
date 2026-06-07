@@ -1,17 +1,21 @@
 using System.IO;
 using System.Net.Http;
+using ImageSeriesStudio.Application.Composition;
 using ImageSeriesStudio.Application.Delivery;
 using System.Windows;
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.Application.ToolAdapters;
 using ImageSeriesStudio.App.Services;
 using ImageSeriesStudio.App.ViewModels;
 using ImageSeriesStudio.App.Telemetry;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Infrastructure.Composition;
 using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
 using ImageSeriesStudio.Infrastructure.OpenAI;
 using ImageSeriesStudio.Infrastructure.Persistence;
+using ImageSeriesStudio.Infrastructure.ToolAdapters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -53,6 +57,11 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<IImageEditProvider>(serviceProvider =>
             serviceProvider.GetRequiredService<FakeImageGenerationProvider>());
         builder.Services.AddSingleton<IVisionReviewProvider, FakeVisionReviewProvider>();
+        // V1 keeps exact label and formula rendering on the local deterministic path instead of asking image generation to render trusted text.
+        builder.Services.AddSingleton<IDeterministicTextComposer, SkiaDeterministicTextComposer>();
+        // V1's first real operator slice is additive local validation, so keep the initial executable low-risk path fully local.
+        builder.Services.AddSingleton<IToolAdapter, ArtifactValidationToolAdapter>();
+        builder.Services.AddSingleton<IToolAdapter, DeterministicTextCompositionToolAdapter>();
         builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
         builder.Services.AddTransient<ProviderCenterViewModel>();
         builder.Services.AddTransient<MainWindowViewModel>();

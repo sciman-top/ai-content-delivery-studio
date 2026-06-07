@@ -149,5 +149,6 @@ V1 does not require:
 
 - Keep role-scoped credential separation intact.
 - Keep the fake-first gate as the default regression path.
+- Use the official OpenAI .NET SDK for the stable Images API path; keep raw `HttpClient` on Responses-backed planning and review until the SDK surface no longer requires the current `OPENAI001` evaluation fallback.
 - Treat Responses multi-turn image state as a hardening slice, not as a prerequisite for the primary launch route.
 - Record any deviation from this policy in roadmap or implementation-plan evidence before changing runtime behavior.

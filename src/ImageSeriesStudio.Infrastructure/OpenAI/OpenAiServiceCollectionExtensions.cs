@@ -21,6 +21,9 @@ public static class OpenAiServiceCollectionExtensions
         services.AddSingleton(providerOptions);
         services.TryAddSingleton(_ => OpenAiSecretStores.CreateDefault());
         services.TryAddSingleton<IProviderCallTelemetrySink, DiagnosticProviderCallTelemetrySink>();
+        services.TryAddSingleton<IOpenAiOfficialSdkFactory, OpenAiOfficialSdkFactory>();
+        services.TryAddSingleton<IOpenAiSdkImageBackend, OpenAiOfficialSdkImageBackend>();
+        services.TryAddSingleton<IOpenAiSdkImageTransport, OpenAiSdkImageTransport>();
 
         var builder = services.AddHttpClient(
             OpenAiHttpClientNames.Provider,

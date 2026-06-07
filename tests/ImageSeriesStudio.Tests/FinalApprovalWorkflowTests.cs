@@ -16,9 +16,13 @@ public sealed class FinalApprovalWorkflowTests
 
         Assert.True(decision.HumanApproved);
         Assert.Equal("Teacher", decision.Reviewer);
+        Assert.Equal("Looks ready.", decision.Notes);
         Assert.Equal(decidedAt, decision.DecidedAt);
         Assert.True(decision.ReviewResult.HumanApproved);
         Assert.Equal(review.CandidateImageId, decision.ReviewResult.CandidateImageId);
+        Assert.Equal("Teacher", decision.ReviewResult.FinalReviewer);
+        Assert.Equal("Looks ready.", decision.ReviewResult.FinalApprovalNotes);
+        Assert.Equal(decidedAt, decision.ReviewResult.FinalApprovalDecidedAt);
     }
 
     [Fact]
@@ -33,6 +37,9 @@ public sealed class FinalApprovalWorkflowTests
         Assert.False(decision.HumanApproved);
         Assert.False(decision.ReviewResult.HumanApproved);
         Assert.Equal("Prompt mismatch.", decision.Notes);
+        Assert.Equal("Teacher", decision.ReviewResult.FinalReviewer);
+        Assert.Equal("Prompt mismatch.", decision.ReviewResult.FinalApprovalNotes);
+        Assert.NotNull(decision.ReviewResult.FinalApprovalDecidedAt);
     }
 
     [Fact]

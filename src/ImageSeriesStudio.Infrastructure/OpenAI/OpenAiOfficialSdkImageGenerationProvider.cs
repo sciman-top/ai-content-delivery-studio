@@ -1,12 +1,12 @@
+using System.ClientModel;
 using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Net;
 using System.Text.Json;
 using ImageSeriesStudio.Core.Providers;
 
 namespace ImageSeriesStudio.Infrastructure.OpenAI;
 
-public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
+public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationProvider
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -14,29 +14,29 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
     };
     private static readonly OpenAiRoutingDecision Routing = OpenAiProviderRoutingPolicy.ForImageGeneration();
 
-    private readonly HttpClient _httpClient;
     private readonly OpenAiProviderOptions _options;
     private readonly IOpenAiSecretStore _secretStore;
+    private readonly IOpenAiSdkImageTransport _transport;
     private readonly IProviderCallTelemetrySink _telemetrySink;
     private readonly OpenAiCostRateCard _rateCard;
 
-    public OpenAiImageGenerationProvider(
-        HttpClient httpClient,
+    public OpenAiOfficialSdkImageGenerationProvider(
         OpenAiProviderOptions options,
         IOpenAiSecretStore secretStore,
+        IOpenAiSdkImageTransport transport,
         IProviderCallTelemetrySink? telemetrySink = null,
         OpenAiCostRateCard? rateCard = null)
     {
-        _httpClient = httpClient;
         _options = options;
         _secretStore = secretStore;
+        _transport = transport;
         _telemetrySink = telemetrySink ?? NullProviderCallTelemetrySink.Instance;
         _rateCard = rateCard ?? OpenAiCostRateCard.Unpriced;
         OpenAiProviderGuard.EnsureAllowsOperation(_options, OpenAiProviderOperation.ImageGeneration);
 
         Capabilities = new ProviderCapabilities(
-            "openai-image",
-            "OpenAI Image Generation Provider",
+            "openai-image-sdk",
+            "OpenAI Image Generation Provider (Official SDK)",
             [_options.ImageGenerationModel],
             SupportsTextPlanning: false,
             SupportsImageGeneration: true,
@@ -71,28 +71,53 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
 
         var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        httpRequest.Content = JsonContent.Create(CreatePayload(request), options: JsonOptions);
-
         var stopwatch = Stopwatch.StartNew();
-        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-        stopwatch.Stop();
-        if (!response.IsSuccessStatusCode)
+
+        OpenAiSdkImageTransportResult transportResult;
+        try
         {
-            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed);
+            transportResult = await _transport.GenerateAsync(_options, apiKey, request, cancellationToken);
+        }
+        catch (ClientResultException exception)
+        {
+            stopwatch.Stop();
+            _telemetrySink.Record(
+                OpenAiProviderTelemetry.Create(
+                    Capabilities.ProviderId,
+                    "image-generation",
+                    _options.ImageGenerationModel,
+                    endpoint,
+                    exception.Status,
+                    succeeded: false,
+                    requestId: null,
+                    body: null,
+                    providerTraceId: null,
+                    stopwatch.Elapsed,
+                    _rateCard.ImageGenerationRequestUsd,
+                    _rateCard.Name));
             throw new HttpRequestException(
-                $"OpenAI image generation request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+                $"OpenAI official SDK image generation request failed with status {exception.Status}.",
+                exception,
+                (HttpStatusCode)exception.Status);
         }
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-        var imageBase64 = ExtractImageBase64(document.RootElement);
-        var imageBytes = Convert.FromBase64String(imageBase64);
+        stopwatch.Stop();
+        using var document = JsonDocument.Parse(transportResult.RawBody);
         var generatedAt = DateTimeOffset.UtcNow;
         var outputFormat = NormalizeOutputFormat(request.Settings.OutputFormat);
-        var providerTraceId = ExtractTraceId(document.RootElement);
-        var telemetry = CreateTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
+        var telemetry = OpenAiProviderTelemetry.Create(
+            Capabilities.ProviderId,
+            "image-generation",
+            _options.ImageGenerationModel,
+            endpoint,
+            transportResult.StatusCode,
+            succeeded: transportResult.StatusCode is >= 200 and < 300,
+            transportResult.RequestId,
+            document.RootElement,
+            transportResult.ProviderTraceId,
+            stopwatch.Elapsed,
+            _rateCard.ImageGenerationRequestUsd,
+            _rateCard.Name);
         _telemetrySink.Record(telemetry);
 
         Directory.CreateDirectory(request.OutputDirectory);
@@ -102,7 +127,7 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             EnsureOutputFileName(request.OutputFileName, outputFormat, request.SeriesItemId, request.PromptVersionId));
         var metadataPath = Path.ChangeExtension(assetPath, ".json");
 
-        await File.WriteAllBytesAsync(assetPath, imageBytes, cancellationToken);
+        await File.WriteAllBytesAsync(assetPath, transportResult.ImageBytes, cancellationToken);
         await File.WriteAllTextAsync(
             metadataPath,
             JsonSerializer.Serialize(
@@ -112,7 +137,7 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
                     endpointFamily = Routing.EndpointFamily.ToString().ToLowerInvariant(),
                     store = Routing.Store,
                     model = _options.ImageGenerationModel,
-                    providerTraceId,
+                    providerTraceId = transportResult.ProviderTraceId,
                     seriesItemId = request.SeriesItemId,
                     promptVersionId = request.PromptVersionId,
                     promptText = request.PromptText,
@@ -142,22 +167,8 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             Guid.NewGuid(),
             assetPath,
             metadataPath,
-            providerTraceId,
+            transportResult.ProviderTraceId,
             generatedAt);
-    }
-
-    private Dictionary<string, object?> CreatePayload(ImageGenerationRequest request)
-    {
-        return new Dictionary<string, object?>
-        {
-            ["model"] = _options.ImageGenerationModel,
-            ["prompt"] = request.PromptText,
-            ["n"] = 1,
-            ["store"] = Routing.Store,
-            ["size"] = BuildSize(request),
-            ["quality"] = NormalizeQuality(request.Settings.Quality),
-            ["output_format"] = NormalizeOutputFormat(request.Settings.OutputFormat),
-        };
     }
 
     private static string BuildSize(ImageGenerationRequest request)
@@ -202,65 +213,5 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         return Path.GetExtension(fileName).Equals(extension, StringComparison.OrdinalIgnoreCase)
             ? fileName
             : Path.ChangeExtension(fileName, extension);
-    }
-
-    private static string ExtractImageBase64(JsonElement root)
-    {
-        if (root.TryGetProperty("data", out var dataElement)
-            && dataElement.ValueKind is JsonValueKind.Array)
-        {
-            foreach (var image in dataElement.EnumerateArray())
-            {
-                if (image.TryGetProperty("b64_json", out var base64Element)
-                    && base64Element.ValueKind is JsonValueKind.String)
-                {
-                    return base64Element.GetString()!;
-                }
-            }
-        }
-
-        throw new InvalidOperationException("OpenAI image generation response did not include base64 image data.");
-    }
-
-    private static string ExtractTraceId(JsonElement root)
-    {
-        if (root.TryGetProperty("id", out var idElement) && idElement.ValueKind is JsonValueKind.String)
-        {
-            return idElement.GetString()!;
-        }
-
-        return root.TryGetProperty("created", out var createdElement)
-            ? $"openai-image-{createdElement}"
-            : "openai-image-generate";
-    }
-
-    private void RecordTelemetry(
-        Uri endpoint,
-        HttpResponseMessage response,
-        JsonElement? body,
-        string? providerTraceId,
-        TimeSpan latency)
-    {
-        _telemetrySink.Record(CreateTelemetry(endpoint, response, body, providerTraceId, latency));
-    }
-
-    private ProviderCallTelemetry CreateTelemetry(
-        Uri endpoint,
-        HttpResponseMessage response,
-        JsonElement? body,
-        string? providerTraceId,
-        TimeSpan latency)
-    {
-        return OpenAiProviderTelemetry.Create(
-            Capabilities.ProviderId,
-            "image-generation",
-            _options.ImageGenerationModel,
-            endpoint,
-            response,
-            body,
-            providerTraceId,
-            latency,
-            _rateCard.ImageGenerationRequestUsd,
-            _rateCard.Name);
     }
 }

@@ -50,6 +50,12 @@ public sealed class EfProjectRepository : IProjectRepository
             .Include(project => project.Series)
             .ThenInclude(series => series.Items)
             .ThenInclude(item => item.PromptVersions)
+            .Include(project => project.Series)
+            .ThenInclude(series => series.Items)
+            .ThenInclude(item => item.GenerationTasks)
+            .Include(project => project.Series)
+            .ThenInclude(series => series.Items)
+            .ThenInclude(item => item.CandidateImages)
             .SingleOrDefaultAsync(project => project.Id == projectId, cancellationToken);
     }
 
@@ -116,6 +122,22 @@ public sealed class EfProjectRepository : IProjectRepository
                         _dbContext.PromptVersions.Add(prompt);
                     }
                 }
+
+                foreach (var task in item.GenerationTasks)
+                {
+                    if (!await _dbContext.GenerationTasks.AnyAsync(existing => existing.Id == task.Id, cancellationToken))
+                    {
+                        _dbContext.GenerationTasks.Add(task);
+                    }
+                }
+
+                foreach (var candidate in item.CandidateImages)
+                {
+                    if (!await _dbContext.CandidateImages.AnyAsync(existing => existing.Id == candidate.Id, cancellationToken))
+                    {
+                        _dbContext.CandidateImages.Add(candidate);
+                    }
+                }
             }
         }
 
@@ -177,5 +199,44 @@ public sealed class EfProjectRepository : IProjectRepository
         return projects
             .OrderByDescending(project => project.UpdatedAt)
             .ToArray();
+    }
+
+    public async Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
+    {
+        var candidateBelongsToProject = await (
+                from candidate in _dbContext.CandidateImages
+                join item in _dbContext.SeriesItems on candidate.SeriesItemId equals item.Id
+                join series in _dbContext.Series on item.SeriesId equals series.Id
+                where candidate.Id == reviewResult.CandidateImageId && series.ProjectId == projectId
+                select candidate.Id)
+            .AnyAsync(cancellationToken);
+        if (!candidateBelongsToProject)
+        {
+            throw new InvalidOperationException(
+                $"Candidate image {reviewResult.CandidateImageId} does not belong to project {projectId}.");
+        }
+
+        var existing = await _dbContext.ReviewResults
+            .SingleOrDefaultAsync(
+                review => review.CandidateImageId == reviewResult.CandidateImageId,
+                cancellationToken);
+        if (existing is null)
+        {
+            _dbContext.ReviewResults.Add(reviewResult);
+        }
+        else
+        {
+            _dbContext.Entry(existing).CurrentValues.SetValues(reviewResult);
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
+    {
+        return _dbContext.ReviewResults
+            .Where(review => review.CandidateImageId == candidateImageId)
+            .OrderByDescending(review => review.FinalApprovalDecidedAt ?? review.CreatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

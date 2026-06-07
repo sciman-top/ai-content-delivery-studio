@@ -2244,6 +2244,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 Text(LocalizationKey.HumanApprovalPending),
                 string.Empty,
                 string.Empty,
+                null,
                 pair.First);
         }).ToArray();
         DeliveryRows = [];
@@ -2272,8 +2273,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanApproveSelectedReview))]
     private Task ApproveSelectedReviewAsync()
     {
-        ApplyFinalApproval(approve: true);
-        return Task.CompletedTask;
+        return ApplyFinalApprovalAsync(approve: true);
     }
 
     private bool CanApproveSelectedReview()
@@ -2285,8 +2285,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRejectSelectedReview))]
     private Task RejectSelectedReviewAsync()
     {
-        ApplyFinalApproval(approve: false);
-        return Task.CompletedTask;
+        return ApplyFinalApprovalAsync(approve: false);
     }
 
     private bool CanRejectSelectedReview()
@@ -2296,20 +2295,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
             && !string.IsNullOrWhiteSpace(FinalApprovalNotes);
     }
 
-    private void ApplyFinalApproval(bool approve)
+    private async Task ApplyFinalApprovalAsync(bool approve)
     {
-        if (SelectedReviewRow is null)
+        if (SelectedReviewRow is null || SelectedProject is null)
         {
             return;
         }
 
-        var decision = FinalApprovalWorkflow.Decide(
+        var decision = await _projectService.RecordFinalApprovalAsync(
+            SelectedProject.Id,
             new FinalApprovalRequest(
                 SelectedReviewRow.Review,
                 approve,
                 FinalApprovalReviewer,
                 FinalApprovalNotes),
-            DateTimeOffset.UtcNow);
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
 
         var updated = SelectedReviewRow with
         {
@@ -2319,6 +2320,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 : Text(LocalizationKey.HumanApprovalRejected),
             FinalReviewer = decision.Reviewer,
             FinalApprovalNotes = decision.Notes,
+            FinalApprovalDecidedAt = decision.DecidedAt,
         };
 
         ReviewRows = ReviewRows
@@ -2367,6 +2369,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 row.PromptText,
                 ReviewDecision.Pass,
                 HumanApproved: true,
+                FinalReviewer: reviewByCandidate[row.CandidateImageId].FinalReviewer,
+                FinalApprovalNotes: reviewByCandidate[row.CandidateImageId].FinalApprovalNotes,
+                FinalApprovalDecidedAt: reviewByCandidate[row.CandidateImageId].FinalApprovalDecidedAt,
                 Blueprint: blueprint))
             .ToArray();
 
@@ -2906,6 +2911,7 @@ public sealed record ReviewRowViewModel(
     string HumanApprovalStatus,
     string FinalReviewer,
     string FinalApprovalNotes,
+    DateTimeOffset? FinalApprovalDecidedAt,
     StructuredReviewOutput Review);
 
 public sealed record DeliveryRowViewModel(

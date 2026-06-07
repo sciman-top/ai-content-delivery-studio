@@ -23,4 +23,5 @@ public sealed record DeterministicTextOverlay(
 public sealed record DeterministicTextCompositionResult(
     string ComposedImagePath,
     string LayoutReportPath,
-    int OverlayCount);
+    int OverlayCount,
+    IReadOnlyList<string> Warnings);

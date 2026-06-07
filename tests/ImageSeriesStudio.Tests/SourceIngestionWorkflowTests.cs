@@ -132,5 +132,15 @@ public sealed class SourceIngestionWorkflowTests
                         project.UpdatedAt))
                     .ToArray());
         }
+
+        public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<ReviewResult?>(null);
+        }
     }
 }

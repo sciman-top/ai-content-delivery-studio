@@ -6,11 +6,11 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 
 - [ ] Harden the short requirement -> brief -> blueprint -> series -> review -> delivery path as the primary V1 launch route.
 - [ ] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path as a supporting validation route without requiring real providers by default.
-- [ ] Complete Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export.
-- [ ] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
-- [ ] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
+- [x] Complete Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export.
+- [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
+- [x] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
-- [ ] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
+- [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
 - [ ] Capture V1 launch evidence against the explicit launch metrics.
 
 ## V1 Documentation And Policy Alignment
@@ -119,8 +119,8 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Add non-generating `/v1/models` health checks for text providers and image key pools.
 - [x] Add Provider Center configuration summary model/view-model without exposing secret values.
 - [x] Add Provider Center manual health summary state for mixed text/image key-pool results.
-- [ ] Evaluate and adopt the official OpenAI .NET SDK where the API surface is stable enough.
-- [ ] Keep raw `HttpClient` fallback only for unsupported or lagging SDK surfaces.
+- [x] Evaluate and adopt the official OpenAI .NET SDK where the API surface is stable enough.
+- [x] Keep raw `HttpClient` fallback only for unsupported or lagging SDK surfaces.
 - [x] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
 - [x] Capture request IDs, token usage, latency, and cost telemetry per provider call.
 - [x] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
@@ -144,12 +144,12 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 
 Priority note: this phase is now part of the near-term golden-path hardening slice, not a distant quality add-on.
 
-- [ ] Add `SkiaSharp`-based deterministic composition foundation for labels, formulas, legends, and callouts.
-- [ ] Add deterministic post-render text composition service for educational or text-heavy visuals.
-- [ ] Add readability, label, and callout-specific review checks.
-- [ ] Persist human approval decisions and reviewer notes.
-- [ ] Export final approval state in delivery manifests and review reports.
-- [ ] Run full build, test, and format gates for the implementation slice.
+- [x] Add `SkiaSharp`-based deterministic composition foundation for labels, formulas, legends, and callouts.
+- [x] Add deterministic post-render text composition service for educational or text-heavy visuals.
+- [x] Add readability, label, and callout-specific review checks.
+- [x] Persist human approval decisions and reviewer notes.
+- [x] Export final approval state in delivery manifests and review reports.
+- [x] Run full build, test, and format gates for the implementation slice.
 
 ## Phase 5: Sample Migration
 
@@ -324,8 +324,8 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Add approval gate for medium/high-risk operator actions.
 - [x] Add low-risk auto-repair path for safe local validation or file-generation tasks.
 - [x] Add operator audit export into diagnostics and delivery evidence where appropriate.
-- [ ] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
-  - [ ] Recommended first slice: local delivery or artifact validation report generation into a new diagnostics folder.
+- [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
+  - [x] Recommended first slice: local delivery or artifact validation report generation into a new diagnostics folder.
 - [x] Run build, test, and format gates for the implementation slice.
 
 ## Phase 14: Product Identity And Repository Rename

@@ -1,0 +1,88 @@
+using System.Text;
+using System.Text.Json;
+using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Infrastructure.OpenAI;
+using System.ClientModel;
+
+namespace ImageSeriesStudio.Tests;
+
+public sealed class OpenAiSdkImageTransportTests
+{
+    [Fact]
+    public async Task GenerateAsync_UsesOfficialImageClientAndPreservesStoreFalse()
+    {
+        var imageBytes = new byte[] { 137, 80, 78, 71 };
+        var fakeBackend = new FakeSdkImageBackend(
+            """
+            {
+              "id": "img_sdk_123",
+              "data": [
+                {
+                  "b64_json": "iVBORw=="
+                }
+              ]
+            }
+            """,
+            requestId: "req_sdk_123");
+        var sdkTransport = new OpenAiSdkImageTransport(fakeBackend);
+        var options = new OpenAiProviderOptions
+        {
+            BaseUri = new Uri("https://api.openai.com/v1/"),
+            ImageGenerationModel = "gpt-image-2",
+            RealApiEnabled = true,
+        };
+
+        var result = await sdkTransport.GenerateAsync(
+            options,
+            "test-openai-key",
+            new ImageGenerationRequest(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                "Create a clean science poster.",
+                new GenerationSettings(1024, 1024, "standard", "png"),
+                Path.GetTempPath()),
+            CancellationToken.None);
+
+        Assert.Equal("img_sdk_123", result.ProviderTraceId);
+        Assert.Equal("req_sdk_123", result.RequestId);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(imageBytes, result.ImageBytes);
+
+        using var payload = JsonDocument.Parse(fakeBackend.LastPayload!);
+        Assert.Equal("gpt-image-2", payload.RootElement.GetProperty("model").GetString());
+        Assert.Equal("Create a clean science poster.", payload.RootElement.GetProperty("prompt").GetString());
+        Assert.Equal(1, payload.RootElement.GetProperty("n").GetInt32());
+        Assert.False(payload.RootElement.GetProperty("store").GetBoolean());
+    }
+
+    private sealed class FakeSdkImageBackend : IOpenAiSdkImageBackend
+    {
+        private readonly string _responseJson;
+        private readonly string _requestId;
+
+        public FakeSdkImageBackend(string responseJson, string requestId)
+        {
+            _responseJson = responseJson;
+            _requestId = requestId;
+        }
+
+        public string? LastPayload { get; private set; }
+
+        public Task<OpenAiSdkImageBackendResponse> SendAsync(
+            OpenAiProviderOptions options,
+            string apiKey,
+            BinaryContent payload,
+            CancellationToken cancellationToken)
+        {
+            using var stream = new MemoryStream();
+            payload.WriteTo(stream, cancellationToken);
+            LastPayload = Encoding.UTF8.GetString(stream.ToArray());
+
+            return Task.FromResult(new OpenAiSdkImageBackendResponse(
+                200,
+                _requestId,
+                BinaryData.FromString(_responseJson)));
+        }
+    }
+}

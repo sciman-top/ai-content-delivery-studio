@@ -431,6 +431,44 @@ public sealed class SeriesItem
         return promptVersion;
     }
 
+    public GenerationTask AddGenerationTask(GenerationTask task, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(task);
+
+        if (task.SeriesItemId != Id)
+        {
+            throw new ArgumentException("Generation task must belong to this series item.", nameof(task));
+        }
+
+        if (_generationTasks.Any(existing => existing.Id == task.Id))
+        {
+            throw new InvalidOperationException($"Generation task already exists: {task.Id}");
+        }
+
+        _generationTasks.Add(task);
+        UpdatedAt = timestamp;
+        return task;
+    }
+
+    public CandidateImage AddCandidateImage(CandidateImage candidateImage, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(candidateImage);
+
+        if (candidateImage.SeriesItemId != Id)
+        {
+            throw new ArgumentException("Candidate image must belong to this series item.", nameof(candidateImage));
+        }
+
+        if (_candidateImages.Any(existing => existing.Id == candidateImage.Id))
+        {
+            throw new InvalidOperationException($"Candidate image already exists: {candidateImage.Id}");
+        }
+
+        _candidateImages.Add(candidateImage);
+        UpdatedAt = timestamp;
+        return candidateImage;
+    }
+
     private void TransitionTo(SeriesItemStatus nextStatus, DateTimeOffset timestamp)
     {
         if (!CanTransition(Status, nextStatus))
@@ -763,7 +801,10 @@ public sealed class ReviewResult
         string comments,
         string? suggestedFix,
         bool humanApproved,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        string? finalReviewer = null,
+        string? finalApprovalNotes = null,
+        DateTimeOffset? finalApprovalDecidedAt = null)
     {
         Id = id;
         CandidateImageId = candidateImageId;
@@ -773,6 +814,9 @@ public sealed class ReviewResult
         Comments = comments;
         SuggestedFix = suggestedFix;
         HumanApproved = humanApproved;
+        FinalReviewer = NormalizeOptionalText(finalReviewer);
+        FinalApprovalNotes = NormalizeOptionalText(finalApprovalNotes);
+        FinalApprovalDecidedAt = finalApprovalDecidedAt;
         CreatedAt = createdAt;
     }
 
@@ -792,7 +836,20 @@ public sealed class ReviewResult
 
     public bool HumanApproved { get; private set; }
 
+    public string? FinalReviewer { get; private set; }
+
+    public string? FinalApprovalNotes { get; private set; }
+
+    public DateTimeOffset? FinalApprovalDecidedAt { get; private set; }
+
     public DateTimeOffset CreatedAt { get; private set; }
+
+    private static string? NormalizeOptionalText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? null
+            : value.Trim();
+    }
 }
 
 public enum ReviewDecision

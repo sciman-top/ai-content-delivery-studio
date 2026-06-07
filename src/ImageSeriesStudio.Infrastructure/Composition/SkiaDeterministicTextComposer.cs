@@ -39,6 +39,7 @@ public sealed class SkiaDeterministicTextComposer : IDeterministicTextComposer
         using var canvas = new SKCanvas(composedBitmap);
 
         var layoutEntries = new List<DeterministicTextOverlayReport>(overlays.Count);
+        var warnings = new List<string>();
         foreach (var overlay in overlays)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -63,7 +64,7 @@ public sealed class SkiaDeterministicTextComposer : IDeterministicTextComposer
             var baselineY = overlay.Y + fontSize;
             canvas.DrawText(text, overlay.X, baselineY, SKTextAlign.Left, font, paint);
 
-            layoutEntries.Add(new DeterministicTextOverlayReport(
+            var overlayReport = new DeterministicTextOverlayReport(
                 text,
                 overlay.X,
                 overlay.Y,
@@ -71,7 +72,9 @@ public sealed class SkiaDeterministicTextComposer : IDeterministicTextComposer
                 fontSize,
                 overlay.HexColor.Trim(),
                 bounds.Width,
-                bounds.Height));
+                bounds.Height);
+            layoutEntries.Add(overlayReport);
+            warnings.AddRange(EvaluateWarnings(overlayReport, composedBitmap.Width, composedBitmap.Height));
         }
 
         EnsureParentDirectory(composedImagePath);
@@ -86,7 +89,8 @@ public sealed class SkiaDeterministicTextComposer : IDeterministicTextComposer
             composedImagePath,
             composedBitmap.Width,
             composedBitmap.Height,
-            layoutEntries);
+            layoutEntries,
+            warnings.Distinct(StringComparer.Ordinal).ToArray());
         await File.WriteAllTextAsync(
             layoutReportPath,
             JsonSerializer.Serialize(layoutReport, JsonOptions),
@@ -95,7 +99,8 @@ public sealed class SkiaDeterministicTextComposer : IDeterministicTextComposer
         return new DeterministicTextCompositionResult(
             composedImagePath,
             layoutReportPath,
-            layoutEntries.Count);
+            layoutEntries.Count,
+            warnings.Distinct(StringComparer.Ordinal).ToArray());
     }
 
     private static string RequirePath(string value, string parameterName)
@@ -146,6 +151,30 @@ public sealed class SkiaDeterministicTextComposer : IDeterministicTextComposer
             (byte)((rgb >> 8) & 0xFF),
             (byte)(rgb & 0xFF));
     }
+
+    private static IReadOnlyList<string> EvaluateWarnings(
+        DeterministicTextOverlayReport overlay,
+        int canvasWidth,
+        int canvasHeight)
+    {
+        var warnings = new List<string>();
+        if (overlay.FontSize < 12)
+        {
+            warnings.Add($"Overlay '{overlay.Text}' uses font size {overlay.FontSize}, which may be unreadable.");
+        }
+
+        var extendsOutsideCanvas =
+            overlay.X < 0
+            || overlay.Y < 0
+            || overlay.X + overlay.MeasuredWidth > canvasWidth
+            || overlay.Y + overlay.MeasuredHeight > canvasHeight;
+        if (extendsOutsideCanvas)
+        {
+            warnings.Add($"Overlay '{overlay.Text}' extends beyond canvas bounds and may clip labels or callouts.");
+        }
+
+        return warnings;
+    }
 }
 
 internal sealed record DeterministicTextCompositionReport(
@@ -153,7 +182,8 @@ internal sealed record DeterministicTextCompositionReport(
     string ComposedImagePath,
     int Width,
     int Height,
-    IReadOnlyList<DeterministicTextOverlayReport> Overlays)
+    IReadOnlyList<DeterministicTextOverlayReport> Overlays,
+    IReadOnlyList<string> Warnings)
 {
     public int OverlayCount => Overlays.Count;
 }

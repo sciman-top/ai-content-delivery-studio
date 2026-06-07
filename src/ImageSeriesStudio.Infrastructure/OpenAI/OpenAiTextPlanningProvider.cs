@@ -10,6 +10,7 @@ namespace ImageSeriesStudio.Infrastructure.OpenAI;
 public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly OpenAiRoutingDecision Routing = OpenAiProviderRoutingPolicy.ForTextPlanning();
 
     private readonly HttpClient _httpClient;
     private readonly OpenAiProviderOptions _options;
@@ -56,7 +57,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
 
-        var endpoint = new Uri(_options.BaseUri, "responses");
+        var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         httpRequest.Content = JsonContent.Create(CreatePayload(request), options: JsonOptions);
@@ -123,7 +124,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             ["model"] = _options.TextPlanningModel,
             ["instructions"] = "You plan coherent image series. Return only valid JSON that matches the requested schema.",
             ["input"] = BuildInput(request),
-            ["store"] = false,
+            ["store"] = Routing.Store,
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = new Dictionary<string, object?>

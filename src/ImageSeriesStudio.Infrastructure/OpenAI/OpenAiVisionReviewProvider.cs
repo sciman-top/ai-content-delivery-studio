@@ -10,6 +10,7 @@ namespace ImageSeriesStudio.Infrastructure.OpenAI;
 public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly OpenAiRoutingDecision Routing = OpenAiProviderRoutingPolicy.ForVisionReview();
 
     private readonly HttpClient _httpClient;
     private readonly OpenAiProviderOptions _options;
@@ -57,7 +58,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
         var imageDataUrl = await CreateImageDataUrlAsync(request.AssetPath, cancellationToken);
 
-        var endpoint = new Uri(_options.BaseUri, "responses");
+        var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         httpRequest.Content = JsonContent.Create(CreatePayload(request, imageDataUrl), options: JsonOptions);
@@ -116,7 +117,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
                     },
                 },
             },
-            ["store"] = false,
+            ["store"] = Routing.Store,
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = new Dictionary<string, object?>

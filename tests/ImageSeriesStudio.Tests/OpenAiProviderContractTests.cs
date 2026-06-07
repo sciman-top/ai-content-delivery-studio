@@ -267,11 +267,14 @@ public sealed class OpenAiProviderContractTests
             Assert.Equal("auto", payload.RootElement.GetProperty("quality").GetString());
             Assert.Equal("png", payload.RootElement.GetProperty("output_format").GetString());
             Assert.Equal(1, payload.RootElement.GetProperty("n").GetInt32());
+            Assert.False(payload.RootElement.GetProperty("store").GetBoolean());
 
             using var metadata = JsonDocument.Parse(await File.ReadAllTextAsync(result.MetadataPath, CancellationToken.None));
             Assert.Equal("openai-image", metadata.RootElement.GetProperty("providerId").GetString());
             Assert.Equal("gpt-image-2", metadata.RootElement.GetProperty("model").GetString());
             Assert.Equal("img_resp_123", metadata.RootElement.GetProperty("providerTraceId").GetString());
+            Assert.Equal("images", metadata.RootElement.GetProperty("endpointFamily").GetString());
+            Assert.False(metadata.RootElement.GetProperty("store").GetBoolean());
         }
         finally
         {

@@ -428,7 +428,10 @@ public sealed class PersistenceTests
                 "Text needs deterministic composition.",
                 "Use post-render labels.",
                 humanApproved: false,
-                timestamp.AddMinutes(9));
+                timestamp.AddMinutes(9),
+                finalReviewer: "Teacher",
+                finalApprovalNotes: "Needs deterministic text before approval.",
+                finalApprovalDecidedAt: timestamp.AddMinutes(9));
             var deliveryPackage = new DeliveryPackage(
                 Guid.NewGuid(),
                 project.Id,
@@ -478,6 +481,9 @@ public sealed class PersistenceTests
                 Assert.Equal("text-rendering-risk", Assert.Single(loadedReview.HardFailures));
                 Assert.Equal("Use post-render labels.", loadedReview.SuggestedFix);
                 Assert.False(loadedReview.HumanApproved);
+                Assert.Equal("Teacher", loadedReview.FinalReviewer);
+                Assert.Equal("Needs deterministic text before approval.", loadedReview.FinalApprovalNotes);
+                Assert.Equal(timestamp.AddMinutes(9), loadedReview.FinalApprovalDecidedAt);
                 Assert.Equal(project.Id, loadedDeliveryPackage.ProjectId);
                 Assert.Equal(3, loadedDeliveryPackage.Version);
                 Assert.Equal("outputs/delivery/package", loadedDeliveryPackage.OutputPath);

@@ -70,7 +70,7 @@ V1 is ready only when all of these are true:
 - Harden the short requirement -> brief -> blueprint -> series -> review -> delivery route as the primary launch workflow.
 - Keep the article or plain-text route focused on evidence-backed planning that promotes into the same downstream workflow.
 - Elevate Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export into the next hardening slice.
-- Finish the most valuable unresolved Phase 3A items: official OpenAI .NET SDK adoption where stable, plus Responses API routing and multi-turn image state only where it materially improves provenance, revision loops, or partial preview UX.
+- Keep the stable Images API path on the official OpenAI .NET SDK, while limiting raw `HttpClient` usage to lagging Responses surfaces and evaluating multi-turn image state only where it materially improves provenance, revision loops, or partial preview UX.
 - Run the first real low-risk operator execution slice with audit evidence, using additive deterministic local tools before broader automation.
 - Record launch evidence against the V1 release metrics instead of treating every completed foundation slice as launch-complete by default.
 - Keep the external reference system focused, deduplicated, and machine-readable instead of widening it ad hoc.
