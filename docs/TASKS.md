@@ -39,7 +39,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Establish `_shared` reference governance with manifest, update script, and duplicate audit script.
 - [x] Add machine-readable manifest and update flow for `ai-content-delivery-studio-references`.
 - [x] Extend `ai-coding-runtime-references` update flow to export a manifest.
-- [ ] Decide whether `Cockpit-Tools-Local-references` should gain a machine-readable manifest next.
+- [x] Decide whether `Cockpit-Tools-Local-references` should gain a machine-readable manifest next.
 
 ## Frozen Until Post-V1
 

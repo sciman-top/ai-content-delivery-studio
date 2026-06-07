@@ -147,3 +147,19 @@ This strategy supports the current V1 boundary in two ways:
 - it reduces maintenance noise so the team can spend more attention on product hardening rather than reference sprawl
 
 The reference system should serve the product roadmap, not become a second project of its own.
+
+## Cockpit Tools Local Manifest Decision
+
+Decision: `Cockpit-Tools-Local-references` should gain a machine-readable `references.manifest.json` in the next reference-governance maintenance slice.
+
+Reason:
+
+- the shelf already contains several mirrors and at least one shared-backed candidate such as `openai-codex`
+- its README already asks maintainers to keep revision records aligned with project docs
+- a manifest would reduce drift without changing the project-facing reference paths
+
+Scope boundary:
+
+- add a lightweight manifest and update guidance only
+- do not promote additional repositories into `_shared` until duplicate upstreams and clean local state are verified
+- do not make Cockpit reference maintenance a V1 launch blocker for AI Content Delivery Studio
