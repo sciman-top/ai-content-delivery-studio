@@ -4,9 +4,11 @@ using System.Text.Json;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Infrastructure.OpenAI;
+using OpenAI.Responses;
 
 namespace ImageSeriesStudio.Tests;
 
+#pragma warning disable OPENAI001 // Tests intentionally verify ADR 0009 SDK text-planning migration details.
 public sealed class OpenAiProviderContractTests
 {
     [Fact]
@@ -217,6 +219,122 @@ public sealed class OpenAiProviderContractTests
 
         Assert.Contains("Brief direction planning is not implemented for OpenAI", exception.Message);
         Assert.Equal(0, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task SdkTextPlanningProvider_UsesResponsesClientAndParsesOutputText()
+    {
+        var sdkClient = new FakeResponsesClient(SdkJsonResponse(
+            """
+            {
+              "id": "resp_sdk_plan_123",
+              "output_text": "{\"summary\":\"SDK plan\",\"items\":[{\"title\":\"Opening\",\"brief\":\"A brief\",\"promptDraft\":\"A prompt\"}]}"
+            }
+            """));
+        var provider = CreateSdkTextProvider(sdkClient);
+
+        var result = await provider.CreatePlanAsync(
+            new PlanningRequest("sdk poster series", "teachers", 1, "clean"),
+            CancellationToken.None);
+
+        Assert.Equal("resp_sdk_plan_123", result.ProviderTraceId);
+        Assert.Equal("SDK plan", result.Summary);
+        Assert.Single(result.Items);
+        Assert.Equal(1, sdkClient.CallCount);
+        Assert.Equal("gpt-5", sdkClient.LastOptions!.Model);
+        Assert.False(sdkClient.LastOptions.StoredOutputEnabled);
+        Assert.Equal(OpenAiTextPlanningRequestMapper.Instructions, sdkClient.LastOptions.Instructions);
+    }
+
+    [Fact]
+    public async Task SdkTextPlanningProvider_RecordsRequestUsageLatencyAndCostTelemetry()
+    {
+        var telemetrySink = new RecordingTelemetrySink();
+        var sdkClient = new FakeResponsesClient(SdkJsonResponse(
+            """
+            {
+              "id": "resp_sdk_telemetry",
+              "output_text": "{\"summary\":\"SDK telemetry plan\",\"items\":[{\"title\":\"Opening\",\"brief\":\"A brief\",\"promptDraft\":\"A prompt\"}]}",
+              "usage": {
+                "input_tokens": 10,
+                "input_tokens_details": { "cached_tokens": 2 },
+                "output_tokens": 20,
+                "output_tokens_details": { "reasoning_tokens": 4 },
+                "total_tokens": 30
+              }
+            }
+            """,
+            requestId: "req_sdk_text_123"));
+        var provider = new OpenAiSdkTextPlanningProvider(
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            sdkClient,
+            new StaticSecretStore("test-openai-key"),
+            telemetrySink,
+            new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
+
+        await provider.CreatePlanAsync(new PlanningRequest("topic", "audience", 1), CancellationToken.None);
+
+        var telemetry = Assert.Single(telemetrySink.Events);
+        Assert.Equal("openai-text-sdk", telemetry.ProviderId);
+        Assert.Equal("text-planning", telemetry.Operation);
+        Assert.Equal("gpt-5", telemetry.Model);
+        Assert.Equal("https://api.openai.com/v1/responses", telemetry.Endpoint);
+        Assert.Equal(200, telemetry.HttpStatusCode);
+        Assert.True(telemetry.Succeeded);
+        Assert.Equal("req_sdk_text_123", telemetry.RequestId);
+        Assert.Equal("resp_sdk_telemetry", telemetry.ProviderTraceId);
+        Assert.Equal(10, telemetry.Usage!.InputTokens);
+        Assert.Equal(20, telemetry.Usage.OutputTokens);
+        Assert.Equal(30, telemetry.Usage.TotalTokens);
+        Assert.Equal(2, telemetry.Usage.CachedInputTokens);
+        Assert.Equal(4, telemetry.Usage.ReasoningOutputTokens);
+        Assert.Equal(0.03m, telemetry.EstimatedCostUsd);
+        Assert.Equal("test-card", telemetry.RateCardName);
+    }
+
+    [Fact]
+    public async Task SdkTextPlanningProvider_DoesNotCallSdkWhenRealApiIsDisabled()
+    {
+        var sdkClient = new FakeResponsesClient(SdkJsonResponse("{}"));
+        var provider = new OpenAiSdkTextPlanningProvider(
+            new OpenAiProviderOptions(),
+            sdkClient,
+            new StaticSecretStore("test-openai-key"));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.CreatePlanAsync(new PlanningRequest("topic", "audience", 1), CancellationToken.None));
+
+        Assert.Equal(0, sdkClient.CallCount);
+    }
+
+    [Fact]
+    public async Task SdkTextPlanningProvider_MapsSdkFailuresToHttpRequestExceptionAndTelemetry()
+    {
+        var telemetrySink = new RecordingTelemetrySink();
+        var sdkClient = new FakeResponsesClient(SdkJsonResponse(
+            """{"error":{"message":"rate limited"}}""",
+            statusCode: 429,
+            reasonPhrase: "Too Many Requests",
+            requestId: "req_sdk_failed"));
+        sdkClient.ThrowOnCreate = true;
+        var provider = new OpenAiSdkTextPlanningProvider(
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            sdkClient,
+            new StaticSecretStore("test-openai-key"),
+            telemetrySink,
+            new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
+
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            provider.CreatePlanAsync(new PlanningRequest("topic", "audience", 1), CancellationToken.None));
+
+        Assert.Contains("429", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(1, sdkClient.CallCount);
+        var telemetry = Assert.Single(telemetrySink.Events);
+        Assert.Equal("req_sdk_failed", telemetry.RequestId);
+        Assert.Equal(429, telemetry.HttpStatusCode);
+        Assert.False(telemetry.Succeeded);
+        Assert.Null(telemetry.Usage);
+        Assert.Equal(0m, telemetry.EstimatedCostUsd);
     }
 
     [Fact]
@@ -574,6 +692,14 @@ public sealed class OpenAiProviderContractTests
             new StaticSecretStore("test-openai-key"));
     }
 
+    private static OpenAiSdkTextPlanningProvider CreateSdkTextProvider(FakeResponsesClient sdkClient)
+    {
+        return new OpenAiSdkTextPlanningProvider(
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            sdkClient,
+            new StaticSecretStore("test-openai-key"));
+    }
+
     private static OpenAiImageGenerationProvider CreateImageProvider(HttpClient httpClient)
     {
         return new OpenAiImageGenerationProvider(
@@ -619,6 +745,23 @@ public sealed class OpenAiProviderContractTests
         return response;
     }
 
+    private static OpenAiResponsesClientResult SdkJsonResponse(
+        string content,
+        int statusCode = 200,
+        string? reasonPhrase = "OK",
+        string? requestId = null)
+    {
+        using var document = JsonDocument.Parse(content);
+        return new OpenAiResponsesClientResult(
+            document.RootElement.TryGetProperty("output_text", out var outputText)
+                ? outputText.GetString()
+                : null,
+            document.RootElement.Clone(),
+            statusCode,
+            reasonPhrase,
+            requestId);
+    }
+
     private sealed class CaptureHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler, IDisposable
     {
         public HttpRequestMessage? LastRequest { get; private set; }
@@ -651,6 +794,34 @@ public sealed class OpenAiProviderContractTests
         }
     }
 
+    private sealed class FakeResponsesClient(OpenAiResponsesClientResult response) : IOpenAiResponsesClient
+    {
+        public CreateResponseOptions? LastOptions { get; private set; }
+
+        public int CallCount { get; private set; }
+
+        public bool ThrowOnCreate { get; set; }
+
+        public Task<OpenAiResponsesClientResult> CreateResponseAsync(
+            CreateResponseOptions options,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            CallCount++;
+            LastOptions = options;
+
+            if (ThrowOnCreate)
+            {
+                throw new OpenAiResponsesClientException(
+                    response,
+                    new InvalidOperationException("SDK request failed."));
+            }
+
+            return Task.FromResult(response);
+        }
+    }
+
     private sealed class RecordingTelemetrySink : IProviderCallTelemetrySink
     {
         private readonly List<ProviderCallTelemetry> _events = [];
@@ -663,3 +834,4 @@ public sealed class OpenAiProviderContractTests
         }
     }
 }
+#pragma warning restore OPENAI001

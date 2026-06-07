@@ -161,7 +161,7 @@ public sealed record ProviderTokenUsage(
 
 internal static class OpenAiProviderTelemetry
 {
-    private static readonly string[] RequestIdHeaderNames =
+    internal static readonly string[] RequestIdHeaderNames =
     [
         "x-request-id",
         "openai-request-id",
@@ -194,6 +194,36 @@ internal static class OpenAiProviderTelemetry
             body is { } root ? ExtractUsage(root) : null,
             latency,
             response.IsSuccessStatusCode ? estimatedCostUsd : 0m,
+            rateCardName,
+            DateTimeOffset.UtcNow);
+    }
+
+    public static ProviderCallTelemetry Create(
+        string providerId,
+        string operation,
+        string model,
+        Uri endpoint,
+        int httpStatusCode,
+        bool succeeded,
+        string? requestId,
+        JsonElement? body,
+        string? providerTraceId,
+        TimeSpan latency,
+        decimal estimatedCostUsd,
+        string rateCardName)
+    {
+        return new ProviderCallTelemetry(
+            providerId,
+            operation,
+            model,
+            endpoint.ToString(),
+            httpStatusCode,
+            succeeded,
+            requestId,
+            providerTraceId,
+            body is { } root ? ExtractUsage(root) : null,
+            latency,
+            succeeded ? estimatedCostUsd : 0m,
             rateCardName,
             DateTimeOffset.UtcNow);
     }

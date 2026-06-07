@@ -10,6 +10,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [x] Evaluate official OpenAI .NET SDK adoption boundary and record the stable-surface decision.
 - [ ] Migrate stable OpenAI provider calls to the official SDK behind existing contracts; keep raw `HttpClient` only for unsupported or lagging gaps.
+  - [x] Migrate non-streaming text planning to an SDK-backed `ITextPlanningProvider` while preserving the raw `HttpClient` fallback.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
 - [x] Capture V1 launch evidence against the explicit launch metrics.
@@ -123,6 +124,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Evaluate and record the official OpenAI .NET SDK adoption boundary.
 - [ ] Migrate stable OpenAI provider calls to the official SDK behind existing contracts.
   - [x] Add fixed OpenAI .NET SDK dependency, guarded SDK client factory, and shared text-planning SDK options mapper.
+  - [x] Add SDK-backed text planning provider with fake-first contract tests for parsing, telemetry, disabled guards, and failure mapping.
 - [ ] Keep raw `HttpClient` fallback only for unsupported, lagging, telemetry-incomplete, or OpenAI-compatible SDK gaps.
 - [x] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
 - [x] Capture request IDs, token usage, latency, and cost telemetry per provider call.
