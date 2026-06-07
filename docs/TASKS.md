@@ -11,7 +11,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [ ] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
-- [ ] Capture V1 launch evidence against the explicit launch metrics.
+- [x] Capture V1 launch evidence against the explicit launch metrics.
 
 ## V1 Documentation And Policy Alignment
 
