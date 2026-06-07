@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ImageSeriesStudio.Tests;
 
+#pragma warning disable OPENAI001 // Tests intentionally verify ADR 0009 SDK adoption boundary details.
 public sealed class OpenAiProviderConfigurationTests
 {
     [Fact]
@@ -448,6 +449,67 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Equal(1, handler.CallCount);
         Assert.Same(options, provider.GetRequiredService<OpenAiProviderOptions>());
         Assert.NotNull(provider.GetRequiredService<IOpenAiSecretStore>());
+        Assert.NotNull(provider.GetRequiredService<OpenAiSdkClientFactory>());
+    }
+
+    [Fact]
+    public async Task OpenAiSdkClientFactory_CreatesResponsesClientWithCustomEndpointAfterGuard()
+    {
+        var options = new OpenAiProviderOptions
+        {
+            BaseUri = new Uri("https://sdk-text.example/v1/"),
+            ApiKeySecretName = "TEXT_PROVIDER_API_KEY",
+            TextPlanningModel = "gpt-5.5",
+            ImageGenerationModel = string.Empty,
+            AllowedOperations = OpenAiProviderOperation.TextPlanning | OpenAiProviderOperation.VisionReview,
+            RealApiEnabled = true,
+        };
+        var factory = new OpenAiSdkClientFactory(new StaticSecretStore("sdk-text-key"));
+
+        var client = await factory.CreateResponsesClientAsync(
+            options,
+            OpenAiProviderOperation.TextPlanning,
+            CancellationToken.None);
+
+        Assert.Equal("https://sdk-text.example/v1/", client.Endpoint.ToString());
+    }
+
+    [Fact]
+    public async Task OpenAiSdkClientFactory_CreatesImageClientWithCustomEndpointAndModelAfterGuard()
+    {
+        var options = new OpenAiProviderOptions
+        {
+            BaseUri = new Uri("https://sdk-image.example/v1/"),
+            ApiKeySecretName = "IMAGE_PROVIDER_API_KEY_1",
+            TextPlanningModel = string.Empty,
+            ImageGenerationModel = "gpt-image-test",
+            VisionReviewModel = string.Empty,
+            AllowedOperations = OpenAiProviderOperation.ImageGeneration,
+            RealApiEnabled = true,
+        };
+        var factory = new OpenAiSdkClientFactory(new StaticSecretStore("sdk-image-key"));
+
+        var client = await factory.CreateImageClientAsync(options, CancellationToken.None);
+
+        Assert.Equal("https://sdk-image.example/v1/", client.Endpoint.ToString());
+        Assert.Equal("gpt-image-test", client.Model);
+    }
+
+    [Fact]
+    public async Task OpenAiSdkClientFactory_UsesExistingReadinessAndRoleGuards()
+    {
+        var options = new OpenAiProviderOptions
+        {
+            ApiKeySecretName = "IMAGE_PROVIDER_API_KEY_1",
+            AllowedOperations = OpenAiProviderOperation.All,
+            RealApiEnabled = true,
+        };
+        var factory = new OpenAiSdkClientFactory(new StaticSecretStore("sdk-image-key"));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            factory.CreateResponsesClientAsync(options, OpenAiProviderOperation.TextPlanning, CancellationToken.None));
+
+        Assert.Contains("IMAGE_PROVIDER_API_KEY", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed class StaticSecretStore(string? value) : IOpenAiSecretStore
@@ -475,3 +537,4 @@ public sealed class OpenAiProviderConfigurationTests
         }
     }
 }
+#pragma warning restore OPENAI001

@@ -122,6 +122,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Add Provider Center manual health summary state for mixed text/image key-pool results.
 - [x] Evaluate and record the official OpenAI .NET SDK adoption boundary.
 - [ ] Migrate stable OpenAI provider calls to the official SDK behind existing contracts.
+  - [x] Add fixed OpenAI .NET SDK dependency and a guarded SDK client factory.
 - [ ] Keep raw `HttpClient` fallback only for unsupported, lagging, telemetry-incomplete, or OpenAI-compatible SDK gaps.
 - [x] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
 - [x] Capture request IDs, token usage, latency, and cost telemetry per provider call.
