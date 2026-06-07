@@ -5,7 +5,7 @@
 The next autonomous delivery priority is to harden a small number of user-visible golden paths before widening scope.
 
 - [x] Harden the short requirement -> brief -> blueprint -> series -> review -> delivery path as the primary V1 launch route.
-- [ ] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path as a supporting validation route without requiring real providers by default.
+- [x] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path as a supporting validation route without requiring real providers by default.
 - [x] Complete Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export.
 - [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [x] Evaluate official OpenAI .NET SDK adoption boundary and record the stable-surface decision.

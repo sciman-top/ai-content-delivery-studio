@@ -1,6 +1,7 @@
 using System.Text.Json;
 using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Core.Styles;
@@ -1083,6 +1084,141 @@ public sealed class ProjectApplicationServiceTests
             var manifestItem = manifest.RootElement.GetProperty("items")[0];
             Assert.True(manifestItem.GetProperty("humanApproved").GetBoolean());
             Assert.Equal(promotedBlueprint.Key, manifestItem.GetProperty("blueprint").GetProperty("key").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ProjectApplicationService_CompletesDocumentIllustrationSupportingRouteWithFakeProviders()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(rootDirectory, "document-supporting-route.sqlite");
+        var generatedDirectory = Path.Combine(rootDirectory, "generated");
+        var deliveryDirectory = Path.Combine(rootDirectory, "delivery");
+        Directory.CreateDirectory(rootDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(
+                new EfProjectRepository(new AppDbContext(options)),
+                new FakeTextPlanningProvider(),
+                new FakeImageGenerationProvider(),
+                new FakeVisionReviewProvider(defaultPasses: true),
+                new DeliveryPackageWriter());
+            var timestamp = new DateTimeOffset(2026, 6, 7, 14, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("Document supporting route", timestamp, CancellationToken.None);
+
+            var workflow = await service.CreateDocumentIllustrationPlanWithProviderAsync(
+                project.Id,
+                new DocumentIllustrationPlanningRequest(
+                    "Energy conservation article",
+                    "The article explains that energy changes form but remains conserved in a closed system.",
+                    "physics teachers",
+                    DocumentFamily.Educational,
+                    IllustrationStrictnessLevel.Educational,
+                    ["Introduction", "Classroom activity"],
+                    ["Energy transfers between kinetic and potential forms."],
+                    ["Use only evidence from the supplied article text.", "Do not invent lab data"]),
+                approveAllTargets: true,
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+
+            Assert.True(workflow.SeriesId.HasValue);
+            Assert.True(workflow.ApprovedTargetCount > 0);
+
+            var generation = await service.RunGenerationQueueAsync(
+                project.Id,
+                generatedDirectory,
+                CancellationToken.None);
+            Assert.Equal(workflow.ApprovedTargetCount, generation.Images.Count);
+
+            var generatedProject = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var generatedSeries = Assert.Single(generatedProject!.Series);
+            var candidates = generatedSeries.Items
+                .SelectMany(item => item.CandidateImages.Select(candidate =>
+                {
+                    var prompt = item.PromptVersions.Single(prompt => prompt.Id == candidate.PromptVersionId);
+                    return new { Item = item, Candidate = candidate, Prompt = prompt };
+                }))
+                .ToArray();
+
+            var reviews = await service.RunStructuredVisionReviewAsync(
+                project.Id,
+                candidates
+                    .Select(value => new ReviewCandidateInput(
+                        value.Candidate.Id,
+                        value.Item.Title,
+                        value.Candidate.AssetPath,
+                        value.Prompt.PromptText))
+                    .ToArray(),
+                CancellationToken.None);
+
+            foreach (var review in reviews)
+            {
+                await service.SaveReviewResultAsync(
+                    project.Id,
+                    review.ToReviewResult(
+                        timestamp.AddMinutes(2),
+                        humanApproved: true,
+                        humanReviewer: "Teacher",
+                        humanReviewNotes: "Supporting document route approved.",
+                        humanReviewDecidedAt: timestamp.AddMinutes(2)),
+                    timestamp.AddMinutes(2),
+                    CancellationToken.None);
+            }
+
+            var approvedProject = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var approvedSeries = Assert.Single(approvedProject!.Series);
+            var deliveryItems = approvedSeries.Items
+                .SelectMany(item => item.CandidateImages.Select(candidate =>
+                {
+                    var prompt = item.PromptVersions.Single(prompt => prompt.Id == candidate.PromptVersionId);
+                    var review = Assert.Single(candidate.ReviewResults);
+                    return new DeliveryExportItem(
+                        item.Title,
+                        item.Title,
+                        candidate.AssetPath,
+                        candidate.MetadataPath,
+                        prompt.PromptText,
+                        review.Decision,
+                        review.HumanApproved,
+                        review.HumanReviewer,
+                        review.HumanReviewNotes,
+                        review.HumanReviewDecidedAt);
+                }))
+                .ToArray();
+
+            var delivery = await service.ExportDeliveryPackageAsync(
+                new DeliveryExportRequest(
+                    approvedProject.Name,
+                    deliveryDirectory,
+                    deliveryItems),
+                CancellationToken.None);
+
+            Assert.Equal(workflow.ApprovedTargetCount, deliveryItems.Length);
+            Assert.Equal(workflow.ApprovedTargetCount, delivery.FinalImagePaths.Count);
+            Assert.All(deliveryItems, item => Assert.Contains("Source evidence", item.PromptText));
+
+            using var manifestStream = File.OpenRead(delivery.ManifestJsonPath);
+            using var manifest = await JsonDocument.ParseAsync(manifestStream, cancellationToken: CancellationToken.None);
+            var manifestItems = manifest.RootElement.GetProperty("items");
+            Assert.Equal(workflow.ApprovedTargetCount, manifestItems.GetArrayLength());
+            Assert.All(manifestItems.EnumerateArray(), item => Assert.True(item.GetProperty("humanApproved").GetBoolean()));
         }
         finally
         {
