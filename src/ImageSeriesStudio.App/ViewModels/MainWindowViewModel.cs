@@ -1,10 +1,8 @@
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
-using ImageSeriesStudio.Core.Generation;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
@@ -16,6 +14,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
 {
     private readonly LocalizationService _localizationService;
     private readonly ProjectApplicationService _projectService;
+    private readonly ProjectWorkspaceCoordinator _projectWorkspaceCoordinator;
+    private readonly PlanningWorkflowCoordinator _planningWorkflowCoordinator;
+    private readonly BriefWorkflowCoordinator _briefWorkflowCoordinator;
+    private readonly GenerationWorkflowCoordinator _generationWorkflowCoordinator;
+    private readonly ReviewWorkflowCoordinator _reviewWorkflowCoordinator;
+    private readonly DeliveryWorkflowCoordinator _deliveryWorkflowCoordinator;
+    private readonly PlanEditorWorkflowCoordinator _planEditorWorkflowCoordinator;
+    private readonly WorkflowGraphCoordinator _workflowGraphCoordinator;
 
     private string _appTitle = string.Empty;
     private string _providerMode = string.Empty;
@@ -192,6 +198,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         _localizationService = localizationService;
         _projectService = projectService;
+        _projectWorkspaceCoordinator = new ProjectWorkspaceCoordinator(projectService);
+        _planningWorkflowCoordinator = new PlanningWorkflowCoordinator(projectService, localizationService);
+        _briefWorkflowCoordinator = new BriefWorkflowCoordinator(projectService);
+        _generationWorkflowCoordinator = new GenerationWorkflowCoordinator(projectService);
+        _reviewWorkflowCoordinator = new ReviewWorkflowCoordinator(projectService, localizationService);
+        _deliveryWorkflowCoordinator = new DeliveryWorkflowCoordinator(projectService);
+        _planEditorWorkflowCoordinator = new PlanEditorWorkflowCoordinator(projectService);
+        _workflowGraphCoordinator = new WorkflowGraphCoordinator(localizationService);
         ProviderCenter = providerCenter;
         RefreshLocalizedText();
         SelectedLanguageOption = LanguageOptions.First(option => option.Preference == _localizationService.Preference);
@@ -1733,12 +1747,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCreateProject))]
     private async Task CreateProjectAsync()
     {
-        var project = await _projectService.CreateProjectAsync(
-            NewProjectName.Trim(),
-            DateTimeOffset.UtcNow,
+        var result = await _projectWorkspaceCoordinator.CreateProjectAsync(
+            NewProjectName,
             CancellationToken.None);
 
-        await RefreshProjectsAsync(project.Id);
+        Projects = result.Projects;
+        SelectedProject = result.SelectedProject;
     }
 
     private bool CanCreateProject()
@@ -1748,14 +1762,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private async Task RefreshProjectsAsync(Guid? selectedProjectId = null)
     {
-        var projectSummaries = await _projectService.ListProjectsAsync(CancellationToken.None);
-        Projects = projectSummaries
-            .Select(project => new ProjectSummaryViewModel(project.Id, project.Name, project.UpdatedAt))
-            .ToArray();
-
-        SelectedProject = selectedProjectId is null
-            ? Projects.FirstOrDefault()
-            : Projects.FirstOrDefault(project => project.Id == selectedProjectId);
+        var result = await _projectWorkspaceCoordinator.RefreshProjectsAsync(
+            selectedProjectId,
+            CancellationToken.None);
+        Projects = result.Projects;
+        SelectedProject = result.SelectedProject;
     }
 
     [RelayCommand]
@@ -1778,17 +1789,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var series = await _projectService.CreatePlanWithProviderAsync(
+        var result = await _planningWorkflowCoordinator.RunFakePlanningAsync(
             SelectedProject.Id,
-            new PlanningRequest(
-                NewPlanningGoal.Trim(),
-                NewPlanningAudience.Trim(),
-                itemCount,
-                NewPlanningStyleBrief.Trim()),
-            DateTimeOffset.UtcNow,
+            NewPlanningGoal,
+            NewPlanningAudience,
+            itemCount,
+            NewPlanningStyleBrief,
             CancellationToken.None);
 
-        await LoadPlanAsync(SelectedProject.Id, series.Id);
+        await LoadPlanAsync(SelectedProject.Id, result.SeriesId);
     }
 
     private bool CanRunFakePlanning()
@@ -1807,52 +1816,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var projectId = SelectedProject.Id;
-        var projectName = SelectedProject.Name;
-        var sourceText = NewDocumentSourceText.Trim();
-        var audience = string.IsNullOrWhiteSpace(NewDocumentAudience)
-            ? _defaultDocumentAudience
-            : NewDocumentAudience.Trim();
-        var strictness = SelectedDocumentStrictnessOption?.Value ?? IllustrationStrictnessLevel.Educational;
         DocumentPlanningResultSummary = string.Empty;
-        var result = await _projectService.CreateDocumentIllustrationPlanWithProviderAsync(
+        var projectId = SelectedProject.Id;
+        var result = await _planningWorkflowCoordinator.RunFakeDocumentPlanningAsync(
             projectId,
-            new DocumentIllustrationPlanningRequest(
-                projectName,
-                sourceText,
-                audience,
-                MapDocumentFamily(strictness),
-                strictness,
-                [Text(LocalizationKey.DocumentPastedSourceSection)],
-                [sourceText],
-                [Text(LocalizationKey.DocumentReadableTextConstraint)]),
-            approveAllTargets: true,
-            DateTimeOffset.UtcNow,
+            SelectedProject.Name,
+            NewDocumentSourceText,
+            NewDocumentAudience,
+            SelectedDocumentStrictnessOption?.Value ?? IllustrationStrictnessLevel.Educational,
+            _defaultDocumentAudience,
             CancellationToken.None);
 
         await RefreshProjectsAsync(projectId);
         await LoadPlanAsync(projectId, result.SeriesId);
-
-        var resultMessage = string.Format(
-            Text(LocalizationKey.DocumentPlanningResultTemplate),
-            result.ApprovedTargetCount);
-        DocumentPlanningResultSummary = resultMessage;
-        ActivityItems = ActivityItems.Concat([resultMessage]).ToArray();
+        DocumentPlanningResultSummary = result.ResultSummary;
+        ActivityItems = ActivityItems.Concat([result.ResultSummary]).ToArray();
     }
 
     private bool CanRunFakeDocumentPlanning()
     {
         return SelectedProject is not null && !string.IsNullOrWhiteSpace(NewDocumentSourceText);
-    }
-
-    private static DocumentFamily MapDocumentFamily(IllustrationStrictnessLevel strictness)
-    {
-        return strictness switch
-        {
-            IllustrationStrictnessLevel.Editorial => DocumentFamily.Editorial,
-            IllustrationStrictnessLevel.ScholarlyDraft => DocumentFamily.ScholarlyDraft,
-            _ => DocumentFamily.Educational,
-        };
     }
 
     private bool TryGetPlanningItemCount(out int itemCount)
@@ -1868,10 +1851,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var brief = await CreateBriefForSelectedSeriesAsync();
-        _activeCreativeBriefId = brief.Id;
+        _activeCreativeBriefId = await _briefWorkflowCoordinator.CreateBriefAsync(
+            SelectedProject.Id,
+            SelectedSeries,
+            NewPlanningGoal,
+            NewPlanningAudience,
+            NewPlanningStyleBrief,
+            CancellationToken.None);
         await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id, SelectedSeriesItem?.Id);
-        _activeCreativeBriefId = brief.Id;
     }
 
     private bool CanCreateBrief()
@@ -1890,11 +1877,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var briefId = await EnsureActiveCreativeBriefIdAsync();
-        var brief = await _projectService.CreatePromptDirectionsAsync(
+        var brief = await _briefWorkflowCoordinator.GeneratePromptDirectionsAsync(
             SelectedProject.Id,
-            briefId,
-            DateTimeOffset.UtcNow,
+            SelectedSeries,
+            _activeCreativeBriefId,
+            NewPlanningGoal,
+            NewPlanningAudience,
+            NewPlanningStyleBrief,
             CancellationToken.None);
 
         _activeCreativeBriefId = brief.Id;
@@ -1917,11 +1906,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var briefId = await EnsureActiveCreativeBriefIdAsync();
-        var brief = await _projectService.CreateDesignBlueprintsAsync(
+        var brief = await _briefWorkflowCoordinator.GenerateDesignBlueprintsAsync(
             SelectedProject.Id,
-            briefId,
-            DateTimeOffset.UtcNow,
+            SelectedSeries,
+            _activeCreativeBriefId,
+            NewPlanningGoal,
+            NewPlanningAudience,
+            NewPlanningStyleBrief,
             CancellationToken.None);
 
         _activeCreativeBriefId = brief.Id;
@@ -1991,30 +1982,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private async Task<Guid> EnsureActiveCreativeBriefIdAsync()
     {
-        var project = SelectedProject is null
-            ? null
-            : await _projectService.LoadProjectAsync(SelectedProject.Id, CancellationToken.None);
-        var selectedSeries = project?.Series.SingleOrDefault(series => series.Id == SelectedSeries?.Id);
-
-        if (_activeCreativeBriefId is { } existingBriefId
-            && selectedSeries?.CreativeBriefs.Any(brief => brief.Id == existingBriefId) == true)
+        if (SelectedProject is null || SelectedSeries is null)
         {
-            return existingBriefId;
+            throw new InvalidOperationException("A project and series must be selected before resolving a brief.");
         }
 
-        var latestBrief = selectedSeries?.CreativeBriefs
-            .OrderByDescending(brief => brief.UpdatedAt)
-            .FirstOrDefault();
-
-        if (latestBrief is not null)
-        {
-            _activeCreativeBriefId = latestBrief.Id;
-            return latestBrief.Id;
-        }
-
-        var created = await CreateBriefForSelectedSeriesAsync();
-        _activeCreativeBriefId = created.Id;
-        return created.Id;
+        var briefId = await _briefWorkflowCoordinator.EnsureActiveCreativeBriefIdAsync(
+            SelectedProject.Id,
+            SelectedSeries,
+            _activeCreativeBriefId,
+            NewPlanningGoal,
+            NewPlanningAudience,
+            NewPlanningStyleBrief,
+            CancellationToken.None);
+        _activeCreativeBriefId = briefId;
+        return briefId;
     }
 
     private async Task<CreativeBrief> CreateBriefForSelectedSeriesAsync()
@@ -2024,29 +2006,24 @@ public sealed partial class MainWindowViewModel : ObservableObject
             throw new InvalidOperationException("A project and series must be selected before creating a brief.");
         }
 
-        return await _projectService.CreateCreativeBriefAsync(
+        var briefId = await _briefWorkflowCoordinator.CreateBriefAsync(
             SelectedProject.Id,
-            SelectedSeries.Id,
-            NewPlanningGoal.Trim(),
-            NewPlanningAudience.Trim(),
-            ImageTextPolicy.Hybrid,
-            NewPlanningStyleBrief.Trim(),
-            BuildBriefMustInclude(),
-            ["unreadable small text"],
-            DateTimeOffset.UtcNow,
+            SelectedSeries,
+            NewPlanningGoal,
+            NewPlanningAudience,
+            NewPlanningStyleBrief,
             CancellationToken.None);
+        var project = await _projectService.LoadProjectAsync(SelectedProject.Id, CancellationToken.None)
+            ?? throw new InvalidOperationException($"Project not found: {SelectedProject.Id}");
+
+        return project.Series
+            .SelectMany(series => series.CreativeBriefs)
+            .Single(brief => brief.Id == briefId);
     }
 
     private IReadOnlyList<string> BuildBriefMustInclude()
     {
-        var itemBriefs = SelectedSeries?.Items
-            .Select(item => string.IsNullOrWhiteSpace(item.Brief) ? item.Title : $"{item.Title}: {item.Brief}")
-            .Where(value => !string.IsNullOrWhiteSpace(value))
-            .ToArray() ?? [];
-
-        return itemBriefs.Length == 0
-            ? [SelectedSeries?.Title ?? NewPlanningGoal.Trim()]
-            : itemBriefs;
+        return BriefWorkflowCoordinator.BuildBriefMustInclude(SelectedSeries, NewPlanningGoal);
     }
 
     [RelayCommand(CanExecute = nameof(CanRunFakeGeneration))]
@@ -2057,18 +2034,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var outputDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            "generated",
-            SelectedProject.Id.ToString("N"));
-        var run = await _projectService.RunGenerationQueueAsync(
+        var result = await _generationWorkflowCoordinator.RunFakeGenerationAsync(
             SelectedProject.Id,
-            outputDirectory,
+            Series,
             CancellationToken.None);
 
-        QueueRows = BuildQueueRows(run);
-        GalleryRows = BuildGalleryRows(run);
+        QueueRows = result.QueueRows;
+        GalleryRows = result.GalleryRows;
         ReviewRows = [];
         DeliveryRows = [];
         RunFakeReviewCommand.NotifyCanExecuteChanged();
@@ -2079,59 +2051,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         return SelectedProject is not null && PromptRows.Count > 0;
     }
 
-    private IReadOnlyList<QueueRowViewModel> BuildQueueRows(GenerationQueueRun run)
-    {
-        var itemTitles = Series
-            .SelectMany(series => series.Items)
-            .ToDictionary(item => item.Id, item => item.Title);
-        var imageIndex = 0;
-        var images = run.Images.ToArray();
-
-        return run.Tasks.Select(task =>
-        {
-            var outputPath = string.Empty;
-            if (task.Status is GenerationTaskStatus.Succeeded && imageIndex < images.Length)
-            {
-                outputPath = images[imageIndex].AssetPath;
-                imageIndex++;
-            }
-
-            return new QueueRowViewModel(
-                itemTitles.GetValueOrDefault(task.SeriesItemId, task.SeriesItemId.ToString("N")),
-                task.Status.ToString(),
-                task.AttemptCount.ToString(),
-                outputPath,
-                task.ErrorMessage ?? string.Empty);
-        }).ToArray();
-    }
-
-    private IReadOnlyList<GalleryRowViewModel> BuildGalleryRows(GenerationQueueRun run)
-    {
-        var itemTitles = Series
-            .SelectMany(series => series.Items)
-            .ToDictionary(item => item.Id, item => item.Title);
-        var succeededTasks = run.Tasks
-            .Where(task => task.Status is GenerationTaskStatus.Succeeded)
-            .ToArray();
-
-        return run.Images.Select((image, index) =>
-        {
-            var task = index < succeededTasks.Length ? succeededTasks[index] : null;
-            var itemTitle = task is null
-                ? image.CandidateImageId.ToString("N")
-                : itemTitles.GetValueOrDefault(task.SeriesItemId, task.SeriesItemId.ToString("N"));
-            var promptText = task is null ? string.Empty : FindPromptText(task.PromptVersionId);
-
-            return new GalleryRowViewModel(
-                image.CandidateImageId,
-                task?.SeriesItemId ?? Guid.Empty,
-                itemTitle,
-                image.AssetPath,
-                image.MetadataPath,
-                promptText);
-        }).ToArray();
-    }
-
     [RelayCommand(CanExecute = nameof(CanRunFakeImageEdit))]
     private async Task RunFakeImageEditAsync()
     {
@@ -2140,37 +2059,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var selectedRow = SelectedGalleryRow;
-        var editPrompt = NewImageEditPrompt.Trim();
-        var maskPath = string.IsNullOrWhiteSpace(NewImageEditMaskPath)
-            ? null
-            : NewImageEditMaskPath.Trim();
-        var outputDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            "edited",
-            SelectedProject.Id.ToString("N"));
-
-        var result = await _projectService.RunImageEditAsync(
-            new ImageEditWorkflowRequest(
-                SelectedProject.Id,
-                selectedRow.SeriesItemId,
-                selectedRow.CandidateImageId,
-                selectedRow.AssetPath,
-                maskPath,
-                editPrompt,
-                CreateDefaultGenerationSettings(),
-                outputDirectory,
-                CreateImageEditOutputFileName(selectedRow)),
+        var editedRow = await _generationWorkflowCoordinator.RunFakeImageEditAsync(
+            SelectedProject.Id,
+            SelectedGalleryRow,
+            NewImageEditPrompt,
+            NewImageEditMaskPath,
             CancellationToken.None);
-
-        var editedRow = new GalleryRowViewModel(
-            result.CandidateImageId,
-            selectedRow.SeriesItemId,
-            $"{selectedRow.ItemTitle} (edited)",
-            result.AssetPath,
-            result.MetadataPath,
-            BuildEditedPromptText(selectedRow.PromptText, editPrompt));
 
         GalleryRows = [.. GalleryRows, editedRow];
         SelectedGalleryRow = editedRow;
@@ -2186,23 +2080,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
             && !string.IsNullOrWhiteSpace(NewImageEditPrompt);
     }
 
-    private static string CreateImageEditOutputFileName(GalleryRowViewModel row)
-    {
-        return $"{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{row.CandidateImageId:N}-{SanitizeFileName(row.ItemTitle)}-edited.png";
-    }
-
-    private static string BuildEditedPromptText(string sourcePrompt, string editPrompt)
-    {
-        return string.IsNullOrWhiteSpace(sourcePrompt)
-            ? editPrompt
-            : string.Join(
-                Environment.NewLine,
-                [
-                    $"Source prompt: {sourcePrompt}",
-                    $"Edit instruction: {editPrompt}",
-                ]);
-    }
-
     [RelayCommand(CanExecute = nameof(CanRunFakeReview))]
     private async Task RunFakeReviewAsync()
     {
@@ -2211,58 +2088,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var reviews = await _projectService.RunStructuredVisionReviewAsync(
+        ReviewRows = await _reviewWorkflowCoordinator.RunFakeReviewAsync(
             SelectedProject.Id,
-            GalleryRows
-                .Select(row => new ReviewCandidateInput(
-                    row.CandidateImageId,
-                    row.ItemTitle,
-                    row.AssetPath,
-                    row.PromptText))
-                .ToArray(),
+            GalleryRows,
             CancellationToken.None);
-
-        var routesByCandidate = _projectService.RouteReviewOutcomes(reviews)
-            .ToDictionary(plan => plan.CandidateImageId);
-
-        ReviewRows = reviews.Zip(GalleryRows).Select(pair =>
-        {
-            var scoreText = string.Join(", ", pair.First.Scores.Select(score => $"{score.Name}:{score.Score}"));
-            var routeSummary = routesByCandidate.TryGetValue(pair.First.CandidateImageId, out var plan)
-                ? FormatReviewRoute(plan)
-                : string.Empty;
-
-            return new ReviewRowViewModel(
-                pair.First.CandidateImageId,
-                pair.Second.ItemTitle,
-                pair.First.Decision.ToString(),
-                scoreText,
-                pair.First.Comments,
-                pair.First.SuggestedFix ?? string.Empty,
-                routeSummary,
-                HumanApproved: false,
-                Text(LocalizationKey.HumanApprovalPending),
-                string.Empty,
-                string.Empty,
-                null,
-                pair.First);
-        }).ToArray();
         DeliveryRows = [];
         ExportDeliveryCommand.NotifyCanExecuteChanged();
-    }
-
-    private static string FormatReviewRoute(ReviewOutcomeRoutingPlan plan)
-    {
-        var route = plan.PrimaryRoute;
-        if (route.TargetLayer is ReviewOutcomeTargetLayer.None)
-        {
-            return ReviewOutcomeTargetLayer.None.ToString();
-        }
-
-        var firstAction = route.Actions.FirstOrDefault() ?? string.Empty;
-        return string.IsNullOrWhiteSpace(firstAction)
-            ? $"{route.TargetLayer} / {route.Severity}"
-            : $"{route.TargetLayer} / {route.Severity}: {firstAction}";
     }
 
     private bool CanRunFakeReview()
@@ -2302,26 +2133,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var decision = await _projectService.RecordFinalApprovalAsync(
+        var updated = await _reviewWorkflowCoordinator.ApplyFinalApprovalAsync(
             SelectedProject.Id,
-            new FinalApprovalRequest(
-                SelectedReviewRow.Review,
-                approve,
-                FinalApprovalReviewer,
-                FinalApprovalNotes),
-            DateTimeOffset.UtcNow,
+            SelectedReviewRow,
+            approve,
+            FinalApprovalReviewer,
+            FinalApprovalNotes,
             CancellationToken.None);
-
-        var updated = SelectedReviewRow with
-        {
-            HumanApproved = decision.HumanApproved,
-            HumanApprovalStatus = decision.HumanApproved
-                ? Text(LocalizationKey.HumanApprovalApproved)
-                : Text(LocalizationKey.HumanApprovalRejected),
-            FinalReviewer = decision.Reviewer,
-            FinalApprovalNotes = decision.Notes,
-            FinalApprovalDecidedAt = decision.DecidedAt,
-        };
 
         ReviewRows = ReviewRows
             .Select(row => row.CandidateImageId == updated.CandidateImageId ? updated : row)
@@ -2329,15 +2147,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedReviewRow = updated;
         DeliveryRows = [];
         ExportDeliveryCommand.NotifyCanExecuteChanged();
-    }
-
-    private string FindPromptText(Guid promptVersionId)
-    {
-        return Series
-            .SelectMany(series => series.Items)
-            .SelectMany(item => item.PromptVersions)
-            .FirstOrDefault(prompt => prompt.Id == promptVersionId)
-            ?.PromptText ?? string.Empty;
     }
 
     [RelayCommand(CanExecute = nameof(CanExportDelivery))]
@@ -2348,68 +2157,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var reviewByCandidate = ReviewRows.ToDictionary(row => row.CandidateImageId);
-        var outputDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            "deliveries",
-            SelectedProject.Id.ToString("N"),
-            DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss"));
-        var blueprint = ResolvePromotedDeliveryBlueprint();
-        var items = GalleryRows
-            .Where(row => reviewByCandidate.TryGetValue(row.CandidateImageId, out var review)
-                && review.HumanApproved
-                && Enum.TryParse<ReviewDecision>(review.Decision, out var decision)
-                && decision is ReviewDecision.Pass)
-            .Select((row, index) => new DeliveryExportItem(
-                $"{index + 1:000}-{row.ItemTitle}",
-                row.ItemTitle,
-                row.AssetPath,
-                row.MetadataPath,
-                row.PromptText,
-                ReviewDecision.Pass,
-                HumanApproved: true,
-                FinalReviewer: reviewByCandidate[row.CandidateImageId].FinalReviewer,
-                FinalApprovalNotes: reviewByCandidate[row.CandidateImageId].FinalApprovalNotes,
-                FinalApprovalDecidedAt: reviewByCandidate[row.CandidateImageId].FinalApprovalDecidedAt,
-                Blueprint: blueprint))
-            .ToArray();
-
-        var result = await _projectService.ExportDeliveryPackageAsync(
-            new DeliveryExportRequest(
-                SelectedProject.Name,
-                outputDirectory,
-                items),
+        var result = await _deliveryWorkflowCoordinator.ExportDeliveryAsync(
+            SelectedProject.Id,
+            SelectedProject.Name,
+            GalleryRows,
+            ReviewRows,
+            DesignBlueprintRows,
+            _activeCreativeBriefId,
             CancellationToken.None);
 
-        DeliveryRows =
-        [
-            new DeliveryRowViewModel(
-                result.PackageDirectory,
-                result.ManifestJsonPath,
-                result.ManifestCsvPath,
-                result.ReviewReportPath,
-                result.FinalImagePaths.Count.ToString()),
-        ];
-    }
-
-    private DeliveryBlueprintMetadata? ResolvePromotedDeliveryBlueprint()
-    {
-        var row = DesignBlueprintRows.FirstOrDefault(blueprint =>
-                blueprint.IsPromoted
-                && (_activeCreativeBriefId is null || blueprint.CreativeBriefId == _activeCreativeBriefId))
-            ?? DesignBlueprintRows.FirstOrDefault(blueprint => blueprint.IsPromoted);
-
-        return row is null
-            ? null
-            : new DeliveryBlueprintMetadata(
-                row.BlueprintId,
-                row.Key,
-                row.DisplayName,
-                row.Category,
-                row.SequenceMode,
-                row.ConsistencySummary,
-                row.VariationSummary);
+        DeliveryRows = result.DeliveryRows;
     }
 
     private bool CanExportDelivery()
@@ -2427,16 +2184,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        await _projectService.AddSeriesAsync(
+        var seriesId = await _planEditorWorkflowCoordinator.CreateSeriesAsync(
             SelectedProject.Id,
-            NewSeriesTitle.Trim(),
-            NewSeriesDescription.Trim(),
-            DateTimeOffset.UtcNow,
+            NewSeriesTitle,
+            NewSeriesDescription,
             CancellationToken.None);
 
         NewSeriesTitle = string.Empty;
         NewSeriesDescription = string.Empty;
-        await LoadPlanAsync(SelectedProject.Id);
+        await LoadPlanAsync(SelectedProject.Id, seriesId);
     }
 
     private bool CanCreateSeries()
@@ -2452,17 +2208,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var item = await _projectService.AddItemAsync(
+        var itemId = await _planEditorWorkflowCoordinator.AddItemAsync(
             SelectedProject.Id,
             SelectedSeries.Id,
-            NewItemTitle.Trim(),
-            NewItemBrief.Trim(),
-            DateTimeOffset.UtcNow,
+            NewItemTitle,
+            NewItemBrief,
             CancellationToken.None);
 
         NewItemTitle = string.Empty;
         NewItemBrief = string.Empty;
-        await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id, item.Id);
+        await LoadPlanAsync(SelectedProject.Id, SelectedSeries.Id, itemId);
     }
 
     private bool CanAddItem()
@@ -2480,13 +2235,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        await _projectService.AddPromptVersionAsync(
+        await _planEditorWorkflowCoordinator.CreatePromptVersionAsync(
             SelectedProject.Id,
             SelectedSeriesItem.Id,
-            NewPromptText.Trim(),
-            CreateDefaultGenerationSettings(),
-            providerProfileId: null,
-            DateTimeOffset.UtcNow,
+            NewPromptText,
             CancellationToken.None);
 
         NewPromptText = string.Empty;
@@ -2498,11 +2250,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         return SelectedProject is not null
             && SelectedSeriesItem is not null
             && !string.IsNullOrWhiteSpace(NewPromptText);
-    }
-
-    private static GenerationSettings CreateDefaultGenerationSettings()
-    {
-        return new GenerationSettings(1024, 1024, "standard", "png");
     }
 
     private async Task LoadPlanAsync(Guid projectId, Guid? selectedSeriesId = null, Guid? selectedItemId = null)
@@ -2536,8 +2283,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
                             .ToArray()))
                     .ToArray()))
             .ToArray();
-        DesignBlueprintRows = BuildDesignBlueprintRows(project, Text(LocalizationKey.BlueprintPromoted), Text(LocalizationKey.BlueprintCandidate));
-        PromptDirectionRows = BuildPromptDirectionRows(project);
+        DesignBlueprintRows = BriefWorkflowCoordinator.BuildDesignBlueprintRows(
+            project,
+            Text(LocalizationKey.BlueprintPromoted),
+            Text(LocalizationKey.BlueprintCandidate));
+        PromptDirectionRows = BriefWorkflowCoordinator.BuildPromptDirectionRows(project);
         RebuildPlanRows();
         RebuildPromptRows();
 
@@ -2614,141 +2364,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private void RebuildWorkflowGraphRows()
     {
-        var rows = new List<WorkflowGraphRowViewModel>();
-
-        if (SelectedProject is not null)
-        {
-            rows.Add(new WorkflowGraphRowViewModel(
-                Text(LocalizationKey.GraphProjectNode),
-                SelectedProject.Name,
-                $"series={Series.Count}",
-                string.Empty));
-        }
-
-        foreach (var series in Series)
-        {
-            rows.Add(new WorkflowGraphRowViewModel(
-                Text(LocalizationKey.GraphSeriesNode),
-                series.Title,
-                $"items={series.Items.Count}",
-                SelectedProject?.Name ?? string.Empty));
-
-            foreach (var item in series.Items)
-            {
-                var candidateCount = GalleryRows.Count(row =>
-                    row.SeriesItemId == item.Id
-                    || row.ItemTitle.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
-                var reviewCount = ReviewRows.Count(row =>
-                    row.ItemTitle.Equals(item.Title, StringComparison.OrdinalIgnoreCase));
-
-                rows.Add(new WorkflowGraphRowViewModel(
-                    Text(LocalizationKey.GraphItemNode),
-                    item.Title,
-                    $"{_localizationService.GetSeriesItemStatusText(item.Status)}; prompts={item.PromptVersions.Count}; candidates={candidateCount}; reviews={reviewCount}",
-                    series.Title));
-
-                foreach (var prompt in item.PromptVersions.OrderBy(prompt => prompt.VersionNumber))
-                {
-                    rows.Add(new WorkflowGraphRowViewModel(
-                        Text(LocalizationKey.GraphPromptNode),
-                        $"v{prompt.VersionNumber}",
-                        $"{prompt.SettingsSummary}; {prompt.CreatedAt.LocalDateTime:g}",
-                        item.Title));
-                }
-            }
-        }
-
-        foreach (var candidate in GalleryRows)
-        {
-            rows.Add(new WorkflowGraphRowViewModel(
-                Text(LocalizationKey.GraphCandidateNode),
-                ShortId(candidate.CandidateImageId),
-                candidate.AssetPath,
-                candidate.ItemTitle));
-        }
-
-        foreach (var review in ReviewRows)
-        {
-            rows.Add(new WorkflowGraphRowViewModel(
-                Text(LocalizationKey.GraphReviewNode),
-                review.Decision,
-                review.ScoreText,
-                review.ItemTitle));
-        }
-
-        foreach (var delivery in DeliveryRows)
-        {
-            rows.Add(new WorkflowGraphRowViewModel(
-                Text(LocalizationKey.GraphDeliveryNode),
-                Path.GetFileName(delivery.PackageDirectory),
-                $"{delivery.FinalImageCount} {Text(LocalizationKey.GraphDeliveryImages)}",
-                SelectedProject?.Name ?? string.Empty));
-        }
-
-        WorkflowGraphRows = rows;
-    }
-
-    private static IReadOnlyList<DesignBlueprintRowViewModel> BuildDesignBlueprintRows(
-        ImageProject project,
-        string promotedText,
-        string candidateText)
-    {
-        return project.Series
-            .SelectMany(series => series.CreativeBriefs.SelectMany(brief => brief.DesignBlueprints.Select(blueprint => new DesignBlueprintRowViewModel(
-                brief.Id,
-                blueprint.Id,
-                blueprint.Key,
-                blueprint.DisplayName,
-                blueprint.Category,
-                blueprint.Summary,
-                blueprint.IntendedUse,
-                $"{blueprint.MinimumRecommendedItemCount}-{blueprint.MaximumRecommendedItemCount}",
-                blueprint.SupportsPanelSequence ? "panel sequence" : "standard items",
-                blueprint.DefaultTextPolicy.ToString(),
-                blueprint.DefaultReviewRubricTemplateId,
-                FormatList(blueprint.ConsistencyRules),
-                FormatList(blueprint.VariationRules),
-                FormatList(blueprint.RiskNotes),
-                blueprint.Id == brief.PromotedBlueprintId,
-                blueprint.Id == brief.PromotedBlueprintId ? promotedText : candidateText))))
-            .ToArray();
-    }
-
-    private static IReadOnlyList<PromptDirectionRowViewModel> BuildPromptDirectionRows(ImageProject project)
-    {
-        return project.Series
-            .SelectMany(series => series.CreativeBriefs.SelectMany(brief => brief.PromptDirections.Select(direction => new PromptDirectionRowViewModel(
-                brief.Id,
-                direction.Key,
-                direction.Name,
-                direction.IntendedUse,
-                direction.PromptText,
-                direction.Strength,
-                direction.Risk,
-                FormatRecommendation(direction.Recommendation),
-                direction.Recommendation?.RecommendationReason ?? string.Empty,
-                FormatList(direction.Recommendation?.CapabilityWarnings),
-                FormatList(direction.Recommendation?.NonExecutableSuggestions)))))
-            .ToArray();
-    }
-
-    private static string FormatRecommendation(PromptDirectionRecommendation? recommendation)
-    {
-        if (recommendation is null)
-        {
-            return string.Empty;
-        }
-
-        return string.Join(
-            " / ",
-            [
-                recommendation.ImageTypePresetId,
-                recommendation.TextPolicy.ToString(),
-                $"{recommendation.Width}x{recommendation.Height}",
-                recommendation.QualityBand,
-                recommendation.OutputFormat,
-                recommendation.ReviewRubricTemplateId,
-            ]);
+        WorkflowGraphRows = _workflowGraphCoordinator.BuildRows(
+            SelectedProject,
+            Series,
+            GalleryRows,
+            ReviewRows,
+            DeliveryRows);
     }
 
     private static string FormatList(IReadOnlyList<string>? values)
@@ -2766,11 +2387,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var invalidChars = Path.GetInvalidFileNameChars();
         var sanitized = new string(value.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
         return string.IsNullOrWhiteSpace(sanitized) ? "image" : sanitized.Trim();
-    }
-
-    private static string ShortId(Guid id)
-    {
-        return id.ToString("N")[..8];
     }
 
     private string Text(LocalizationKey key)

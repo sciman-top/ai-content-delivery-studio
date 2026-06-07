@@ -286,8 +286,16 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Define reusable `WorkflowViewSlot` names for source list, stage workspace, inspector, activity panel, approval panel, and artifact preview.
 - [x] Add `FeatureViewModule` contract for WPF view, view model, localization keys, commands, and fake-service tests.
 - [ ] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
+  - [x] Extract project workspace command orchestration into `ProjectWorkspaceCoordinator` while preserving existing bindings and commands.
+  - [x] Extract planning and document-planning orchestration into `PlanningWorkflowCoordinator` while preserving existing bindings and commands.
+  - [x] Extract brief-tab workflow orchestration into `BriefWorkflowCoordinator` while preserving existing bindings and commands.
+  - [x] Extract generation/gallery workflow orchestration into `GenerationWorkflowCoordinator` while preserving existing bindings and commands.
+  - [x] Extract review/approval workflow orchestration into `ReviewWorkflowCoordinator` while preserving existing bindings and commands.
+  - [x] Extract delivery export orchestration into `DeliveryWorkflowCoordinator` while preserving existing bindings and commands.
+  - [x] Extract plan editor command orchestration into `PlanEditorWorkflowCoordinator` while preserving existing bindings and commands.
+  - [x] Extract workflow graph row construction into `WorkflowGraphCoordinator` while preserving existing bindings and graph output.
 - [ ] Split large WPF views into feature-owned user controls where needed.
-- [ ] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
+- [x] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
   - [x] Extract project create/load/list workflow methods into `ProjectWorkspaceApplicationService` while preserving the existing facade entrypoints.
   - [x] Extract series, item, prompt, and fake planning workflow methods into `SeriesWorkflowApplicationService` while preserving the existing facade entrypoints.
   - [x] Extract review/repair routing and Prompt/Settings repair application into `ReviewRepairApplicationService` while preserving the existing facade entrypoints.
@@ -310,7 +318,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract document illustration, source asset, and artifact packaging `IEntityTypeConfiguration<T>` slices with focused SQLite reload tests.
   - [x] Add a focused SQLite reload test before extracting quality-loop review rubric/result mappings.
   - [x] Remove inline `modelBuilder.Entity<T>` mapping blocks from `AppDbContext`.
-- [ ] Add focused tests for each extracted use-case service before expanding UI surface.
+- [x] Add focused tests for each extracted use-case service before expanding UI surface.
   - [x] Cover `ProjectWorkspaceApplicationService` directly while keeping facade workflow tests.
   - [x] Cover `SeriesWorkflowApplicationService` directly while keeping facade workflow tests.
   - [x] Add focused delivery application service tests for registered and missing writer paths.
