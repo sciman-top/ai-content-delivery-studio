@@ -8,7 +8,8 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [ ] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path as a supporting validation route without requiring real providers by default.
 - [x] Complete Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export.
 - [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
-- [ ] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
+- [x] Evaluate official OpenAI .NET SDK adoption boundary and record the stable-surface decision.
+- [ ] Migrate stable OpenAI provider calls to the official SDK behind existing contracts; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
 - [x] Capture V1 launch evidence against the explicit launch metrics.
@@ -119,8 +120,9 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Add non-generating `/v1/models` health checks for text providers and image key pools.
 - [x] Add Provider Center configuration summary model/view-model without exposing secret values.
 - [x] Add Provider Center manual health summary state for mixed text/image key-pool results.
-- [ ] Evaluate and adopt the official OpenAI .NET SDK where the API surface is stable enough.
-- [ ] Keep raw `HttpClient` fallback only for unsupported or lagging SDK surfaces.
+- [x] Evaluate and record the official OpenAI .NET SDK adoption boundary.
+- [ ] Migrate stable OpenAI provider calls to the official SDK behind existing contracts.
+- [ ] Keep raw `HttpClient` fallback only for unsupported, lagging, telemetry-incomplete, or OpenAI-compatible SDK gaps.
 - [x] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
 - [x] Capture request IDs, token usage, latency, and cost telemetry per provider call.
 - [x] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
