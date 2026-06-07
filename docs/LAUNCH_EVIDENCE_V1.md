@@ -9,14 +9,14 @@ Generated on: 2026-06-07
 | Gate | Command | Result | Evidence |
 | --- | --- | --- | --- |
 | Build | `dotnet build` | Pass | 0 warnings, 0 errors on 2026-06-07. |
-| Test | `dotnet test` | Pass | 271 tests passed, 0 failed on 2026-06-07. |
+| Test | `dotnet test` | Pass | 276 tests passed, 0 failed on 2026-06-07. |
 | Format | `dotnet format --verify-no-changes` | Pass | Exit code 0 on 2026-06-07. |
 
 ## Launch Metrics
 
 | Metric | Current status | Evidence | Gap or next action |
 | --- | --- | --- | --- |
-| Fake-first primary workflow completes from planning through delivery. | Pass | `tests/ImageSeriesStudio.Tests/FakeWorkflowTests.cs` covers fake planning, generation, review, approval, delivery package export, and manifest output. | The fuller brief -> blueprint promotion path is covered by focused application tests, but the UI-level golden path still needs a launch rehearsal. |
+| Fake-first primary workflow completes from planning through delivery. | Pass | `ProjectApplicationService_CompletesBriefBlueprintReviewAndDeliveryGoldenPathWithFakeProviders` and `tests/ImageSeriesStudio.Tests/FakeWorkflowTests.cs` cover fake brief creation, blueprint promotion, prompt promotion, generation, structured review, human approval, delivery package export, and manifest output. | UI-level golden path still needs a launch rehearsal. |
 | Article or plain-text supporting route creates evidence-backed illustration targets without paid providers by default. | Pass | `tests/ImageSeriesStudio.Tests/DocumentIllustrationWorkflowTests.cs` and persistence tests cover fake-provider document planning, evidence anchors, approved target promotion, and stored plans. | Binary document extraction remains outside V1 launch scope. |
 | Educational poster proof path exports deterministic text-composition provenance and human approval evidence. | Pass | `SkiaDeterministicTextComposerTests`, `PostRenderTextCompositionServiceTests`, `CompositionReadabilityCheckServiceTests`, delivery manifest tests, and final approval persistence/export tests cover composition output, layout report, readability findings, and approval evidence. | UI workflow wiring for invoking composition remains a later hardening opportunity. |
 | One real low-risk operator action executes end-to-end with audit evidence. | Pass | `ArtifactValidationToolAdapterTests` covers additive local artifact validation, validation report output, `LowRiskAutoRepairService`, and diagnostics audit export. | No rollback action is needed for the current additive validation output; deleting the generated validation report is sufficient cleanup. |

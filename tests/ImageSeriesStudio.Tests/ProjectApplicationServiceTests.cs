@@ -930,6 +930,169 @@ public sealed class ProjectApplicationServiceTests
         }
     }
 
+    [Fact]
+    public async Task ProjectApplicationService_CompletesBriefBlueprintReviewAndDeliveryGoldenPathWithFakeProviders()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(rootDirectory, "golden-path.sqlite");
+        var generatedDirectory = Path.Combine(rootDirectory, "generated");
+        var deliveryDirectory = Path.Combine(rootDirectory, "delivery");
+        Directory.CreateDirectory(rootDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+            }
+
+            var service = new ProjectApplicationService(
+                new EfProjectRepository(new AppDbContext(options)),
+                new FakeTextPlanningProvider(),
+                new FakeImageGenerationProvider(),
+                new FakeVisionReviewProvider(defaultPasses: true),
+                new DeliveryPackageWriter());
+            var timestamp = new DateTimeOffset(2026, 6, 7, 13, 0, 0, TimeSpan.Zero);
+            var project = await service.CreateProjectAsync("V1 golden path", timestamp, CancellationToken.None);
+            var series = await service.AddSeriesAsync(
+                project.Id,
+                "Short requirement launch route",
+                "A creator turns one short requirement into a reviewed image-series delivery.",
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+            var item = await service.AddItemAsync(
+                project.Id,
+                series.Id,
+                "Opening classroom poster",
+                "A clean physics teaching poster opening panel.",
+                timestamp.AddMinutes(2),
+                CancellationToken.None);
+
+            var brief = await service.CreateCreativeBriefAsync(
+                project.Id,
+                series.Id,
+                "Explain conservation of energy with a three-panel classroom visual",
+                "middle school physics teachers",
+                ImageTextPolicy.DeterministicPostRender,
+                "clear editorial diagrams with deterministic labels",
+                ["energy transfer arrows", "teacher-friendly composition"],
+                ["unreadable model-rendered text"],
+                timestamp.AddMinutes(3),
+                CancellationToken.None);
+
+            var blueprints = await service.CreateDesignBlueprintsAsync(
+                project.Id,
+                brief.Id,
+                timestamp.AddMinutes(4),
+                CancellationToken.None);
+            var promotedBlueprint = await service.PromoteDesignBlueprintAsync(
+                project.Id,
+                brief.Id,
+                blueprints.DesignBlueprints.First().Id,
+                timestamp.AddMinutes(5),
+                CancellationToken.None);
+
+            await service.CreatePromptDirectionsAsync(
+                project.Id,
+                brief.Id,
+                timestamp.AddMinutes(6),
+                CancellationToken.None);
+            var prompt = await service.PromotePromptDirectionAsync(
+                project.Id,
+                item.Id,
+                brief.Id,
+                "conservative",
+                timestamp.AddMinutes(7),
+                CancellationToken.None);
+
+            var generation = await service.RunGenerationQueueAsync(
+                project.Id,
+                generatedDirectory,
+                CancellationToken.None);
+            var generatedImage = Assert.Single(generation.Images);
+
+            var reviews = await service.RunStructuredVisionReviewAsync(
+                project.Id,
+                [
+                    new ReviewCandidateInput(
+                        generatedImage.CandidateImageId,
+                        item.Title,
+                        generatedImage.AssetPath,
+                        prompt.PromptText),
+                ],
+                CancellationToken.None);
+            var review = Assert.Single(reviews).ToReviewResult(
+                timestamp.AddMinutes(8),
+                humanApproved: true,
+                humanReviewer: "Teacher",
+                humanReviewNotes: "Approved for launch rehearsal.",
+                humanReviewDecidedAt: timestamp.AddMinutes(8));
+            await service.SaveReviewResultAsync(
+                project.Id,
+                review,
+                timestamp.AddMinutes(8),
+                CancellationToken.None);
+
+            var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var loadedSeries = Assert.Single(loaded!.Series);
+            var loadedBrief = Assert.Single(loadedSeries.CreativeBriefs);
+            var loadedItem = Assert.Single(loadedSeries.Items);
+            var candidate = Assert.Single(loadedItem.CandidateImages);
+            var loadedReview = Assert.Single(candidate.ReviewResults);
+
+            var delivery = await service.ExportDeliveryPackageAsync(
+                new DeliveryExportRequest(
+                    loaded.Name,
+                    deliveryDirectory,
+                    [
+                        new DeliveryExportItem(
+                            "opening-classroom-poster",
+                            loadedItem.Title,
+                            candidate.AssetPath,
+                            candidate.MetadataPath,
+                            prompt.PromptText,
+                            loadedReview.Decision,
+                            loadedReview.HumanApproved,
+                            loadedReview.HumanReviewer,
+                            loadedReview.HumanReviewNotes,
+                            loadedReview.HumanReviewDecidedAt,
+                            Blueprint: new DeliveryBlueprintMetadata(
+                                promotedBlueprint.Id,
+                                promotedBlueprint.Key,
+                                promotedBlueprint.DisplayName,
+                                promotedBlueprint.Category,
+                                promotedBlueprint.SupportsPanelSequence ? "panel-sequence" : "standard-items",
+                                string.Join("; ", promotedBlueprint.ConsistencyRules),
+                                string.Join("; ", promotedBlueprint.VariationRules))),
+                    ]),
+                CancellationToken.None);
+
+            Assert.Equal(promotedBlueprint.Id, loadedBrief.PromotedBlueprintId);
+            Assert.Equal(prompt.Id, loadedItem.PromptVersions.Single().Id);
+            Assert.True(File.Exists(candidate.AssetPath));
+            Assert.True(File.Exists(Assert.Single(delivery.FinalImagePaths)));
+            Assert.True(loadedReview.HumanApproved);
+            Assert.Equal("Teacher", loadedReview.HumanReviewer);
+
+            using var manifestStream = File.OpenRead(delivery.ManifestJsonPath);
+            using var manifest = await JsonDocument.ParseAsync(manifestStream, cancellationToken: CancellationToken.None);
+            var manifestItem = manifest.RootElement.GetProperty("items")[0];
+            Assert.True(manifestItem.GetProperty("humanApproved").GetBoolean());
+            Assert.Equal(promotedBlueprint.Key, manifestItem.GetProperty("blueprint").GetProperty("key").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
     private sealed class InMemoryProjectRepository : IProjectRepository
     {
         private readonly Dictionary<Guid, ImageProject> _projects = new();
