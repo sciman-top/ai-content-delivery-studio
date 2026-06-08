@@ -21,10 +21,12 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
         var imagesDirectory = Path.Combine(request.OutputDirectory, "images");
         var promptsDirectory = Path.Combine(request.OutputDirectory, "prompts");
         var metadataDirectory = Path.Combine(request.OutputDirectory, "metadata");
+        var compositionDirectory = Path.Combine(request.OutputDirectory, "composition");
 
         Directory.CreateDirectory(imagesDirectory);
         Directory.CreateDirectory(promptsDirectory);
         Directory.CreateDirectory(metadataDirectory);
+        Directory.CreateDirectory(compositionDirectory);
 
         var approvedItems = request.Items
             .Where(item => item.ReviewDecision is ReviewDecision.Pass && item.HumanApproved)
@@ -47,6 +49,11 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
             var imagePath = Path.Combine(imagesDirectory, $"{itemKey}{imageExtension}");
             var promptPath = Path.Combine(promptsDirectory, $"{itemKey}.txt");
             var metadataPath = Path.Combine(metadataDirectory, $"{itemKey}.json");
+            var deterministicCompositionReportPath = CopyDeterministicCompositionReport(
+                item,
+                compositionDirectory,
+                request.OutputDirectory,
+                itemKey);
 
             File.Copy(item.FinalImagePath, imagePath, overwrite: true);
             await File.WriteAllTextAsync(promptPath, item.PromptText, cancellationToken);
@@ -68,6 +75,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 item.FinalReviewer,
                 item.FinalApprovalNotes,
                 item.FinalApprovalDecidedAt,
+                deterministicCompositionReportPath,
                 item.StyleGuideId,
                 item.StyleGuideVersion,
                 item.RecipeId,
@@ -139,7 +147,8 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                         item.EvidenceAnchorIds,
                         item.ArtifactRole,
                         item.Blueprint,
-                        item.OperatorRunIds))
+                        item.OperatorRunIds,
+                        item.DeterministicCompositionReportPath))
                     .ToArray()),
             cancellationToken);
 
@@ -172,7 +181,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
     private static string WriteManifestCsv(IReadOnlyList<DeliveryManifestItem> items)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,finalReviewer,finalApprovalNotes,finalApprovalDecidedAt,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,outputArtifactId,sourceAssetIds,evidenceAnchorIds,operatorRunIds,artifactRole,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary");
+        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,finalReviewer,finalApprovalNotes,finalApprovalDecidedAt,deterministicCompositionReportPath,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,outputArtifactId,sourceAssetIds,evidenceAnchorIds,operatorRunIds,artifactRole,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary");
 
         foreach (var item in items)
         {
@@ -188,6 +197,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 EscapeCsv(item.FinalReviewer ?? string.Empty),
                 EscapeCsv(item.FinalApprovalNotes ?? string.Empty),
                 EscapeCsv(item.FinalApprovalDecidedAt?.ToString("O") ?? string.Empty),
+                EscapeCsv(item.DeterministicCompositionReportPath ?? string.Empty),
                 EscapeCsv(item.StyleGuideId?.ToString() ?? string.Empty),
                 item.StyleGuideVersion?.ToString() ?? string.Empty,
                 EscapeCsv(item.RecipeId?.ToString() ?? string.Empty),
@@ -221,10 +231,38 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
         foreach (var item in items)
         {
             builder.AppendLine(
-                $"- {item.Title}: {item.ReviewDecision}, humanApproved={item.HumanApproved}, reviewer={item.FinalReviewer ?? string.Empty}, notes={item.FinalApprovalNotes ?? string.Empty}");
+                $"- {item.Title}: {item.ReviewDecision}, humanApproved={item.HumanApproved}, reviewer={item.FinalReviewer ?? string.Empty}, notes={item.FinalApprovalNotes ?? string.Empty}, compositionReport={item.DeterministicCompositionReportPath ?? string.Empty}");
         }
 
         return builder.ToString();
+    }
+
+    private static string? CopyDeterministicCompositionReport(
+        DeliveryPackageItem item,
+        string compositionDirectory,
+        string outputDirectory,
+        string itemKey)
+    {
+        if (string.IsNullOrWhiteSpace(item.DeterministicCompositionReportPath))
+        {
+            return null;
+        }
+
+        if (!File.Exists(item.DeterministicCompositionReportPath))
+        {
+            throw new InvalidOperationException(
+                $"Deterministic composition report was not found: {item.DeterministicCompositionReportPath}");
+        }
+
+        var extension = Path.GetExtension(item.DeterministicCompositionReportPath);
+        if (string.IsNullOrWhiteSpace(extension))
+        {
+            extension = ".json";
+        }
+
+        var reportPath = Path.Combine(compositionDirectory, $"{itemKey}{extension}");
+        File.Copy(item.DeterministicCompositionReportPath, reportPath, overwrite: true);
+        return ToRelativePath(outputDirectory, reportPath);
     }
 
     private static string FormatExperimentParameters(IReadOnlyDictionary<string, string> parameters)
@@ -271,7 +309,8 @@ public sealed record DeliveryPackageItem(
     IReadOnlyList<Guid>? EvidenceAnchorIds = null,
     string? ArtifactRole = null,
     DeliveryBlueprintMetadata? Blueprint = null,
-    IReadOnlyList<Guid>? OperatorRunIds = null);
+    IReadOnlyList<Guid>? OperatorRunIds = null,
+    string? DeterministicCompositionReportPath = null);
 
 public sealed record DeliveryPackageResult(
     string PackageDirectory,
@@ -296,6 +335,7 @@ internal sealed record DeliveryManifestItem(
     string? FinalReviewer,
     string? FinalApprovalNotes,
     DateTimeOffset? FinalApprovalDecidedAt,
+    string? DeterministicCompositionReportPath,
     Guid? StyleGuideId,
     int? StyleGuideVersion,
     Guid? RecipeId,

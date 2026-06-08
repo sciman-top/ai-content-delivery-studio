@@ -10,9 +10,9 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [x] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
-- [ ] Add bounded local review-prep artifacts and review-batch thresholds before expanding multi-turn image-state review.
+- [x] Add bounded local review-prep artifacts and review-batch thresholds before expanding multi-turn image-state review.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
-- [ ] Capture V1 launch evidence against the explicit launch metrics.
+- [x] Capture V1 launch evidence against the explicit launch metrics.
 
 ## V1 Documentation And Policy Alignment
 
@@ -32,8 +32,8 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Lock the first real operator slice to an additive local validation action.
 - [x] Choose the deterministic text composition implementation library: `SkiaSharp`.
 - [x] Keep packs internal-only for V1 and defer public sharing behavior.
-- [ ] Reflect the locked V1 defaults in implementation-facing code comments, options, and operator descriptors where relevant.
-- [ ] Reflect stateless local-direct visual review defaults in implementation-facing options and review operator descriptors.
+- [x] Reflect the locked V1 defaults in implementation-facing code comments, options, and operator descriptors where relevant.
+- [x] Reflect stateless local-direct visual review defaults in implementation-facing options and review operator descriptors.
 - [ ] Reuse the text-planning low-502 execution policy when future real-provider brief or blueprint planning leaves the current fake-first boundary.
 
 ## Reference Governance

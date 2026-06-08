@@ -556,6 +556,82 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task VisionReviewProvider_UsesExplicitStatefulReviewOptionsWhenEnabled()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var imagePath = Path.Combine(rootDirectory, "candidate.png");
+        await File.WriteAllBytesAsync(imagePath, [1, 2, 3, 4], CancellationToken.None);
+
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_review_stateful",
+              "output_text": "{\"decision\":\"pass\",\"scores\":{\"match\":5},\"hardFailures\":[],\"comments\":\"Looks aligned.\",\"suggestedFix\":null}"
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiVisionReviewProvider(
+            httpClient,
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                VisionReviewUsesStoredResponses = true,
+                VisionReviewAllowsPreviousResponseId = true,
+            },
+            new StaticSecretStore("test-openai-key"));
+
+        try
+        {
+            await provider.ReviewAsync(
+                CreateVisionReviewRequest(imagePath) with { PreviousResponseId = "resp_prev_123" },
+                CancellationToken.None);
+
+            using var payload = JsonDocument.Parse(handler.LastRequestBody!);
+            Assert.True(payload.RootElement.GetProperty("store").GetBoolean());
+            Assert.Equal("resp_prev_123", payload.RootElement.GetProperty("previous_response_id").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task VisionReviewProvider_RejectsPreviousResponseIdWhenStatefulReviewIsDisabled()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var imagePath = Path.Combine(rootDirectory, "candidate.png");
+        await File.WriteAllBytesAsync(imagePath, [1, 2, 3, 4], CancellationToken.None);
+
+        using var handler = new CaptureHandler(_ => JsonResponse("{}"));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateVisionProvider(httpClient);
+
+        try
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                provider.ReviewAsync(
+                    CreateVisionReviewRequest(imagePath) with { PreviousResponseId = "resp_prev_123" },
+                    CancellationToken.None));
+
+            Assert.Contains("previous_response_id", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, handler.CallCount);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task VisionReviewProvider_DoesNotSendHttpWhenRealApiIsDisabled()
     {
         using var handler = new CaptureHandler(_ => JsonResponse("{}"));

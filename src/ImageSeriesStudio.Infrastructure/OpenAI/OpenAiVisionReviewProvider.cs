@@ -10,7 +10,7 @@ namespace ImageSeriesStudio.Infrastructure.OpenAI;
 public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
-    private static readonly OpenAiRoutingDecision Routing = OpenAiProviderRoutingPolicy.ForVisionReview();
+    private static readonly OpenAiRoutingDecision BaseRouting = OpenAiProviderRoutingPolicy.ForVisionReview();
 
     private readonly HttpClient _httpClient;
     private readonly OpenAiProviderOptions _options;
@@ -49,6 +49,8 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         VisionReviewRequest request,
         CancellationToken cancellationToken)
     {
+        ValidateStatefulReviewOptions(request);
+
         await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
             _options,
             _secretStore,
@@ -57,11 +59,12 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
         var imageDataUrl = await CreateImageDataUrlAsync(request.AssetPath, cancellationToken);
+        var routing = BaseRouting with { Store = _options.VisionReviewUsesStoredResponses };
 
-        var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
+        var endpoint = new Uri(_options.BaseUri, routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        httpRequest.Content = JsonContent.Create(CreatePayload(request, imageDataUrl), options: JsonOptions);
+        httpRequest.Content = JsonContent.Create(CreatePayload(request, imageDataUrl, routing), options: JsonOptions);
 
         var stopwatch = Stopwatch.StartNew();
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
@@ -90,9 +93,28 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
             review.SuggestedFix);
     }
 
-    private Dictionary<string, object?> CreatePayload(VisionReviewRequest request, string imageDataUrl)
+    private void ValidateStatefulReviewOptions(VisionReviewRequest request)
     {
-        return new Dictionary<string, object?>
+        if (_options.VisionReviewAllowsPreviousResponseId && !_options.VisionReviewUsesStoredResponses)
+        {
+            throw new InvalidOperationException(
+                "Vision review previous_response_id requires stored responses to be enabled explicitly.");
+        }
+
+        if (!_options.VisionReviewAllowsPreviousResponseId
+            && !string.IsNullOrWhiteSpace(request.PreviousResponseId))
+        {
+            throw new InvalidOperationException(
+                "Vision review previous_response_id is disabled by default. Enable stateful review options explicitly before dispatch.");
+        }
+    }
+
+    private Dictionary<string, object?> CreatePayload(
+        VisionReviewRequest request,
+        string imageDataUrl,
+        OpenAiRoutingDecision routing)
+    {
+        var payload = new Dictionary<string, object?>
         {
             ["model"] = _options.VisionReviewModel,
             ["instructions"] = "Review the generated image against the prompt and rubric. Return only valid JSON.",
@@ -117,7 +139,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
                     },
                 },
             },
-            ["store"] = Routing.Store,
+            ["store"] = routing.Store,
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = new Dictionary<string, object?>
@@ -129,6 +151,14 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
                 },
             },
         };
+
+        if (_options.VisionReviewAllowsPreviousResponseId
+            && !string.IsNullOrWhiteSpace(request.PreviousResponseId))
+        {
+            payload["previous_response_id"] = request.PreviousResponseId;
+        }
+
+        return payload;
     }
 
     private static string BuildReviewText(VisionReviewRequest request)

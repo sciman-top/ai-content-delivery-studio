@@ -96,13 +96,15 @@ public sealed class ReviewWorkflowApplicationService
 
     private static void ValidateReviewBatch(string providerId, IReadOnlyList<ReviewCandidateInput> candidates)
     {
-        if (candidates.Count > VisionReviewExecutionPolicy.DefaultBatchItemLimit)
+        var descriptor = VisionReviewExecutionPolicy.CreateOperatorDescriptor(providerId);
+
+        if (candidates.Count > descriptor.BatchItemLimit)
         {
             throw new InvalidOperationException(
-                $"Remote vision review batch contains {candidates.Count} items, which exceeds the default low-502 limit of {VisionReviewExecutionPolicy.DefaultBatchItemLimit}. Split the review batch before dispatch.");
+                $"Remote vision review batch contains {candidates.Count} items, which exceeds the default low-502 limit of {descriptor.BatchItemLimit}. Split the review batch before dispatch.");
         }
 
-        if (!VisionReviewExecutionPolicy.RequiresCompactLocalArtifacts(providerId))
+        if (!descriptor.RequiresCompactLocalArtifacts)
         {
             return;
         }
@@ -118,12 +120,12 @@ public sealed class ReviewWorkflowApplicationService
 
         var oversizedCompactArtifact = candidates.FirstOrDefault(candidate =>
             candidate.ReviewPrep is not null &&
-            candidate.ReviewPrep.Summary.Length > VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters);
+            candidate.ReviewPrep.Summary.Length > descriptor.CompactSummaryCharacterLimit);
 
         if (oversizedCompactArtifact is not null)
         {
             throw new InvalidOperationException(
-                $"Remote vision review compact summary exceeds the bounded local-direct default of {VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters} characters. Trim the review-prep summary locally before dispatch.");
+                $"Remote vision review compact summary exceeds the bounded local-direct default of {descriptor.CompactSummaryCharacterLimit} characters. Trim the review-prep summary locally before dispatch.");
         }
 
         var missingEvidenceSelection = candidates.FirstOrDefault(candidate =>

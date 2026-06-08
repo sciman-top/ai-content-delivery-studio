@@ -7,6 +7,15 @@ public static class TextPlanningExecutionPolicy
     public const bool StoreResponsesByDefault = false;
     public const bool AllowPreviousResponseIdByDefault = false;
 
+    public static TextPlanningOperatorDescriptor CreateOperatorDescriptor()
+    {
+        return new TextPlanningOperatorDescriptor(
+            "local-direct-stateless",
+            DefaultMaxInputCharacters,
+            StoreResponsesByDefault,
+            AllowPreviousResponseIdByDefault);
+    }
+
     public static int EstimateInputCharacters(PlanningRequest request)
     {
         return string.Join(
@@ -45,3 +54,9 @@ public static class TextPlanningExecutionPolicy
             ]).Length;
     }
 }
+
+public sealed record TextPlanningOperatorDescriptor(
+    string ExecutionMode,
+    int MaxInputCharacters,
+    bool UsesStoredResponses,
+    bool AllowsPreviousResponseId);

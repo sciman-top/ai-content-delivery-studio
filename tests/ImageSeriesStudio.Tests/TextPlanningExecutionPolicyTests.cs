@@ -11,4 +11,15 @@ public sealed class TextPlanningExecutionPolicyTests
         Assert.False(TextPlanningExecutionPolicy.StoreResponsesByDefault);
         Assert.False(TextPlanningExecutionPolicy.AllowPreviousResponseIdByDefault);
     }
+
+    [Fact]
+    public void CreateOperatorDescriptor_UsesStatelessLocalDirectDefaults()
+    {
+        var descriptor = TextPlanningExecutionPolicy.CreateOperatorDescriptor();
+
+        Assert.Equal("local-direct-stateless", descriptor.ExecutionMode);
+        Assert.Equal(4000, descriptor.MaxInputCharacters);
+        Assert.False(descriptor.UsesStoredResponses);
+        Assert.False(descriptor.AllowsPreviousResponseId);
+    }
 }

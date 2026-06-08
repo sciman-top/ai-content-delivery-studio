@@ -263,7 +263,8 @@ public sealed record VisionReviewRequest(
     string AssetPath,
     ReviewRubric Rubric,
     string PromptText,
-    ReviewPrepArtifactContract? ReviewPrep = null);
+    ReviewPrepArtifactContract? ReviewPrep = null,
+    string? PreviousResponseId = null);
 
 public sealed record ReviewPrepArtifactContract(
     string Summary,

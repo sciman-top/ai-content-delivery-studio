@@ -15,6 +15,29 @@ public sealed class VisionReviewExecutionPolicyTests
     }
 
     [Fact]
+    public void CreateOperatorDescriptor_UsesStatelessLocalDirectDefaultsForRemoteReview()
+    {
+        var descriptor = VisionReviewExecutionPolicy.CreateOperatorDescriptor("openai-vision");
+
+        Assert.Equal("local-direct-stateless", descriptor.ExecutionMode);
+        Assert.Equal(6, descriptor.BatchItemLimit);
+        Assert.Equal(4, descriptor.HighRiskBatchItemLimit);
+        Assert.Equal(280, descriptor.CompactSummaryCharacterLimit);
+        Assert.False(descriptor.UsesStoredResponses);
+        Assert.False(descriptor.AllowsPreviousResponseId);
+        Assert.True(descriptor.RequiresCompactLocalArtifacts);
+    }
+
+    [Fact]
+    public void CreateOperatorDescriptor_SkipsCompactArtifactRequirementForFakeReview()
+    {
+        var descriptor = VisionReviewExecutionPolicy.CreateOperatorDescriptor("fake-vision");
+
+        Assert.Equal("fake-local-review", descriptor.ExecutionMode);
+        Assert.False(descriptor.RequiresCompactLocalArtifacts);
+    }
+
+    [Fact]
     public void CreateMinimalLocalContract_TrimsLongPromptIntoCompactSummary()
     {
         var promptText = new string('A', VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters + 50);

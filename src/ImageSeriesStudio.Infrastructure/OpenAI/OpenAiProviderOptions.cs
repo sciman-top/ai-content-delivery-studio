@@ -26,12 +26,15 @@ public sealed record OpenAiProviderOptions
 
     public string VisionReviewModel { get; init; } = "gpt-5";
 
+    // Keep remote visual review in small local-direct batches unless a later slice explicitly widens it.
     public int VisionReviewBatchItemLimit { get; init; } = VisionReviewExecutionPolicy.DefaultBatchItemLimit;
 
     public int HighRiskVisionReviewBatchItemLimit { get; init; } = VisionReviewExecutionPolicy.DefaultHighRiskBatchItemLimit;
 
+    // The default V1 path is stateless review backed by local project provenance, not remote retained history.
     public bool VisionReviewUsesStoredResponses { get; init; } = VisionReviewExecutionPolicy.StoreResponsesByDefault;
 
+    // previous_response_id stays fail-closed until a stateful review slice opts in explicitly.
     public bool VisionReviewAllowsPreviousResponseId { get; init; } = VisionReviewExecutionPolicy.AllowPreviousResponseIdByDefault;
 
     public bool RealApiEnabled { get; init; }
@@ -121,6 +124,11 @@ public sealed record OpenAiProviderOptions
         if (HighRiskVisionReviewBatchItemLimit > VisionReviewBatchItemLimit)
         {
             errors.Add("High-risk vision review batch item limit cannot exceed the default vision review batch item limit.");
+        }
+
+        if (VisionReviewAllowsPreviousResponseId && !VisionReviewUsesStoredResponses)
+        {
+            errors.Add("Vision review previous response IDs require stored responses to be enabled.");
         }
 
         if (AllowedOperations is OpenAiProviderOperation.None)

@@ -102,11 +102,12 @@ public sealed class SeriesWorkflowApplicationService
 
     private static void ValidatePlanningRequest(PlanningRequest request)
     {
+        var descriptor = TextPlanningExecutionPolicy.CreateOperatorDescriptor();
         var estimatedCharacters = TextPlanningExecutionPolicy.EstimateInputCharacters(request);
-        if (estimatedCharacters > TextPlanningExecutionPolicy.DefaultMaxInputCharacters)
+        if (estimatedCharacters > descriptor.MaxInputCharacters)
         {
             throw new InvalidOperationException(
-                $"Text planning request exceeds the bounded local-direct default of {TextPlanningExecutionPolicy.DefaultMaxInputCharacters} characters. Split or summarize the request locally before provider dispatch.");
+                $"Text planning request exceeds the bounded local-direct default of {descriptor.MaxInputCharacters} characters. Split or summarize the request locally before provider dispatch.");
         }
     }
 

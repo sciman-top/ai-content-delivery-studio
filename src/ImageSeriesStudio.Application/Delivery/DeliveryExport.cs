@@ -35,7 +35,8 @@ public sealed record DeliveryExportItem(
     IReadOnlyList<Guid>? EvidenceAnchorIds = null,
     string? ArtifactRole = null,
     DeliveryBlueprintMetadata? Blueprint = null,
-    IReadOnlyList<Guid>? OperatorRunIds = null);
+    IReadOnlyList<Guid>? OperatorRunIds = null,
+    string? DeterministicCompositionReportPath = null);
 
 public sealed record DeliveryBlueprintMetadata(
     Guid Id,

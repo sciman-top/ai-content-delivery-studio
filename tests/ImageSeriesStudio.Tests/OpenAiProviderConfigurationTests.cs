@@ -188,6 +188,20 @@ public sealed class OpenAiProviderConfigurationTests
     }
 
     [Fact]
+    public void OpenAiProviderOptions_RejectsPreviousResponseIdsWithoutStoredResponses()
+    {
+        var options = new OpenAiProviderOptions
+        {
+            VisionReviewUsesStoredResponses = false,
+            VisionReviewAllowsPreviousResponseId = true,
+        };
+
+        var errors = options.Validate();
+
+        Assert.Contains(errors, error => error.Contains("previous response", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void OpenAiProviders_FailClosedWhenOptionsAreUsedForWrongOperation()
     {
         var configuration = ProviderEnvironmentConfiguration.FromValues(

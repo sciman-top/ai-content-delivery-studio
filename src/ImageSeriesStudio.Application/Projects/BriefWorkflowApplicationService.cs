@@ -277,21 +277,23 @@ public sealed class BriefWorkflowApplicationService
 
     private static void ValidateBoundedTextPlanningRequest(BriefPlanningRequest request)
     {
+        var descriptor = TextPlanningExecutionPolicy.CreateOperatorDescriptor();
         var estimatedCharacters = TextPlanningExecutionPolicy.EstimateInputCharacters(request);
-        if (estimatedCharacters > TextPlanningExecutionPolicy.DefaultMaxInputCharacters)
+        if (estimatedCharacters > descriptor.MaxInputCharacters)
         {
             throw new InvalidOperationException(
-                $"Brief direction planning exceeds the bounded local-direct default of {TextPlanningExecutionPolicy.DefaultMaxInputCharacters} characters. Summarize or trim the brief locally before provider dispatch.");
+                $"Brief direction planning exceeds the bounded local-direct default of {descriptor.MaxInputCharacters} characters. Summarize or trim the brief locally before provider dispatch.");
         }
     }
 
     private static void ValidateBoundedTextPlanningRequest(BlueprintPlanningRequest request)
     {
+        var descriptor = TextPlanningExecutionPolicy.CreateOperatorDescriptor();
         var estimatedCharacters = TextPlanningExecutionPolicy.EstimateInputCharacters(request);
-        if (estimatedCharacters > TextPlanningExecutionPolicy.DefaultMaxInputCharacters)
+        if (estimatedCharacters > descriptor.MaxInputCharacters)
         {
             throw new InvalidOperationException(
-                $"Blueprint planning exceeds the bounded local-direct default of {TextPlanningExecutionPolicy.DefaultMaxInputCharacters} characters. Summarize or trim the brief locally before provider dispatch.");
+                $"Blueprint planning exceeds the bounded local-direct default of {descriptor.MaxInputCharacters} characters. Summarize or trim the brief locally before provider dispatch.");
         }
     }
 }

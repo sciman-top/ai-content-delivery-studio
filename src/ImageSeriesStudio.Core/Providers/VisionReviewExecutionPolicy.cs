@@ -9,6 +9,21 @@ public static class VisionReviewExecutionPolicy
     public const bool StoreResponsesByDefault = false;
     public const bool AllowPreviousResponseIdByDefault = false;
 
+    public static VisionReviewOperatorDescriptor CreateOperatorDescriptor(string providerId)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(providerId);
+
+        var requiresCompactLocalArtifacts = RequiresCompactLocalArtifacts(providerId);
+        return new VisionReviewOperatorDescriptor(
+            requiresCompactLocalArtifacts ? "local-direct-stateless" : "fake-local-review",
+            DefaultBatchItemLimit,
+            DefaultHighRiskBatchItemLimit,
+            DefaultCompactSummaryCharacters,
+            StoreResponsesByDefault,
+            AllowPreviousResponseIdByDefault,
+            requiresCompactLocalArtifacts);
+    }
+
     public static bool RequiresCompactLocalArtifacts(string providerId)
     {
         return !providerId.StartsWith("fake", StringComparison.OrdinalIgnoreCase);
@@ -60,3 +75,12 @@ public static class VisionReviewExecutionPolicy
         return normalized[..Math.Max(0, limit - 3)] + "...";
     }
 }
+
+public sealed record VisionReviewOperatorDescriptor(
+    string ExecutionMode,
+    int BatchItemLimit,
+    int HighRiskBatchItemLimit,
+    int CompactSummaryCharacterLimit,
+    bool UsesStoredResponses,
+    bool AllowsPreviousResponseId,
+    bool RequiresCompactLocalArtifacts);

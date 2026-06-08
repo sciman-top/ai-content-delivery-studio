@@ -17,9 +17,9 @@
 - Modify: `docs/PROVIDER_ROUTING_POLICY.md`
 - Modify: `docs/ARCHITECTURE.md`
 
-- [ ] Write the design spec that distinguishes bounded local-direct cloud review from long conversational review chains.
-- [ ] Add routing-policy language that structured visual review should prefer direct local stateless requests by default.
-- [ ] Add architecture language that local review-prep artifacts and batch thresholds are first-class parts of the review loop.
+- [x] Write the design spec that distinguishes bounded local-direct cloud review from long conversational review chains.
+- [x] Add routing-policy language that structured visual review should prefer direct local stateless requests by default.
+- [x] Add architecture language that local review-prep artifacts and batch thresholds are first-class parts of the review loop.
 
 Run:
 
@@ -34,9 +34,9 @@ Expected: the new review boundary is visible in the design and policy docs.
 **Files:**
 - Modify: `docs/TASKS.md`
 
-- [ ] Add an unchecked task to introduce bounded local review-prep artifacts before expanding multi-turn image state.
-- [ ] Add an unchecked task to encode review batch thresholds and stateless defaults in implementation-facing options or operator descriptors.
-- [ ] Keep the new tasks aligned with the existing V1 launch boundary instead of broadening scope.
+- [x] Add an unchecked task to introduce bounded local review-prep artifacts before expanding multi-turn image state.
+- [x] Add an unchecked task to encode review batch thresholds and stateless defaults in implementation-facing options or operator descriptors.
+- [x] Keep the new tasks aligned with the existing V1 launch boundary instead of broadening scope.
 
 Run:
 
