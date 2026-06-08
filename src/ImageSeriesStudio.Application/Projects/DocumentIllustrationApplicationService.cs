@@ -24,6 +24,8 @@ public sealed class DocumentIllustrationApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
+        ValidatePlanningRequest(request);
+
         if (_textPlanningProvider is null)
         {
             throw new InvalidOperationException("Text planning provider is not registered.");
@@ -199,5 +201,21 @@ public sealed class DocumentIllustrationApplicationService
         return values.Count == 0
             ? "- None specified."
             : string.Join(Environment.NewLine, values.Select(value => $"- {value}"));
+    }
+
+    private static void ValidatePlanningRequest(DocumentIllustrationPlanningRequest request)
+    {
+        if (request.SourceText.Length > DocumentIllustrationExecutionPolicy.DefaultMaxSourceTextCharacters)
+        {
+            throw new InvalidOperationException(
+                $"Document illustration planning exceeds the bounded local-direct default of {DocumentIllustrationExecutionPolicy.DefaultMaxSourceTextCharacters} source-text characters. Summarize or chunk the source locally before dispatch.");
+        }
+
+        var evidenceRowCount = request.Sections.Count + request.KeyClaims.Count + request.KnownConstraints.Count;
+        if (evidenceRowCount > DocumentIllustrationExecutionPolicy.DefaultMaxEvidenceRows)
+        {
+            throw new InvalidOperationException(
+                $"Document illustration planning contains {evidenceRowCount} evidence rows, which exceeds the local review-prep default of {DocumentIllustrationExecutionPolicy.DefaultMaxEvidenceRows}. Summarize or select a smaller source-evidence subset before dispatch.");
+        }
     }
 }

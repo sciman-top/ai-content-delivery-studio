@@ -73,6 +73,8 @@ public sealed class SeriesWorkflowApplicationService
         DateTimeOffset timestamp,
         CancellationToken cancellationToken)
     {
+        ValidatePlanningRequest(request);
+
         if (_textPlanningProvider is null)
         {
             throw new InvalidOperationException("Text planning provider is not registered.");
@@ -96,6 +98,16 @@ public sealed class SeriesWorkflowApplicationService
 
         await _repository.SaveAsync(project, cancellationToken);
         return series;
+    }
+
+    private static void ValidatePlanningRequest(PlanningRequest request)
+    {
+        var estimatedCharacters = TextPlanningExecutionPolicy.EstimateInputCharacters(request);
+        if (estimatedCharacters > TextPlanningExecutionPolicy.DefaultMaxInputCharacters)
+        {
+            throw new InvalidOperationException(
+                $"Text planning request exceeds the bounded local-direct default of {TextPlanningExecutionPolicy.DefaultMaxInputCharacters} characters. Split or summarize the request locally before provider dispatch.");
+        }
     }
 
     private static GenerationSettings CreateDefaultGenerationSettings()

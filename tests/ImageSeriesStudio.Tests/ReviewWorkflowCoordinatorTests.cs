@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.App.ViewModels;
@@ -42,6 +43,110 @@ public sealed class ReviewWorkflowCoordinatorTests
         Assert.Contains("Brief", reviewRow.RouteSummary);
         Assert.Contains("Regenerate", reviewRow.RouteSummary);
         Assert.Equal(localizationService.GetText(LocalizationKey.HumanApprovalPending), reviewRow.HumanApprovalStatus);
+    }
+
+    [Fact]
+    public async Task RunFakeReviewAsync_WritesLocalReviewPrepManifest()
+    {
+        var repository = new InMemoryProjectRepository();
+        var capturingProvider = new CapturingVisionReviewProvider();
+        var projectService = new ProjectApplicationService(
+            repository,
+            textPlanningProvider: null,
+            imageGenerationProvider: null,
+            visionReviewProvider: capturingProvider);
+        var localizationService = new LocalizationService(() => new CultureInfo("en-US"));
+        var coordinator = new ReviewWorkflowCoordinator(projectService, localizationService);
+        var timestamp = DateTimeOffset.Parse("2026-06-09T10:00:00Z");
+        var project = await projectService.CreateProjectAsync("Review manifest demo", timestamp, CancellationToken.None);
+
+        var reviewRows = await coordinator.RunFakeReviewAsync(
+            project.Id,
+            [
+                new GalleryRowViewModel(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "Opening frame",
+                    Path.Combine(Path.GetTempPath(), "candidate.png"),
+                    Path.Combine(Path.GetTempPath(), "candidate.json"),
+                    "Create a frame that will be routed for repair."),
+            ],
+            CancellationToken.None);
+
+        Assert.Single(reviewRows);
+        Assert.NotNull(capturingProvider.LastRequest?.ReviewPrep);
+        Assert.False(string.IsNullOrWhiteSpace(capturingProvider.LastRequest!.ReviewPrep!.ManifestPath));
+        Assert.True(File.Exists(capturingProvider.LastRequest.ReviewPrep.ManifestPath));
+
+        var manifestJson = await File.ReadAllTextAsync(capturingProvider.LastRequest.ReviewPrep.ManifestPath, CancellationToken.None);
+        var manifest = JsonSerializer.Deserialize<ReviewPrepArtifactManifest>(
+            manifestJson,
+            new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.NotNull(manifest);
+        Assert.Equal("Opening frame", manifest.ItemTitle);
+        Assert.Equal("Create a frame that will be routed for repair.", manifest.PromptText);
+        Assert.Equal(Path.GetTempPath() + "candidate.png", manifest.AssetPath);
+        Assert.Equal(Path.GetTempPath() + "candidate.json", manifest.MetadataPath);
+        Assert.Collection(
+            manifest.EvidenceSelections,
+            selection =>
+            {
+                Assert.Equal("candidate-image", selection.Role);
+                Assert.Equal("generated-asset", selection.SourceKind);
+                Assert.Equal(Path.GetTempPath() + "candidate.png", selection.LocalPath);
+            },
+            selection =>
+            {
+                Assert.Equal("candidate-metadata", selection.Role);
+                Assert.Equal("generation-metadata", selection.SourceKind);
+                Assert.Equal(Path.GetTempPath() + "candidate.json", selection.LocalPath);
+            },
+            selection =>
+            {
+                Assert.Equal("prompt-summary", selection.Role);
+                Assert.Equal("prompt-text", selection.SourceKind);
+                Assert.Null(selection.LocalPath);
+            });
+        Assert.Equal(3, capturingProvider.LastRequest.ReviewPrep.EvidenceSelections.Count);
+    }
+
+    [Fact]
+    public async Task RunFakeReviewAsync_TrimsCompactReviewPrepSummaryForLongPrompt()
+    {
+        var repository = new InMemoryProjectRepository();
+        var capturingProvider = new CapturingVisionReviewProvider();
+        var projectService = new ProjectApplicationService(
+            repository,
+            textPlanningProvider: null,
+            imageGenerationProvider: null,
+            visionReviewProvider: capturingProvider);
+        var localizationService = new LocalizationService(() => new CultureInfo("en-US"));
+        var coordinator = new ReviewWorkflowCoordinator(projectService, localizationService);
+        var timestamp = DateTimeOffset.Parse("2026-06-09T10:30:00Z");
+        var project = await projectService.CreateProjectAsync("Review bounded summary demo", timestamp, CancellationToken.None);
+        var longPrompt = new string('A', VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters + 120);
+
+        await coordinator.RunFakeReviewAsync(
+            project.Id,
+            [
+                new GalleryRowViewModel(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "Opening frame",
+                    Path.Combine(Path.GetTempPath(), "candidate.png"),
+                    Path.Combine(Path.GetTempPath(), "candidate.json"),
+                    longPrompt),
+            ],
+            CancellationToken.None);
+
+        Assert.NotNull(capturingProvider.LastRequest?.ReviewPrep);
+        Assert.True(capturingProvider.LastRequest!.ReviewPrep!.Summary.Length <= VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters);
+        var promptEvidence = Assert.Single(
+            capturingProvider.LastRequest.ReviewPrep.EvidenceSelections,
+            selection => selection.Role == "prompt-summary");
+        Assert.NotNull(promptEvidence.Summary);
+        Assert.True(promptEvidence.Summary!.Length <= VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters);
     }
 
     [Fact]
@@ -132,6 +237,34 @@ public sealed class ReviewWorkflowCoordinatorTests
         public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
         {
             return Task.FromResult<ReviewResult?>(null);
+        }
+    }
+
+    private sealed class CapturingVisionReviewProvider : IVisionReviewProvider
+    {
+        public VisionReviewRequest? LastRequest { get; private set; }
+
+        public IProviderCapabilities Capabilities { get; } = new ProviderCapabilities(
+            "fake-capturing-vision",
+            "Fake capturing vision provider",
+            ["fake-vision"],
+            SupportsTextPlanning: false,
+            SupportsImageGeneration: false,
+            SupportsVisionReview: true,
+            SupportsImageEditing: false,
+            SupportsStreaming: false);
+
+        public Task<VisionReviewResult> ReviewAsync(VisionReviewRequest request, CancellationToken cancellationToken)
+        {
+            LastRequest = request;
+            return Task.FromResult(
+                new VisionReviewResult(
+                    request.CandidateImageId,
+                    ReviewDecision.Fail,
+                    new Dictionary<string, int> { ["match"] = 1 },
+                    ["fake-review-failed"],
+                    "Fake review failed by configuration.",
+                    "Revise the prompt or regenerate the candidate."));
         }
     }
 }

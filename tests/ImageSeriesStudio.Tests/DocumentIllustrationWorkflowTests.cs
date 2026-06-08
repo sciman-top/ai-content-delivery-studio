@@ -98,6 +98,69 @@ public sealed class DocumentIllustrationWorkflowTests
         Assert.Empty(loaded.Series);
     }
 
+    [Fact]
+    public async Task CreateDocumentIllustrationPlanWithProvider_RejectsOversizedSourceBeforeProviderCall()
+    {
+        var repository = new InMemoryProjectRepository();
+        var service = new DocumentIllustrationApplicationService(repository, new FakeTextPlanningProvider());
+        var timestamp = new DateTimeOffset(2026, 6, 8, 9, 0, 0, TimeSpan.Zero);
+        var project = ImageProject.Create("Oversized document demo", timestamp);
+        await repository.SaveAsync(project, CancellationToken.None);
+
+        var oversizedSource = new string('A', DocumentIllustrationExecutionPolicy.DefaultMaxSourceTextCharacters + 100);
+        var request = new DocumentIllustrationPlanningRequest(
+            "Quantum teaching note",
+            oversizedSource,
+            "teachers",
+            DocumentFamily.Educational,
+            IllustrationStrictnessLevel.Educational,
+            ["Introduction"],
+            ["Key claim"],
+            ["avoid fake lab data"]);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreateDocumentIllustrationPlanWithProviderAsync(
+                project.Id,
+                request,
+                approveAllTargets: false,
+                timestamp.AddMinutes(1),
+                CancellationToken.None));
+
+        Assert.Contains("bounded", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("summarize", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task CreateDocumentIllustrationPlanWithProvider_RejectsOversizedEvidenceSelectionBeforeProviderCall()
+    {
+        var repository = new InMemoryProjectRepository();
+        var service = new DocumentIllustrationApplicationService(repository, new FakeTextPlanningProvider());
+        var timestamp = new DateTimeOffset(2026, 6, 8, 9, 10, 0, TimeSpan.Zero);
+        var project = ImageProject.Create("Oversized evidence demo", timestamp);
+        await repository.SaveAsync(project, CancellationToken.None);
+
+        var request = new DocumentIllustrationPlanningRequest(
+            "Quantum teaching note",
+            "Teachers need an intuitive explanation of superposition.",
+            "teachers",
+            DocumentFamily.Educational,
+            IllustrationStrictnessLevel.Educational,
+            Enumerable.Range(1, 6).Select(index => $"Section {index}").ToArray(),
+            Enumerable.Range(1, 4).Select(index => $"Key claim {index}").ToArray(),
+            Enumerable.Range(1, 4).Select(index => $"Constraint {index}").ToArray());
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreateDocumentIllustrationPlanWithProviderAsync(
+                project.Id,
+                request,
+                approveAllTargets: false,
+                timestamp.AddMinutes(1),
+                CancellationToken.None));
+
+        Assert.Contains("evidence rows", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("smaller source-evidence subset", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static DocumentIllustrationPlanningRequest CreateRequest()
     {
         return new DocumentIllustrationPlanningRequest(

@@ -1,6 +1,7 @@
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Projects;
+using ImageSeriesStudio.Core.Providers;
 
 namespace ImageSeriesStudio.App.ViewModels;
 
@@ -26,13 +27,7 @@ public sealed class ReviewWorkflowCoordinator
 
         var reviews = await _projectService.RunStructuredVisionReviewAsync(
             projectId,
-            galleryRows
-                .Select(row => new ReviewCandidateInput(
-                    row.CandidateImageId,
-                    row.ItemTitle,
-                    row.AssetPath,
-                    row.PromptText))
-                .ToArray(),
+            await BuildReviewCandidateInputsAsync(projectId, galleryRows, cancellationToken),
             cancellationToken);
 
         var routesByCandidate = _projectService.RouteReviewOutcomes(reviews)
@@ -60,6 +55,33 @@ public sealed class ReviewWorkflowCoordinator
                 null,
                 pair.First);
         }).ToArray();
+    }
+
+    private static async Task<IReadOnlyList<ReviewCandidateInput>> BuildReviewCandidateInputsAsync(
+        Guid projectId,
+        IReadOnlyList<GalleryRowViewModel> galleryRows,
+        CancellationToken cancellationToken)
+    {
+        var inputs = new List<ReviewCandidateInput>(galleryRows.Count);
+        foreach (var row in galleryRows)
+        {
+            var reviewPrep = await ReviewPrepArtifactBuilder.BuildAsync(
+                projectId,
+                row.ItemTitle,
+                row.AssetPath,
+                row.MetadataPath,
+                row.PromptText,
+                cancellationToken);
+
+            inputs.Add(new ReviewCandidateInput(
+                row.CandidateImageId,
+                row.ItemTitle,
+                row.AssetPath,
+                row.PromptText,
+                reviewPrep));
+        }
+
+        return inputs;
     }
 
     public async Task<ReviewRowViewModel> ApplyFinalApprovalAsync(

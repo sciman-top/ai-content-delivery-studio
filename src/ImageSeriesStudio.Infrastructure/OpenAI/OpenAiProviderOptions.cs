@@ -1,3 +1,5 @@
+using ImageSeriesStudio.Core.Providers;
+
 namespace ImageSeriesStudio.Infrastructure.OpenAI;
 
 [Flags]
@@ -23,6 +25,14 @@ public sealed record OpenAiProviderOptions
     public string ImageGenerationModel { get; init; } = "gpt-image-2";
 
     public string VisionReviewModel { get; init; } = "gpt-5";
+
+    public int VisionReviewBatchItemLimit { get; init; } = VisionReviewExecutionPolicy.DefaultBatchItemLimit;
+
+    public int HighRiskVisionReviewBatchItemLimit { get; init; } = VisionReviewExecutionPolicy.DefaultHighRiskBatchItemLimit;
+
+    public bool VisionReviewUsesStoredResponses { get; init; } = VisionReviewExecutionPolicy.StoreResponsesByDefault;
+
+    public bool VisionReviewAllowsPreviousResponseId { get; init; } = VisionReviewExecutionPolicy.AllowPreviousResponseIdByDefault;
 
     public bool RealApiEnabled { get; init; }
 
@@ -96,6 +106,21 @@ public sealed record OpenAiProviderOptions
             && string.IsNullOrWhiteSpace(VisionReviewModel))
         {
             errors.Add("Vision review model is required.");
+        }
+
+        if (VisionReviewBatchItemLimit <= 0)
+        {
+            errors.Add("Vision review batch item limit must be greater than zero.");
+        }
+
+        if (HighRiskVisionReviewBatchItemLimit <= 0)
+        {
+            errors.Add("High-risk vision review batch item limit must be greater than zero.");
+        }
+
+        if (HighRiskVisionReviewBatchItemLimit > VisionReviewBatchItemLimit)
+        {
+            errors.Add("High-risk vision review batch item limit cannot exceed the default vision review batch item limit.");
         }
 
         if (AllowedOperations is OpenAiProviderOperation.None)

@@ -24,7 +24,8 @@ public sealed class ReviewWorkflowApplicationServiceTests
                     Guid.NewGuid(),
                     "Opening image",
                     Path.Combine(Path.GetTempPath(), "candidate.png"),
-                    "A clean editorial candidate."),
+                    "A clean editorial candidate.",
+                    new ReviewPrepArtifactContract("Local review prep: opening image / editorial candidate.")),
             ],
             CancellationToken.None);
 
@@ -32,6 +33,123 @@ public sealed class ReviewWorkflowApplicationServiceTests
         Assert.Equal(ReviewDecision.Pass, review.Decision);
         Assert.Contains(review.Scores, score => score.Name == "match" && score.Score == 5);
         Assert.False(review.NeedsRepair);
+    }
+
+    [Fact]
+    public async Task ReviewWorkflowApplicationService_RejectsOversizedRemoteReviewBatchBeforeDispatch()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CountingVisionReviewProvider();
+        var service = new ReviewWorkflowApplicationService(repository, provider);
+        var timestamp = DateTimeOffset.Parse("2026-06-08T10:00:00Z");
+        var project = ImageProject.Create("Oversized review demo", timestamp);
+        await repository.SaveAsync(project, CancellationToken.None);
+
+        var candidates = Enumerable.Range(0, 7)
+            .Select(index => new ReviewCandidateInput(
+                Guid.NewGuid(),
+                $"Candidate {index + 1}",
+                Path.Combine(Path.GetTempPath(), $"candidate-{index + 1}.png"),
+                "Compact prompt summary."))
+            .ToArray();
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.RunStructuredVisionReviewAsync(project.Id, candidates, CancellationToken.None));
+
+        Assert.Contains("review batch", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("split", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task ReviewWorkflowApplicationService_RejectsRemoteReviewWhenCompactPrepArtifactsAreMissing()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CountingVisionReviewProvider();
+        var service = new ReviewWorkflowApplicationService(repository, provider);
+        var timestamp = DateTimeOffset.Parse("2026-06-08T10:10:00Z");
+        var project = ImageProject.Create("Missing prep demo", timestamp);
+        await repository.SaveAsync(project, CancellationToken.None);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.RunStructuredVisionReviewAsync(
+                project.Id,
+                [
+                    new ReviewCandidateInput(
+                        Guid.NewGuid(),
+                        "Candidate 1",
+                        Path.Combine(Path.GetTempPath(), "candidate.png"),
+                        "",
+                        null),
+                ],
+                CancellationToken.None));
+
+        Assert.Contains("compact local review artifacts", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task ReviewWorkflowApplicationService_RejectsRemoteReviewWhenTypedEvidenceSelectionsAreMissing()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CountingVisionReviewProvider();
+        var service = new ReviewWorkflowApplicationService(repository, provider);
+        var timestamp = DateTimeOffset.Parse("2026-06-08T10:20:00Z");
+        var project = ImageProject.Create("Missing evidence demo", timestamp);
+        await repository.SaveAsync(project, CancellationToken.None);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.RunStructuredVisionReviewAsync(
+                project.Id,
+                [
+                    new ReviewCandidateInput(
+                        Guid.NewGuid(),
+                        "Candidate 1",
+                        Path.Combine(Path.GetTempPath(), "candidate.png"),
+                        "Compact prompt summary.",
+                        new ReviewPrepArtifactContract("Compact local review prep.")),
+                ],
+                CancellationToken.None));
+
+        Assert.Contains("typed local evidence selection", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, provider.CallCount);
+    }
+
+    [Fact]
+    public async Task ReviewWorkflowApplicationService_RejectsRemoteReviewWhenCompactSummaryIsOversized()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CountingVisionReviewProvider();
+        var service = new ReviewWorkflowApplicationService(repository, provider);
+        var timestamp = DateTimeOffset.Parse("2026-06-08T10:25:00Z");
+        var project = ImageProject.Create("Oversized compact summary demo", timestamp);
+        await repository.SaveAsync(project, CancellationToken.None);
+        var oversizedSummary = new string('A', VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters + 20);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.RunStructuredVisionReviewAsync(
+                project.Id,
+                [
+                    new ReviewCandidateInput(
+                        Guid.NewGuid(),
+                        "Candidate 1",
+                        Path.Combine(Path.GetTempPath(), "candidate.png"),
+                        "Compact prompt summary.",
+                        new ReviewPrepArtifactContract(
+                            oversizedSummary,
+                            EvidenceSelections:
+                            [
+                                new ReviewPrepEvidenceSelection(
+                                    "prompt-summary",
+                                    "prompt-text",
+                                    null,
+                                    "Compact prompt summary."),
+                            ])),
+                ],
+                CancellationToken.None));
+
+        Assert.Contains("compact summary exceeds", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, provider.CallCount);
     }
 
     [Fact]
@@ -167,6 +285,34 @@ public sealed class ReviewWorkflowApplicationServiceTests
         public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
         {
             return Task.FromResult<ReviewResult?>(null);
+        }
+    }
+
+    private sealed class CountingVisionReviewProvider : IVisionReviewProvider
+    {
+        public int CallCount { get; private set; }
+
+        public IProviderCapabilities Capabilities { get; } = new ProviderCapabilities(
+            "counting-vision-provider",
+            "Counting vision provider",
+            ["review-model"],
+            SupportsTextPlanning: false,
+            SupportsImageGeneration: false,
+            SupportsVisionReview: true,
+            SupportsImageEditing: false,
+            SupportsStreaming: false);
+
+        public Task<VisionReviewResult> ReviewAsync(VisionReviewRequest request, CancellationToken cancellationToken)
+        {
+            CallCount++;
+            return Task.FromResult(
+                new VisionReviewResult(
+                    request.CandidateImageId,
+                    ReviewDecision.Pass,
+                    new Dictionary<string, int> { ["match"] = 5 },
+                    [],
+                    "Looks aligned.",
+                    SuggestedFix: null));
         }
     }
 }

@@ -418,4 +418,5 @@ public sealed record ReviewCandidateInput(
     Guid CandidateImageId,
     string ItemTitle,
     string AssetPath,
-    string PromptText);
+    string PromptText,
+    ReviewPrepArtifactContract? ReviewPrep = null);

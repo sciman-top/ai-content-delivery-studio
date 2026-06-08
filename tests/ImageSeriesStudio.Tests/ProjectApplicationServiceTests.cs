@@ -702,7 +702,8 @@ public sealed class ProjectApplicationServiceTests
                         Guid.NewGuid(),
                         "Opening image",
                         Path.Combine(databaseDirectory, "candidate.png"),
-                        "A clean editorial candidate."),
+                        "A clean editorial candidate.",
+                        new ReviewPrepArtifactContract("Local candidate manifest: opening image / editorial candidate.")),
                 ],
                 CancellationToken.None);
 
@@ -738,7 +739,8 @@ public sealed class ProjectApplicationServiceTests
                     Guid.NewGuid(),
                     "Opening image",
                     Path.Combine(Path.GetTempPath(), "candidate.png"),
-                    "A clean editorial candidate."),
+                    "A clean editorial candidate.",
+                    new ReviewPrepArtifactContract("Local candidate manifest: opening image / editorial candidate.")),
             ],
             CancellationToken.None);
 
@@ -932,6 +934,27 @@ public sealed class ProjectApplicationServiceTests
                 Directory.Delete(databaseDirectory, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public async Task ProjectApplicationService_RejectsOversizedTextPlanningRequestBeforeProviderDispatch()
+    {
+        var service = new ProjectApplicationService(
+            new InMemoryProjectRepository(),
+            new FakeTextPlanningProvider());
+        var timestamp = new DateTimeOffset(2026, 6, 9, 9, 0, 0, TimeSpan.Zero);
+        var project = await service.CreateProjectAsync("Oversized plan demo", timestamp, CancellationToken.None);
+        var oversizedGoal = new string('A', TextPlanningExecutionPolicy.DefaultMaxInputCharacters + 100);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreatePlanWithProviderAsync(
+                project.Id,
+                new PlanningRequest(oversizedGoal, "teachers", 2, "clean editorial"),
+                timestamp.AddMinutes(1),
+                CancellationToken.None));
+
+        Assert.Contains("bounded", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("summarize", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     private sealed class InMemoryProjectRepository : IProjectRepository

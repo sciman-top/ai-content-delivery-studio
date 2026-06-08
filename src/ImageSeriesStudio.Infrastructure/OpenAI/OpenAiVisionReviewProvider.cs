@@ -137,14 +137,47 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
             Environment.NewLine,
             request.Rubric.Dimensions.Select(
                 dimension => $"- {dimension.Name} (weight {dimension.Weight}): {dimension.Requirement}"));
+        var evidenceSummary = BuildEvidenceSummary(request.ReviewPrep);
 
         return string.Join(
             Environment.NewLine,
             [
                 $"Prompt: {request.PromptText}",
                 $"Rubric: {request.Rubric.Name}",
+                $"Compact review artifact summary: {request.ReviewPrep?.Summary ?? "Not provided"}",
+                $"Local evidence selections: {evidenceSummary}",
                 rubric,
             ]);
+    }
+
+    private static string BuildEvidenceSummary(ReviewPrepArtifactContract? reviewPrep)
+    {
+        if (reviewPrep is null || reviewPrep.EvidenceSelections.Count == 0)
+        {
+            return "Not provided";
+        }
+
+        return string.Join(
+            "; ",
+            reviewPrep.EvidenceSelections.Select(selection =>
+            {
+                var summary = string.IsNullOrWhiteSpace(selection.Summary)
+                    ? null
+                    : selection.Summary.Trim();
+                var pathHint = string.IsNullOrWhiteSpace(selection.LocalPath)
+                    ? null
+                    : Path.GetFileName(selection.LocalPath);
+
+                return string.Join(
+                    " / ",
+                    new[]
+                    {
+                        selection.Role,
+                        selection.SourceKind,
+                        pathHint,
+                        summary,
+                    }.Where(value => !string.IsNullOrWhiteSpace(value)));
+            }));
     }
 
     private static Dictionary<string, object?> CreateReviewSchema()

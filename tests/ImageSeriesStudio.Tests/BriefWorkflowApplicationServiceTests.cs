@@ -107,6 +107,70 @@ public sealed class BriefWorkflowApplicationServiceTests
         Assert.Equal(promoted.Id, loadedBrief.DesignBlueprints.First().Id);
     }
 
+    [Fact]
+    public async Task BriefWorkflowApplicationService_RejectsOversizedPromptDirectionRequestBeforeProviderDispatch()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CountingTextPlanningProvider();
+        var service = new BriefWorkflowApplicationService(repository, provider);
+        var timestamp = DateTimeOffset.Parse("2026-06-08T11:00:00Z");
+        var project = ImageProject.Create("Oversized brief workflow demo", timestamp);
+        var series = project.AddSeries("Article images", "Series", timestamp.AddMinutes(1));
+        var oversizedGoal = new string('A', TextPlanningExecutionPolicy.DefaultMaxInputCharacters + 100);
+        var brief = series.AddCreativeBrief(
+            oversizedGoal,
+            "teachers",
+            ImageTextPolicy.DeterministicPostRender,
+            "clean editorial",
+            ["accurate visual"],
+            ["small fake text"],
+            timestamp.AddMinutes(2));
+        await repository.SaveAsync(project, CancellationToken.None);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreatePromptDirectionsAsync(
+                project.Id,
+                brief.Id,
+                timestamp.AddMinutes(3),
+                CancellationToken.None));
+
+        Assert.Contains("bounded", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("trim", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, provider.PromptDirectionCallCount);
+    }
+
+    [Fact]
+    public async Task BriefWorkflowApplicationService_RejectsOversizedBlueprintRequestBeforeProviderDispatch()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CountingTextPlanningProvider();
+        var service = new BriefWorkflowApplicationService(repository, provider);
+        var timestamp = DateTimeOffset.Parse("2026-06-08T11:10:00Z");
+        var project = ImageProject.Create("Oversized blueprint workflow demo", timestamp);
+        var series = project.AddSeries("Narrative images", "Series", timestamp.AddMinutes(1));
+        var oversizedGoal = new string('A', TextPlanningExecutionPolicy.DefaultMaxInputCharacters + 100);
+        var brief = series.AddCreativeBrief(
+            oversizedGoal,
+            "students",
+            ImageTextPolicy.DeterministicPostRender,
+            "clear visual storytelling",
+            ["same main character"],
+            ["wall of unreadable text"],
+            timestamp.AddMinutes(2));
+        await repository.SaveAsync(project, CancellationToken.None);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.CreateDesignBlueprintsAsync(
+                project.Id,
+                brief.Id,
+                timestamp.AddMinutes(3),
+                CancellationToken.None));
+
+        Assert.Contains("bounded", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("trim", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, provider.BlueprintCallCount);
+    }
+
     private sealed class InMemoryProjectRepository : IProjectRepository
     {
         private readonly Dictionary<Guid, ImageProject> _projects = [];
@@ -144,6 +208,61 @@ public sealed class BriefWorkflowApplicationServiceTests
         public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
         {
             return Task.FromResult<ReviewResult?>(null);
+        }
+    }
+
+    private sealed class CountingTextPlanningProvider : ITextPlanningProvider
+    {
+        public int PromptDirectionCallCount { get; private set; }
+
+        public int BlueprintCallCount { get; private set; }
+
+        public IProviderCapabilities Capabilities { get; } = new ProviderCapabilities(
+            "counting-text-provider",
+            "Counting text provider",
+            ["fake-text"],
+            SupportsTextPlanning: true,
+            SupportsImageGeneration: false,
+            SupportsVisionReview: false,
+            SupportsImageEditing: false,
+            SupportsStreaming: false);
+
+        public Task<SeriesPlanResult> CreatePlanAsync(PlanningRequest request, CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
+        }
+
+        public Task<BriefPlanningResult> CreatePromptDirectionsAsync(
+            BriefPlanningRequest request,
+            CancellationToken cancellationToken)
+        {
+            PromptDirectionCallCount++;
+            return Task.FromResult(
+                new BriefPlanningResult(
+                    [],
+                    [],
+                    [],
+                    "counting-brief"));
+        }
+
+        public Task<BlueprintPlanningResult> CreateDesignBlueprintsAsync(
+            BlueprintPlanningRequest request,
+            CancellationToken cancellationToken)
+        {
+            BlueprintCallCount++;
+            return Task.FromResult(
+                new BlueprintPlanningResult(
+                    [],
+                    [],
+                    [],
+                    "counting-blueprint"));
+        }
+
+        public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
+            DocumentIllustrationPlanningRequest request,
+            CancellationToken cancellationToken)
+        {
+            throw new NotSupportedException();
         }
     }
 }

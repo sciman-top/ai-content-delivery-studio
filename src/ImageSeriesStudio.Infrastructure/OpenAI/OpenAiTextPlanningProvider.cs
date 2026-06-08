@@ -49,6 +49,8 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         PlanningRequest request,
         CancellationToken cancellationToken)
     {
+        ValidateRequest(request);
+
         await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
             _options,
             _secretStore,
@@ -91,6 +93,16 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
                 .Select(item => new SeriesPlanItem(item.Title, item.Brief, item.PromptDraft))
                 .ToArray(),
             providerTraceId);
+    }
+
+    private static void ValidateRequest(PlanningRequest request)
+    {
+        var estimatedCharacters = TextPlanningExecutionPolicy.EstimateInputCharacters(request);
+        if (estimatedCharacters > TextPlanningExecutionPolicy.DefaultMaxInputCharacters)
+        {
+            throw new InvalidOperationException(
+                $"Text planning request exceeds the bounded local-direct default of {TextPlanningExecutionPolicy.DefaultMaxInputCharacters} characters. Split or summarize the request locally before dispatch.");
+        }
     }
 
     public Task<BriefPlanningResult> CreatePromptDirectionsAsync(

@@ -131,6 +131,24 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task TextPlanningProvider_RejectsOversizedRequestBeforeSendingHttp()
+    {
+        using var handler = new CaptureHandler(_ => JsonResponse("{}"));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateTextProvider(httpClient);
+        var oversizedGoal = new string('A', TextPlanningExecutionPolicy.DefaultMaxInputCharacters + 100);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.CreatePlanAsync(
+                new PlanningRequest(oversizedGoal, "audience", 1, "style"),
+                CancellationToken.None));
+
+        Assert.Contains("bounded", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("split", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, handler.CallCount);
+    }
+
+    [Fact]
     public async Task TextPlanningProvider_DoesNotSendHttpWhenRealApiIsDisabled()
     {
         using var handler = new CaptureHandler(_ => JsonResponse("{}"));
@@ -428,7 +446,22 @@ public sealed class OpenAiProviderContractTests
                         "Default review",
                         [new ReviewRubricDimension("match", "Image should match the prompt.", 1)],
                         DateTimeOffset.UtcNow),
-                    "Create a clean science poster."),
+                    "Create a clean science poster.",
+                    new ReviewPrepArtifactContract(
+                        "Compact local review prep.",
+                        EvidenceSelections:
+                        [
+                            new ReviewPrepEvidenceSelection(
+                                "candidate-image",
+                                "generated-asset",
+                                imagePath,
+                                "Primary local candidate image selected for bounded remote review."),
+                            new ReviewPrepEvidenceSelection(
+                                "candidate-metadata",
+                                "generation-metadata",
+                                Path.ChangeExtension(imagePath, ".json"),
+                                "Local generation sidecar metadata kept as provenance evidence."),
+                        ])),
                 CancellationToken.None);
 
             Assert.Equal(candidateId, result.CandidateImageId);
@@ -445,6 +478,7 @@ public sealed class OpenAiProviderContractTests
             using var payload = JsonDocument.Parse(handler.LastRequestBody!);
             Assert.Equal("gpt-5", payload.RootElement.GetProperty("model").GetString());
             Assert.False(payload.RootElement.GetProperty("store").GetBoolean());
+            Assert.False(payload.RootElement.TryGetProperty("previous_response_id", out _));
             Assert.Equal(
                 "json_schema",
                 payload.RootElement.GetProperty("text").GetProperty("format").GetProperty("type").GetString());
@@ -454,6 +488,8 @@ public sealed class OpenAiProviderContractTests
                 .GetProperty("content");
             Assert.Equal("input_text", content[0].GetProperty("type").GetString());
             Assert.Contains("Create a clean science poster.", content[0].GetProperty("text").GetString());
+            Assert.Contains("Local evidence selections:", content[0].GetProperty("text").GetString());
+            Assert.Contains("candidate-image / generated-asset / candidate.png", content[0].GetProperty("text").GetString());
             Assert.Equal("input_image", content[1].GetProperty("type").GetString());
             Assert.StartsWith("data:image/png;base64,", content[1].GetProperty("image_url").GetString());
         }
@@ -604,7 +640,17 @@ public sealed class OpenAiProviderContractTests
                 "Default review",
                 [new ReviewRubricDimension("match", "Image should match the prompt.", 1)],
                 DateTimeOffset.UtcNow),
-            "prompt");
+            "prompt",
+            new ReviewPrepArtifactContract(
+                "Compact local review prep.",
+                EvidenceSelections:
+                [
+                    new ReviewPrepEvidenceSelection(
+                        "candidate-image",
+                        "generated-asset",
+                        assetPath,
+                        "Primary local candidate image selected for bounded remote review."),
+                ]));
     }
 
     private static HttpResponseMessage JsonResponse(string content, string? requestId = null)

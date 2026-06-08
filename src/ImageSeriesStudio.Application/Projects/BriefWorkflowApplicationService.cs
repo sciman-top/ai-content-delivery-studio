@@ -61,15 +61,17 @@ public sealed class BriefWorkflowApplicationService
             .SelectMany(series => series.CreativeBriefs)
             .SingleOrDefault(brief => brief.Id == creativeBriefId)
             ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
+        var request = new BriefPlanningRequest(
+            brief.Goal,
+            brief.Audience,
+            brief.StyleIntent,
+            brief.MustInclude,
+            brief.MustAvoid,
+            DirectionCount: 3);
+        ValidateBoundedTextPlanningRequest(request);
 
         var result = await _textPlanningProvider.CreatePromptDirectionsAsync(
-            new BriefPlanningRequest(
-                brief.Goal,
-                brief.Audience,
-                brief.StyleIntent,
-                brief.MustInclude,
-                brief.MustAvoid,
-                DirectionCount: 3),
+            request,
             cancellationToken);
 
         brief.ReplaceDirections(
@@ -107,16 +109,18 @@ public sealed class BriefWorkflowApplicationService
             .SelectMany(series => series.CreativeBriefs)
             .SingleOrDefault(candidate => candidate.Id == creativeBriefId)
             ?? throw new InvalidOperationException($"Creative brief not found: {creativeBriefId}");
+        var request = new BlueprintPlanningRequest(
+            brief.Goal,
+            brief.Audience,
+            brief.StyleIntent,
+            brief.MustInclude,
+            brief.MustAvoid,
+            brief.TextPolicy,
+            CandidateCount: 3);
+        ValidateBoundedTextPlanningRequest(request);
 
         var result = await _textPlanningProvider.CreateDesignBlueprintsAsync(
-            new BlueprintPlanningRequest(
-                brief.Goal,
-                brief.Audience,
-                brief.StyleIntent,
-                brief.MustInclude,
-                brief.MustAvoid,
-                brief.TextPolicy,
-                CandidateCount: 3),
+            request,
             cancellationToken);
 
         brief.ReplaceBlueprints(
@@ -269,5 +273,25 @@ public sealed class BriefWorkflowApplicationService
     {
         return await _repository.LoadAsync(projectId, cancellationToken)
             ?? throw new InvalidOperationException($"Project not found: {projectId}");
+    }
+
+    private static void ValidateBoundedTextPlanningRequest(BriefPlanningRequest request)
+    {
+        var estimatedCharacters = TextPlanningExecutionPolicy.EstimateInputCharacters(request);
+        if (estimatedCharacters > TextPlanningExecutionPolicy.DefaultMaxInputCharacters)
+        {
+            throw new InvalidOperationException(
+                $"Brief direction planning exceeds the bounded local-direct default of {TextPlanningExecutionPolicy.DefaultMaxInputCharacters} characters. Summarize or trim the brief locally before provider dispatch.");
+        }
+    }
+
+    private static void ValidateBoundedTextPlanningRequest(BlueprintPlanningRequest request)
+    {
+        var estimatedCharacters = TextPlanningExecutionPolicy.EstimateInputCharacters(request);
+        if (estimatedCharacters > TextPlanningExecutionPolicy.DefaultMaxInputCharacters)
+        {
+            throw new InvalidOperationException(
+                $"Blueprint planning exceeds the bounded local-direct default of {TextPlanningExecutionPolicy.DefaultMaxInputCharacters} characters. Summarize or trim the brief locally before provider dispatch.");
+        }
     }
 }

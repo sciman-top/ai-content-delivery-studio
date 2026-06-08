@@ -34,6 +34,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Keep packs internal-only for V1 and defer public sharing behavior.
 - [ ] Reflect the locked V1 defaults in implementation-facing code comments, options, and operator descriptors where relevant.
 - [ ] Reflect stateless local-direct visual review defaults in implementation-facing options and review operator descriptors.
+- [ ] Reuse the text-planning low-502 execution policy when future real-provider brief or blueprint planning leaves the current fake-first boundary.
 
 ## Reference Governance
 

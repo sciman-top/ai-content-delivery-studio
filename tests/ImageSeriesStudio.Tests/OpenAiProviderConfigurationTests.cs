@@ -1,4 +1,5 @@
 using System.Net;
+using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Infrastructure.OpenAI;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -173,6 +174,17 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.True(imageOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.ImageGeneration));
         Assert.False(imageOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.TextPlanning));
         Assert.False(imageOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.VisionReview));
+    }
+
+    [Fact]
+    public void OpenAiProviderOptions_DefaultsVisionReviewToStatelessBoundedRequests()
+    {
+        var options = new OpenAiProviderOptions();
+
+        Assert.Equal(VisionReviewExecutionPolicy.DefaultBatchItemLimit, options.VisionReviewBatchItemLimit);
+        Assert.Equal(VisionReviewExecutionPolicy.DefaultHighRiskBatchItemLimit, options.HighRiskVisionReviewBatchItemLimit);
+        Assert.False(options.VisionReviewUsesStoredResponses);
+        Assert.False(options.VisionReviewAllowsPreviousResponseId);
     }
 
     [Fact]

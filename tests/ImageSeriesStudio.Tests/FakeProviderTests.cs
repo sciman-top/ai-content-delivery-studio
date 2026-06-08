@@ -220,7 +220,8 @@ public sealed class FakeProviderTests
                 "Default rubric",
                 [new ReviewRubricDimension("subject", "Required subject is visible", 1)],
                 DateTimeOffset.UtcNow),
-                "A clean blue poster background"),
+                "A clean blue poster background",
+                new ReviewPrepArtifactContract("Local fake review prep.")),
             CancellationToken.None);
 
         Assert.Equal(candidateId, result.CandidateImageId);

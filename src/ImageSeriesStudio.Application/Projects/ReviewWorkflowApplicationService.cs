@@ -45,6 +45,8 @@ public sealed class ReviewWorkflowApplicationService
             throw new InvalidOperationException("Vision review provider is not registered.");
         }
 
+        ValidateReviewBatch(_visionReviewProvider.Capabilities.ProviderId, candidates);
+
         if (!_visionReviewProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("Real vision review requires explicit approval.");
@@ -64,7 +66,8 @@ public sealed class ReviewWorkflowApplicationService
                     candidate.CandidateImageId,
                     candidate.AssetPath,
                     rubric,
-                    candidate.PromptText),
+                    candidate.PromptText,
+                    candidate.ReviewPrep),
                 cancellationToken);
             results.Add(StructuredReviewOutput.FromProviderResult(result, rubric));
         }
@@ -89,5 +92,60 @@ public sealed class ReviewWorkflowApplicationService
     {
         return await _repository.LoadAsync(projectId, cancellationToken)
             ?? throw new InvalidOperationException($"Project not found: {projectId}");
+    }
+
+    private static void ValidateReviewBatch(string providerId, IReadOnlyList<ReviewCandidateInput> candidates)
+    {
+        if (candidates.Count > VisionReviewExecutionPolicy.DefaultBatchItemLimit)
+        {
+            throw new InvalidOperationException(
+                $"Remote vision review batch contains {candidates.Count} items, which exceeds the default low-502 limit of {VisionReviewExecutionPolicy.DefaultBatchItemLimit}. Split the review batch before dispatch.");
+        }
+
+        if (!VisionReviewExecutionPolicy.RequiresCompactLocalArtifacts(providerId))
+        {
+            return;
+        }
+
+        var missingCompactArtifact = candidates.FirstOrDefault(candidate =>
+            string.IsNullOrWhiteSpace(candidate.ReviewPrep?.Summary));
+
+        if (missingCompactArtifact is not null)
+        {
+            throw new InvalidOperationException(
+                "Remote vision review requires compact local review artifacts before dispatch. Add a bounded local summary, manifest, or evidence selection for each candidate.");
+        }
+
+        var oversizedCompactArtifact = candidates.FirstOrDefault(candidate =>
+            candidate.ReviewPrep is not null &&
+            candidate.ReviewPrep.Summary.Length > VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters);
+
+        if (oversizedCompactArtifact is not null)
+        {
+            throw new InvalidOperationException(
+                $"Remote vision review compact summary exceeds the bounded local-direct default of {VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters} characters. Trim the review-prep summary locally before dispatch.");
+        }
+
+        var missingEvidenceSelection = candidates.FirstOrDefault(candidate =>
+            !HasMinimumLocalEvidence(candidate.ReviewPrep));
+
+        if (missingEvidenceSelection is not null)
+        {
+            throw new InvalidOperationException(
+                "Remote vision review requires at least one typed local evidence selection before dispatch. Add a bounded local candidate-image, metadata, or prompt-summary evidence entry for each candidate.");
+        }
+    }
+
+    private static bool HasMinimumLocalEvidence(ReviewPrepArtifactContract? reviewPrep)
+    {
+        if (reviewPrep is null || reviewPrep.EvidenceSelections.Count == 0)
+        {
+            return false;
+        }
+
+        return reviewPrep.EvidenceSelections.Any(selection =>
+            !string.IsNullOrWhiteSpace(selection.Role) &&
+            !string.IsNullOrWhiteSpace(selection.SourceKind) &&
+            (!string.IsNullOrWhiteSpace(selection.LocalPath) || !string.IsNullOrWhiteSpace(selection.Summary)));
     }
 }

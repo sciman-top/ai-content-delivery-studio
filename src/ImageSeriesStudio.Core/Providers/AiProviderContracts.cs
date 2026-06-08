@@ -262,7 +262,31 @@ public sealed record VisionReviewRequest(
     Guid CandidateImageId,
     string AssetPath,
     ReviewRubric Rubric,
-    string PromptText);
+    string PromptText,
+    ReviewPrepArtifactContract? ReviewPrep = null);
+
+public sealed record ReviewPrepArtifactContract(
+    string Summary,
+    string? ManifestPath = null,
+    string? ThumbnailGridPath = null,
+    IReadOnlyList<ReviewPrepEvidenceSelection>? EvidenceSelections = null)
+{
+    public IReadOnlyList<ReviewPrepEvidenceSelection> EvidenceSelections { get; init; } = EvidenceSelections ?? [];
+}
+
+public sealed record ReviewPrepEvidenceSelection(
+    string Role,
+    string SourceKind,
+    string? LocalPath,
+    string? Summary = null);
+
+public sealed record ReviewPrepArtifactManifest(
+    string ItemTitle,
+    string AssetPath,
+    string MetadataPath,
+    string PromptText,
+    IReadOnlyList<ReviewPrepEvidenceSelection> EvidenceSelections,
+    DateTimeOffset CreatedAt);
 
 public sealed record VisionReviewResult(
     Guid CandidateImageId,
