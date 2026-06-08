@@ -111,6 +111,17 @@ public sealed class LocalToolRegistry
                     sideEffects: ["Reads delivery artifacts and writes a validation report."],
                     defaultTimeout: TimeSpan.FromSeconds(30),
                     cleanupPath: null),
+                ToolAdapterDescriptor.Create(
+                    "openai-launch-preflight",
+                    "OpenAI Launch Preflight",
+                    ToolAdapterKind.LocalLibrary,
+                    OperatorRiskLevel.Low,
+                    dryRunSupported: true,
+                    inputNames: ["envPath"],
+                    outputNames: ["preflightJsonPath", "preflightMarkdownPath"],
+                    sideEffects: ["Reads provider configuration and secret readiness, writes an OpenAI launch preflight report."],
+                    defaultTimeout: TimeSpan.FromSeconds(30),
+                    cleanupPath: null),
             ]);
     }
 

@@ -10,7 +10,7 @@ public sealed class LocalToolRegistryTests
     {
         var registry = LocalToolRegistry.CreateBuiltIn();
 
-        Assert.Equal(7, registry.Tools.Count);
+        Assert.Equal(8, registry.Tools.Count);
         AssertTool(
             registry.GetRequired("document-extraction"),
             ToolAdapterKind.LocalLibrary,
@@ -43,6 +43,11 @@ public sealed class LocalToolRegistryTests
             dryRunSupported: true);
         AssertTool(
             registry.GetRequired("artifact-validation"),
+            ToolAdapterKind.LocalLibrary,
+            OperatorRiskLevel.Low,
+            dryRunSupported: true);
+        AssertTool(
+            registry.GetRequired("openai-launch-preflight"),
             ToolAdapterKind.LocalLibrary,
             OperatorRiskLevel.Low,
             dryRunSupported: true);
