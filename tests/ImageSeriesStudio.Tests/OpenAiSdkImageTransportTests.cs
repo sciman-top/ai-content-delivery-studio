@@ -36,6 +36,8 @@ public sealed class OpenAiSdkImageTransportTests
         var result = await sdkTransport.GenerateAsync(
             options,
             "test-openai-key",
+            appId: "app-id",
+            appSecret: "app-secret",
             new ImageGenerationRequest(
                 Guid.NewGuid(),
                 Guid.NewGuid(),
@@ -48,6 +50,8 @@ public sealed class OpenAiSdkImageTransportTests
         Assert.Equal("req_sdk_123", result.RequestId);
         Assert.Equal(200, result.StatusCode);
         Assert.Equal(imageBytes, result.ImageBytes);
+        Assert.Equal("app-id", fakeBackend.LastAppId);
+        Assert.Equal("app-secret", fakeBackend.LastAppSecret);
 
         using var payload = JsonDocument.Parse(fakeBackend.LastPayload!);
         Assert.Equal("gpt-image-2", payload.RootElement.GetProperty("model").GetString());
@@ -69,15 +73,23 @@ public sealed class OpenAiSdkImageTransportTests
 
         public string? LastPayload { get; private set; }
 
+        public string? LastAppId { get; private set; }
+
+        public string? LastAppSecret { get; private set; }
+
         public Task<OpenAiSdkImageBackendResponse> SendAsync(
             OpenAiProviderOptions options,
             string apiKey,
+            string? appId,
+            string? appSecret,
             BinaryContent payload,
             CancellationToken cancellationToken)
         {
             using var stream = new MemoryStream();
             payload.WriteTo(stream, cancellationToken);
             LastPayload = Encoding.UTF8.GetString(stream.ToArray());
+            LastAppId = appId;
+            LastAppSecret = appSecret;
 
             return Task.FromResult(new OpenAiSdkImageBackendResponse(
                 200,

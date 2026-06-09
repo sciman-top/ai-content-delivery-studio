@@ -21,6 +21,7 @@ Use these documents in this order:
 | What is currently proven enough to claim? | [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) |
 | What should be implemented or hardened next? | [ROADMAP.md](./ROADMAP.md) and [TASKS.md](./TASKS.md) |
 | What is the best realistic longer-term engineering end state? | [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) |
+| What high-drift engineering changes require explicit reference evidence? | [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) |
 
 ## Status Semantics
 
@@ -37,6 +38,7 @@ Use these documents in this order:
 - `ROADMAP.md` may describe phase status and next sequencing, but phase status does not equal launch readiness.
 - `TASKS.md` is an action backlog, not a release-claim document.
 - `TARGET_ENGINEERING_STATE.md` is the best-end-state target, not a near-term commitment list.
+- `REFERENCE_EVIDENCE_POLICY.md` defines when high-drift engineering changes must leave a visible evidence trail and points to the local verification gate.
 
 ## Review Shortcut
 
@@ -45,4 +47,5 @@ When reviewing the repository quickly:
 1. Read [PRD_V1.md](./PRD_V1.md) for the launch promise.
 2. Read [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) for current proof.
 3. Read [ROADMAP.md](./ROADMAP.md) and [TASKS.md](./TASKS.md) for what still needs to happen next.
-4. Read [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) only when deciding how to extend the architecture beyond the current V1 boundary.
+4. Read [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) before changing provider, host, persistence, or tooling boundaries.
+5. Read [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) only when deciding how to extend the architecture beyond the current V1 boundary.

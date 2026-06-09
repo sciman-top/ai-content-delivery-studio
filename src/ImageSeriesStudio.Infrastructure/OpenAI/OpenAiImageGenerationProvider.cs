@@ -69,10 +69,13 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             cancellationToken);
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
+        var appId = await GetOptionalSecretAsync(_options.AppIdSecretName, cancellationToken);
+        var appSecret = await GetOptionalSecretAsync(_options.AppSecretSecretName, cancellationToken);
 
         var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        AddOptionalAppHeaders(httpRequest, appId, appSecret);
         httpRequest.Content = JsonContent.Create(CreatePayload(request), options: JsonOptions);
 
         var stopwatch = Stopwatch.StartNew();
@@ -232,6 +235,29 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         return root.TryGetProperty("created", out var createdElement)
             ? $"openai-image-{createdElement}"
             : "openai-image-generate";
+    }
+
+    private async Task<string?> GetOptionalSecretAsync(string? secretName, CancellationToken cancellationToken)
+    {
+        return string.IsNullOrWhiteSpace(secretName)
+            ? null
+            : await _secretStore.GetSecretAsync(secretName, cancellationToken);
+    }
+
+    private static void AddOptionalAppHeaders(
+        HttpRequestMessage request,
+        string? appId,
+        string? appSecret)
+    {
+        if (!string.IsNullOrWhiteSpace(appId))
+        {
+            request.Headers.TryAddWithoutValidation("X-App-ID", appId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(appSecret))
+        {
+            request.Headers.TryAddWithoutValidation("X-App-Secret", appSecret);
+        }
     }
 
     private void RecordTelemetry(

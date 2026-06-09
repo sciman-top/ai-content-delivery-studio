@@ -141,6 +141,8 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
         public Task<OpenAiSdkImageTransportResult> GenerateAsync(
             OpenAiProviderOptions options,
             string apiKey,
+            string? appId,
+            string? appSecret,
             ImageGenerationRequest request,
             CancellationToken cancellationToken)
         {
@@ -154,6 +156,8 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
         public Task<OpenAiSdkImageTransportResult> GenerateAsync(
             OpenAiProviderOptions options,
             string apiKey,
+            string? appId,
+            string? appSecret,
             ImageGenerationRequest request,
             CancellationToken cancellationToken)
         {

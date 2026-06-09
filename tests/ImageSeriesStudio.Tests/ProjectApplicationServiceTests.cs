@@ -957,6 +957,121 @@ public sealed class ProjectApplicationServiceTests
         Assert.Contains("summarize", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task EfProjectRepository_SaveReviewResultAsync_UpdatesExistingReviewWithoutChangingPrimaryKey()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "review-update.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            var timestamp = new DateTimeOffset(2026, 6, 9, 14, 0, 0, TimeSpan.Zero);
+            Guid projectId;
+            Guid candidateId;
+            Guid originalReviewId;
+
+            await using (var setup = new AppDbContext(options))
+            {
+                await setup.Database.EnsureCreatedAsync();
+
+                var project = ImageProject.Create("Review update demo", timestamp);
+                var profile = project.AddProviderProfile("Fake provider", ProviderKind.Fake, timestamp.AddMinutes(1));
+                var series = project.AddSeries("Series", "Description", timestamp.AddMinutes(2));
+                var item = series.AddItem("Item", "Brief", timestamp.AddMinutes(3));
+                var prompt = item.AddPromptVersion(
+                    "Create a reviewable image.",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    profile.Id,
+                    timestamp.AddMinutes(4));
+                var task = new GenerationTask(
+                    Guid.NewGuid(),
+                    item.Id,
+                    prompt.Id,
+                    profile.Id,
+                    GenerationTaskStatus.Succeeded,
+                    1,
+                    0,
+                    timestamp.AddMinutes(5),
+                    timestamp.AddMinutes(5));
+                var candidate = new CandidateImage(
+                    Guid.NewGuid(),
+                    item.Id,
+                    prompt.Id,
+                    task.Id,
+                    profile.Id,
+                    CandidateImageStatus.ReviewPending,
+                    "outputs/candidate.png",
+                    "outputs/candidate.json",
+                    timestamp.AddMinutes(6));
+                var firstReview = new ReviewResult(
+                    Guid.NewGuid(),
+                    candidate.Id,
+                    ReviewDecision.Pass,
+                    new Dictionary<string, int> { ["match"] = 5 },
+                    [],
+                    "Initial AI review.",
+                    null,
+                    humanApproved: false,
+                    createdAt: timestamp.AddMinutes(7));
+
+                setup.Projects.Add(project);
+                setup.GenerationTasks.Add(task);
+                setup.CandidateImages.Add(candidate);
+                setup.ReviewResults.Add(firstReview);
+                await setup.SaveChangesAsync();
+
+                projectId = project.Id;
+                candidateId = candidate.Id;
+                originalReviewId = firstReview.Id;
+            }
+
+            await using (var updateDb = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(updateDb);
+                var updatedReview = new ReviewResult(
+                    Guid.NewGuid(),
+                    candidateId,
+                    ReviewDecision.Pass,
+                    new Dictionary<string, int> { ["match"] = 5 },
+                    [],
+                    "Final approved review.",
+                    null,
+                    humanApproved: true,
+                    createdAt: timestamp.AddMinutes(8),
+                    finalReviewer: "Teacher",
+                    finalApprovalNotes: "Ready for package.",
+                    finalApprovalDecidedAt: timestamp.AddMinutes(8));
+
+                await repository.SaveReviewResultAsync(projectId, updatedReview, CancellationToken.None);
+            }
+
+            await using (var verifyDb = new AppDbContext(options))
+            {
+                var storedReview = await verifyDb.ReviewResults.SingleAsync();
+
+                Assert.Equal(originalReviewId, storedReview.Id);
+                Assert.Equal(candidateId, storedReview.CandidateImageId);
+                Assert.True(storedReview.HumanApproved);
+                Assert.Equal("Teacher", storedReview.FinalReviewer);
+                Assert.Equal("Ready for package.", storedReview.FinalApprovalNotes);
+                Assert.Equal(timestamp.AddMinutes(8), storedReview.FinalApprovalDecidedAt);
+                Assert.Equal("Final approved review.", storedReview.Comments);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
     private sealed class InMemoryProjectRepository : IProjectRepository
     {
         private readonly Dictionary<Guid, ImageProject> _projects = new();

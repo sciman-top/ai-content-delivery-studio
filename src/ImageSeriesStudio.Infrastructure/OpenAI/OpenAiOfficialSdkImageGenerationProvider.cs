@@ -69,6 +69,8 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
             cancellationToken);
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
+        var appId = await GetOptionalSecretAsync(_options.AppIdSecretName, cancellationToken);
+        var appSecret = await GetOptionalSecretAsync(_options.AppSecretSecretName, cancellationToken);
 
         var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
         var stopwatch = Stopwatch.StartNew();
@@ -76,7 +78,7 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
         OpenAiSdkImageTransportResult transportResult;
         try
         {
-            transportResult = await _transport.GenerateAsync(_options, apiKey, request, cancellationToken);
+            transportResult = await _transport.GenerateAsync(_options, apiKey, appId, appSecret, request, cancellationToken);
         }
         catch (ClientResultException exception)
         {
@@ -169,6 +171,13 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
             metadataPath,
             transportResult.ProviderTraceId,
             generatedAt);
+    }
+
+    private async Task<string?> GetOptionalSecretAsync(string? secretName, CancellationToken cancellationToken)
+    {
+        return string.IsNullOrWhiteSpace(secretName)
+            ? null
+            : await _secretStore.GetSecretAsync(secretName, cancellationToken);
     }
 
     private static string BuildSize(ImageGenerationRequest request)

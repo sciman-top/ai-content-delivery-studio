@@ -14,9 +14,10 @@ This repository is the active implementation home for AI Content Delivery Studio
 - `docs/`: product design, architecture, references, roadmap, task lists, and ADRs.
 - `docs/research/`: official and community references used for engineering decisions.
 - `docs/adr/`: durable architecture decisions.
-- Future `src/`: WPF app, domain core, infrastructure providers, and tests.
-- Future `workspace/`: local runtime project data; ignored by git.
-- Future `outputs/`: generated images and delivery packages; ignored by git.
+- `src/`: WPF app, application services, domain core, infrastructure providers, deterministic composition, diagnostics, persistence, and tool adapters.
+- `tests/`: unit and integration tests, including fake-first launch verification, provider preflight, and operator/tool-adapter coverage.
+- `workspace/`: local runtime project data; ignored by git.
+- `outputs/`: generated images and delivery packages; ignored by git.
 
 ## B. Gate Order
 
@@ -30,12 +31,13 @@ git status --short
 After code exists:
 
 ```powershell
-dotnet build
-dotnet test
-dotnet format --verify-no-changes
+.\scripts\verify-repo.ps1
 ```
 
 Provider integration gates must use fake providers first. Real paid API calls require explicit user approval.
+`.\scripts\verify-repo.ps1` is the canonical local full gate. It runs `.\scripts\verify-reference-evidence.ps1` first, then `dotnet build`, `dotnet test`, and `dotnet format --verify-no-changes`.
+When provider, host/observability, persistence/schema, or tooling/operator boundaries change, the reference-evidence portion of that gate must pass before treating the slice as ready.
+The repository also carries `.github/workflows/verify-repo.yml` so the same verification path can run remotely on normal `push` and `pull_request` events.
 
 ## C. Safety And Resource Guards
 
@@ -48,6 +50,7 @@ Provider integration gates must use fake providers first. Real paid API calls re
 ## D. Evidence And Rollback
 
 - Design evidence lives in `docs/research/REFERENCE_RESEARCH.md`.
+- Reference-discipline rules live in `docs/REFERENCE_EVIDENCE_POLICY.md`.
 - Architecture decisions live in `docs/adr/`.
 - Implementation tasks live in `docs/TASKS.md` and `docs/superpowers/plans/`.
 - Revert documentation changes with git. Generated outputs and local workspaces are ignored and must be backed up outside git when needed.

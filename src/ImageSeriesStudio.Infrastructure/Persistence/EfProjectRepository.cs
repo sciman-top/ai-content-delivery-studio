@@ -226,7 +226,16 @@ public sealed class EfProjectRepository : IProjectRepository
         }
         else
         {
-            _dbContext.Entry(existing).CurrentValues.SetValues(reviewResult);
+            _dbContext.Entry(existing).Property(review => review.Decision).CurrentValue = reviewResult.Decision;
+            _dbContext.Entry(existing).Property(review => review.Scores).CurrentValue = reviewResult.Scores;
+            _dbContext.Entry(existing).Property(review => review.HardFailures).CurrentValue = reviewResult.HardFailures;
+            _dbContext.Entry(existing).Property(review => review.Comments).CurrentValue = reviewResult.Comments;
+            _dbContext.Entry(existing).Property(review => review.SuggestedFix).CurrentValue = reviewResult.SuggestedFix;
+            _dbContext.Entry(existing).Property(review => review.HumanApproved).CurrentValue = reviewResult.HumanApproved;
+            _dbContext.Entry(existing).Property(review => review.FinalReviewer).CurrentValue = reviewResult.FinalReviewer;
+            _dbContext.Entry(existing).Property(review => review.FinalApprovalNotes).CurrentValue = reviewResult.FinalApprovalNotes;
+            _dbContext.Entry(existing).Property(review => review.FinalApprovalDecidedAt).CurrentValue = reviewResult.FinalApprovalDecidedAt;
+            _dbContext.Entry(existing).Property(review => review.CreatedAt).CurrentValue = reviewResult.CreatedAt;
         }
 
         await _dbContext.SaveChangesAsync(cancellationToken);

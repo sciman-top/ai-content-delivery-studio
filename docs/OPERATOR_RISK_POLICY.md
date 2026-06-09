@@ -24,6 +24,7 @@ Examples:
 
 - Validate a delivery folder, manifest, or artifact package.
 - Generate a diagnostics or validation report in a new output folder.
+- Run a read-only OpenAI launch preflight that inspects readiness and writes local diagnostics only.
 - Build thumbnails, contact sheets, or derived previews without overwriting approved assets.
 - Create deterministic text-composition preview assets in a new location.
 - Run read-only metadata inspection or checksum generation.
@@ -99,6 +100,10 @@ Why this slice:
 - It proves real operator execution without broad destructive risk.
 - It exercises audit, inputs, outputs, exit status, and rollback metadata.
 - It improves delivery confidence for the primary launch route.
+
+Companion low-risk path already useful in the current repository:
+
+- a read-only `openai-launch-preflight` action that evaluates role-scoped provider readiness and writes local diagnostics before any live V1 sample run is attempted
 
 ## Required Action Metadata
 

@@ -58,8 +58,8 @@ AI 推荐: keep the current Windows desktop stack and harden it rather than chas
 ### Recommended Near-Term Additions
 
 - One deterministic 2D composition library for text-heavy outputs. The current V1 implementation choice is `SkiaSharp`, and the local reference shelf now includes its source repository.
-- `dotnet/extensions` as a code-level reference for hosting, options, and resilience internals
-- `opentelemetry-dotnet` as a code-level observability reference
+- `dotnet/extensions` as a code-level reference for hosting, options, and resilience internals; the local reference shelf now includes it.
+- `opentelemetry-dotnet` as a code-level observability reference; the local reference shelf now includes it.
 - OCR reference expansion such as `Tesseract` or `OCRmyPDF` when scanned-document hardening becomes active
 
 ### Deferred Or Optional

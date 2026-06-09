@@ -63,6 +63,33 @@ Do not put an image-only merchant key under `TEXT_PROVIDER_API_KEY` or generic `
 
 Credential placement does not decide whether a workflow should use remote retained state. The V1 default remains `store: false` unless the provider routing policy explicitly allows a stateful workflow.
 
+## OpenAI Launch Preflight
+
+The repository now includes a read-only OpenAI launch preflight path that evaluates whether the current local provider configuration is ready for a live V1 sample run.
+
+Current behavior:
+
+- reads role-scoped provider configuration from the selected `.env` path
+- checks text-planning, vision-review, and image-generation readiness separately
+- applies the real-provider smoke gate before any live smoke path is considered runnable
+- writes local `json` and `md` reports under a diagnostics folder
+
+Default smoke opt-in gate:
+
+```env
+IMAGE_SERIES_STUDIO_OPENAI_REAL_API_SMOKE=1
+```
+
+If this variable is missing or set to a different value, the preflight remains a dry-run readiness check and records the blocking reason instead of treating the smoke path as enabled.
+
+The preflight is intentionally low-risk:
+
+- no secret values are exported
+- no provider dashboard state is required
+- normal use stays on the local diagnostics path
+
+This preflight is a readiness and evidence tool, not a replacement for the eventual live `2-item` V1 provider run recorded in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md).
+
 ## Health Checks
 
 Provider Center health checks use non-generating `/v1/models` requests. They validate connectivity and authentication without creating text completions or images. If a merchant forbids all non-image endpoints, skip Provider Center health checks for that image provider and rely on opt-in image smoke tests.

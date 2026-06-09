@@ -556,6 +556,53 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task ImageGenerationProvider_AddsAppModeHeadersWhenConfigured()
+    {
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "img_resp_app_mode",
+              "created": 1790000000,
+              "data": [
+                {
+                  "b64_json": "iVBORw=="
+                }
+              ]
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiImageGenerationProvider(
+            httpClient,
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                AppIdSecretName = "IMAGE_PROVIDER_APP_ID",
+                AppSecretSecretName = "IMAGE_PROVIDER_APP_SECRET",
+            },
+            new StaticSecretMapStore(
+                new Dictionary<string, string?>
+                {
+                    ["OPENAI_API_KEY"] = "test-openai-key",
+                    ["IMAGE_PROVIDER_APP_ID"] = "app-id",
+                    ["IMAGE_PROVIDER_APP_SECRET"] = "app-secret",
+                }));
+
+        await provider.GenerateImageAsync(
+            new ImageGenerationRequest(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                "Create a clean science poster.",
+                new GenerationSettings(1024, 1024, "standard", "png"),
+                Path.GetTempPath()),
+            CancellationToken.None);
+
+        Assert.True(handler.LastRequest!.Headers.TryGetValues("X-App-ID", out var appIdValues));
+        Assert.Equal("app-id", Assert.Single(appIdValues));
+        Assert.True(handler.LastRequest.Headers.TryGetValues("X-App-Secret", out var appSecretValues));
+        Assert.Equal("app-secret", Assert.Single(appSecretValues));
+    }
+
+    [Fact]
     public async Task VisionReviewProvider_UsesExplicitStatefulReviewOptionsWhenEnabled()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
@@ -773,6 +820,16 @@ public sealed class OpenAiProviderContractTests
             cancellationToken.ThrowIfCancellationRequested();
 
             return Task.FromResult(value);
+        }
+    }
+
+    private sealed class StaticSecretMapStore(IReadOnlyDictionary<string, string?> values) : IOpenAiSecretStore
+    {
+        public Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return Task.FromResult(values.TryGetValue(secretName, out var value) ? value : null);
         }
     }
 

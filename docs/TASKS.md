@@ -48,6 +48,9 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Establish `_shared` reference governance with manifest, update script, and duplicate audit script.
 - [x] Add machine-readable manifest and update flow for `ai-content-delivery-studio-references`.
 - [x] Extend `ai-coding-runtime-references` update flow to export a manifest.
+- [x] Add a repository-local reference-evidence policy and verification gate for high-drift engineering areas.
+- [x] Add a canonical local full-gate script that runs reference evidence checks before build, test, and format verification.
+- [x] Add a GitHub Actions verification workflow that reuses the repository gate on normal `push` and `pull_request` events.
 - [x] Add `dotnet/extensions` as a code-level reference before the next host/options/resilience hardening slice.
 - [x] Add `opentelemetry-dotnet` as a code-level reference before the next telemetry or diagnostics slice.
 - [x] Add `SkiaSharp` reference-source coverage before the next deterministic composition expansion beyond the current poster proof path.

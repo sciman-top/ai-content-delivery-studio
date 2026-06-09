@@ -10,6 +10,8 @@ public interface IOpenAiSdkImageBackend
     Task<OpenAiSdkImageBackendResponse> SendAsync(
         OpenAiProviderOptions options,
         string apiKey,
+        string? appId,
+        string? appSecret,
         BinaryContent payload,
         CancellationToken cancellationToken);
 }
@@ -31,6 +33,8 @@ public sealed class OpenAiOfficialSdkImageBackend : IOpenAiSdkImageBackend
     public async Task<OpenAiSdkImageBackendResponse> SendAsync(
         OpenAiProviderOptions options,
         string apiKey,
+        string? appId,
+        string? appSecret,
         BinaryContent payload,
         CancellationToken cancellationToken)
     {
@@ -40,6 +44,15 @@ public sealed class OpenAiOfficialSdkImageBackend : IOpenAiSdkImageBackend
             BufferResponse = true,
             CancellationToken = cancellationToken,
         };
+        if (!string.IsNullOrWhiteSpace(appId))
+        {
+            request.AddHeader("X-App-ID", appId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(appSecret))
+        {
+            request.AddHeader("X-App-Secret", appSecret);
+        }
         var response = await client.GenerateImagesAsync(payload, request);
         var rawResponse = response.GetRawResponse();
         var responseBody = rawResponse.Content ?? await rawResponse.BufferContentAsync(cancellationToken);
@@ -56,6 +69,8 @@ public interface IOpenAiSdkImageTransport
     Task<OpenAiSdkImageTransportResult> GenerateAsync(
         OpenAiProviderOptions options,
         string apiKey,
+        string? appId,
+        string? appSecret,
         ImageGenerationRequest request,
         CancellationToken cancellationToken);
 }
@@ -73,6 +88,8 @@ public sealed class OpenAiSdkImageTransport : IOpenAiSdkImageTransport
     public async Task<OpenAiSdkImageTransportResult> GenerateAsync(
         OpenAiProviderOptions options,
         string apiKey,
+        string? appId,
+        string? appSecret,
         ImageGenerationRequest request,
         CancellationToken cancellationToken)
     {
@@ -83,6 +100,8 @@ public sealed class OpenAiSdkImageTransport : IOpenAiSdkImageTransport
         var response = await _backend.SendAsync(
             options,
             apiKey,
+            appId,
+            appSecret,
             BinaryContent.CreateJson(CreatePayload(options, request), JsonOptions),
             cancellationToken);
 

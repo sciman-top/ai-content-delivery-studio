@@ -18,6 +18,10 @@ public sealed record OpenAiProviderOptions
 
     public string ApiKeySecretName { get; init; } = "OPENAI_API_KEY";
 
+    public string? AppIdSecretName { get; init; }
+
+    public string? AppSecretSecretName { get; init; }
+
     public OpenAiProviderOperation AllowedOperations { get; init; } = OpenAiProviderOperation.All;
 
     public string TextPlanningModel { get; init; } = "gpt-5";
@@ -49,6 +53,8 @@ public sealed record OpenAiProviderOptions
         {
             BaseUri = RequireBaseUri(configuration.Text, "Text provider"),
             ApiKeySecretName = RequireApiKeySecretName(configuration.Text, "Text provider"),
+            AppIdSecretName = configuration.Text.AppIdSecretName,
+            AppSecretSecretName = configuration.Text.AppSecretSecretName,
             TextPlanningModel = RequireModel(configuration.Text, "Text provider"),
             ImageGenerationModel = string.Empty,
             VisionReviewModel = RequireModel(configuration.Text, "Text provider"),
@@ -67,6 +73,8 @@ public sealed record OpenAiProviderOptions
         {
             BaseUri = RequireBaseUri(configuration.Image, "Image provider"),
             ApiKeySecretName = RequireApiKeySecretName(configuration.Image, "Image provider"),
+            AppIdSecretName = configuration.Image.AppIdSecretName,
+            AppSecretSecretName = configuration.Image.AppSecretSecretName,
             TextPlanningModel = string.Empty,
             ImageGenerationModel = RequireModel(configuration.Image, "Image provider"),
             VisionReviewModel = string.Empty,
@@ -91,6 +99,11 @@ public sealed record OpenAiProviderOptions
         if (RealApiEnabled && string.IsNullOrWhiteSpace(ApiKeySecretName))
         {
             errors.Add("API key secret name is required when real API calls are enabled.");
+        }
+
+        if (string.IsNullOrWhiteSpace(AppIdSecretName) ^ string.IsNullOrWhiteSpace(AppSecretSecretName))
+        {
+            errors.Add("App id and app secret secret names must be configured together.");
         }
 
         if (AllowedOperations.HasFlag(OpenAiProviderOperation.TextPlanning)
@@ -316,6 +329,12 @@ public static class OpenAiProviderGuard
         var apiKey = options.RealApiEnabled
             ? await secretStore.GetSecretAsync(options.ApiKeySecretName, cancellationToken)
             : null;
+        var appId = !string.IsNullOrWhiteSpace(options.AppIdSecretName)
+            ? await secretStore.GetSecretAsync(options.AppIdSecretName, cancellationToken)
+            : null;
+        var appSecret = !string.IsNullOrWhiteSpace(options.AppSecretSecretName)
+            ? await secretStore.GetSecretAsync(options.AppSecretSecretName, cancellationToken)
+            : null;
 
         if (!options.RealApiEnabled)
         {
@@ -324,6 +343,16 @@ public static class OpenAiProviderGuard
         else if (string.IsNullOrWhiteSpace(apiKey))
         {
             errors.Add("OpenAI API key was not found in the configured secret store.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.AppIdSecretName) && string.IsNullOrWhiteSpace(appId))
+        {
+            errors.Add("OpenAI app id was not found in the configured secret store.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.AppSecretSecretName) && string.IsNullOrWhiteSpace(appSecret))
+        {
+            errors.Add("OpenAI app secret was not found in the configured secret store.");
         }
 
         return new OpenAiProviderReadiness(errors.Count == 0, errors);
