@@ -18,6 +18,7 @@ The goal is to keep launch readiness honest. Completed implementation slices are
 
 - Snapshot date: `2026-06-09`
 - Repository root: `D:\CODE\ai-image-series-studio`
+- Latest live provider sample run: `artifacts/live-openai-v1-sample/20260609-141921`
 - Fresh gate for this snapshot:
   - `dotnet build --no-restore`
   - `dotnet test --no-build --no-restore`
@@ -32,21 +33,20 @@ The goal is to keep launch readiness honest. Completed implementation slices are
 | Launch metric | Current status | Evidence now | Remaining gap |
 | --- | --- | --- | --- |
 | Primary route completes three consecutive fake-first end-to-end runs with no paid APIs and no manual database edits. | Verified by automated repo evidence | `PrimaryLaunchRouteVerificationTests.PrimaryLaunchRoute_CompletesThreeConsecutiveFakeFirstRunsWithoutManualDatabaseEdits` proves three consecutive short-requirement -> brief -> blueprint -> series -> review -> delivery runs with fake providers and persisted local state checks. Supporting slice coverage remains in `FakeWorkflowTests`, `ProjectApplicationServiceTests`, and `BriefWorkflowApplicationServiceTests`. | A future user-facing script can still mirror this suite, but the launch metric now has automated proof. |
-| A 2-item sample series completes through the opt-in OpenAI path with request provenance, review evidence, and secret redaction verified. | Partial | `OpenAiProviderContractTests` verify request payloads, provenance capture, telemetry, bounded defaults, and secret-store guardrails at contract level. `OpenAiProviderConfigurationTests` verify DPAPI and `.env` secret handling. `OpenAiProviderSmokeTests` verify that the real-provider smoke path stays fail-closed unless the explicit opt-in environment gate is enabled. `OpenAiLaunchPreflightTests` verify that text planning, vision review, image generation, and opt-in smoke prerequisites can be evaluated together without triggering paid calls. `OpenAiLaunchPreflightReportWriterTests` prove those prerequisites can be exported as local JSON/Markdown preflight reports, `OpenAiLaunchPreflightToolAdapterTests` prove the same preflight can run through a low-risk local tool adapter entrypoint, `ToolAdapterServiceCollectionExtensionsTests` prove the desktop host now registers that low-risk preflight path through the built-in local tool set, and `DiagnosticsPackageTests` prove preflight readiness can be carried forward inside the redacted diagnostics bundle. | No fresh live opt-in OpenAI run has been recorded in this evidence ledger yet. |
+| A 2-item sample series completes through the opt-in OpenAI path with request provenance, review evidence, and secret redaction verified. | Verified by live provider evidence | `artifacts/live-openai-v1-sample/20260609-141921/live-v1-sample-summary.json` records a fresh opt-in OpenAI run that passed launch preflight, completed real text planning, real image generation, real image review, final approval, delivery export, and diagnostics export for two items. `artifacts/live-openai-v1-sample/20260609-141921/outputs/delivery/manifest.json` shows both items as human-approved with prompt snapshots and metadata preserved, while `artifacts/live-openai-v1-sample/20260609-141921/diagnostics/diagnostics.json` and `openai-launch-preflight.json` keep secret values redacted. Supporting automated guardrails remain in `OpenAiProviderContractTests`, `OpenAiProviderConfigurationTests`, `OpenAiProviderSmokeTests`, `OpenAiLaunchPreflightTests`, `OpenAiLaunchPreflightReportWriterTests`, `OpenAiLaunchPreflightToolAdapterTests`, `ToolAdapterServiceCollectionExtensionsTests`, `DiagnosticsPackageTests`, and `OpenAiLiveV1SampleRouteTests`. | Refresh this evidence only when provider behavior materially changes or a newer launch snapshot is needed. |
 | Article or plain-text planning can produce and promote approved illustration targets without requiring real providers by default. | Verified by automated repo evidence | `SupportingValidationRouteVerificationTests.SupportingValidationRoute_CompletesFakeFirstDocumentPlanningThroughDelivery` proves article/plain-text planning, approved-target promotion, fake-first generation, review, approval, and delivery export in one route. `DocumentIllustrationWorkflowTests` still cover the narrower planning and oversize-guard boundary. | Still worth adding a user-facing script later, but the launch metric already has automated proof. |
 | The educational poster proof path exports deterministic text-composition provenance and human approval evidence. | Verified by automated repo evidence | `EducationalPosterLaunchProofTests.EducationalPosterProofPath_ExportsCompositionProvenanceAndApprovalEvidence` proves deterministic composition, copied composition-report provenance, and final approval evidence in one delivery export. Supporting component coverage remains in `SkiaDeterministicTextComposerTests`, `DeterministicTextCompositionToolAdapterTests`, and `DeliveryPackageTests`. | A future live sample export is still useful, but the launch metric now has automated proof. |
 | The first real low-risk operator action runs end-to-end and writes audit output plus rollback or cleanup notes. | Verified by automated repo evidence | `ArtifactValidationToolAdapterTests.LowRiskAutoRepairService_RunsArtifactValidationAdapterAndWritesDiagnosticsReport` proves local validation output into a diagnostics folder and includes cleanup guidance. `LowRiskAutoRepairServiceTests` prove the low-risk-only execution boundary. | A user-visible launch bundle could still be added later, but the launch metric already has automated proof. |
 
 ## Current Readout
 
-- `4 / 5` launch metrics have automated evidence strong enough to count as currently verified.
-- `1 / 5` launch metrics still needs a live provider execution record.
-- The biggest honesty gap is now the absence of a current live OpenAI evidence run.
-- The repository now has a read-only preflight plus diagnostics-bundle path for that remaining live-provider gap, but those readiness artifacts do not replace the live run itself.
+- `5 / 5` launch metrics now have either automated repo evidence or fresh live provider evidence strong enough to count as currently verified.
+- The live OpenAI launch gap is closed for the current `2026-06-09` snapshot.
+- The repository now has both the read-only preflight path and one fresh live provider evidence set for the same release claim.
 
 ## Recommended Next Evidence Slices
 
-1. Record one opt-in real OpenAI 2-item sample run with provenance, review evidence, and secret-redaction checks, then append the outcome here.
+1. If provider behavior changes later, rerun the opt-in OpenAI `2-item` sample path and refresh the live evidence artifact set.
 2. If needed later, add a user-facing script that mirrors the automated three-run fake-first launch suite.
 3. If needed later, add a user-facing sample export bundle that mirrors the automated educational-poster proof.
 
@@ -59,6 +59,7 @@ The goal is to keep launch readiness honest. Completed implementation slices are
 - `tests/ImageSeriesStudio.Tests/DocumentIllustrationWorkflowTests.cs`
 - `tests/ImageSeriesStudio.Tests/OpenAiProviderContractTests.cs`
 - `tests/ImageSeriesStudio.Tests/OpenAiProviderConfigurationTests.cs`
+- `tests/ImageSeriesStudio.Tests/OpenAiLiveV1SampleRouteTests.cs`
 - `tests/ImageSeriesStudio.Tests/OpenAiProviderSmokeTests.cs`
 - `tests/ImageSeriesStudio.Tests/OpenAiLaunchPreflightTests.cs`
 - `tests/ImageSeriesStudio.Tests/OpenAiLaunchPreflightReportWriterTests.cs`

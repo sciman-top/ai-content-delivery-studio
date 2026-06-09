@@ -4,7 +4,7 @@
 
 Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for current release claims. As of the current snapshot, the only open V1 release-claim gap is:
 
-- [ ] Record one fresh opt-in OpenAI 2-item live run with provenance, review evidence, and secret-redaction checks, then append the result to `docs/V1_LAUNCH_EVIDENCE.md`.
+- [x] Record one fresh opt-in OpenAI 2-item live run with provenance, review evidence, and secret-redaction checks, then append the result to `docs/V1_LAUNCH_EVIDENCE.md`.
 
 ## Near-Term Hardening (Not Current Release Blockers)
 
