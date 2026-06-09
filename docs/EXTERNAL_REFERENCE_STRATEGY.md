@@ -39,10 +39,13 @@ These are high-value references for AI Content Delivery Studio and should remain
 - `docs-desktop`
 - `CommunityToolkit-dotnet`
 - `EntityFramework.Docs`
+- `dotnet/extensions`
+- `opentelemetry-dotnet`
 - `markitdown`
 - `docling`
 - `PdfPig`
 - `QuestPDF`
+- `SkiaSharp`
 - `playwright-dotnet`
 - `FlaUI`
 - `ComfyUI`
@@ -79,12 +82,6 @@ Future candidates if duplication actually appears:
 
 These references are worth adding when the corresponding engineering slices become active:
 
-- `dotnet/extensions`
-  - for host, options, logging, and resilience internals
-- `opentelemetry-dotnet`
-  - for trace and metric instrumentation patterns
-- `SkiaSharp`
-  - for deterministic text composition and image-layer assembly in the current V1 plan
 - `Tesseract` or `OCRmyPDF`
   - when OCR or scanned-document hardening becomes a real near-term slice
 - `WindowsAppSDK-Samples`

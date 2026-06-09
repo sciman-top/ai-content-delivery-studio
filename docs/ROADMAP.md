@@ -10,6 +10,7 @@ AI, providers, workflow packs, and output formats can evolve quickly. Core domai
 - `Status: complete for initial design` or `complete for the local pack foundation` means the design baseline or fake-first/local foundation exists.
 - A workflow is user-visible complete only when it can run end-to-end in the workbench with review and delivery.
 - A workflow is production-ready only when approval evidence, deterministic rendering or composition where required, and real-provider behavior are verified.
+- Current V1 release-claim truth lives in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md); roadmap phase status and completed backlog items do not count as launch proof by themselves.
 
 ## V1 Release Frame
 
@@ -23,6 +24,7 @@ V1 should ship these routes well before it widens the public pack surface, binar
 
 Authoritative launch-boundary docs:
 
+- [DOCUMENTATION_GOVERNANCE.md](./DOCUMENTATION_GOVERNANCE.md)
 - [PRD_V1.md](./PRD_V1.md)
 - [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md)
 - [OPERATOR_RISK_POLICY.md](./OPERATOR_RISK_POLICY.md)
@@ -36,8 +38,8 @@ Authoritative launch-boundary docs:
 
 - Product scope can widen faster than launch evidence.
 - Provider routing can drift unless the policy is implemented, not only documented.
-- Deterministic text composition is still a required but unfinished proof path.
-- Operator execution needs one real low-risk proof before broader automation ambition resumes.
+- Deterministic text composition is a required proof path; automated repo evidence now exists, but stronger user-visible collateral is still optional future work.
+- Operator execution now has a bounded automated proof for the first low-risk slice; broader automation still needs to stay behind explicit scope and evidence gates.
 - Reference shelf growth needs lightweight governance so research does not become maintenance drag.
 
 ## Locked V1 Decisions
@@ -70,9 +72,9 @@ V1 is ready only when all of these are true:
 
 - Harden the short requirement -> brief -> blueprint -> series -> review -> delivery route as the primary launch workflow.
 - Keep the article or plain-text route focused on evidence-backed planning that promotes into the same downstream workflow.
-- Elevate Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export into the next hardening slice.
+- Keep Phase 4A deterministic composition, readability checks, reviewer notes, and approval evidence export stable, and add stronger user-visible launch collateral only if needed later.
 - Keep the stable Images API path on the official OpenAI .NET SDK, while limiting raw `HttpClient` usage to lagging Responses surfaces and evaluating multi-turn image state only where it materially improves provenance, revision loops, or partial preview UX.
-- Run the first real low-risk operator execution slice with audit evidence, using additive deterministic local tools before broader automation.
+- Keep the first low-risk operator execution slice bounded and auditable, and strengthen live evidence only where release review or user-facing validation needs it.
 - Record launch evidence against the V1 release metrics instead of treating every completed foundation slice as launch-complete by default.
 - Keep the external reference system focused, deduplicated, and machine-readable instead of widening it ad hoc.
 
@@ -212,7 +214,7 @@ Exit gate:
 
 Goal: make text-heavy educational, document, and poster outputs reliable even when image-model text rendering is imperfect.
 
-Status: elevated as a current near-term hardening priority because text fidelity and approval evidence are required for credible delivery.
+Status: core proof path verified by automated repo evidence for the current V1 scope; further work is now about keeping the slice stable and optionally adding stronger user-visible collateral.
 
 Deliverables:
 
@@ -348,7 +350,7 @@ Exit gate:
 
 Goal: let AI replace repetitive human judgment and tool operation while preserving approval and audit boundaries.
 
-Status: started with a structured `RepairPlan` model generated from review routing evidence, `OperatorAction` and `OperatorRun` audit records, a provider-neutral tool adapter contract covering SDK, CLI, local library, browser automation, Windows desktop automation, and computer-use boundaries, built-in local tool descriptors for extraction, conversion, OCR, ImageMagick/FFmpeg processing, deterministic text composition, and artifact validation, an approval gate for medium/high-risk operator actions, a low-risk auto-repair path through the adapter contract, and operator audit export in diagnostics/delivery evidence. Real tool execution remains a future slice.
+Status: started with a structured `RepairPlan` model generated from review routing evidence, `OperatorAction` and `OperatorRun` audit records, a provider-neutral tool adapter contract covering SDK, CLI, local library, browser automation, Windows desktop automation, and computer-use boundaries, built-in local tool descriptors for extraction, conversion, OCR, ImageMagick/FFmpeg processing, deterministic text composition, and artifact validation, an approval gate for medium/high-risk operator actions, a low-risk auto-repair path through the adapter contract, and operator audit export in diagnostics/delivery evidence. The first bounded low-risk execution slice now has automated repo evidence; broader real tool execution remains a future slice.
 
 Deliverables:
 

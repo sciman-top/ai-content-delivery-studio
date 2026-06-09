@@ -22,19 +22,34 @@ Help a user turn an idea, source file, or draft into a reviewed delivery package
 - Desktop UI: WPF on .NET 10 for the MVP, using MVVM and .NET Generic Host.
 - Domain and application core: C# class libraries with provider-neutral interfaces.
 - Persistence: SQLite via EF Core for project state; filesystem for image assets and delivery packages.
-- AI APIs: separate provider contracts for text planning, image generation, and vision review.
-- Primary provider: OpenAI Responses API for conversation, planning, vision, and multi-turn image workflows; OpenAI Images API for direct batch image generation and edits.
+- AI APIs: separate provider contracts for text planning, image generation, vision review, and artifact planning.
+- Primary provider split: OpenAI Images API for direct generation and edit flows, OpenAI Responses API for stateful planning, structured review, and only those multi-turn image workflows that provide clear provenance or revision value.
 - Background execution: local queue with bounded concurrency, retry policy, cancellation, cost budget, and audit logs.
 - Delivery format: folder package plus manifest CSV/JSON, prompt snapshots, image metadata, and review reports.
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/PRODUCT_DESIGN.md](docs/PRODUCT_DESIGN.md).
+Current launch-boundary and engineering-state docs:
+
+- [Documentation Governance](docs/DOCUMENTATION_GOVERNANCE.md)
+- [V1 PRD](docs/PRD_V1.md)
+- [Product Design](docs/PRODUCT_DESIGN.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Provider Routing Policy](docs/PROVIDER_ROUTING_POLICY.md)
+- [Operator Risk Policy](docs/OPERATOR_RISK_POLICY.md)
+- [Target Engineering State](docs/TARGET_ENGINEERING_STATE.md)
+- [External Reference Strategy](docs/EXTERNAL_REFERENCE_STRATEGY.md)
 
 ## Design Documents
 
+- [Documentation Governance](docs/DOCUMENTATION_GOVERNANCE.md)
+- [V1 PRD](docs/PRD_V1.md)
 - [Product Design](docs/PRODUCT_DESIGN.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Roadmap](docs/ROADMAP.md)
 - [Task Checklist](docs/TASKS.md)
+- [Provider Routing Policy](docs/PROVIDER_ROUTING_POLICY.md)
+- [Operator Risk Policy](docs/OPERATOR_RISK_POLICY.md)
+- [Target Engineering State](docs/TARGET_ENGINEERING_STATE.md)
+- [External Reference Strategy](docs/EXTERNAL_REFERENCE_STRATEGY.md)
 - [User Guide](docs/USER_GUIDE.md)
 - [Reference Research](docs/research/REFERENCE_RESEARCH.md)
 - [ADR 0001: Independent Repo And Stack](docs/adr/0001-independent-repo-and-stack.md)

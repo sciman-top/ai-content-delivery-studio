@@ -1,8 +1,14 @@
 # Task Checklist
 
-## Current Focus
+## Current V1 Release Gap
 
-The next autonomous delivery priority is to harden a small number of user-visible golden paths before widening scope.
+Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for current release claims. As of the current snapshot, the only open V1 release-claim gap is:
+
+- [ ] Record one fresh opt-in OpenAI 2-item live run with provenance, review evidence, and secret-redaction checks, then append the result to `docs/V1_LAUNCH_EVIDENCE.md`.
+
+## Near-Term Hardening (Not Current Release Blockers)
+
+These items are still valuable, but they are not the same thing as the current V1 release gap.
 
 - [x] Harden the short requirement -> brief -> blueprint -> series -> review -> delivery path as the primary V1 launch route.
 - [x] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path as a supporting validation route without requiring real providers by default.
@@ -13,6 +19,7 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Add bounded local review-prep artifacts and review-batch thresholds before expanding multi-turn image-state review.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
 - [x] Capture V1 launch evidence against the explicit launch metrics.
+- [ ] Reuse the text-planning low-502 execution policy when future real-provider brief or blueprint planning leaves the current fake-first boundary.
 
 ## V1 Documentation And Policy Alignment
 
@@ -34,7 +41,6 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Keep packs internal-only for V1 and defer public sharing behavior.
 - [x] Reflect the locked V1 defaults in implementation-facing code comments, options, and operator descriptors where relevant.
 - [x] Reflect stateless local-direct visual review defaults in implementation-facing options and review operator descriptors.
-- [ ] Reuse the text-planning low-502 execution policy when future real-provider brief or blueprint planning leaves the current fake-first boundary.
 
 ## Reference Governance
 
@@ -42,6 +48,10 @@ The next autonomous delivery priority is to harden a small number of user-visibl
 - [x] Establish `_shared` reference governance with manifest, update script, and duplicate audit script.
 - [x] Add machine-readable manifest and update flow for `ai-content-delivery-studio-references`.
 - [x] Extend `ai-coding-runtime-references` update flow to export a manifest.
+- [x] Add `dotnet/extensions` as a code-level reference before the next host/options/resilience hardening slice.
+- [x] Add `opentelemetry-dotnet` as a code-level reference before the next telemetry or diagnostics slice.
+- [x] Add `SkiaSharp` reference-source coverage before the next deterministic composition expansion beyond the current poster proof path.
+- [ ] Add OCR reference coverage such as `Tesseract` or `OCRmyPDF` only when scanned-document hardening enters the active near-term roadmap.
 - [ ] Decide whether `Cockpit-Tools-Local-references` should gain a machine-readable manifest next.
 
 ## Frozen Until Post-V1

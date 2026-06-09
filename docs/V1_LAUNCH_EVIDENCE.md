@@ -4,6 +4,8 @@
 
 This file tracks current evidence against the explicit V1 launch metrics in [PRD_V1.md](./PRD_V1.md).
 
+Within the core document set, this is the authoritative file for current V1 launch-verification status. `ROADMAP.md` and `TASKS.md` may describe sequencing or implementation progress, but they should defer to this file for current release-claim truth. See [DOCUMENTATION_GOVERNANCE.md](./DOCUMENTATION_GOVERNANCE.md).
+
 It is intentionally strict about evidence type:
 
 - `Automated repo evidence`: local tests, build gates, and deterministic artifact checks inside this repository.

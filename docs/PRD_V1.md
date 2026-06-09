@@ -4,6 +4,12 @@
 
 AI Content Delivery Studio V1 is a Windows-first local workbench for turning a short requirement into a reviewed, reproducible image-series delivery package.
 
+## Document Role
+
+This PRD defines the V1 launch promise, release boundary, and launch gate.
+
+It does not claim that the current repository has already met those launch metrics. Current proof belongs in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md). The broader document-role map lives in [DOCUMENTATION_GOVERNANCE.md](./DOCUMENTATION_GOVERNANCE.md).
+
 ## Release Thesis
 
 The long-term product vision is a multimodal content delivery studio. V1 does not attempt to launch that whole vision at once.
