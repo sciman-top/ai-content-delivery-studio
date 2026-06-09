@@ -59,9 +59,9 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<IVisionReviewProvider, FakeVisionReviewProvider>();
         // V1 keeps exact label and formula rendering on the local deterministic path instead of asking image generation to render trusted text.
         builder.Services.AddSingleton<IDeterministicTextComposer, SkiaDeterministicTextComposer>();
-        // V1's first real operator slice is additive local validation, so keep the initial executable low-risk path fully local.
-        builder.Services.AddSingleton<IToolAdapter, ArtifactValidationToolAdapter>();
-        builder.Services.AddSingleton<IToolAdapter, DeterministicTextCompositionToolAdapter>();
+        // Keep the currently executable local operator adapters wired into the desktop host, including the
+        // read-only OpenAI launch preflight that only inspects readiness and writes local diagnostics.
+        builder.Services.AddBuiltInLocalToolAdapters();
         builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
         builder.Services.AddTransient<ProviderCenterViewModel>();
         builder.Services.AddTransient<MainWindowViewModel>();

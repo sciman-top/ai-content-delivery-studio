@@ -83,10 +83,13 @@ public sealed class OpenAiLaunchPreflightToolAdapterTests
     public async Task RunAsync_WritesOpenAiLaunchPreflightReports()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var previousOptIn = Environment.GetEnvironmentVariable(OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable);
         Directory.CreateDirectory(rootDirectory);
 
         try
         {
+            Environment.SetEnvironmentVariable(OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable, null);
+
             var envPath = Path.Combine(rootDirectory, ".env");
             await File.WriteAllLinesAsync(
                 envPath,
@@ -132,6 +135,8 @@ public sealed class OpenAiLaunchPreflightToolAdapterTests
         }
         finally
         {
+            Environment.SetEnvironmentVariable(OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable, previousOptIn);
+
             if (Directory.Exists(rootDirectory))
             {
                 Directory.Delete(rootDirectory, recursive: true);
