@@ -31,7 +31,8 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
             request.Providers,
             request.Secrets,
             request.RepairPatches ?? [],
-            request.OperatorRuns ?? []);
+            request.OperatorRuns ?? [],
+            request.OpenAiLaunchPreflight);
 
         var jsonPath = Path.Combine(request.OutputDirectory, "diagnostics.json");
         var markdownPath = Path.Combine(request.OutputDirectory, "diagnostics.md");
@@ -95,6 +96,24 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
             builder.AppendLine($"- {secret.Name}: configured={secret.IsConfigured}");
         }
 
+        if (package.OpenAiLaunchPreflight is not null)
+        {
+            builder.AppendLine();
+            builder.AppendLine("## OpenAI Launch Preflight");
+            builder.AppendLine(
+                $"- canRunLiveV1SampleSeries={package.OpenAiLaunchPreflight.CanRunLiveV1SampleSeries}, configurationErrors={package.OpenAiLaunchPreflight.ConfigurationErrorCount}");
+            AppendPreflightOperation(builder, package.OpenAiLaunchPreflight.TextPlanning);
+            AppendPreflightOperation(builder, package.OpenAiLaunchPreflight.VisionReview);
+            AppendPreflightOperation(builder, package.OpenAiLaunchPreflight.ImageGeneration);
+            AppendSmoke(builder, "Text smoke", package.OpenAiLaunchPreflight.TextSmoke);
+            AppendSmoke(builder, "Image smoke", package.OpenAiLaunchPreflight.ImageSmoke);
+
+            foreach (var reason in package.OpenAiLaunchPreflight.BlockingReasons)
+            {
+                builder.AppendLine($"- blockingReason: {reason}");
+            }
+        }
+
         builder.AppendLine();
         builder.AppendLine("## Repair Patches");
 
@@ -120,6 +139,33 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
 
         return builder.ToString();
     }
+
+    private static void AppendPreflightOperation(
+        StringBuilder builder,
+        OpenAiOperationDiagnosticsSnapshot operation)
+    {
+        builder.AppendLine(
+            $"- operation={operation.Operation}, provider={operation.ProviderPrefix}, canCallRealApi={operation.CanCallRealApi}");
+
+        foreach (var error in operation.Errors)
+        {
+            builder.AppendLine($"  - {error}");
+        }
+    }
+
+    private static void AppendSmoke(
+        StringBuilder builder,
+        string title,
+        OpenAiSmokeDiagnosticsSnapshot smoke)
+    {
+        builder.AppendLine(
+            $"- {title}: canRunRealApiSmoke={smoke.CanRunRealApiSmoke}, isDryRun={smoke.IsDryRun}, optIn={smoke.OptInEnvironmentVariable}");
+
+        foreach (var reason in smoke.Reasons)
+        {
+            builder.AppendLine($"  - {reason}");
+        }
+    }
 }
 
 internal sealed record DiagnosticsPackage(
@@ -129,4 +175,5 @@ internal sealed record DiagnosticsPackage(
     IReadOnlyList<DiagnosticsProviderSnapshot> Providers,
     IReadOnlyList<DiagnosticsSecretSnapshot> Secrets,
     IReadOnlyList<RepairPatchDiagnosticsSnapshot> RepairPatches,
-    IReadOnlyList<OperatorAuditSnapshot> OperatorRuns);
+    IReadOnlyList<OperatorAuditSnapshot> OperatorRuns,
+    OpenAiLaunchPreflightDiagnosticsSnapshot? OpenAiLaunchPreflight);

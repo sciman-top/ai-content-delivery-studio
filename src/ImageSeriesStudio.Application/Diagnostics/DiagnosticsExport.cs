@@ -16,7 +16,8 @@ public sealed record DiagnosticsExportRequest(
     IReadOnlyList<DiagnosticsProviderSnapshot> Providers,
     IReadOnlyList<DiagnosticsSecretSnapshot> Secrets,
     IReadOnlyList<RepairPatchDiagnosticsSnapshot>? RepairPatches = null,
-    IReadOnlyList<OperatorAuditSnapshot>? OperatorRuns = null);
+    IReadOnlyList<OperatorAuditSnapshot>? OperatorRuns = null,
+    OpenAiLaunchPreflightDiagnosticsSnapshot? OpenAiLaunchPreflight = null);
 
 public sealed record DiagnosticsApplicationSnapshot(
     string AppName,
@@ -166,6 +167,28 @@ public sealed record OperatorAuditSnapshot(
             action.ApprovedAt);
     }
 }
+
+public sealed record OpenAiLaunchPreflightDiagnosticsSnapshot(
+    bool CanRunLiveV1SampleSeries,
+    int ConfigurationErrorCount,
+    IReadOnlyList<string> BlockingReasons,
+    OpenAiOperationDiagnosticsSnapshot TextPlanning,
+    OpenAiOperationDiagnosticsSnapshot VisionReview,
+    OpenAiOperationDiagnosticsSnapshot ImageGeneration,
+    OpenAiSmokeDiagnosticsSnapshot TextSmoke,
+    OpenAiSmokeDiagnosticsSnapshot ImageSmoke);
+
+public sealed record OpenAiOperationDiagnosticsSnapshot(
+    string Operation,
+    string ProviderPrefix,
+    bool CanCallRealApi,
+    IReadOnlyList<string> Errors);
+
+public sealed record OpenAiSmokeDiagnosticsSnapshot(
+    bool CanRunRealApiSmoke,
+    bool IsDryRun,
+    string OptInEnvironmentVariable,
+    IReadOnlyList<string> Reasons);
 
 public sealed record DiagnosticsExportResult(
     string PackageDirectory,

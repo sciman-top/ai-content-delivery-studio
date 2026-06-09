@@ -2,6 +2,7 @@ using ImageSeriesStudio.Application.Diagnostics;
 using ImageSeriesStudio.Core.Operators;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Infrastructure.Diagnostics;
+using ImageSeriesStudio.Infrastructure.OpenAI;
 
 namespace ImageSeriesStudio.Tests;
 
@@ -43,6 +44,27 @@ public sealed class DiagnosticsPackageTests
                 DateTimeOffset.Parse("2026-06-01T08:04:45Z"));
             project.AddRoutedRepairPatch(repairPatch, DateTimeOffset.Parse("2026-06-01T08:04:50Z"));
             var operatorAction = CreateOperatorAction();
+            var preflightReport = new OpenAiLaunchPreflightReport(
+                [],
+                new OpenAiOperationPreflight(OpenAiProviderOperation.TextPlanning, "TEXT_PROVIDER", true, []),
+                new OpenAiOperationPreflight(
+                    OpenAiProviderOperation.VisionReview,
+                    "TEXT_PROVIDER",
+                    false,
+                    ["Vision review requires explicit live approval evidence."]),
+                new OpenAiOperationPreflight(OpenAiProviderOperation.ImageGeneration, "IMAGE_PROVIDER", true, []),
+                new OpenAiSmokeTestDecision(
+                    CanRunRealApiSmoke: false,
+                    IsDryRun: true,
+                    OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable,
+                    ["Real OpenAI API smoke is not opted in."]),
+                new OpenAiSmokeTestDecision(
+                    CanRunRealApiSmoke: true,
+                    IsDryRun: false,
+                    OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable,
+                    []),
+                CanRunLiveV1SampleSeries: false,
+                ["Vision review requires explicit live approval evidence.", "Real OpenAI API smoke is not opted in."]);
 
             var writer = new DiagnosticsPackageWriter();
             var result = await writer.WriteAsync(
@@ -84,7 +106,8 @@ public sealed class DiagnosticsPackageTests
                                 .CompleteSucceeded(
                                     "Manifest validation succeeded.",
                                     DateTimeOffset.Parse("2026-06-01T08:06:05Z"))),
-                    ]),
+                    ],
+                    OpenAiLaunchPreflight: OpenAiLaunchPreflightDiagnosticsSnapshotFactory.FromReport(preflightReport)),
                 CancellationToken.None);
 
             var json = await File.ReadAllTextAsync(result.JsonPath);
@@ -101,6 +124,10 @@ public sealed class DiagnosticsPackageTests
             Assert.Contains("artifact-validator", json);
             Assert.Contains("## Operator Runs", markdown);
             Assert.Contains("Manifest validation succeeded.", markdown);
+            Assert.Contains("openAiLaunchPreflight", json);
+            Assert.Contains("\"canRunLiveV1SampleSeries\": false", json);
+            Assert.Contains("## OpenAI Launch Preflight", markdown);
+            Assert.Contains("Vision review requires explicit live approval evidence.", markdown);
             Assert.Contains("repairPatches", json);
             Assert.Contains("Add a stronger blueprint consistency rule.", json);
             Assert.Contains("## Repair Patches", markdown);
