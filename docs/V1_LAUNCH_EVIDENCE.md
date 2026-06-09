@@ -22,7 +22,7 @@ The goal is to keep launch readiness honest. Completed implementation slices are
   - `dotnet format --verify-no-changes`
 - Result:
   - Build passed
-  - Tests passed: `339 / 339`
+  - Tests passed: `340 / 340`
   - Format check passed
 
 ## Metric Ledger
