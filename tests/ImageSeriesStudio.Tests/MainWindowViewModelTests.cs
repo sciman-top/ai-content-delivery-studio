@@ -157,7 +157,13 @@ public sealed class MainWindowViewModelTests
 
             await viewModel.ExportDeliveryCommand.ExecuteAsync(null);
 
-            Assert.Single(viewModel.DeliveryRows);
+            var delivery = Assert.Single(viewModel.DeliveryRows);
+            using var manifestStream = File.OpenRead(delivery.ManifestJsonPath);
+            using var manifest = await JsonDocument.ParseAsync(manifestStream, cancellationToken: CancellationToken.None);
+            var item = Assert.Single(manifest.RootElement.GetProperty("items").EnumerateArray());
+
+            Assert.Equal("Teacher", item.GetProperty("finalReviewer").GetString());
+            Assert.Equal("Looks ready for delivery.", item.GetProperty("finalApprovalNotes").GetString());
         }
         finally
         {
@@ -291,6 +297,51 @@ public sealed class MainWindowViewModelTests
             Assert.Equal("Teacher", rejectedRow.FinalReviewer);
             Assert.Contains("rejected", rejectedRow.HumanApprovalStatus, StringComparison.OrdinalIgnoreCase);
             Assert.False(viewModel.ExportDeliveryCommand.CanExecute(null));
+        }
+        finally
+        {
+            DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+        }
+    }
+
+    [Fact]
+    public async Task FinalApprovalWorkflow_ReloadedProjectRestoresPersistedHumanDecision()
+    {
+        var repository = new InMemoryProjectRepository();
+        var viewModel = CreateViewModel(repository: repository);
+
+        viewModel.NewProjectName = "Reload approval demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Reload storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening frame";
+        viewModel.NewItemBrief = "Opening visual for reload.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        viewModel.NewPromptText = "Create a clean opening frame.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+        await viewModel.RunFakeReviewCommand.ExecuteAsync(null);
+
+        try
+        {
+            viewModel.SelectedReviewRow = Assert.Single(viewModel.ReviewRows);
+            viewModel.FinalApprovalReviewer = "Teacher";
+            viewModel.FinalApprovalNotes = "Approved after reload test.";
+            await viewModel.ApproveSelectedReviewCommand.ExecuteAsync(null);
+
+            viewModel.SelectedProject = null;
+            await WaitForConditionAsync(() => viewModel.ReviewRows.Count == 0 && viewModel.GalleryRows.Count == 0);
+
+            viewModel.SelectedProject = Assert.Single(viewModel.Projects);
+            await WaitForConditionAsync(() => viewModel.ReviewRows.Count == 1 && viewModel.GalleryRows.Count == 1);
+
+            var restoredRow = Assert.Single(viewModel.ReviewRows);
+            Assert.True(restoredRow.HumanApproved);
+            Assert.Equal("Teacher", restoredRow.FinalReviewer);
+            Assert.Equal("Approved after reload test.", restoredRow.FinalApprovalNotes);
         }
         finally
         {
@@ -453,14 +504,15 @@ public sealed class MainWindowViewModelTests
 
     private static MainWindowViewModel CreateViewModel(
         bool reviewPasses = true,
-        ProviderCenterViewModel? providerCenter = null)
+        ProviderCenterViewModel? providerCenter = null,
+        IProjectRepository? repository = null)
     {
         var fakeImageProvider = new FakeImageGenerationProvider();
 
         return new MainWindowViewModel(
             new LocalizationService(() => new CultureInfo("en-US")),
             new ProjectApplicationService(
-                new InMemoryProjectRepository(),
+                repository ?? new InMemoryProjectRepository(),
                 new FakeTextPlanningProvider(),
                 fakeImageProvider,
                 new FakeVisionReviewProvider(defaultPasses: reviewPasses),
@@ -469,6 +521,21 @@ public sealed class MainWindowViewModelTests
             providerCenter ?? new ProviderCenterViewModel(
                 new StaticProviderCenterConfigurationService(
                     ProviderCenterSnapshot.MissingEnvironmentFile(".env"))));
+    }
+
+    private static async Task WaitForConditionAsync(Func<bool> condition, int timeoutMs = 2000)
+    {
+        var startedAt = DateTime.UtcNow;
+
+        while (!condition())
+        {
+            if ((DateTime.UtcNow - startedAt).TotalMilliseconds > timeoutMs)
+            {
+                throw new TimeoutException("Condition was not met before timeout.");
+            }
+
+            await Task.Delay(25);
+        }
     }
 
     private sealed class StaticProviderCenterConfigurationService(ProviderCenterSnapshot snapshot)
@@ -506,6 +573,7 @@ public sealed class MainWindowViewModelTests
     private sealed class InMemoryProjectRepository : IProjectRepository
     {
         private readonly Dictionary<Guid, ImageProject> _projects = [];
+        private readonly Dictionary<Guid, ReviewResult> _reviewResultsByCandidateId = [];
 
         public Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
         {
@@ -535,12 +603,21 @@ public sealed class MainWindowViewModelTests
 
         public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
         {
+            if (_projects.TryGetValue(projectId, out var project))
+            {
+                project.UpsertReviewResult(
+                    reviewResult,
+                    reviewResult.FinalApprovalDecidedAt ?? reviewResult.CreatedAt);
+            }
+
+            _reviewResultsByCandidateId[reviewResult.CandidateImageId] = reviewResult;
             return Task.CompletedTask;
         }
 
         public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
         {
-            return Task.FromResult<ReviewResult?>(null);
+            _reviewResultsByCandidateId.TryGetValue(candidateImageId, out var review);
+            return Task.FromResult<ReviewResult?>(review);
         }
     }
 }

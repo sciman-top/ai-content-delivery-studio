@@ -4,9 +4,11 @@ using System.Text.Json;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Infrastructure.OpenAI;
+using OpenAI.Responses;
 
 namespace ImageSeriesStudio.Tests;
 
+#pragma warning disable OPENAI001 // Tests intentionally verify ADR 0009 SDK text-planning migration details.
 public sealed class OpenAiProviderContractTests
 {
     [Fact]
@@ -736,6 +738,14 @@ public sealed class OpenAiProviderContractTests
             new StaticSecretStore("test-openai-key"));
     }
 
+    private static OpenAiSdkTextPlanningProvider CreateSdkTextProvider(FakeResponsesClient sdkClient)
+    {
+        return new OpenAiSdkTextPlanningProvider(
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            sdkClient,
+            new StaticSecretStore("test-openai-key"));
+    }
+
     private static OpenAiImageGenerationProvider CreateImageProvider(HttpClient httpClient)
     {
         return new OpenAiImageGenerationProvider(
@@ -791,6 +801,23 @@ public sealed class OpenAiProviderContractTests
         return response;
     }
 
+    private static OpenAiResponsesClientResult SdkJsonResponse(
+        string content,
+        int statusCode = 200,
+        string? reasonPhrase = "OK",
+        string? requestId = null)
+    {
+        using var document = JsonDocument.Parse(content);
+        return new OpenAiResponsesClientResult(
+            document.RootElement.TryGetProperty("output_text", out var outputText)
+                ? outputText.GetString()
+                : null,
+            document.RootElement.Clone(),
+            statusCode,
+            reasonPhrase,
+            requestId);
+    }
+
     private sealed class CaptureHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler, IDisposable
     {
         public HttpRequestMessage? LastRequest { get; private set; }
@@ -833,6 +860,34 @@ public sealed class OpenAiProviderContractTests
         }
     }
 
+    private sealed class FakeResponsesClient(OpenAiResponsesClientResult response) : IOpenAiResponsesClient
+    {
+        public CreateResponseOptions? LastOptions { get; private set; }
+
+        public int CallCount { get; private set; }
+
+        public bool ThrowOnCreate { get; set; }
+
+        public Task<OpenAiResponsesClientResult> CreateResponseAsync(
+            CreateResponseOptions options,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            CallCount++;
+            LastOptions = options;
+
+            if (ThrowOnCreate)
+            {
+                throw new OpenAiResponsesClientException(
+                    response,
+                    new InvalidOperationException("SDK request failed."));
+            }
+
+            return Task.FromResult(response);
+        }
+    }
+
     private sealed class RecordingTelemetrySink : IProviderCallTelemetrySink
     {
         private readonly List<ProviderCallTelemetry> _events = [];
@@ -845,3 +900,4 @@ public sealed class OpenAiProviderContractTests
         }
     }
 }
+#pragma warning restore OPENAI001

@@ -206,6 +206,21 @@ public sealed class ImageProject
         return patch;
     }
 
+    public ReviewResult UpsertReviewResult(ReviewResult review, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(review);
+
+        var candidate = _series
+            .SelectMany(series => series.Items)
+            .SelectMany(item => item.CandidateImages)
+            .SingleOrDefault(candidate => candidate.Id == review.CandidateImageId)
+            ?? throw new InvalidOperationException($"Candidate image not found for review result: {review.CandidateImageId}");
+
+        var persisted = candidate.UpsertReviewResult(review);
+        UpdatedAt = timestamp;
+        return persisted;
+    }
+
     private static string RequireText(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -672,6 +687,8 @@ public enum GenerationTaskStatus
 
 public sealed class CandidateImage
 {
+    private readonly List<ReviewResult> _reviewResults = [];
+
     private CandidateImage()
     {
         AssetPath = string.Empty;
@@ -716,7 +733,29 @@ public sealed class CandidateImage
 
     public string MetadataPath { get; private set; }
 
+    public IReadOnlyCollection<ReviewResult> ReviewResults => _reviewResults.AsReadOnly();
+
     public DateTimeOffset CreatedAt { get; private set; }
+
+    public ReviewResult UpsertReviewResult(ReviewResult review)
+    {
+        ArgumentNullException.ThrowIfNull(review);
+
+        if (review.CandidateImageId != Id)
+        {
+            throw new ArgumentException("Review result must belong to this candidate image.", nameof(review));
+        }
+
+        var existing = _reviewResults.SingleOrDefault();
+        if (existing is null)
+        {
+            _reviewResults.Add(review);
+            return review;
+        }
+
+        existing.UpdateFrom(review);
+        return existing;
+    }
 }
 
 public enum CandidateImageStatus
@@ -849,6 +888,27 @@ public sealed class ReviewResult
         return string.IsNullOrWhiteSpace(value)
             ? null
             : value.Trim();
+    }
+
+    public void UpdateFrom(ReviewResult review)
+    {
+        ArgumentNullException.ThrowIfNull(review);
+
+        if (review.CandidateImageId != CandidateImageId)
+        {
+            throw new ArgumentException("Review result candidate does not match the existing review.", nameof(review));
+        }
+
+        Decision = review.Decision;
+        Scores = new Dictionary<string, int>(review.Scores, StringComparer.OrdinalIgnoreCase);
+        HardFailures = review.HardFailures.ToArray();
+        Comments = review.Comments;
+        SuggestedFix = review.SuggestedFix;
+        HumanApproved = review.HumanApproved;
+        FinalReviewer = NormalizeOptionalText(review.FinalReviewer);
+        FinalApprovalNotes = NormalizeOptionalText(review.FinalApprovalNotes);
+        FinalApprovalDecidedAt = review.FinalApprovalDecidedAt;
+        CreatedAt = review.CreatedAt;
     }
 }
 

@@ -104,6 +104,7 @@ Why this slice:
 Companion low-risk path already useful in the current repository:
 
 - a read-only `openai-launch-preflight` action that evaluates role-scoped provider readiness and writes local diagnostics before any live V1 sample run is attempted
+- the allow-listed `artifact-validation` action registered in the local tool registry, which keeps validation additive, dry-run aware, and confined to diagnostics outputs outside approved delivery assets
 
 ## Required Action Metadata
 

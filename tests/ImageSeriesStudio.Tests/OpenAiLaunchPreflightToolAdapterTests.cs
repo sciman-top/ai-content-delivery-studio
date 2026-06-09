@@ -8,11 +8,13 @@ namespace ImageSeriesStudio.Tests;
 
 public sealed class OpenAiLaunchPreflightToolAdapterTests
 {
+    private const string ToolAdapterOptInEnvironmentVariable = "IMAGE_SERIES_STUDIO_OPENAI_REAL_API_SMOKE_TOOL_ADAPTER_TEST";
+
     [Fact]
     public async Task LowRiskAutoRepairService_RunsOpenAiLaunchPreflightAdapterAndWritesDiagnosticsReport()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
-        var previousOptIn = Environment.GetEnvironmentVariable(OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable);
+        var previousOptIn = Environment.GetEnvironmentVariable(ToolAdapterOptInEnvironmentVariable);
         Directory.CreateDirectory(rootDirectory);
 
         try
@@ -29,7 +31,7 @@ public sealed class OpenAiLaunchPreflightToolAdapterTests
                     "IMAGE_PROVIDER_API_KEY_1=sk-image-1",
                 ]);
 
-            Environment.SetEnvironmentVariable(OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable, "1");
+            Environment.SetEnvironmentVariable(ToolAdapterOptInEnvironmentVariable, "1");
 
             var adapter = new OpenAiLaunchPreflightToolAdapter();
             var service = new LowRiskAutoRepairService([adapter]);
@@ -40,7 +42,11 @@ public sealed class OpenAiLaunchPreflightToolAdapterTests
                 displayName: "OpenAI launch preflight",
                 OperatorRiskLevel.Low,
                 dryRunSupported: true,
-                inputs: new Dictionary<string, string> { ["envPath"] = envPath },
+                inputs: new Dictionary<string, string>
+                {
+                    ["envPath"] = envPath,
+                    ["optInEnvironmentVariable"] = ToolAdapterOptInEnvironmentVariable,
+                },
                 expectedOutputs: ["preflight report"],
                 sideEffects: ["Reads provider configuration and secret readiness, writes an OpenAI launch preflight report."],
                 timeout: TimeSpan.FromSeconds(30),
@@ -70,7 +76,7 @@ public sealed class OpenAiLaunchPreflightToolAdapterTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable(OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable, previousOptIn);
+            Environment.SetEnvironmentVariable(ToolAdapterOptInEnvironmentVariable, previousOptIn);
 
             if (Directory.Exists(rootDirectory))
             {
@@ -83,12 +89,12 @@ public sealed class OpenAiLaunchPreflightToolAdapterTests
     public async Task RunAsync_WritesOpenAiLaunchPreflightReports()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
-        var previousOptIn = Environment.GetEnvironmentVariable(OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable);
+        var previousOptIn = Environment.GetEnvironmentVariable(ToolAdapterOptInEnvironmentVariable);
         Directory.CreateDirectory(rootDirectory);
 
         try
         {
-            Environment.SetEnvironmentVariable(OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable, null);
+            Environment.SetEnvironmentVariable(ToolAdapterOptInEnvironmentVariable, null);
 
             var envPath = Path.Combine(rootDirectory, ".env");
             await File.WriteAllLinesAsync(
@@ -109,6 +115,7 @@ public sealed class OpenAiLaunchPreflightToolAdapterTests
                 inputs: new Dictionary<string, string>
                 {
                     ["envPath"] = envPath,
+                    ["optInEnvironmentVariable"] = ToolAdapterOptInEnvironmentVariable,
                 },
                 DateTimeOffset.Parse("2026-06-09T16:00:00Z"));
 
@@ -125,7 +132,7 @@ public sealed class OpenAiLaunchPreflightToolAdapterTests
             using var reportJson = await JsonDocument.ParseAsync(reportStream, cancellationToken: CancellationToken.None);
             Assert.False(reportJson.RootElement.GetProperty("canRunLiveV1SampleSeries").GetBoolean());
             Assert.Equal(
-                "IMAGE_SERIES_STUDIO_OPENAI_REAL_API_SMOKE",
+                ToolAdapterOptInEnvironmentVariable,
                 reportJson.RootElement.GetProperty("textSmoke").GetProperty("optInEnvironmentVariable").GetString());
 
             var markdown = await File.ReadAllTextAsync(expectedMarkdownPath, CancellationToken.None);
@@ -135,7 +142,7 @@ public sealed class OpenAiLaunchPreflightToolAdapterTests
         }
         finally
         {
-            Environment.SetEnvironmentVariable(OpenAiSmokeTestGate.DefaultOptInEnvironmentVariable, previousOptIn);
+            Environment.SetEnvironmentVariable(ToolAdapterOptInEnvironmentVariable, previousOptIn);
 
             if (Directory.Exists(rootDirectory))
             {

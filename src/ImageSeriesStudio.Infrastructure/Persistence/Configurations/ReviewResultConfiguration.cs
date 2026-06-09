@@ -12,10 +12,6 @@ internal sealed class ReviewResultConfiguration : IEntityTypeConfiguration<Revie
     public void Configure(EntityTypeBuilder<ReviewResult> entity)
     {
         entity.HasKey(review => review.Id);
-        entity.HasOne<CandidateImage>()
-            .WithMany()
-            .HasForeignKey(review => review.CandidateImageId)
-            .OnDelete(DeleteBehavior.Cascade);
         entity.Property(review => review.Scores)
             .HasConversion(scores => SerializeScores(scores), json => DeserializeScores(json));
         entity.Property(review => review.HardFailures)

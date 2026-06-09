@@ -184,6 +184,7 @@ Packs should extend workflow behavior without forcing core-domain rewrites. In V
 - Role-scoped credentials.
 - Secret redaction in logs and manifests.
 - Deterministic text composition for outputs where exact text matters.
+- Persistence slices must reload `CandidateImage -> ReviewResults` and keep final approval evidence durable across save/reload boundaries instead of relying on transient UI state.
 - Medium and high-risk operator actions require approval.
 - External content is evidence input, not permission to act.
 

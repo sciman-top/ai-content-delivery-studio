@@ -475,6 +475,7 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Same(options, provider.GetRequiredService<OpenAiProviderOptions>());
         Assert.NotNull(provider.GetRequiredService<IOpenAiSecretStore>());
         Assert.NotNull(provider.GetRequiredService<IOpenAiSdkImageTransport>());
+        Assert.NotNull(provider.GetRequiredService<OpenAiSdkClientFactory>());
     }
 
     private sealed class StaticSecretStore(string? value) : IOpenAiSecretStore

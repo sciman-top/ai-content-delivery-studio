@@ -11,5 +11,10 @@ internal sealed class CandidateImageConfiguration : IEntityTypeConfiguration<Can
         entity.HasKey(candidate => candidate.Id);
         entity.Property(candidate => candidate.AssetPath).IsRequired();
         entity.Property(candidate => candidate.MetadataPath).IsRequired();
+        entity.HasMany(candidate => candidate.ReviewResults)
+            .WithOne()
+            .HasForeignKey(review => review.CandidateImageId)
+            .OnDelete(DeleteBehavior.Cascade);
+        entity.Navigation(candidate => candidate.ReviewResults).UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }

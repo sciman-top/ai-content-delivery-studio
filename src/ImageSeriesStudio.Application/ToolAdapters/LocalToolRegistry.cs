@@ -97,7 +97,7 @@ public sealed class LocalToolRegistry
                     dryRunSupported: true,
                     inputNames: ["backgroundPath", "labelSpecPath"],
                     outputNames: ["composedImagePath", "layoutReportPath"],
-                    sideEffects: ["Writes composed image and text layout report under workspace outputs."],
+                    sideEffects: ["Writes SkiaSharp-composed image and text layout report under workspace outputs."],
                     defaultTimeout: TimeSpan.FromMinutes(2),
                     cleanupPath: "workspace/outputs/.composition-tmp"),
                 ToolAdapterDescriptor.Create(
@@ -108,7 +108,7 @@ public sealed class LocalToolRegistry
                     dryRunSupported: true,
                     inputNames: ["manifestPath"],
                     outputNames: ["validationReportPath"],
-                    sideEffects: ["Reads delivery artifacts and writes a validation report."],
+                    sideEffects: ["Reads delivery artifacts and writes an additive validation report."],
                     defaultTimeout: TimeSpan.FromSeconds(30),
                     cleanupPath: null),
                 ToolAdapterDescriptor.Create(

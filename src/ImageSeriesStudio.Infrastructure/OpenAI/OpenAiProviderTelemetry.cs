@@ -161,7 +161,7 @@ public sealed record ProviderTokenUsage(
 
 internal static class OpenAiProviderTelemetry
 {
-    private static readonly string[] RequestIdHeaderNames =
+    internal static readonly string[] RequestIdHeaderNames =
     [
         "x-request-id",
         "openai-request-id",

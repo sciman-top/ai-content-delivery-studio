@@ -131,6 +131,8 @@ Every provider result persisted to project state should capture as many of these
 
 AI 推荐: adopt the official OpenAI .NET SDK where the surface is stable, and keep raw `HttpClient` only for lagging or unsupported gaps.
 
+The adoption boundary is recorded in [ADR 0009](./adr/0009-openai-dotnet-sdk-adoption.md). The policy decision is complete; runtime migration remains a separate parity-tested implementation slice.
+
 Rules:
 
 - New stable planning and review flows should prefer SDK support first.

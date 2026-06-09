@@ -2290,6 +2290,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PromptDirectionRows = BriefWorkflowCoordinator.BuildPromptDirectionRows(project);
         RebuildPlanRows();
         RebuildPromptRows();
+        GalleryRows = BuildGalleryRows(project);
+        ReviewRows = BuildReviewRows(project);
+        DeliveryRows = [];
 
         SelectedSeries = selectedSeriesId is null
             ? Series.FirstOrDefault()
@@ -2305,6 +2308,91 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _activeCreativeBriefId is null || blueprint.CreativeBriefId == _activeCreativeBriefId);
         CreateSeriesCommand.NotifyCanExecuteChanged();
         RebuildWorkflowGraphRows();
+    }
+
+    private IReadOnlyList<GalleryRowViewModel> BuildGalleryRows(ImageProject project)
+    {
+        return project.Series
+            .SelectMany(series => series.Items)
+            .SelectMany(item => item.CandidateImages
+                .OrderBy(candidate => candidate.CreatedAt)
+                .Select(candidate => new GalleryRowViewModel(
+                    candidate.Id,
+                    item.Id,
+                    item.Title,
+                    candidate.AssetPath,
+                    candidate.MetadataPath,
+                    item.PromptVersions.FirstOrDefault(prompt => prompt.Id == candidate.PromptVersionId)?.PromptText ?? string.Empty)))
+            .ToArray();
+    }
+
+    private IReadOnlyList<ReviewRowViewModel> BuildReviewRows(ImageProject project)
+    {
+        var restoredReviews = project.Series
+            .SelectMany(series => series.Items)
+            .SelectMany(item => item.CandidateImages
+                .SelectMany(candidate => candidate.ReviewResults.Select(review => new
+                {
+                    ItemTitle = item.Title,
+                    Review = review,
+                    Output = new StructuredReviewOutput(
+                        review.CandidateImageId,
+                        review.Decision,
+                        review.Scores
+                            .OrderBy(score => score.Key, StringComparer.OrdinalIgnoreCase)
+                            .Select(score => new StructuredReviewScore(score.Key, score.Key, 0, score.Value))
+                            .ToArray(),
+                        review.HardFailures.ToArray(),
+                        review.Comments,
+                        review.SuggestedFix),
+                })))
+            .OrderBy(entry => entry.Review.CreatedAt)
+            .ToArray();
+
+        var routesByCandidate = _projectService.RouteReviewOutcomes(restoredReviews.Select(entry => entry.Output).ToArray())
+            .ToDictionary(plan => plan.CandidateImageId);
+
+        return restoredReviews.Select(entry =>
+        {
+            var scoreText = string.Join(", ", entry.Review.Scores.Select(score => $"{score.Key}:{score.Value}"));
+            var routeSummary = routesByCandidate.TryGetValue(entry.Review.CandidateImageId, out var plan)
+                ? FormatReviewRoute(plan)
+                : string.Empty;
+            var approvalStatus = entry.Review.FinalApprovalDecidedAt is null
+                ? Text(LocalizationKey.HumanApprovalPending)
+                : entry.Review.HumanApproved
+                    ? Text(LocalizationKey.HumanApprovalApproved)
+                    : Text(LocalizationKey.HumanApprovalRejected);
+
+            return new ReviewRowViewModel(
+                entry.Review.CandidateImageId,
+                entry.ItemTitle,
+                entry.Review.Decision.ToString(),
+                scoreText,
+                entry.Review.Comments,
+                entry.Review.SuggestedFix ?? string.Empty,
+                routeSummary,
+                entry.Review.HumanApproved,
+                approvalStatus,
+                entry.Review.FinalReviewer ?? string.Empty,
+                entry.Review.FinalApprovalNotes ?? string.Empty,
+                entry.Review.FinalApprovalDecidedAt,
+                entry.Output);
+        }).ToArray();
+    }
+
+    private static string FormatReviewRoute(ReviewOutcomeRoutingPlan plan)
+    {
+        var route = plan.PrimaryRoute;
+        if (route.TargetLayer is ReviewOutcomeTargetLayer.None)
+        {
+            return ReviewOutcomeTargetLayer.None.ToString();
+        }
+
+        var firstAction = route.Actions.FirstOrDefault() ?? string.Empty;
+        return string.IsNullOrWhiteSpace(firstAction)
+            ? $"{route.TargetLayer} / {route.Severity}"
+            : $"{route.TargetLayer} / {route.Severity}: {firstAction}";
     }
 
     private Task ClearPlanAsync()

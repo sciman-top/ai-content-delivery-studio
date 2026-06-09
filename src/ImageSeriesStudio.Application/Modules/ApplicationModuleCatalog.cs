@@ -231,6 +231,13 @@ public static class ApplicationModuleCatalog
                 null,
                 null,
                 ["ToolAdapterRegistry"]),
+            ApplicationModuleDefinition.Create(
+                "remote-workflows",
+                "Remote Workflows",
+                "src/ImageSeriesStudio.Application/RemoteWorkflows",
+                null,
+                "src/ImageSeriesStudio.Infrastructure/RemoteWorkflows",
+                ["RemoteWorkflowEngineAdapter"]),
         ]);
 
     public static IReadOnlyList<ApplicationModuleDefinition> Create(
