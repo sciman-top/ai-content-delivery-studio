@@ -32,10 +32,12 @@ After code exists:
 
 ```powershell
 .\scripts\verify-repo.ps1
+.\scripts\preflight-release.ps1
 ```
 
 Provider integration gates must use fake providers first. Real paid API calls require explicit user approval.
 `.\scripts\verify-repo.ps1` is the canonical local full gate. It runs `.\scripts\verify-reference-evidence.ps1` first, then `dotnet build`, `dotnet test`, and `dotnet format --verify-no-changes`.
+`.\scripts\preflight-release.ps1` is the stronger release-style preflight. It adds placeholder and merge-conflict scans, reuses the reference-evidence gate, runs the canonical repository verification path, performs a publish `-WhatIfOnly` dry run, and finishes with diff-hygiene checks.
 When provider, host/observability, persistence/schema, or tooling/operator boundaries change, the reference-evidence portion of that gate must pass before treating the slice as ready.
 The repository also carries `.github/workflows/verify-repo.yml` so the same verification path can run remotely on normal `push` and `pull_request` events.
 
@@ -51,6 +53,7 @@ The repository also carries `.github/workflows/verify-repo.yml` so the same veri
 
 - Design evidence lives in `docs/research/REFERENCE_RESEARCH.md`.
 - Reference-discipline rules live in `docs/REFERENCE_EVIDENCE_POLICY.md`.
+- Durable `code area/task -> reference shelf` mapping lives in `docs/REFERENCE_BASIS.md` and `scripts/reference-basis.json`.
 - Architecture decisions live in `docs/adr/`.
 - Implementation tasks live in `docs/TASKS.md` and `docs/superpowers/plans/`.
 - Revert documentation changes with git. Generated outputs and local workspaces are ignored and must be backed up outside git when needed.

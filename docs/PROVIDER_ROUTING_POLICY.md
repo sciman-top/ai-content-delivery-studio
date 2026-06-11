@@ -158,4 +158,5 @@ V1 does not require:
 - Treat Responses multi-turn image state as a hardening slice, not as a prerequisite for the primary launch route.
 - Prepare compact local review artifacts before remote vision review: thumbnail grids, candidate manifests, prompt or setting summaries, and selected evidence anchors.
 - Keep normal production review stateless and bounded by batch thresholds; if a review request grows too large, split the batch instead of chaining more remote state.
+- For current Responses-backed vision review, default to compact review payloads: low-detail image understanding, compressed review assets when needed, and a minimal strict schema with local score backfill instead of oversized remote review JSON.
 - Record any deviation from this policy in roadmap or implementation-plan evidence before changing runtime behavior.

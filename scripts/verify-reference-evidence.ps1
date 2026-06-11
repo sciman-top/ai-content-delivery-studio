@@ -1,7 +1,8 @@
 param(
     [string[]]$Paths,
     [string]$BaseRef,
-    [string]$HeadRef
+    [string]$HeadRef,
+    [switch]$RequireReferenceBasisFile
 )
 
 Set-StrictMode -Version Latest
@@ -113,89 +114,32 @@ function Test-MatchAnyRule {
 }
 
 function Get-AreaDefinitions {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot
+    )
+
+    $basisPath = Join-Path $RepoRoot "scripts/reference-basis.json"
+    if (-not (Test-Path -LiteralPath $basisPath)) {
+        throw "Missing reference basis manifest: $basisPath"
+    }
+
+    $basis = Get-Content -LiteralPath $basisPath -Raw | ConvertFrom-Json
+    $areas = @($basis.areas)
+    if (-not $areas.Count) {
+        throw "Reference basis manifest does not define any areas: $basisPath"
+    }
+
     return @(
-        [pscustomobject]@{
-            Name = "openai-provider"
-            SourceRules = @(
-                "src/ImageSeriesStudio.Infrastructure/OpenAI/",
-                "src/ImageSeriesStudio.Core/Providers/"
-            )
-            EvidenceRules = @(
-                "docs/research/REFERENCE_RESEARCH.md",
-                "docs/PROVIDER_CONFIGURATION.md",
-                "docs/PROVIDER_ROUTING_POLICY.md",
-                "docs/V1_LAUNCH_EVIDENCE.md",
-                "docs/superpowers/specs/",
-                "docs/superpowers/plans/"
-            )
-            RecommendedReferences = @(
-                "D:/CODE/external/ai-content-delivery-studio-references/01-openai",
-                "D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md"
-            )
-        }
-        [pscustomobject]@{
-            Name = "host-and-observability"
-            SourceRules = @(
-                "src/ImageSeriesStudio.App/",
-                "src/ImageSeriesStudio.Infrastructure/Diagnostics/",
-                "src/ImageSeriesStudio.App/Telemetry/"
-            )
-            EvidenceRules = @(
-                "docs/research/REFERENCE_RESEARCH.md",
-                "docs/ARCHITECTURE.md",
-                "docs/TARGET_ENGINEERING_STATE.md",
-                "docs/V1_LAUNCH_EVIDENCE.md",
-                "docs/superpowers/specs/",
-                "docs/superpowers/plans/"
-            )
-            RecommendedReferences = @(
-                "D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf",
-                "D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability",
-                "D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md"
-            )
-        }
-        [pscustomobject]@{
-            Name = "persistence-and-schema"
-            SourceRules = @(
-                "src/ImageSeriesStudio.Infrastructure/Persistence/",
-                "src/ImageSeriesStudio.Core/Projects/",
-                "src/ImageSeriesStudio.Core/Artifacts/",
-                "src/ImageSeriesStudio.Core/Sources/"
-            )
-            EvidenceRules = @(
-                "docs/research/REFERENCE_RESEARCH.md",
-                "docs/ARCHITECTURE.md",
-                "docs/ROADMAP.md",
-                "docs/TARGET_ENGINEERING_STATE.md",
-                "docs/superpowers/specs/",
-                "docs/superpowers/plans/"
-            )
-            RecommendedReferences = @(
-                "D:/CODE/external/ai-content-delivery-studio-references/03-data-persistence",
-                "D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md"
-            )
-        }
-        [pscustomobject]@{
-            Name = "tooling-and-operator"
-            SourceRules = @(
-                "src/ImageSeriesStudio.Application/ToolAdapters/",
-                "src/ImageSeriesStudio.Infrastructure/ToolAdapters/",
-                "src/ImageSeriesStudio.Core/Operators/"
-            )
-            EvidenceRules = @(
-                "docs/research/REFERENCE_RESEARCH.md",
-                "docs/ARCHITECTURE.md",
-                "docs/OPERATOR_RISK_POLICY.md",
-                "docs/V1_LAUNCH_EVIDENCE.md",
-                "docs/superpowers/specs/",
-                "docs/superpowers/plans/"
-            )
-            RecommendedReferences = @(
-                "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering",
-                "D:/CODE/external/ai-content-delivery-studio-references/06-automation-testing",
-                "D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references",
-                "D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md"
-            )
+        $areas | ForEach-Object {
+            [pscustomobject]@{
+                Name = [string]$_.name
+                Required = [bool]$_.required
+                SourceRules = @($_.sourceRules)
+                EvidenceRules = @($_.evidenceRules)
+                RecommendedReferences = @($_.localReferences | ForEach-Object { [string]$_.path })
+                RequiredTriggers = @($_.requiredTriggers)
+            }
         }
     )
 }
@@ -231,16 +175,21 @@ if (-not $changedPaths -or $changedPaths.Count -eq 0) {
     exit 0
 }
 
-$areas = Get-AreaDefinitions
+$areas = Get-AreaDefinitions -RepoRoot $repoRoot
 $touchedAreas = @()
 
 foreach ($area in $areas) {
+    if (-not $area.Required) {
+        continue
+    }
+
     $triggeringPaths = @($changedPaths | Where-Object { Test-MatchAnyRule -Path $_ -Rules $area.SourceRules })
     if ($triggeringPaths.Count -eq 0) {
         continue
     }
 
     $evidenceHits = @($changedPaths | Where-Object { Test-MatchAnyRule -Path $_ -Rules $area.EvidenceRules })
+    $referenceBasisHit = $changedPaths | Where-Object { $_ -eq "docs/REFERENCE_BASIS.md" -or $_ -eq "scripts/reference-basis.json" } | Select-Object -First 1
 
     $touchedAreas += [pscustomobject]@{
         Name = $area.Name
@@ -248,6 +197,8 @@ foreach ($area in $areas) {
         EvidenceHits = @($evidenceHits)
         EvidenceRules = $area.EvidenceRules
         RecommendedReferences = $area.RecommendedReferences
+        RequiredTriggers = $area.RequiredTriggers
+        HasReferenceBasisHit = [bool]$referenceBasisHit
     }
 }
 
@@ -256,23 +207,41 @@ if ($touchedAreas.Count -eq 0) {
     exit 0
 }
 
-$failedAreas = @($touchedAreas | Where-Object { @($_.EvidenceHits).Count -eq 0 })
+$failedAreas = @(
+    $touchedAreas | Where-Object {
+        @($_.EvidenceHits).Count -eq 0 -or ($RequireReferenceBasisFile -and -not $_.HasReferenceBasisHit)
+    }
+)
 
 foreach ($area in $touchedAreas) {
-    if (@($area.EvidenceHits).Count -gt 0) {
+    $hasEvidence = @($area.EvidenceHits).Count -gt 0
+    $hasRequiredBasis = -not $RequireReferenceBasisFile -or $area.HasReferenceBasisHit
+    if ($hasEvidence -and $hasRequiredBasis) {
         Write-Host "[OK] $($area.Name): evidence update detected." -ForegroundColor Green
         foreach ($hit in $area.EvidenceHits) {
             Write-Host "  - $hit"
         }
+        if ($RequireReferenceBasisFile) {
+            Write-Host "  - docs/REFERENCE_BASIS.md or scripts/reference-basis.json updated"
+        }
     } else {
-        Write-Host "[FAIL] $($area.Name): no reference evidence update detected." -ForegroundColor Red
+        Write-Host "[FAIL] $($area.Name): required reference evidence is incomplete." -ForegroundColor Red
         Write-Host "  Triggering paths:"
         foreach ($path in $area.TriggeringPaths) {
             Write-Host "  - $path"
         }
+        Write-Host "  Typical trigger families:"
+        foreach ($trigger in $area.RequiredTriggers) {
+            Write-Host "  - $trigger"
+        }
         Write-Host "  Acceptable evidence updates:"
         foreach ($rule in $area.EvidenceRules) {
             Write-Host "  - $rule"
+        }
+        if ($RequireReferenceBasisFile) {
+            Write-Host "  Required basis updates:"
+            Write-Host "  - docs/REFERENCE_BASIS.md"
+            Write-Host "  - scripts/reference-basis.json"
         }
         Write-Host "  Recommended local references:"
         foreach ($reference in $area.RecommendedReferences) {

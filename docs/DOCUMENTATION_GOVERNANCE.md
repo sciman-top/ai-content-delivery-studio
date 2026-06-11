@@ -22,6 +22,7 @@ Use these documents in this order:
 | What should be implemented or hardened next? | [ROADMAP.md](./ROADMAP.md) and [TASKS.md](./TASKS.md) |
 | What is the best realistic longer-term engineering end state? | [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) |
 | What high-drift engineering changes require explicit reference evidence? | [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) |
+| Which code areas and task families should consult which local references? | [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) |
 
 ## Status Semantics
 
@@ -39,6 +40,7 @@ Use these documents in this order:
 - `TASKS.md` is an action backlog, not a release-claim document.
 - `TARGET_ENGINEERING_STATE.md` is the best-end-state target, not a near-term commitment list.
 - `REFERENCE_EVIDENCE_POLICY.md` defines when high-drift engineering changes must leave a visible evidence trail and points to the local verification gate.
+- `REFERENCE_BASIS.md` defines the durable `task/code area -> local reference shelf -> reuse level` mapping and should be refreshed when hard-drift engineering areas or the reference shelf change.
 
 ## Review Shortcut
 
@@ -47,5 +49,5 @@ When reviewing the repository quickly:
 1. Read [PRD_V1.md](./PRD_V1.md) for the launch promise.
 2. Read [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) for current proof.
 3. Read [ROADMAP.md](./ROADMAP.md) and [TASKS.md](./TASKS.md) for what still needs to happen next.
-4. Read [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) before changing provider, host, persistence, or tooling boundaries.
+4. Read [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) and [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) before changing provider, host, persistence, or tooling boundaries.
 5. Read [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) only when deciding how to extend the architecture beyond the current V1 boundary.

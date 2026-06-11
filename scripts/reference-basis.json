@@ -1,0 +1,275 @@
+{
+  "version": 1,
+  "updatedAt": "2026-06-09T23:10:00+08:00",
+  "areas": [
+    {
+      "name": "openai-provider",
+      "required": true,
+      "sourceRules": [
+        "src/ImageSeriesStudio.Infrastructure/OpenAI/",
+        "src/ImageSeriesStudio.Core/Providers/"
+      ],
+      "evidenceRules": [
+        "docs/research/REFERENCE_RESEARCH.md",
+        "docs/PROVIDER_CONFIGURATION.md",
+        "docs/PROVIDER_ROUTING_POLICY.md",
+        "docs/V1_LAUNCH_EVIDENCE.md",
+        "docs/REFERENCE_BASIS.md",
+        "docs/superpowers/specs/",
+        "docs/superpowers/plans/"
+      ],
+      "localReferences": [
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/01-openai/openai-dotnet",
+          "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/01-openai/openai-cookbook-selected",
+          "kind": "official-examples",
+          "reuseLevel": "adapt-with-review"
+        },
+        {
+          "path": "D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md",
+          "kind": "repo-evidence",
+          "reuseLevel": "direct-pattern"
+        }
+      ],
+      "requiredTriggers": [
+        "request-response-shape",
+        "images-vs-responses-routing",
+        "store-or-previous-response-id",
+        "structured-output",
+        "vision-review",
+        "real-provider-enablement"
+      ]
+    },
+    {
+      "name": "host-and-observability",
+      "required": true,
+      "sourceRules": [
+        "src/ImageSeriesStudio.App/",
+        "src/ImageSeriesStudio.Infrastructure/Diagnostics/"
+      ],
+      "evidenceRules": [
+        "docs/research/REFERENCE_RESEARCH.md",
+        "docs/ARCHITECTURE.md",
+        "docs/TARGET_ENGINEERING_STATE.md",
+        "docs/V1_LAUNCH_EVIDENCE.md",
+        "docs/REFERENCE_BASIS.md",
+        "docs/superpowers/specs/",
+        "docs/superpowers/plans/"
+      ],
+      "localReferences": [
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/docs-desktop",
+          "kind": "official-doc-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/WPF-Samples",
+          "kind": "official-samples",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet",
+          "kind": "official-toolkit-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/dotnet-extensions",
+          "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/opentelemetry-dotnet",
+          "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/aspire",
+          "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        }
+      ],
+      "requiredTriggers": [
+        "host-startup",
+        "dependency-injection",
+        "telemetry-registration",
+        "otlp-export",
+        "aspire-dashboard",
+        "http-resilience",
+        "health-diagnostics"
+      ]
+    },
+    {
+      "name": "persistence-and-schema",
+      "required": true,
+      "sourceRules": [
+        "src/ImageSeriesStudio.Infrastructure/Persistence/",
+        "src/ImageSeriesStudio.Core/Projects/",
+        "src/ImageSeriesStudio.Core/Artifacts/",
+        "src/ImageSeriesStudio.Core/Sources/",
+        "src/ImageSeriesStudio.Core/Documents/",
+        "src/ImageSeriesStudio.Core/Packs/"
+      ],
+      "evidenceRules": [
+        "docs/research/REFERENCE_RESEARCH.md",
+        "docs/ARCHITECTURE.md",
+        "docs/ROADMAP.md",
+        "docs/TARGET_ENGINEERING_STATE.md",
+        "docs/REFERENCE_BASIS.md",
+        "docs/superpowers/specs/",
+        "docs/superpowers/plans/"
+      ],
+      "localReferences": [
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/03-data-persistence/EntityFramework.Docs",
+          "kind": "official-doc-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md",
+          "kind": "repo-evidence",
+          "reuseLevel": "direct-pattern"
+        }
+      ],
+      "requiredTriggers": [
+        "entity-configuration",
+        "aggregate-shape",
+        "migration-behavior",
+        "sqlite-limitation",
+        "project-load-save-contract"
+      ]
+    },
+    {
+      "name": "tooling-and-operator",
+      "required": true,
+      "sourceRules": [
+        "src/ImageSeriesStudio.Application/ToolAdapters/",
+        "src/ImageSeriesStudio.Infrastructure/ToolAdapters/",
+        "src/ImageSeriesStudio.Core/Operators/",
+        "src/ImageSeriesStudio.Infrastructure/Composition/",
+        "src/ImageSeriesStudio.Infrastructure/Delivery/",
+        "src/ImageSeriesStudio.Infrastructure/Import/",
+        "src/ImageSeriesStudio.Infrastructure/Sources/"
+      ],
+      "evidenceRules": [
+        "docs/research/REFERENCE_RESEARCH.md",
+        "docs/ARCHITECTURE.md",
+        "docs/OPERATOR_RISK_POLICY.md",
+        "docs/V1_LAUNCH_EVIDENCE.md",
+        "docs/REFERENCE_BASIS.md",
+        "docs/superpowers/specs/",
+        "docs/superpowers/plans/"
+      ],
+      "localReferences": [
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown",
+          "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling",
+          "kind": "community-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig",
+          "kind": "community-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/QuestPDF",
+          "kind": "community-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/SkiaSharp",
+          "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/06-automation-testing/playwright-dotnet",
+          "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/06-automation-testing/FlaUI",
+          "kind": "community-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/ComfyUI",
+          "kind": "community-source",
+          "reuseLevel": "inspiration-only"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/InvokeAI",
+          "kind": "community-source",
+          "reuseLevel": "inspiration-only"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/diffusers",
+          "kind": "community-source",
+          "reuseLevel": "inspiration-only"
+        }
+      ],
+      "requiredTriggers": [
+        "deterministic-composition",
+        "document-conversion",
+        "artifact-validation",
+        "delivery-packaging",
+        "diagnostics-export",
+        "browser-automation",
+        "desktop-automation"
+      ]
+    },
+    {
+      "name": "workflow-and-ux-architecture",
+      "required": false,
+      "sourceRules": [
+        "src/ImageSeriesStudio.App/ViewModels/",
+        "src/ImageSeriesStudio.App/Views/",
+        "src/ImageSeriesStudio.Application/Modules/",
+        "src/ImageSeriesStudio.Application/Workflows/"
+      ],
+      "evidenceRules": [
+        "docs/ARCHITECTURE.md",
+        "docs/TARGET_ENGINEERING_STATE.md",
+        "docs/REFERENCE_BASIS.md",
+        "docs/superpowers/specs/",
+        "docs/superpowers/plans/"
+      ],
+      "localReferences": [
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet",
+          "kind": "official-toolkit-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/WPF-Samples",
+          "kind": "official-samples",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/ComfyUI",
+          "kind": "community-source",
+          "reuseLevel": "inspiration-only"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/InvokeAI",
+          "kind": "community-source",
+          "reuseLevel": "inspiration-only"
+        }
+      ],
+      "requiredTriggers": [
+        "large-viewmodel-split",
+        "large-view-split",
+        "workflow-graph",
+        "queue-gallery-stage-composition",
+        "module-boundary-change"
+      ]
+    }
+  ]
+}

@@ -42,6 +42,7 @@ Current launch-boundary and engineering-state docs:
 
 - [Documentation Governance](docs/DOCUMENTATION_GOVERNANCE.md)
 - [Reference Evidence Policy](docs/REFERENCE_EVIDENCE_POLICY.md)
+- [Reference Basis](docs/REFERENCE_BASIS.md)
 - [V1 PRD](docs/PRD_V1.md)
 - [Product Design](docs/PRODUCT_DESIGN.md)
 - [Architecture](docs/ARCHITECTURE.md)
@@ -57,6 +58,7 @@ Current launch-boundary and engineering-state docs:
 
 - [Documentation Governance](docs/DOCUMENTATION_GOVERNANCE.md)
 - [Reference Evidence Policy](docs/REFERENCE_EVIDENCE_POLICY.md)
+- [Reference Basis](docs/REFERENCE_BASIS.md)
 - [V1 PRD](docs/PRD_V1.md)
 - [Product Design](docs/PRODUCT_DESIGN.md)
 - [Architecture](docs/ARCHITECTURE.md)
@@ -93,6 +95,7 @@ Use it for quick local lookup of:
 - WPF, Generic Host, MVVM, and desktop app samples
 - EF Core and SQLite documentation sources
 - `Microsoft.Extensions` host/options/resilience internals and OpenTelemetry implementation references
+- Aspire dashboard, OTLP, and local observability references
 - document extraction and deterministic rendering tools such as MarkItDown, Docling, PdfPig, QuestPDF, and SkiaSharp
 - browser and Windows desktop automation references such as Playwright .NET and FlaUI
 - image workflow architecture references such as ComfyUI, InvokeAI, and Diffusers
@@ -118,6 +121,14 @@ Current core gate:
 The same verification path is also wired into GitHub Actions through `.github/workflows/verify-repo.yml`.
 
 The reference-evidence gate matters most when changes touch provider behavior, host or observability plumbing, persistence/schema boundaries, or tooling/operator execution. See [docs/REFERENCE_EVIDENCE_POLICY.md](docs/REFERENCE_EVIDENCE_POLICY.md).
+
+Stronger release-style preflight:
+
+```powershell
+.\scripts\preflight-release.ps1
+```
+
+`.\scripts\preflight-release.ps1` adds placeholder and merge-conflict scans, reuses the reference-evidence gate, runs the canonical repository verification path, performs a publish dry-run, and finishes with diff-hygiene checks.
 
 ## Local Publish
 

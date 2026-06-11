@@ -49,10 +49,14 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add machine-readable manifest and update flow for `ai-content-delivery-studio-references`.
 - [x] Extend `ai-coding-runtime-references` update flow to export a manifest.
 - [x] Add a repository-local reference-evidence policy and verification gate for high-drift engineering areas.
+- [x] Add a durable `reference-basis` mapping from code areas and task families to local references and reuse levels.
+- [x] Move enforced reference-area logic to a machine-readable repository manifest.
 - [x] Add a canonical local full-gate script that runs reference evidence checks before build, test, and format verification.
 - [x] Add a GitHub Actions verification workflow that reuses the repository gate on normal `push` and `pull_request` events.
+- [x] Add a stronger release-style preflight script that layers placeholder, merge-conflict, publish-dry-run, and diff-hygiene checks on top of the canonical gate.
 - [x] Add `dotnet/extensions` as a code-level reference before the next host/options/resilience hardening slice.
 - [x] Add `opentelemetry-dotnet` as a code-level reference before the next telemetry or diagnostics slice.
+- [x] Add `aspire` as a code-level reference before the next OTLP or local dashboard observability slice.
 - [x] Add `SkiaSharp` reference-source coverage before the next deterministic composition expansion beyond the current poster proof path.
 - [ ] Add OCR reference coverage such as `Tesseract` or `OCRmyPDF` only when scanned-document hardening enters the active near-term roadmap.
 - [ ] Decide whether `Cockpit-Tools-Local-references` should gain a machine-readable manifest next.

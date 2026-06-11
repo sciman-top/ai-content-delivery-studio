@@ -5,6 +5,8 @@ public static class VisionReviewExecutionPolicy
     public const int DefaultBatchItemLimit = 6;
     public const int DefaultHighRiskBatchItemLimit = 4;
     public const int DefaultCompactSummaryCharacters = 280;
+    public const int DefaultCompactReviewImageMaxDimension = 384;
+    public const int DefaultCompactReviewImageJpegQuality = 70;
 
     public const bool StoreResponsesByDefault = false;
     public const bool AllowPreviousResponseIdByDefault = false;

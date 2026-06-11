@@ -4,6 +4,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using SkiaSharp;
 
 namespace ImageSeriesStudio.Infrastructure.OpenAI;
 
@@ -58,7 +59,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
             cancellationToken);
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
-        var imageDataUrl = await CreateImageDataUrlAsync(request.AssetPath, cancellationToken);
+        var imageDataUrl = await CreateCompactImageDataUrlAsync(request.AssetPath, cancellationToken);
         var routing = BaseRouting with { Store = _options.VisionReviewUsesStoredResponses };
 
         var endpoint = new Uri(_options.BaseUri, routing.RelativePath);
@@ -84,13 +85,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         var review = JsonSerializer.Deserialize<OpenAiVisionReviewResponse>(outputText, JsonOptions)
             ?? throw new InvalidOperationException("OpenAI vision review response was empty.");
 
-        return new VisionReviewResult(
-            request.CandidateImageId,
-            ParseDecision(review.Decision),
-            review.Scores ?? new Dictionary<string, int>(),
-            review.HardFailures ?? [],
-            review.Comments,
-            review.SuggestedFix);
+        return BuildResult(request, review);
     }
 
     private void ValidateStatefulReviewOptions(VisionReviewRequest request)
@@ -117,7 +112,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         var payload = new Dictionary<string, object?>
         {
             ["model"] = _options.VisionReviewModel,
-            ["instructions"] = "Review the generated image against the prompt and rubric. Return only valid JSON.",
+            ["instructions"] = "Review the generated image against the prompt and rubric. Return only valid JSON with the final decision and a short comment.",
             ["input"] = new object[]
             {
                 new Dictionary<string, object?>
@@ -134,7 +129,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
                         {
                             ["type"] = "input_image",
                             ["image_url"] = imageDataUrl,
-                            ["detail"] = "high",
+                            ["detail"] = "low",
                         },
                     },
                 },
@@ -145,7 +140,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
                 ["format"] = new Dictionary<string, object?>
                 {
                     ["type"] = "json_schema",
-                    ["name"] = "image_review",
+                    ["name"] = "compact_image_review",
                     ["strict"] = true,
                     ["schema"] = CreateReviewSchema(),
                 },
@@ -163,51 +158,15 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
 
     private static string BuildReviewText(VisionReviewRequest request)
     {
-        var rubric = string.Join(
-            Environment.NewLine,
-            request.Rubric.Dimensions.Select(
-                dimension => $"- {dimension.Name} (weight {dimension.Weight}): {dimension.Requirement}"));
-        var evidenceSummary = BuildEvidenceSummary(request.ReviewPrep);
-
         return string.Join(
             Environment.NewLine,
             [
                 $"Prompt: {request.PromptText}",
-                $"Rubric: {request.Rubric.Name}",
-                $"Compact review artifact summary: {request.ReviewPrep?.Summary ?? "Not provided"}",
-                $"Local evidence selections: {evidenceSummary}",
-                rubric,
+                $"Rubric dimensions: {string.Join(", ", request.Rubric.Dimensions.Select(dimension => dimension.Name))}",
+                $"Compact review summary: {request.ReviewPrep?.Summary ?? "Not provided"}",
+                "Pass only if the image clearly matches the prompt, has no embedded text, and keeps clean label space for later deterministic overlays.",
+                "Fail if the image contains visible text, major clutter, or misses the requested concept.",
             ]);
-    }
-
-    private static string BuildEvidenceSummary(ReviewPrepArtifactContract? reviewPrep)
-    {
-        if (reviewPrep is null || reviewPrep.EvidenceSelections.Count == 0)
-        {
-            return "Not provided";
-        }
-
-        return string.Join(
-            "; ",
-            reviewPrep.EvidenceSelections.Select(selection =>
-            {
-                var summary = string.IsNullOrWhiteSpace(selection.Summary)
-                    ? null
-                    : selection.Summary.Trim();
-                var pathHint = string.IsNullOrWhiteSpace(selection.LocalPath)
-                    ? null
-                    : Path.GetFileName(selection.LocalPath);
-
-                return string.Join(
-                    " / ",
-                    new[]
-                    {
-                        selection.Role,
-                        selection.SourceKind,
-                        pathHint,
-                        summary,
-                    }.Where(value => !string.IsNullOrWhiteSpace(value)));
-            }));
     }
 
     private static Dictionary<string, object?> CreateReviewSchema()
@@ -216,7 +175,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         {
             ["type"] = "object",
             ["additionalProperties"] = false,
-            ["required"] = new[] { "decision", "scores", "hardFailures", "comments", "suggestedFix" },
+            ["required"] = new[] { "decision", "comments" },
             ["properties"] = new Dictionary<string, object?>
             {
                 ["decision"] = new Dictionary<string, object?>
@@ -224,40 +183,89 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
                     ["type"] = "string",
                     ["enum"] = new[] { "pass", "fail", "pending" },
                 },
-                ["scores"] = new Dictionary<string, object?>
-                {
-                    ["type"] = "object",
-                    ["additionalProperties"] = new Dictionary<string, object?>
-                    {
-                        ["type"] = "integer",
-                    },
-                },
-                ["hardFailures"] = new Dictionary<string, object?>
-                {
-                    ["type"] = "array",
-                    ["items"] = new Dictionary<string, object?>
-                    {
-                        ["type"] = "string",
-                    },
-                },
                 ["comments"] = new Dictionary<string, object?>
                 {
                     ["type"] = "string",
-                },
-                ["suggestedFix"] = new Dictionary<string, object?>
-                {
-                    ["type"] = new[] { "string", "null" },
                 },
             },
         };
     }
 
-    private static async Task<string> CreateImageDataUrlAsync(
+    private static VisionReviewResult BuildResult(
+        VisionReviewRequest request,
+        OpenAiVisionReviewResponse review)
+    {
+        var decision = ParseDecision(review.Decision);
+        var scores = review.Scores ?? CreateFallbackScores(request.Rubric, decision);
+        var hardFailures = review.HardFailures ?? [];
+        var suggestedFix = !string.IsNullOrWhiteSpace(review.SuggestedFix)
+            ? review.SuggestedFix
+            : decision is ReviewDecision.Pass
+                ? null
+                : review.Comments;
+
+        return new VisionReviewResult(
+            request.CandidateImageId,
+            decision,
+            scores,
+            hardFailures,
+            review.Comments,
+            suggestedFix);
+    }
+
+    private static IReadOnlyDictionary<string, int> CreateFallbackScores(ReviewRubric rubric, ReviewDecision decision)
+    {
+        var scoreValue = decision switch
+        {
+            ReviewDecision.Pass => 5,
+            ReviewDecision.Pending => 2,
+            _ => 1,
+        };
+
+        return rubric.Dimensions.ToDictionary(dimension => dimension.Name, _ => scoreValue);
+    }
+
+    private static async Task<string> CreateCompactImageDataUrlAsync(
         string assetPath,
         CancellationToken cancellationToken)
     {
-        var bytes = await File.ReadAllBytesAsync(assetPath, cancellationToken);
-        return $"data:{GetMimeType(assetPath)};base64,{Convert.ToBase64String(bytes)}";
+        var originalBytes = await File.ReadAllBytesAsync(assetPath, cancellationToken);
+        SKBitmap? originalBitmap = null;
+        try
+        {
+            originalBitmap = SKBitmap.Decode(originalBytes);
+        }
+        catch (ArgumentNullException)
+        {
+            originalBitmap = null;
+        }
+
+        if (originalBitmap is null)
+        {
+            return $"data:{GetMimeType(assetPath)};base64,{Convert.ToBase64String(originalBytes)}";
+        }
+
+        using (originalBitmap)
+        {
+            var maxDimension = Math.Max(originalBitmap.Width, originalBitmap.Height);
+            if (maxDimension <= VisionReviewExecutionPolicy.DefaultCompactReviewImageMaxDimension)
+            {
+                return $"data:{GetMimeType(assetPath)};base64,{Convert.ToBase64String(originalBytes)}";
+            }
+
+            var scale = VisionReviewExecutionPolicy.DefaultCompactReviewImageMaxDimension / (double)maxDimension;
+            var resizedWidth = Math.Max(1, (int)Math.Round(originalBitmap.Width * scale));
+            var resizedHeight = Math.Max(1, (int)Math.Round(originalBitmap.Height * scale));
+            using var resizedBitmap = originalBitmap.Resize(
+                new SKImageInfo(resizedWidth, resizedHeight),
+                new SKSamplingOptions(SKFilterMode.Linear))
+                ?? throw new InvalidOperationException("Could not resize image for compact vision review.");
+            using var resizedImage = SKImage.FromBitmap(resizedBitmap);
+            using var encodedImage = resizedImage.Encode(
+                SKEncodedImageFormat.Jpeg,
+                VisionReviewExecutionPolicy.DefaultCompactReviewImageJpegQuality);
+            return $"data:image/jpeg;base64,{Convert.ToBase64String(encodedImage.ToArray())}";
+        }
     }
 
     private static string GetMimeType(string assetPath)

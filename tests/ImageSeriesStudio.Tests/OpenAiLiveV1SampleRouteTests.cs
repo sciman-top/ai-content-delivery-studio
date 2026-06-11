@@ -78,9 +78,13 @@ public sealed class OpenAiLiveV1SampleRouteTests
         var imageOptions = OpenAiProviderOptions.FromImageProviderEnvironment(configuration, realApiEnabled: true);
 
         using var textHttpClient = CreateProviderHttpClient(textOptions.BaseUri);
-        using var visionHttpClient = CreateProviderHttpClient(textOptions.BaseUri);
 
         var textProvider = new OpenAiTextPlanningProvider(textHttpClient, textOptions, secretStore, telemetrySink);
+        var visionProvider = new OpenAiVisionReviewProvider(
+            CreateProviderHttpClient(textOptions.BaseUri),
+            textOptions,
+            secretStore,
+            telemetrySink);
         var imageProvider = new OpenAiOfficialSdkImageGenerationProvider(
             imageOptions,
             secretStore,
@@ -194,10 +198,9 @@ public sealed class OpenAiLiveV1SampleRouteTests
                     item.Title,
                     CancellationToken.None);
                 var compactReview = await RunCompactLiveVisionReviewAsync(
-                    visionHttpClient,
-                    textOptions,
-                    secretStore,
-                    candidate.Id,
+                    visionProvider,
+                    telemetrySink,
+                    candidate,
                     reviewAssetPath,
                     reviewRubric,
                     promptVersion.PromptText,
@@ -474,162 +477,32 @@ public sealed class OpenAiLiveV1SampleRouteTests
     }
 
     private static async Task<CompactVisionReviewResult> RunCompactLiveVisionReviewAsync(
-        HttpClient httpClient,
-        OpenAiProviderOptions options,
-        IOpenAiSecretStore secretStore,
-        Guid candidateImageId,
+        OpenAiVisionReviewProvider visionProvider,
+        CapturingProviderCallTelemetrySink telemetrySink,
+        CandidateImage candidate,
         string assetPath,
         ReviewRubric rubric,
         string promptText,
         ReviewPrepArtifactContract reviewPrep,
         CancellationToken cancellationToken)
     {
-        await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
-            options,
-            secretStore,
-            OpenAiProviderOperation.VisionReview,
+        var result = await visionProvider.ReviewAsync(
+            new VisionReviewRequest(
+                candidate.Id,
+                assetPath,
+                rubric,
+                promptText,
+                reviewPrep),
             cancellationToken);
-        var apiKey = await secretStore.GetSecretAsync(options.ApiKeySecretName, cancellationToken)
-            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
-
-        var imageDataUrl = await CreateImageDataUrlAsync(assetPath, cancellationToken);
-        using var request = new HttpRequestMessage(HttpMethod.Post, new Uri(options.BaseUri, "responses"));
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        request.Content = JsonContent.Create(
-            new Dictionary<string, object?>
-            {
-                ["model"] = options.VisionReviewModel,
-                ["instructions"] = "Review the generated educational illustration. Return only valid JSON with the final decision and a short comment.",
-                ["input"] = new object[]
-                {
-                    new Dictionary<string, object?>
-                    {
-                        ["role"] = "user",
-                        ["content"] = new object[]
-                        {
-                            new Dictionary<string, object?>
-                            {
-                                ["type"] = "input_text",
-                                ["text"] = BuildCompactReviewText(promptText, rubric, reviewPrep),
-                            },
-                            new Dictionary<string, object?>
-                            {
-                                ["type"] = "input_image",
-                                ["image_url"] = imageDataUrl,
-                                ["detail"] = "low",
-                            },
-                        },
-                    },
-                },
-                ["store"] = false,
-                ["text"] = new Dictionary<string, object?>
-                {
-                    ["format"] = new Dictionary<string, object?>
-                    {
-                        ["type"] = "json_schema",
-                        ["name"] = "compact_image_review",
-                        ["strict"] = true,
-                        ["schema"] = new Dictionary<string, object?>
-                        {
-                            ["type"] = "object",
-                            ["additionalProperties"] = false,
-                            ["required"] = new[] { "decision", "comments" },
-                            ["properties"] = new Dictionary<string, object?>
-                            {
-                                ["decision"] = new Dictionary<string, object?>
-                                {
-                                    ["type"] = "string",
-                                    ["enum"] = new[] { "pass", "fail", "pending" },
-                                },
-                                ["comments"] = new Dictionary<string, object?>
-                                {
-                                    ["type"] = "string",
-                                },
-                            },
-                        },
-                    },
-                },
-            },
-            options: JsonOptions);
-
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new HttpRequestException(
-                $"Compact OpenAI vision review request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
-        }
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-        var providerTraceId = TryReadString(document.RootElement, "id");
-        var outputText = ExtractOutputText(document.RootElement);
-        using var reviewJson = JsonDocument.Parse(outputText);
-
-        var decision = ParseCompactDecision(reviewJson.RootElement.GetProperty("decision").GetString());
-        var comments = reviewJson.RootElement.GetProperty("comments").GetString() ?? string.Empty;
-        var scoreValue = decision switch
-        {
-            ReviewDecision.Pass => 5,
-            ReviewDecision.Pending => 2,
-            _ => 1,
-        };
-
-        var review = new StructuredReviewOutput(
-            candidateImageId,
-            decision,
-            rubric.Dimensions
-                .Select(dimension => new StructuredReviewScore(
-                    dimension.Name,
-                    dimension.Requirement,
-                    dimension.Weight,
-                    scoreValue))
-                .ToArray(),
-            [],
-            comments,
-            decision is ReviewDecision.Pass ? null : comments);
+        var telemetry = telemetrySink.GetLatest("vision-review")
+            ?? throw new InvalidOperationException("Vision-review telemetry was not captured for the live sample run.");
+        var structuredReview = StructuredReviewOutput.FromProviderResult(result, rubric);
 
         return new CompactVisionReviewResult(
-            review,
-            TryReadHeader(response, "x-request-id"),
-            providerTraceId,
-            (int)response.StatusCode);
-    }
-
-    private static string BuildCompactReviewText(
-        string promptText,
-        ReviewRubric rubric,
-        ReviewPrepArtifactContract reviewPrep)
-    {
-        var dimensionNames = string.Join(", ", rubric.Dimensions.Select(dimension => dimension.Name));
-        return string.Join(
-            Environment.NewLine,
-            [
-                $"Prompt: {promptText}",
-                $"Rubric dimensions: {dimensionNames}",
-                $"Compact review summary: {reviewPrep.Summary}",
-                "Pass only if the image clearly matches the prompt, has no embedded text, and keeps clean label space for later deterministic overlays.",
-                "Fail if the image contains visible text, major clutter, or misses the buoyancy concept.",
-            ]);
-    }
-
-    private static async Task<string> CreateImageDataUrlAsync(string assetPath, CancellationToken cancellationToken)
-    {
-        var bytes = await File.ReadAllBytesAsync(assetPath, cancellationToken);
-        var mime = Path.GetExtension(assetPath).Equals(".jpg", StringComparison.OrdinalIgnoreCase)
-            || Path.GetExtension(assetPath).Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
-            ? "image/jpeg"
-            : "image/png";
-        return $"data:{mime};base64,{Convert.ToBase64String(bytes)}";
-    }
-
-    private static ReviewDecision ParseCompactDecision(string? decision)
-    {
-        return decision?.Trim().ToLowerInvariant() switch
-        {
-            "pass" => ReviewDecision.Pass,
-            "fail" => ReviewDecision.Fail,
-            _ => ReviewDecision.Pending,
-        };
+            structuredReview,
+            telemetry.RequestId,
+            telemetry.ProviderTraceId,
+            telemetry.HttpStatusCode);
     }
 
     private static async Task<string> CreateCompactReviewAssetAsync(

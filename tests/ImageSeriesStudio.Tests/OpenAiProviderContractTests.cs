@@ -490,10 +490,15 @@ public sealed class OpenAiProviderContractTests
                 .GetProperty("content");
             Assert.Equal("input_text", content[0].GetProperty("type").GetString());
             Assert.Contains("Create a clean science poster.", content[0].GetProperty("text").GetString());
-            Assert.Contains("Local evidence selections:", content[0].GetProperty("text").GetString());
-            Assert.Contains("candidate-image / generated-asset / candidate.png", content[0].GetProperty("text").GetString());
+            Assert.Contains("Rubric dimensions:", content[0].GetProperty("text").GetString());
+            Assert.Contains("Compact review summary:", content[0].GetProperty("text").GetString());
             Assert.Equal("input_image", content[1].GetProperty("type").GetString());
             Assert.StartsWith("data:image/png;base64,", content[1].GetProperty("image_url").GetString());
+            Assert.Equal("low", content[1].GetProperty("detail").GetString());
+
+            var schema = payload.RootElement.GetProperty("text").GetProperty("format").GetProperty("schema");
+            var required = schema.GetProperty("required").EnumerateArray().Select(element => element.GetString()).ToArray();
+            Assert.Equal(["decision", "comments"], required);
         }
         finally
         {
@@ -547,6 +552,64 @@ public sealed class OpenAiProviderContractTests
             Assert.Equal(8, telemetry.Usage.OutputTokens);
             Assert.Equal(30, telemetry.Usage.TotalTokens);
             Assert.Equal(0.01m, telemetry.EstimatedCostUsd);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task VisionReviewProvider_BackfillsRubricScoresAndSuggestedFixWhenCompactResponseOmitsRichFields()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var imagePath = Path.Combine(rootDirectory, "candidate.png");
+        await File.WriteAllBytesAsync(imagePath, [1, 2, 3, 4], CancellationToken.None);
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_review_compact_fail",
+              "output_text": "{\"decision\":\"fail\",\"comments\":\"Visible text and crowded layout.\"}"
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateVisionProvider(httpClient);
+        var rubric = ReviewRubricTemplateCatalog
+            .GetById(ReviewRubricTemplateCatalog.GeneralImage)
+            .CreateRubric(Guid.NewGuid(), DateTimeOffset.UtcNow);
+
+        try
+        {
+            var result = await provider.ReviewAsync(
+                new VisionReviewRequest(
+                    Guid.NewGuid(),
+                    imagePath,
+                    rubric,
+                    "Create a clean science poster with empty label space.",
+                    new ReviewPrepArtifactContract(
+                        "Compact local review prep.",
+                        EvidenceSelections:
+                        [
+                            new ReviewPrepEvidenceSelection(
+                                "candidate-image",
+                                "generated-asset",
+                                imagePath,
+                                "Primary local candidate image selected for bounded remote review."),
+                        ])),
+                CancellationToken.None);
+
+            Assert.Equal(ReviewDecision.Fail, result.Decision);
+            Assert.Equal("Visible text and crowded layout.", result.Comments);
+            Assert.Equal("Visible text and crowded layout.", result.SuggestedFix);
+            Assert.Empty(result.HardFailures);
+            Assert.Equal(rubric.Dimensions.Count, result.Scores.Count);
+            Assert.All(
+                rubric.Dimensions,
+                dimension => Assert.Equal(1, result.Scores[dimension.Name]));
         }
         finally
         {

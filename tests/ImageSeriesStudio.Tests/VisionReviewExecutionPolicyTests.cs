@@ -10,6 +10,8 @@ public sealed class VisionReviewExecutionPolicyTests
         Assert.Equal(6, VisionReviewExecutionPolicy.DefaultBatchItemLimit);
         Assert.Equal(4, VisionReviewExecutionPolicy.DefaultHighRiskBatchItemLimit);
         Assert.Equal(280, VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters);
+        Assert.Equal(384, VisionReviewExecutionPolicy.DefaultCompactReviewImageMaxDimension);
+        Assert.Equal(70, VisionReviewExecutionPolicy.DefaultCompactReviewImageJpegQuality);
         Assert.False(VisionReviewExecutionPolicy.StoreResponsesByDefault);
         Assert.False(VisionReviewExecutionPolicy.AllowPreviousResponseIdByDefault);
     }

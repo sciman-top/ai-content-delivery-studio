@@ -5,6 +5,7 @@
 This policy strengthens the repository's reference discipline for high-drift engineering work.
 
 The project already maintains local reference sources and in-repo research notes. This policy adds a stronger rule: when certain engineering areas change, the change must also leave a visible in-repo evidence trail.
+The durable area-to-reference mapping now lives in [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) and the machine-readable source at `scripts/reference-basis.json`.
 
 ## When This Policy Applies
 
@@ -33,6 +34,7 @@ At least one relevant evidence update must appear in the same change set when an
 Accepted evidence files:
 
 - `docs/research/REFERENCE_RESEARCH.md`
+- `docs/REFERENCE_BASIS.md`
 - `docs/ARCHITECTURE.md`
 - `docs/PROVIDER_CONFIGURATION.md`
 - `docs/PROVIDER_ROUTING_POLICY.md`
@@ -92,6 +94,12 @@ For the normal repository-wide local gate, run:
 
 That wrapper runs this reference-evidence gate first, then the standard `build -> test -> format` sequence.
 
+For a stronger release-style preflight, run:
+
+```powershell
+.\scripts\preflight-release.ps1
+```
+
 The repository also includes a GitHub Actions workflow at `.github/workflows/verify-repo.yml`. On normal `push` and `pull_request` events with a usable git diff range, that workflow reuses the same gate before running the standard repository verification sequence.
 
 The gate passes when:
@@ -108,6 +116,7 @@ The gate fails when:
 
 - [DOCUMENTATION_GOVERNANCE.md](./DOCUMENTATION_GOVERNANCE.md) explains which core product docs answer which kinds of questions.
 - [EXTERNAL_REFERENCE_STRATEGY.md](./EXTERNAL_REFERENCE_STRATEGY.md) explains which local references should exist and why.
+- [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) explains which code areas and task families should consult which local references.
 - This file is the enforcement rule for when those references must visibly influence a change.
 
 ## Current Limitation
