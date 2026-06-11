@@ -15,6 +15,7 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Complete Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export.
 - [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [x] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
+- [x] Add a bounded transient `502 upstream_error` retry on the official SDK Images path before failing the live OpenAI route.
 - [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
 - [x] Add bounded local review-prep artifacts and review-batch thresholds before expanding multi-turn image-state review.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.

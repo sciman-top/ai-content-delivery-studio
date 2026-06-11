@@ -8,6 +8,8 @@ namespace ImageSeriesStudio.Infrastructure.OpenAI;
 
 public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationProvider
 {
+    private const int MaxTransientUpstreamRetryCount = 1;
+    private static readonly TimeSpan TransientUpstreamRetryDelay = TimeSpan.FromSeconds(2);
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true,
@@ -78,7 +80,12 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
         OpenAiSdkImageTransportResult transportResult;
         try
         {
-            transportResult = await _transport.GenerateAsync(_options, apiKey, appId, appSecret, request, cancellationToken);
+            transportResult = await GenerateWithTransientRetryAsync(
+                apiKey,
+                appId,
+                appSecret,
+                request,
+                cancellationToken);
         }
         catch (ClientResultException exception)
         {
@@ -171,6 +178,32 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
             metadataPath,
             transportResult.ProviderTraceId,
             generatedAt);
+    }
+
+    private async Task<OpenAiSdkImageTransportResult> GenerateWithTransientRetryAsync(
+        string apiKey,
+        string? appId,
+        string? appSecret,
+        ImageGenerationRequest request,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await _transport.GenerateAsync(_options, apiKey, appId, appSecret, request, cancellationToken);
+            }
+            catch (ClientResultException exception) when (ShouldRetryTransientUpstream(exception) && attempt < MaxTransientUpstreamRetryCount)
+            {
+                await Task.Delay(TransientUpstreamRetryDelay, cancellationToken);
+            }
+        }
+    }
+
+    private static bool ShouldRetryTransientUpstream(ClientResultException exception)
+    {
+        return exception.Status == 502
+            && exception.Message.Contains("upstream_error", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task<string?> GetOptionalSecretAsync(string? secretName, CancellationToken cancellationToken)

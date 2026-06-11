@@ -100,10 +100,11 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
     public async Task GenerateImageAsync_MapsSdkFailuresToHttpRequestExceptionAndRecordsFailureTelemetry()
     {
         var telemetrySink = new RecordingTelemetrySink();
+        var transport = new ThrowingOpenAiSdkImageTransport(429);
         var provider = new OpenAiOfficialSdkImageGenerationProvider(
             new OpenAiProviderOptions { RealApiEnabled = true },
             new StaticSecretStore("test-openai-key"),
-            new ThrowingOpenAiSdkImageTransport(429),
+            transport,
             telemetrySink,
             new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
 
@@ -118,6 +119,7 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
                 CancellationToken.None));
 
         Assert.Contains("429", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(1, transport.CallCount);
 
         var telemetry = Assert.Single(telemetrySink.Events);
         Assert.Equal("openai-image-sdk", telemetry.ProviderId);
@@ -125,6 +127,70 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
         Assert.False(telemetry.Succeeded);
         Assert.Equal(0m, telemetry.EstimatedCostUsd);
         Assert.Null(telemetry.RequestId);
+    }
+
+    [Fact]
+    public async Task GenerateImageAsync_RetriesSingleTransientUpstream502AndThenSucceeds()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var transport = new SequencedOpenAiSdkImageTransport(
+        [
+            new ClientResultException(
+                "HTTP 502 (server_error: upstream_error)",
+                new FakePipelineResponse(502),
+                innerException: null),
+            new OpenAiSdkImageTransportResult(
+                [137, 80, 78, 71],
+                "img_sdk_provider_retry",
+                200,
+                "req_sdk_provider_retry",
+                BinaryData.FromString(
+                    """
+                    {
+                      "id": "img_sdk_provider_retry",
+                      "data": [
+                        {
+                          "b64_json": "iVBORw=="
+                        }
+                      ]
+                    }
+                    """)),
+        ]);
+        var telemetrySink = new RecordingTelemetrySink();
+        var provider = new OpenAiOfficialSdkImageGenerationProvider(
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            new StaticSecretStore("test-openai-key"),
+            transport,
+            telemetrySink,
+            new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
+
+        try
+        {
+            var result = await provider.GenerateImageAsync(
+                new ImageGenerationRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "Create a clean science poster.",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    rootDirectory,
+                    "science-poster.png"),
+                CancellationToken.None);
+
+            Assert.Equal("img_sdk_provider_retry", result.ProviderTraceId);
+            Assert.Equal(2, transport.CallCount);
+
+            var telemetry = Assert.Single(telemetrySink.Events);
+            Assert.True(telemetry.Succeeded);
+            Assert.Equal(200, telemetry.HttpStatusCode);
+            Assert.Equal("req_sdk_provider_retry", telemetry.RequestId);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
     }
 
     private sealed class FakeOpenAiSdkImageTransport : IOpenAiSdkImageTransport
@@ -153,6 +219,8 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
 
     private sealed class ThrowingOpenAiSdkImageTransport(int statusCode) : IOpenAiSdkImageTransport
     {
+        public int CallCount { get; private set; }
+
         public Task<OpenAiSdkImageTransportResult> GenerateAsync(
             OpenAiProviderOptions options,
             string apiKey,
@@ -161,10 +229,36 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
             ImageGenerationRequest request,
             CancellationToken cancellationToken)
         {
+            CallCount++;
             throw new ClientResultException(
                 $"SDK request failed with status {statusCode}.",
                 new FakePipelineResponse(statusCode),
                 innerException: null);
+        }
+    }
+
+    private sealed class SequencedOpenAiSdkImageTransport(IReadOnlyList<object> results) : IOpenAiSdkImageTransport
+    {
+        private int _index;
+
+        public int CallCount { get; private set; }
+
+        public Task<OpenAiSdkImageTransportResult> GenerateAsync(
+            OpenAiProviderOptions options,
+            string apiKey,
+            string? appId,
+            string? appSecret,
+            ImageGenerationRequest request,
+            CancellationToken cancellationToken)
+        {
+            CallCount++;
+            var current = results[_index++];
+            if (current is Exception exception)
+            {
+                throw exception;
+            }
+
+            return Task.FromResult((OpenAiSdkImageTransportResult)current);
         }
     }
 
