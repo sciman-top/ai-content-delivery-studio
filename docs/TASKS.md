@@ -315,6 +315,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract delivery export orchestration into `DeliveryWorkflowCoordinator` while preserving existing bindings and commands.
   - [x] Extract plan editor command orchestration into `PlanEditorWorkflowCoordinator` while preserving existing bindings and commands.
   - [x] Extract workflow graph row construction into `WorkflowGraphCoordinator` while preserving existing bindings and graph output.
+  - [x] Extract workbench projection building into `ProjectWorkbenchProjectionCoordinator` while preserving plan, prompt, gallery, review, and reload output.
 - [ ] Split large WPF views into feature-owned user controls where needed.
   - [x] Extract the workflow graph tab content into `WorkflowGraphView` while preserving existing bindings and graph output.
   - [x] Extract the delivery tab content into `DeliveryView` while preserving existing bindings and delivery output.

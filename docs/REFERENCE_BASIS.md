@@ -76,7 +76,10 @@ Must check references when:
 
 Source paths:
 
-- `src/ImageSeriesStudio.App/`
+- `src/ImageSeriesStudio.App/App.xaml.cs`
+- `src/ImageSeriesStudio.App/Telemetry/`
+- `src/ImageSeriesStudio.App/Services/ProviderCenterServices.cs`
+- `src/ImageSeriesStudio.App/Properties/launchSettings.json`
 - `src/ImageSeriesStudio.Infrastructure/Diagnostics/`
 
 Required local references:
@@ -105,7 +108,7 @@ Reuse guidance:
 
 Must check references when:
 
-- changing host startup, dependency injection, view-model composition, or lifecycle wiring
+- changing `App.xaml.cs` host startup, dependency injection registration, or application lifetime wiring
 - changing telemetry registration, OTLP export, Aspire dashboard support, logging, or metrics/tracing sources
 - changing `HttpClient` resilience handler behavior or named-client conventions
 - changing provider-center health or diagnostics plumbing
@@ -184,6 +187,8 @@ Must check references when:
 
 Source paths:
 
+- `src/ImageSeriesStudio.App/MainWindow.xaml`
+- `src/ImageSeriesStudio.App/MainWindow.xaml.cs`
 - `src/ImageSeriesStudio.App/ViewModels/`
 - `src/ImageSeriesStudio.App/Views/`
 - `src/ImageSeriesStudio.Application/Modules/`
@@ -191,6 +196,7 @@ Source paths:
 
 Required local references:
 
+- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\docs-desktop`
 - `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\CommunityToolkit-dotnet`
 - `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\WPF-Samples`
 - `D:\CODE\external\ai-content-delivery-studio-references\07-image-workflow-references\ComfyUI`
@@ -198,15 +204,23 @@ Required local references:
 - `docs/ARCHITECTURE.md`
 - `docs/TARGET_ENGINEERING_STATE.md`
 
+Preferred official docs:
+
+- CommunityToolkit.Mvvm docs
+- WPF data binding and commanding docs
+- WPF user-control and shell composition docs
+
 Reuse guidance:
 
-- `CommunityToolkit-dotnet`, `WPF-Samples`: `direct-pattern`
+- `docs-desktop`, `CommunityToolkit-dotnet`, `WPF-Samples`: `direct-pattern`
 - `ComfyUI`, `InvokeAI`: `inspiration-only`
 
 Must check references when:
 
-- splitting large view models or large WPF views
+- splitting large view models, shell views, or feature-owned WPF views
+- extracting deterministic projection, row-building, or workflow-tab composition out of `MainWindowViewModel`
 - changing workflow graph, queue, gallery, stage composition, or module boundaries
+- changing `MainWindow.xaml` or `MainWindow.xaml.cs` shell data-context or navigation composition
 - promoting image-workflow UX ideas into reusable product architecture
 
 ## Current Code Review Findings That Should Drive Reference Use
@@ -214,7 +228,7 @@ Must check references when:
 These repository areas especially benefit from stronger reference discipline:
 
 - `src/ImageSeriesStudio.App/ViewModels/MainWindowViewModel.cs`
-  - large orchestration surface; prefer WPF/MVVM and modular-composition references before further expansion
+  - large orchestration surface; prefer WPF/MVVM and modular-composition references before further expansion, and extract pure projection builders before moving command ownership
 - `src/ImageSeriesStudio.App/MainWindow.xaml`
   - large shell view; prefer WPF sample and modular-view references before adding more UI surface
 - `src/ImageSeriesStudio.Infrastructure/OpenAI/`

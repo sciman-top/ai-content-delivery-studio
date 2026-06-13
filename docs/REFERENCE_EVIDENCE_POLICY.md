@@ -15,17 +15,19 @@ This policy applies when a change touches one or more of these engineering areas
 - `host-and-observability`
 - `persistence-and-schema`
 - `tooling-and-operator`
+- `workflow-and-ux-architecture`
 
-It does **not** apply to every small edit. Docs-only wording changes, localization text tweaks, and unrelated view-level cleanup should not be blocked by this policy unless they also touch one of the enforced areas below.
+It does **not** apply to every small edit. Docs-only wording changes, localization text tweaks, and unrelated tiny view-level cleanup should not be blocked by this policy unless they also touch one of the enforced areas below. Large WPF shell, view-model, or workflow-boundary changes are intentionally enforced through `workflow-and-ux-architecture`.
 
 ## Enforced Change Areas
 
 | Area | Typical source paths | Why it is enforced |
 | --- | --- | --- |
 | `openai-provider` | `src/ImageSeriesStudio.Infrastructure/OpenAI/`, `src/ImageSeriesStudio.Core/Providers/` | Official API semantics, provider-role boundaries, and SDK-vs-raw transport behavior drift over time. |
-| `host-and-observability` | `src/ImageSeriesStudio.App/`, `src/ImageSeriesStudio.Infrastructure/Diagnostics/`, app telemetry or host wiring | Host lifetime, resilience, diagnostics, and telemetry behavior should stay aligned with official .NET guidance. |
+| `host-and-observability` | `src/ImageSeriesStudio.App/App.xaml.cs`, `src/ImageSeriesStudio.App/Telemetry/`, `src/ImageSeriesStudio.App/Services/ProviderCenterServices.cs`, `src/ImageSeriesStudio.Infrastructure/Diagnostics/` | Host lifetime, resilience, diagnostics, and telemetry behavior should stay aligned with official .NET guidance. |
 | `persistence-and-schema` | `src/ImageSeriesStudio.Infrastructure/Persistence/`, `src/ImageSeriesStudio.Core/Projects/`, `src/ImageSeriesStudio.Core/Artifacts/`, `src/ImageSeriesStudio.Core/Sources/` | Schema and persistence changes are easy to get subtly wrong without explicit design and provider evidence. |
 | `tooling-and-operator` | `src/ImageSeriesStudio.Application/ToolAdapters/`, `src/ImageSeriesStudio.Infrastructure/ToolAdapters/`, `src/ImageSeriesStudio.Core/Operators/` | Local tool execution and operator boundaries need explicit risk and evidence discipline, not ad hoc behavior drift. |
+| `workflow-and-ux-architecture` | `src/ImageSeriesStudio.App/MainWindow.xaml*`, `src/ImageSeriesStudio.App/ViewModels/`, `src/ImageSeriesStudio.App/Views/`, `src/ImageSeriesStudio.Application/Modules/`, `src/ImageSeriesStudio.Application/Workflows/` | Large WPF shell and workflow-boundary changes need explicit MVVM and modular-composition evidence so the UI does not regress into one giant orchestrator. |
 
 ## What Counts As Evidence
 
@@ -48,6 +50,7 @@ The right evidence file depends on the change. For example:
 - provider transport or readiness changes should usually update provider docs, launch evidence, or a new spec
 - operator boundary changes should usually update operator policy or a new spec
 - persistence boundary changes should usually update architecture or research notes
+- workflow/view-model split slices should usually update architecture state, reference basis, or a focused plan/spec
 
 ## Local Reference Shelf Priority
 
@@ -75,6 +78,12 @@ When this policy applies, prefer these local references first:
 - `D:\CODE\external\ai-content-delivery-studio-references\06-automation-testing`
 - `D:\CODE\external\ai-content-delivery-studio-references\07-image-workflow-references`
 - then `docs/research/REFERENCE_RESEARCH.md`
+
+### `workflow-and-ux-architecture`
+
+- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf`
+- `D:\CODE\external\ai-content-delivery-studio-references\07-image-workflow-references`
+- then `docs/ARCHITECTURE.md` and `docs/TARGET_ENGINEERING_STATE.md`
 
 ## Local Gate
 
