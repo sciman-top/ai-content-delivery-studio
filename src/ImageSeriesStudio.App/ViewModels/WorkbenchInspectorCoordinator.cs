@@ -77,6 +77,24 @@ public sealed class WorkbenchInspectorCoordinator
             editedRow,
             [imageEditResultText, .. currentActivityItems]);
     }
+
+    public Task RefreshProviderCenterAsync(
+        ProviderCenterViewModel providerCenter,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(providerCenter);
+
+        return providerCenter.RefreshAsync(cancellationToken);
+    }
+
+    public Task CheckProviderHealthAsync(
+        ProviderCenterViewModel providerCenter,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(providerCenter);
+
+        return providerCenter.CheckHealthAsync(cancellationToken);
+    }
 }
 
 public sealed record WorkbenchInspectorDocumentPlanningResult(

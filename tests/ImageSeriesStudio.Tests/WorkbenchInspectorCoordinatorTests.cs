@@ -1,6 +1,7 @@
 using System.Globalization;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.App.Services;
 using ImageSeriesStudio.App.ViewModels;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
@@ -109,6 +110,41 @@ public sealed class WorkbenchInspectorCoordinatorTests
         }
     }
 
+    [Fact]
+    public async Task RefreshProviderCenterAsync_RefreshesInspectorSummary()
+    {
+        var snapshot = new ProviderCenterSnapshot(
+            new ProviderEndpointConfigurationSnapshot(
+                "Text provider",
+                "TEXT_PROVIDER",
+                "openai_compatible",
+                "https://text.example/v1",
+                "gpt-5.5",
+                1,
+                UsesAppCredentials: false,
+                ConcurrencyPerKey: 1,
+                TotalConcurrency: 1),
+            new ProviderEndpointConfigurationSnapshot(
+                "Image provider",
+                "IMAGE_PROVIDER",
+                "openai_compatible_image_only",
+                "https://image.example/v1",
+                "image-model",
+                4,
+                UsesAppCredentials: true,
+                ConcurrencyPerKey: 10,
+                TotalConcurrency: 40),
+            []);
+        var providerCenter = new ProviderCenterViewModel(new StaticProviderCenterConfigurationService(snapshot));
+        var coordinator = CreateCoordinator(new ProjectApplicationService(new InMemoryProjectRepository(), new FakeTextPlanningProvider()));
+
+        await coordinator.RefreshProviderCenterAsync(providerCenter, CancellationToken.None);
+
+        Assert.Equal(
+            "Providers ready: text key configured; image keys 4; total image concurrency 40.",
+            providerCenter.SummaryText);
+    }
+
     private static WorkbenchInspectorCoordinator CreateCoordinator(ProjectApplicationService projectService)
     {
         var localizationService = new LocalizationService(() => new CultureInfo("en-US"));
@@ -172,6 +208,17 @@ public sealed class WorkbenchInspectorCoordinatorTests
         public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
         {
             return Task.FromResult<ReviewResult?>(null);
+        }
+    }
+
+    private sealed class StaticProviderCenterConfigurationService(ProviderCenterSnapshot snapshot)
+        : IProviderCenterConfigurationService
+    {
+        public Task<ProviderCenterSnapshot> LoadAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return Task.FromResult(snapshot);
         }
     }
 }

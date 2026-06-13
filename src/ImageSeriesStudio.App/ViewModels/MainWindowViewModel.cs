@@ -1715,13 +1715,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private async Task RefreshProviderCenterAsync()
     {
-        await ProviderCenter.RefreshAsync(CancellationToken.None);
+        await _workbenchInspectorCoordinator.RefreshProviderCenterAsync(
+            ProviderCenter,
+            CancellationToken.None);
     }
 
     [RelayCommand]
     private async Task CheckProviderHealthAsync()
     {
-        await ProviderCenter.CheckHealthAsync(CancellationToken.None);
+        await _workbenchInspectorCoordinator.CheckProviderHealthAsync(
+            ProviderCenter,
+            CancellationToken.None);
     }
 
     [RelayCommand(CanExecute = nameof(CanRunFakePlanning))]

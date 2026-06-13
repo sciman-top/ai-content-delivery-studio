@@ -8,7 +8,7 @@ This repository is the active implementation home for the product. It is intenti
 
 - Active implementation root: `D:\CODE\ai-image-series-studio`
 - Intended medium-term root after the rename gate: `D:\CODE\ai-content-delivery-studio`
-- Latest local repository verification: `2026-06-13` via `.\scripts\verify-repo.ps1` with `381 / 381` tests passing
+- Latest local repository verification: `2026-06-13` via `.\scripts\verify-repo.ps1` with `382 / 382` tests passing
 - Latest recorded V1 release-verification snapshot: `2026-06-11`
 - Latest recorded live OpenAI sample: `artifacts/live-openai-v1-sample/20260611-132947`
 - Current launch-verification readout: the latest recorded snapshot in [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md) closes all `5 / 5` V1 launch metrics
