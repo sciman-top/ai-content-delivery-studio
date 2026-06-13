@@ -169,6 +169,53 @@ public sealed class MainWindowLocalizationCoordinator
             ?? options.First(option => option.Value is IllustrationStrictnessLevel.Educational);
     }
 
+    public MainWindowLocalizedSelectionState RestoreSelectionState(
+        MainWindowLocalizationPayload payload,
+        string currentDocumentSourceText,
+        string currentDocumentAudience,
+        string previousDocumentSourceDefault,
+        string previousDocumentAudienceDefault,
+        IllustrationStrictnessLevel selectedStrictness,
+        string? selectedImageTypePresetId,
+        string? selectedStyleGuideId,
+        string? selectedGenerationRecipeId,
+        LanguagePreference selectedLanguagePreference)
+    {
+        var documentDefaults = ResolveDocumentDefaults(
+            currentDocumentSourceText,
+            currentDocumentAudience,
+            previousDocumentSourceDefault,
+            previousDocumentAudienceDefault,
+            payload.DefaultDocumentSourceText,
+            payload.DefaultDocumentAudience);
+
+        var selectedDocumentStrictness = SelectDocumentStrictnessOption(
+            payload.DocumentStrictnessOptions,
+            selectedStrictness);
+        var selectedImageTypePreset = SelectById(payload.ImageTypePresetOptions, selectedImageTypePresetId)
+            ?? payload.ImageTypePresetOptions.FirstOrDefault();
+        var selectedStyleGuide = SelectById(payload.StyleGuideOptions, selectedStyleGuideId)
+            ?? payload.StyleGuideOptions.FirstOrDefault();
+        var selectedGenerationRecipe = SelectById(payload.GenerationRecipeOptions, selectedGenerationRecipeId)
+            ?? payload.GenerationRecipeOptions.FirstOrDefault();
+        var selectedLanguageOption = payload.LanguageOptions
+            .First(option => option.Preference == selectedLanguagePreference);
+
+        return new MainWindowLocalizedSelectionState(
+            documentDefaults.SourceText,
+            documentDefaults.Audience,
+            payload.DocumentStrictnessOptions,
+            selectedDocumentStrictness,
+            payload.ImageTypePresetOptions,
+            selectedImageTypePreset,
+            payload.StyleGuideOptions,
+            selectedStyleGuide,
+            payload.GenerationRecipeOptions,
+            selectedGenerationRecipe,
+            payload.LanguageOptions,
+            selectedLanguageOption);
+    }
+
     private IReadOnlyList<string> BuildNavigationItems()
     {
         return
@@ -259,6 +306,14 @@ public sealed class MainWindowLocalizationCoordinator
     private string Text(LocalizationKey key)
     {
         return _localizationService.GetText(key);
+    }
+
+    private static T? SelectById<T>(IReadOnlyList<T> values, string? id)
+        where T : IIdentifiedOption
+    {
+        return string.IsNullOrWhiteSpace(id)
+            ? default
+            : values.FirstOrDefault(value => value.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 }
 
@@ -388,3 +443,17 @@ public sealed class MainWindowLocalizationPayload
 }
 
 public sealed record DocumentDefaultFields(string SourceText, string Audience);
+
+public sealed record MainWindowLocalizedSelectionState(
+    string DocumentSourceText,
+    string DocumentAudience,
+    IReadOnlyList<DocumentStrictnessOptionViewModel> DocumentStrictnessOptions,
+    DocumentStrictnessOptionViewModel SelectedDocumentStrictnessOption,
+    IReadOnlyList<ImageTypePresetOptionViewModel> ImageTypePresetOptions,
+    ImageTypePresetOptionViewModel? SelectedImageTypePresetOption,
+    IReadOnlyList<StyleGuideOptionViewModel> StyleGuideOptions,
+    StyleGuideOptionViewModel? SelectedStyleGuideOption,
+    IReadOnlyList<GenerationRecipeOptionViewModel> GenerationRecipeOptions,
+    GenerationRecipeOptionViewModel? SelectedGenerationRecipeOption,
+    IReadOnlyList<LanguageOptionViewModel> LanguageOptions,
+    LanguageOptionViewModel SelectedLanguageOption);

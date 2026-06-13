@@ -323,6 +323,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract current-project summary display building into `MainWindowSelectionSummaryCoordinator` while preserving empty-state and timestamp formatting behavior.
   - [x] Extract document default/strictness localization restoration into `MainWindowLocalizationCoordinator` while preserving user-entered text and educational fallback behavior.
   - [x] Extract shell localization payload building into `MainWindowLocalizationCoordinator` while preserving language-switch behavior and selected-option restoration.
+  - [x] Extract localized selection and option restoration into `MainWindowLocalizationCoordinator` while preserving language-switch behavior and current inspector selections.
 - [ ] Split large WPF views into feature-owned user controls where needed.
   - [x] Extract the workflow graph tab content into `WorkflowGraphView` while preserving existing bindings and graph output.
   - [x] Extract the delivery tab content into `DeliveryView` while preserving existing bindings and delivery output.

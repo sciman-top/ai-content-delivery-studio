@@ -1511,7 +1511,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var previousDefaultDocumentSourceText = _defaultDocumentSourceText;
         var previousDefaultDocumentAudience = _defaultDocumentAudience;
         var previousDocumentStrictness = SelectedDocumentStrictnessOption?.Value ?? IllustrationStrictnessLevel.Educational;
+        var previousPresetId = SelectedImageTypePresetOption?.Id;
+        var previousStyleGuideId = SelectedStyleGuideOption?.Id;
+        var previousRecipeId = SelectedGenerationRecipeOption?.Id;
         var payload = _mainWindowLocalizationCoordinator.BuildPayload();
+        var restoredSelections = _mainWindowLocalizationCoordinator.RestoreSelectionState(
+            payload,
+            NewDocumentSourceText,
+            NewDocumentAudience,
+            previousDefaultDocumentSourceText,
+            previousDefaultDocumentAudience,
+            previousDocumentStrictness,
+            previousPresetId,
+            previousStyleGuideId,
+            previousRecipeId,
+            previousPreference);
 
         AppTitle = payload.AppTitle;
         ProviderMode = payload.ProviderMode;
@@ -1627,12 +1641,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         RunFakeImageEditText = payload.RunFakeImageEditText;
         ImageEditResultText = payload.ImageEditResultText;
         OnPropertyChanged(nameof(SelectedCandidateSummary));
-        RefreshDocumentDefaults(previousDefaultDocumentSourceText, previousDefaultDocumentAudience);
-        RefreshDocumentStrictnessOptions(previousDocumentStrictness, payload.DocumentStrictnessOptions);
-        RefreshStyleRecipeOptions(
-            payload.ImageTypePresetOptions,
-            payload.StyleGuideOptions,
-            payload.GenerationRecipeOptions);
+        NewDocumentSourceText = restoredSelections.DocumentSourceText;
+        NewDocumentAudience = restoredSelections.DocumentAudience;
+        DocumentStrictnessOptions = restoredSelections.DocumentStrictnessOptions;
+        SelectedDocumentStrictnessOption = restoredSelections.SelectedDocumentStrictnessOption;
+        ImageTypePresetOptions = restoredSelections.ImageTypePresetOptions;
+        SelectedImageTypePresetOption = restoredSelections.SelectedImageTypePresetOption;
+        StyleGuideOptions = restoredSelections.StyleGuideOptions;
+        SelectedStyleGuideOption = restoredSelections.SelectedStyleGuideOption;
+        GenerationRecipeOptions = restoredSelections.GenerationRecipeOptions;
+        SelectedGenerationRecipeOption = restoredSelections.SelectedGenerationRecipeOption;
         CurrentProjectSummary = _mainWindowSelectionSummaryCoordinator.BuildCurrentProjectSummary(
             SelectedProject,
             Text(LocalizationKey.NoProjectLoaded));
@@ -1649,9 +1667,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         NavigationItems = payload.NavigationItems;
         WorkbenchTabs = payload.WorkbenchTabs;
         ActivityItems = payload.ActivityItems;
-        LanguageOptions = payload.LanguageOptions;
+        LanguageOptions = restoredSelections.LanguageOptions;
 
-        _selectedLanguageOption = LanguageOptions.First(option => option.Preference == previousPreference);
+        _selectedLanguageOption = restoredSelections.SelectedLanguageOption;
         OnPropertyChanged(nameof(SelectedLanguageOption));
         SelectedSeriesItemTitleText = _mainWindowSelectionSummaryCoordinator.BuildSelectedSeriesItemTitle(
             SelectedSeriesItem,
@@ -1661,62 +1679,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         RebuildWorkflowGraphRows();
     }
 
-    private void RefreshDocumentDefaults(string previousSourceTextDefault, string previousAudienceDefault)
-    {
-        var defaults = _mainWindowLocalizationCoordinator.ResolveDocumentDefaults(
-            NewDocumentSourceText,
-            NewDocumentAudience,
-            previousSourceTextDefault,
-            previousAudienceDefault,
-            _defaultDocumentSourceText,
-            _defaultDocumentAudience);
-        NewDocumentSourceText = defaults.SourceText;
-        NewDocumentAudience = defaults.Audience;
-    }
-
-    private void RefreshDocumentStrictnessOptions(
-        IllustrationStrictnessLevel selectedStrictness,
-        IReadOnlyList<DocumentStrictnessOptionViewModel> options)
-    {
-        DocumentStrictnessOptions = options;
-        SelectedDocumentStrictnessOption = _mainWindowLocalizationCoordinator.SelectDocumentStrictnessOption(
-            DocumentStrictnessOptions,
-            selectedStrictness);
-    }
-
-    private void RefreshStyleRecipeOptions(
-        IReadOnlyList<ImageTypePresetOptionViewModel> imageTypePresetOptions,
-        IReadOnlyList<StyleGuideOptionViewModel> styleGuideOptions,
-        IReadOnlyList<GenerationRecipeOptionViewModel> generationRecipeOptions)
-    {
-        var previousPresetId = SelectedImageTypePresetOption?.Id;
-        var previousStyleGuideId = SelectedStyleGuideOption?.Id;
-        var previousRecipeId = SelectedGenerationRecipeOption?.Id;
-
-        ImageTypePresetOptions = imageTypePresetOptions;
-        StyleGuideOptions = styleGuideOptions;
-        GenerationRecipeOptions = generationRecipeOptions;
-
-        SelectedImageTypePresetOption = SelectById(ImageTypePresetOptions, previousPresetId) ?? ImageTypePresetOptions.FirstOrDefault();
-        SelectedStyleGuideOption = SelectById(StyleGuideOptions, previousStyleGuideId) ?? StyleGuideOptions.FirstOrDefault();
-        SelectedGenerationRecipeOption = SelectById(GenerationRecipeOptions, previousRecipeId) ?? GenerationRecipeOptions.FirstOrDefault();
-        RefreshStyleRecipeSummary();
-    }
-
     private void RefreshStyleRecipeSummary()
     {
         StyleRecipeSummaryText = _mainWindowSelectionSummaryCoordinator.BuildStyleRecipeSummary(
             SelectedImageTypePresetOption,
             SelectedStyleGuideOption,
             SelectedGenerationRecipeOption);
-    }
-
-    private static T? SelectById<T>(IReadOnlyList<T> values, string? id)
-        where T : IIdentifiedOption
-    {
-        return string.IsNullOrWhiteSpace(id)
-            ? default
-            : values.FirstOrDefault(value => value.Id.Equals(id, StringComparison.OrdinalIgnoreCase));
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateProject))]

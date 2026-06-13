@@ -83,4 +83,33 @@ public sealed class MainWindowLocalizationCoordinatorTests
             IllustrationStrictnessLevel.Educational,
             coordinator.SelectDocumentStrictnessOption(options, IllustrationStrictnessLevel.ScholarlyDraft).Value);
     }
+
+    [Fact]
+    public void RestoreSelectionState_RestoresLocalizedDefaultsAndExistingSelections()
+    {
+        var localizationService = new LocalizationService(() => new CultureInfo("en-US"));
+        localizationService.SetLanguage(LanguagePreference.Chinese);
+        var coordinator = new MainWindowLocalizationCoordinator(localizationService);
+        var payload = coordinator.BuildPayload();
+
+        var restored = coordinator.RestoreSelectionState(
+            payload,
+            currentDocumentSourceText: "",
+            currentDocumentAudience: "teachers",
+            previousDocumentSourceDefault: "old source",
+            previousDocumentAudienceDefault: "teachers",
+            selectedStrictness: IllustrationStrictnessLevel.ScholarlyDraft,
+            selectedImageTypePresetId: payload.ImageTypePresetOptions.First().Id,
+            selectedStyleGuideId: payload.StyleGuideOptions.First().Id,
+            selectedGenerationRecipeId: payload.GenerationRecipeOptions.First().Id,
+            selectedLanguagePreference: LanguagePreference.Chinese);
+
+        Assert.Equal(payload.DefaultDocumentSourceText, restored.DocumentSourceText);
+        Assert.Equal(payload.DefaultDocumentAudience, restored.DocumentAudience);
+        Assert.Equal(IllustrationStrictnessLevel.ScholarlyDraft, restored.SelectedDocumentStrictnessOption.Value);
+        Assert.Equal(payload.ImageTypePresetOptions.First().Id, restored.SelectedImageTypePresetOption?.Id);
+        Assert.Equal(payload.StyleGuideOptions.First().Id, restored.SelectedStyleGuideOption?.Id);
+        Assert.Equal(payload.GenerationRecipeOptions.First().Id, restored.SelectedGenerationRecipeOption?.Id);
+        Assert.Equal(LanguagePreference.Chinese, restored.SelectedLanguageOption.Preference);
+    }
 }
