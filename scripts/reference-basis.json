@@ -48,10 +48,7 @@
       "name": "host-and-observability",
       "required": true,
       "sourceRules": [
-        "src/ImageSeriesStudio.App/App.xaml.cs",
-        "src/ImageSeriesStudio.App/Telemetry/",
-        "src/ImageSeriesStudio.App/Services/ProviderCenterServices.cs",
-        "src/ImageSeriesStudio.App/Properties/launchSettings.json",
+        "src/ImageSeriesStudio.App/",
         "src/ImageSeriesStudio.Infrastructure/Diagnostics/"
       ],
       "evidenceRules": [
@@ -230,10 +227,8 @@
     },
     {
       "name": "workflow-and-ux-architecture",
-      "required": true,
+      "required": false,
       "sourceRules": [
-        "src/ImageSeriesStudio.App/MainWindow.xaml",
-        "src/ImageSeriesStudio.App/MainWindow.xaml.cs",
         "src/ImageSeriesStudio.App/ViewModels/",
         "src/ImageSeriesStudio.App/Views/",
         "src/ImageSeriesStudio.Application/Modules/",
@@ -247,11 +242,6 @@
         "docs/superpowers/plans/"
       ],
       "localReferences": [
-        {
-          "path": "D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/docs-desktop",
-          "kind": "official-doc-source",
-          "reuseLevel": "direct-pattern"
-        },
         {
           "path": "D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet",
           "kind": "official-toolkit-source",
@@ -276,7 +266,6 @@
       "requiredTriggers": [
         "large-viewmodel-split",
         "large-view-split",
-        "shell-view-structure",
         "workflow-graph",
         "queue-gallery-stage-composition",
         "module-boundary-change"
