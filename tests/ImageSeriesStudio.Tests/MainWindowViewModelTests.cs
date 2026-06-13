@@ -116,6 +116,34 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task SelectionDerivedSummaries_ShowCurrentItemStyleRecipeAndCandidate()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.NewProjectName = "Selection summary demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening frame";
+        viewModel.NewItemBrief = "Opening visual for a short series.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        Assert.Equal("Opening frame", viewModel.SelectedSeriesItemTitleText);
+        Assert.Equal("Educational poster / Default editorial guide / Fake standard PNG", viewModel.StyleRecipeSummaryText);
+
+        viewModel.NewPromptText = "Create a clean opening frame.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+
+        var selectedCandidate = Assert.Single(viewModel.GalleryRows);
+        Assert.Equal(
+            $"{selectedCandidate.ItemTitle} ({selectedCandidate.CandidateImageId:N})",
+            viewModel.SelectedCandidateSummary);
+    }
+
+    [Fact]
     public async Task FinalApprovalWorkflow_BlocksDeliveryUntilHumanApprovesReview()
     {
         var viewModel = CreateViewModel();

@@ -24,6 +24,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly WorkflowGraphCoordinator _workflowGraphCoordinator;
     private readonly ProjectWorkbenchProjectionCoordinator _projectWorkbenchProjectionCoordinator;
     private readonly MainWindowLocalizationCoordinator _mainWindowLocalizationCoordinator;
+    private readonly MainWindowSelectionSummaryCoordinator _mainWindowSelectionSummaryCoordinator;
 
     private string _appTitle = string.Empty;
     private string _providerMode = string.Empty;
@@ -210,6 +211,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _workflowGraphCoordinator = new WorkflowGraphCoordinator(localizationService);
         _projectWorkbenchProjectionCoordinator = new ProjectWorkbenchProjectionCoordinator(localizationService, projectService);
         _mainWindowLocalizationCoordinator = new MainWindowLocalizationCoordinator(localizationService);
+        _mainWindowSelectionSummaryCoordinator = new MainWindowSelectionSummaryCoordinator();
         ProviderCenter = providerCenter;
         RefreshLocalizedText();
         SelectedLanguageOption = LanguageOptions.First(option => option.Preference == _localizationService.Preference);
@@ -1056,9 +1058,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _selectedCandidateLabel, value);
     }
 
-    public string SelectedCandidateSummary => SelectedGalleryRow is null
-        ? Text(LocalizationKey.NoCandidateSelectedForEdit)
-        : $"{SelectedGalleryRow.ItemTitle} ({SelectedGalleryRow.CandidateImageId:N})";
+    public string SelectedCandidateSummary => _mainWindowSelectionSummaryCoordinator.BuildSelectedCandidateSummary(
+        SelectedGalleryRow,
+        Text(LocalizationKey.NoCandidateSelectedForEdit));
 
     public string ImageEditPromptLabel
     {
@@ -1272,7 +1274,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
             }
 
             PromptVersions = value?.PromptVersions ?? [];
-            SelectedSeriesItemTitleText = value?.Title ?? NoItemSelectedForPromptText;
+            SelectedSeriesItemTitleText = _mainWindowSelectionSummaryCoordinator.BuildSelectedSeriesItemTitle(
+                value,
+                NoItemSelectedForPromptText);
             CreatePromptVersionCommand.NotifyCanExecuteChanged();
             PromotePromptDirectionCommand.NotifyCanExecuteChanged();
         }
@@ -1644,7 +1648,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         _selectedLanguageOption = LanguageOptions.First(option => option.Preference == previousPreference);
         OnPropertyChanged(nameof(SelectedLanguageOption));
-        SelectedSeriesItemTitleText = SelectedSeriesItem?.Title ?? NoItemSelectedForPromptText;
+        SelectedSeriesItemTitleText = _mainWindowSelectionSummaryCoordinator.BuildSelectedSeriesItemTitle(
+            SelectedSeriesItem,
+            NoItemSelectedForPromptText);
         RebuildPlanRows();
         RebuildPromptRows();
         RebuildWorkflowGraphRows();
@@ -1696,10 +1702,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private void RefreshStyleRecipeSummary()
     {
-        var preset = SelectedImageTypePresetOption?.DisplayName ?? "-";
-        var guide = SelectedStyleGuideOption?.Name ?? "-";
-        var recipe = SelectedGenerationRecipeOption?.DisplayName ?? "-";
-        StyleRecipeSummaryText = $"{preset} / {guide} / {recipe}";
+        StyleRecipeSummaryText = _mainWindowSelectionSummaryCoordinator.BuildStyleRecipeSummary(
+            SelectedImageTypePresetOption,
+            SelectedStyleGuideOption,
+            SelectedGenerationRecipeOption);
     }
 
     private static T? SelectById<T>(IReadOnlyList<T> values, string? id)
