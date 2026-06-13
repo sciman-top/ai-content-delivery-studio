@@ -23,6 +23,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly PlanEditorWorkflowCoordinator _planEditorWorkflowCoordinator;
     private readonly WorkflowGraphCoordinator _workflowGraphCoordinator;
     private readonly ProjectWorkbenchProjectionCoordinator _projectWorkbenchProjectionCoordinator;
+    private readonly WorkbenchInspectorCoordinator _workbenchInspectorCoordinator;
     private readonly MainWindowLocalizationCoordinator _mainWindowLocalizationCoordinator;
     private readonly MainWindowSelectionSummaryCoordinator _mainWindowSelectionSummaryCoordinator;
 
@@ -210,6 +211,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _planEditorWorkflowCoordinator = new PlanEditorWorkflowCoordinator(projectService);
         _workflowGraphCoordinator = new WorkflowGraphCoordinator(localizationService);
         _projectWorkbenchProjectionCoordinator = new ProjectWorkbenchProjectionCoordinator(localizationService, projectService);
+        _workbenchInspectorCoordinator = new WorkbenchInspectorCoordinator(
+            _projectWorkspaceCoordinator,
+            _planningWorkflowCoordinator,
+            _generationWorkflowCoordinator);
         _mainWindowLocalizationCoordinator = new MainWindowLocalizationCoordinator(localizationService);
         _mainWindowSelectionSummaryCoordinator = new MainWindowSelectionSummaryCoordinator();
         ProviderCenter = providerCenter;
@@ -1717,7 +1722,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCreateProject))]
     private async Task CreateProjectAsync()
     {
-        var result = await _projectWorkspaceCoordinator.CreateProjectAsync(
+        var result = await _workbenchInspectorCoordinator.CreateProjectAsync(
             NewProjectName,
             CancellationToken.None);
 
@@ -1788,19 +1793,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         DocumentPlanningResultSummary = string.Empty;
         var projectId = SelectedProject.Id;
-        var result = await _planningWorkflowCoordinator.RunFakeDocumentPlanningAsync(
-            projectId,
-            SelectedProject.Name,
+        var result = await _workbenchInspectorCoordinator.RunFakeDocumentPlanningAsync(
+            SelectedProject,
             NewDocumentSourceText,
             NewDocumentAudience,
             SelectedDocumentStrictnessOption?.Value ?? IllustrationStrictnessLevel.Educational,
             _defaultDocumentAudience,
+            ActivityItems,
             CancellationToken.None);
 
-        await RefreshProjectsAsync(projectId);
+        Projects = result.Workspace.Projects;
+        SelectedProject = result.Workspace.SelectedProject;
         await LoadPlanAsync(projectId, result.SeriesId);
         DocumentPlanningResultSummary = result.ResultSummary;
-        ActivityItems = ActivityItems.Concat([result.ResultSummary]).ToArray();
+        ActivityItems = result.ActivityItems;
     }
 
     private bool CanRunFakeDocumentPlanning()
@@ -2029,18 +2035,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var editedRow = await _generationWorkflowCoordinator.RunFakeImageEditAsync(
+        var result = await _workbenchInspectorCoordinator.RunFakeImageEditAsync(
             SelectedProject.Id,
             SelectedGalleryRow,
             NewImageEditPrompt,
             NewImageEditMaskPath,
+            ImageEditResultText,
+            GalleryRows,
+            ActivityItems,
             CancellationToken.None);
 
-        GalleryRows = [.. GalleryRows, editedRow];
-        SelectedGalleryRow = editedRow;
+        GalleryRows = result.GalleryRows;
+        SelectedGalleryRow = result.SelectedGalleryRow;
         ReviewRows = [];
         DeliveryRows = [];
-        ActivityItems = [ImageEditResultText, .. ActivityItems];
+        ActivityItems = result.ActivityItems;
     }
 
     private bool CanRunFakeImageEdit()

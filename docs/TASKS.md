@@ -310,6 +310,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Add `FeatureViewModule` contract for WPF view, view model, localization keys, commands, and fake-service tests.
 - [ ] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
   - [x] Extract project workspace command orchestration into `ProjectWorkspaceCoordinator` while preserving existing bindings and commands.
+  - [x] Extract shell-inspector project creation, document planning, and image-edit orchestration into `WorkbenchInspectorCoordinator` while preserving existing bindings and inspector behavior.
   - [x] Extract planning and document-planning orchestration into `PlanningWorkflowCoordinator` while preserving existing bindings and commands.
   - [x] Extract brief-tab workflow orchestration into `BriefWorkflowCoordinator` while preserving existing bindings and commands.
   - [x] Extract generation/gallery workflow orchestration into `GenerationWorkflowCoordinator` while preserving existing bindings and commands.
