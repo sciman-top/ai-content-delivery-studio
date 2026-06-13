@@ -8,8 +8,9 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesBriefWorkflowUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var tabHostViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchTabHostView.xaml");
 
-        Assert.Contains("<views:BriefWorkflowView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:BriefWorkflowView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.DesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             mainWindowXaml);
@@ -19,6 +20,8 @@ public sealed class MainWindowLayoutTests
 
         var briefWorkflowViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "BriefWorkflowView.xaml");
         Assert.True(File.Exists(briefWorkflowViewPath));
+
+        Assert.Contains("<views:BriefWorkflowView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var briefWorkflowViewXaml = File.ReadAllText(briefWorkflowViewPath);
         Assert.Contains(
@@ -33,14 +36,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesPlanUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var tabHostViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchTabHostView.xaml");
 
-        Assert.Contains("<views:PlanView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:PlanView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.PlanRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             mainWindowXaml);
 
         var planViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "PlanView.xaml");
         Assert.True(File.Exists(planViewPath));
+
+        Assert.Contains("<views:PlanView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var planViewXaml = File.ReadAllText(planViewPath);
         Assert.Contains(
@@ -52,14 +58,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesPromptsUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var tabHostViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchTabHostView.xaml");
 
-        Assert.Contains("<views:PromptsView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:PromptsView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.PromptRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             mainWindowXaml);
 
         var promptsViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "PromptsView.xaml");
         Assert.True(File.Exists(promptsViewPath));
+
+        Assert.Contains("<views:PromptsView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var promptsViewXaml = File.ReadAllText(promptsViewPath);
         Assert.Contains(
@@ -71,14 +80,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesPlanEditorPanelUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var inspectorViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchInspectorView.xaml");
 
-        Assert.Contains("<views:PlanEditorPanelView Margin=\"0,0,0,14\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:PlanEditorPanelView Margin=\"0,0,0,14\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding SeriesItems}\"",
             mainWindowXaml);
 
         var planEditorPanelViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "PlanEditorPanelView.xaml");
         Assert.True(File.Exists(planEditorPanelViewPath));
+
+        Assert.Contains("<views:PlanEditorPanelView Margin=\"0,0,0,14\" />", inspectorViewXaml);
 
         var planEditorPanelViewXaml = File.ReadAllText(planEditorPanelViewPath);
         Assert.Contains("ItemsSource=\"{Binding SeriesItems}\"", planEditorPanelViewXaml);
@@ -89,14 +101,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesPromptEditorPanelUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var inspectorViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchInspectorView.xaml");
 
-        Assert.Contains("<views:PromptEditorPanelView Margin=\"0,0,0,12\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:PromptEditorPanelView Margin=\"0,0,0,12\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding PromptVersions}\"",
             mainWindowXaml);
 
         var promptEditorPanelViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "PromptEditorPanelView.xaml");
         Assert.True(File.Exists(promptEditorPanelViewPath));
+
+        Assert.Contains("<views:PromptEditorPanelView Margin=\"0,0,0,12\" />", inspectorViewXaml);
 
         var promptEditorPanelViewXaml = File.ReadAllText(promptEditorPanelViewPath);
         Assert.Contains("ItemsSource=\"{Binding PromptVersions}\"", promptEditorPanelViewXaml);
@@ -107,14 +122,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesImageEditPanelUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var inspectorViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchInspectorView.xaml");
 
-        Assert.Contains("<views:ImageEditPanelView Margin=\"0,0,0,12\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:ImageEditPanelView Margin=\"0,0,0,12\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "Text=\"{Binding SelectedCandidateSummary}\"",
             mainWindowXaml);
 
         var imageEditPanelViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "ImageEditPanelView.xaml");
         Assert.True(File.Exists(imageEditPanelViewPath));
+
+        Assert.Contains("<views:ImageEditPanelView Margin=\"0,0,0,12\" />", inspectorViewXaml);
 
         var imageEditPanelViewXaml = File.ReadAllText(imageEditPanelViewPath);
         Assert.Contains("Text=\"{Binding SelectedCandidateSummary}\"", imageEditPanelViewXaml);
@@ -125,14 +143,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesReviewApprovalPanelUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var inspectorViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchInspectorView.xaml");
 
-        Assert.Contains("<views:ReviewApprovalPanelView />", mainWindowXaml);
+        Assert.DoesNotContain("<views:ReviewApprovalPanelView />", mainWindowXaml);
         Assert.DoesNotContain(
             "Command=\"{Binding ApproveSelectedReviewCommand}\"",
             mainWindowXaml);
 
         var reviewApprovalPanelViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "ReviewApprovalPanelView.xaml");
         Assert.True(File.Exists(reviewApprovalPanelViewPath));
+
+        Assert.Contains("<views:ReviewApprovalPanelView />", inspectorViewXaml);
 
         var reviewApprovalPanelViewXaml = File.ReadAllText(reviewApprovalPanelViewPath);
         Assert.Contains("Command=\"{Binding ApproveSelectedReviewCommand}\"", reviewApprovalPanelViewXaml);
@@ -143,15 +164,18 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesWorkflowGraphUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var tabHostViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchTabHostView.xaml");
 
         Assert.Contains("xmlns:views=\"clr-namespace:ImageSeriesStudio.App.Views\"", mainWindowXaml);
-        Assert.Contains("<views:WorkflowGraphView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:WorkflowGraphView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.WorkflowGraphRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             mainWindowXaml);
 
         var workflowGraphViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "WorkflowGraphView.xaml");
         Assert.True(File.Exists(workflowGraphViewPath));
+
+        Assert.Contains("<views:WorkflowGraphView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var workflowGraphViewXaml = File.ReadAllText(workflowGraphViewPath);
         Assert.Contains(
@@ -163,14 +187,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesDeliveryUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var tabHostViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchTabHostView.xaml");
 
-        Assert.Contains("<views:DeliveryView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:DeliveryView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.DeliveryRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             mainWindowXaml);
 
         var deliveryViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "DeliveryView.xaml");
         Assert.True(File.Exists(deliveryViewPath));
+
+        Assert.Contains("<views:DeliveryView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var deliveryViewXaml = File.ReadAllText(deliveryViewPath);
         Assert.Contains(
@@ -182,14 +209,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesReviewUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var tabHostViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchTabHostView.xaml");
 
-        Assert.Contains("<views:ReviewView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:ReviewView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.ReviewRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             mainWindowXaml);
 
         var reviewViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "ReviewView.xaml");
         Assert.True(File.Exists(reviewViewPath));
+
+        Assert.Contains("<views:ReviewView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var reviewViewXaml = File.ReadAllText(reviewViewPath);
         Assert.Contains(
@@ -201,14 +231,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesQueueUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var tabHostViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchTabHostView.xaml");
 
-        Assert.Contains("<views:QueueView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:QueueView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.QueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             mainWindowXaml);
 
         var queueViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "QueueView.xaml");
         Assert.True(File.Exists(queueViewPath));
+
+        Assert.Contains("<views:QueueView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var queueViewXaml = File.ReadAllText(queueViewPath);
         Assert.Contains(
@@ -220,14 +253,17 @@ public sealed class MainWindowLayoutTests
     public void MainWindowXaml_UsesGalleryUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
+        var tabHostViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchTabHostView.xaml");
 
-        Assert.Contains("<views:GalleryView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
+        Assert.DoesNotContain("<views:GalleryView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", mainWindowXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.GalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             mainWindowXaml);
 
         var galleryViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "GalleryView.xaml");
         Assert.True(File.Exists(galleryViewPath));
+
+        Assert.Contains("<views:GalleryView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var galleryViewXaml = File.ReadAllText(galleryViewPath);
         Assert.Contains(
@@ -236,6 +272,76 @@ public sealed class MainWindowLayoutTests
         Assert.Contains(
             "SelectedItem=\"{Binding DataContext.SelectedGalleryRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}\"",
             galleryViewXaml);
+    }
+
+    [Fact]
+    public void MainWindowXaml_UsesWorkbenchInspectorUserControl()
+    {
+        var mainWindowXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "MainWindow.xaml");
+
+        Assert.Contains("<views:WorkbenchInspectorView />", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"Provider Center\"", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding DocumentIllustrationTitle}\"", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding CurrentProjectSummary}\"", mainWindowXaml);
+
+        var inspectorViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "WorkbenchInspectorView.xaml");
+        Assert.True(File.Exists(inspectorViewPath));
+
+        var inspectorViewXaml = File.ReadAllText(inspectorViewPath);
+        Assert.Contains("Text=\"Provider Center\"", inspectorViewXaml);
+        Assert.Contains("Text=\"{Binding DocumentIllustrationTitle}\"", inspectorViewXaml);
+        Assert.Contains("Text=\"{Binding CurrentProjectSummary}\"", inspectorViewXaml);
+    }
+
+    [Fact]
+    public void MainWindowXaml_UsesWorkspaceNavigationUserControl()
+    {
+        var mainWindowXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "MainWindow.xaml");
+
+        Assert.Contains("<views:WorkspaceNavigationView />", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding WorkspaceHeader}\"", mainWindowXaml);
+        Assert.DoesNotContain("ItemsSource=\"{Binding NavigationItems}\"", mainWindowXaml);
+
+        var navigationViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "WorkspaceNavigationView.xaml");
+        Assert.True(File.Exists(navigationViewPath));
+
+        var navigationViewXaml = File.ReadAllText(navigationViewPath);
+        Assert.Contains("Text=\"{Binding WorkspaceHeader}\"", navigationViewXaml);
+        Assert.Contains("ItemsSource=\"{Binding NavigationItems}\"", navigationViewXaml);
+    }
+
+    [Fact]
+    public void MainWindowXaml_UsesActivityPanelUserControl()
+    {
+        var mainWindowXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "MainWindow.xaml");
+
+        Assert.Contains("<views:ActivityPanelView />", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding ActivityTitle}\"", mainWindowXaml);
+        Assert.DoesNotContain("ItemsSource=\"{Binding ActivityItems}\"", mainWindowXaml);
+
+        var activityViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "ActivityPanelView.xaml");
+        Assert.True(File.Exists(activityViewPath));
+
+        var activityViewXaml = File.ReadAllText(activityViewPath);
+        Assert.Contains("Text=\"{Binding ActivityTitle}\"", activityViewXaml);
+        Assert.Contains("ItemsSource=\"{Binding ActivityItems}\"", activityViewXaml);
+    }
+
+    [Fact]
+    public void MainWindowXaml_UsesWorkbenchTabHostView()
+    {
+        var mainWindowXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "MainWindow.xaml");
+
+        Assert.Contains("<views:WorkbenchTabHostView Grid.Row=\"1\" Grid.Column=\"1\" />", mainWindowXaml);
+        Assert.DoesNotContain("ItemsSource=\"{Binding WorkbenchTabs}\"", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding EmptyState}\"", mainWindowXaml);
+
+        var tabHostViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "WorkbenchTabHostView.xaml");
+        Assert.True(File.Exists(tabHostViewPath));
+
+        var tabHostViewXaml = File.ReadAllText(tabHostViewPath);
+        Assert.Contains("ItemsSource=\"{Binding WorkbenchTabs}\"", tabHostViewXaml);
+        Assert.Contains("Text=\"{Binding EmptyState}\"", tabHostViewXaml);
     }
 
     private static string ReadRepoFile(params string[] segments)

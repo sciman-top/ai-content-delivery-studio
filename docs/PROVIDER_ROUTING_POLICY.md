@@ -156,6 +156,7 @@ V1 does not require:
 - Keep the fake-first gate as the default regression path.
 - Use the official OpenAI .NET SDK for the stable Images API path; keep raw `HttpClient` on Responses-backed planning and review until the SDK surface no longer requires the current `OPENAI001` evaluation fallback.
 - Allow one bounded retry for transient official SDK Images `502 upstream_error` failures before surfacing the error to the live route.
+- Reuse the same bounded transient `502 upstream_error` policy for official SDK Responses text-planning calls. This keeps future real-provider brief or blueprint planning from inventing a broader retry policy when those paths leave the fake-first boundary.
 - Treat Responses multi-turn image state as a hardening slice, not as a prerequisite for the primary launch route.
 - Prepare compact local review artifacts before remote vision review: thumbnail grids, candidate manifests, prompt or setting summaries, and selected evidence anchors.
 - Keep normal production review stateless and bounded by batch thresholds; if a review request grows too large, split the batch instead of chaining more remote state.

@@ -3,15 +3,19 @@ namespace ImageSeriesStudio.Core.Providers;
 public static class TextPlanningExecutionPolicy
 {
     public const int DefaultMaxInputCharacters = 4000;
+    public const int MaxTransientUpstreamRetryCount = 1;
 
     public const bool StoreResponsesByDefault = false;
     public const bool AllowPreviousResponseIdByDefault = false;
+    public static readonly TimeSpan TransientUpstreamRetryDelay = TimeSpan.FromSeconds(2);
 
     public static TextPlanningOperatorDescriptor CreateOperatorDescriptor()
     {
         return new TextPlanningOperatorDescriptor(
             "local-direct-stateless",
             DefaultMaxInputCharacters,
+            MaxTransientUpstreamRetryCount,
+            TransientUpstreamRetryDelay,
             StoreResponsesByDefault,
             AllowPreviousResponseIdByDefault);
     }
@@ -58,5 +62,7 @@ public static class TextPlanningExecutionPolicy
 public sealed record TextPlanningOperatorDescriptor(
     string ExecutionMode,
     int MaxInputCharacters,
+    int MaxTransientUpstreamRetryCount,
+    TimeSpan TransientUpstreamRetryDelay,
     bool UsesStoredResponses,
     bool AllowsPreviousResponseId);

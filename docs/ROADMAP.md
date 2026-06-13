@@ -11,6 +11,7 @@ AI, providers, workflow packs, and output formats can evolve quickly. Core domai
 - A workflow is user-visible complete only when it can run end-to-end in the workbench with review and delivery.
 - A workflow is production-ready only when approval evidence, deterministic rendering or composition where required, and real-provider behavior are verified.
 - Current V1 release-claim truth lives in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md); roadmap phase status and completed backlog items do not count as launch proof by themselves.
+- As of the latest recorded launch snapshot on `2026-06-11`, that evidence file closes all `5 / 5` V1 launch metrics. This does not mean every roadmap phase is complete or that future release snapshots never need refresh.
 
 ## V1 Release Frame
 
@@ -60,6 +61,8 @@ V1 is ready only when all of these are true:
 - The educational poster proof path exports deterministic text-composition provenance and human approval evidence.
 - The first real low-risk operator action runs end-to-end and writes audit output plus rollback or cleanup notes.
 
+The current recorded answer is "yes" for the `2026-06-11` snapshot in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md). Keep this gate as the standard for future refreshes instead of treating the existing proof as a permanent exemption.
+
 ## Frozen Until Post-V1
 
 - Physical repository and namespace rename.
@@ -70,17 +73,19 @@ V1 is ready only when all of these are true:
 
 ## Now
 
-- Harden the short requirement -> brief -> blueprint -> series -> review -> delivery route as the primary launch workflow.
-- Keep the article or plain-text route focused on evidence-backed planning that promotes into the same downstream workflow.
-- Keep Phase 4A deterministic composition, readability checks, reviewer notes, and approval evidence export stable, and add stronger user-visible launch collateral only if needed later.
+- Keep the verified short requirement -> brief -> blueprint -> series -> review -> delivery route stable as the primary launch spine.
+- Keep the article or plain-text route focused on evidence-backed planning that promotes into the same downstream workflow, and only widen it when real-provider or extraction slices are explicitly activated.
+- Keep Phase 4A deterministic composition, readability checks, reviewer notes, and approval evidence export stable, adding stronger user-visible collateral only when release review or onboarding actually needs it.
 - Keep the stable Images API path on the official OpenAI .NET SDK, while limiting raw `HttpClient` usage to lagging Responses surfaces and evaluating multi-turn image state only where it materially improves provenance, revision loops, or partial preview UX.
-- Keep the first low-risk operator execution slice bounded and auditable, and strengthen live evidence only where release review or user-facing validation needs it.
-- Record launch evidence against the V1 release metrics instead of treating every completed foundation slice as launch-complete by default.
+- Keep the first low-risk operator execution slice bounded and auditable, and refresh live evidence only when provider behavior or release-claim snapshots change.
+- Continue modular splits in Phase 12 only when new slices touch large WPF views or orchestration-heavy services.
 - Keep the external reference system focused, deduplicated, and machine-readable instead of widening it ad hoc.
 
 ## Next
 
 - Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
+- Reuse the text-planning low-502 execution policy if future real-provider brief or blueprint planning moves beyond the current fake-first boundary.
+- Evaluate Responses API multi-turn image state only for workflows that gain meaningful provenance, revision, or preview value.
 - Add targeted binary extraction hardening only for formats promoted by the support matrix.
 - Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
 - Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.

@@ -15,6 +15,7 @@ Use these documents in this order:
 
 | Question | Authoritative document |
 | --- | --- |
+| What is this repository, where is the current root, and how do I start locally? | [README.md](../README.md) |
 | What does V1 promise? | [PRD_V1.md](./PRD_V1.md) |
 | What source inputs and output artifacts are launch-capable? | [SOURCE_ARTIFACT_SUPPORT_MATRIX.md](./SOURCE_ARTIFACT_SUPPORT_MATRIX.md) |
 | What are the provider and operator execution boundaries? | [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md) and [OPERATOR_RISK_POLICY.md](./OPERATOR_RISK_POLICY.md) |
@@ -35,6 +36,7 @@ Use these documents in this order:
 ## Hard Rules
 
 - `PRD_V1.md` defines launch promise and launch gate. It does not claim current proof.
+- `README.md` is the repository overview and local-start entrypoint. It must summarize current posture, but it must defer release-claim truth to `V1_LAUNCH_EVIDENCE.md`.
 - `V1_LAUNCH_EVIDENCE.md` is the only core document that should summarize current V1 release-verification status.
 - `ROADMAP.md` may describe phase status and next sequencing, but phase status does not equal launch readiness.
 - `TASKS.md` is an action backlog, not a release-claim document.
@@ -46,8 +48,9 @@ Use these documents in this order:
 
 When reviewing the repository quickly:
 
-1. Read [PRD_V1.md](./PRD_V1.md) for the launch promise.
-2. Read [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) for current proof.
-3. Read [ROADMAP.md](./ROADMAP.md) and [TASKS.md](./TASKS.md) for what still needs to happen next.
-4. Read [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) and [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) before changing provider, host, persistence, or tooling boundaries.
-5. Read [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) only when deciding how to extend the architecture beyond the current V1 boundary.
+1. Read [README.md](../README.md) for repository scope, local entrypoints, and the current root/rename posture.
+2. Read [PRD_V1.md](./PRD_V1.md) for the launch promise.
+3. Read [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) for current proof.
+4. Read [ROADMAP.md](./ROADMAP.md) and [TASKS.md](./TASKS.md) for what still needs to happen next.
+5. Read [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) and [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) before changing provider, host, persistence, or tooling boundaries.
+6. Read [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) only when deciding how to extend the architecture beyond the current V1 boundary.

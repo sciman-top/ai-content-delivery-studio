@@ -1,6 +1,6 @@
 # User Guide
 
-AI Content Delivery Studio is a Windows desktop workbench for planning, generating, reviewing, repairing, and delivering content packages. Image-series production is the current core workflow. The current implementation uses fake providers by default, so the end-to-end flow can be tested without paid API calls.
+AI Content Delivery Studio is a Windows desktop workbench for planning, generating, reviewing, repairing, and delivering content packages. Image-series production is the current core workflow. The current implementation uses fake providers by default, so the end-to-end flow can be tested without paid API calls, while the latest recorded V1 launch snapshot keeps the opt-in live OpenAI route as evidence rather than as a default runtime mode.
 
 ## Language
 
@@ -23,8 +23,8 @@ Domain identifiers, provider IDs, model IDs, and error strings remain in English
 
 ## Strongest Supported Paths
 
-- Requirement-first image series: the strongest current end-to-end path.
-- Plain-text or article illustration planning: a fake-first path that promotes approved targets into the existing image-series workflow.
+- Requirement-first image series: the strongest current end-to-end path and the primary verified launch spine in the latest recorded V1 snapshot.
+- Plain-text or article illustration planning: a fake-first path that promotes approved targets into the existing image-series workflow and already has automated route proof for the current V1 scope.
 - Text-heavy educational or poster output: an automated-proof path for the current V1 scope. When readable labels, formulas, or callouts matter, treat generated visuals as background plates and use deterministic post-render composition plus separate readability review.
 
 ## Document Illustration
@@ -68,7 +68,7 @@ If a target requires evidence-bearing figures, measured plots, or document-nativ
 
 ## OpenAI Launch Preflight
 
-Before attempting a live V1 OpenAI sample run, use the built-in read-only OpenAI launch preflight path.
+The latest recorded live OpenAI V1 sample is already captured under `artifacts/live-openai-v1-sample/20260611-132947`. Use the built-in read-only OpenAI launch preflight path before attempting any refresh run, provider-behavior revalidation, or new release-evidence snapshot.
 
 What it checks:
 
@@ -125,12 +125,16 @@ Delivery packages are immutable snapshots. Rebuild as a new package when content
 
 ## Troubleshooting
 
-Run the standard gate before reporting a build or workflow issue:
+Run the canonical repository gate before reporting a build or workflow issue:
 
 ```powershell
-dotnet build
-dotnet test
-dotnet format --verify-no-changes
+.\scripts\verify-repo.ps1
 ```
 
-For real-provider readiness questions, run the OpenAI launch preflight first and inspect the generated `json` or `md` report before attempting a live sample run.
+For stronger release-style validation, use:
+
+```powershell
+.\scripts\preflight-release.ps1
+```
+
+For real-provider readiness questions, run the OpenAI launch preflight first and inspect the generated `json` or `md` report before attempting a live sample refresh.

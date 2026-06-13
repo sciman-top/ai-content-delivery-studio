@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Providers;
+using OpenAI.Responses;
 
 namespace ImageSeriesStudio.Infrastructure.OpenAI;
 
+#pragma warning disable OPENAI001 // SDK Responses APIs are adopted behind ADR 0009 parity gates.
 public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
 {
     private readonly OpenAiProviderOptions _options;
@@ -86,7 +88,7 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
 
         try
         {
-            var response = await client.CreateResponseAsync(sdkOptions, cancellationToken);
+            var response = await CreateResponseWithTransientRetryAsync(client, sdkOptions, cancellationToken);
             stopwatch.Stop();
             var body = response.Body
                 ?? throw new InvalidOperationException("OpenAI SDK text planning response did not include a JSON body.");
@@ -143,6 +145,31 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
         return new OpenAiSdkResponsesClient(client);
     }
 
+    private static async Task<OpenAiResponsesClientResult> CreateResponseWithTransientRetryAsync(
+        IOpenAiResponsesClient client,
+        CreateResponseOptions sdkOptions,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 0; ; attempt++)
+        {
+            try
+            {
+                return await client.CreateResponseAsync(sdkOptions, cancellationToken);
+            }
+            catch (OpenAiResponsesClientException exception)
+                when (ShouldRetryTransientUpstream(exception) && attempt < TextPlanningExecutionPolicy.MaxTransientUpstreamRetryCount)
+            {
+                await Task.Delay(TextPlanningExecutionPolicy.TransientUpstreamRetryDelay, cancellationToken);
+            }
+        }
+    }
+
+    private static bool ShouldRetryTransientUpstream(OpenAiResponsesClientException exception)
+    {
+        return exception.Result.StatusCode == 502
+            && exception.Message.Contains("upstream_error", StringComparison.OrdinalIgnoreCase);
+    }
+
     private void RecordTelemetry(
         Uri endpoint,
         OpenAiResponsesClientResult response,
@@ -164,3 +191,4 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
             _rateCard.Name));
     }
 }
+#pragma warning restore OPENAI001

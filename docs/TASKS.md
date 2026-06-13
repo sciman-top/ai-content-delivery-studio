@@ -1,10 +1,12 @@
 # Task Checklist
 
-## Current V1 Release Gap
+## Current V1 Release Readout
 
-Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for current release claims. As of the current snapshot, the only open V1 release-claim gap is:
+Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for current release claims. The latest recorded release-verification readout is:
 
-- [x] Record one fresh opt-in OpenAI 2-item live run with provenance, review evidence, and secret-redaction checks, then append the result to `docs/V1_LAUNCH_EVIDENCE.md`.
+- Latest recorded release-verification snapshot: `2026-06-11`
+- Current readout: no open V1 release-claim gaps remain in that snapshot; all `5 / 5` launch metrics are verified, including the fresh opt-in OpenAI `2-item` sample under `artifacts/live-openai-v1-sample/20260611-132947`
+- Reopen this as a release-gap section only when provider behavior materially changes, a newer launch snapshot is needed, or a regression invalidates the existing evidence
 
 ## Near-Term Hardening (Not Current Release Blockers)
 
@@ -20,7 +22,7 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add bounded local review-prep artifacts and review-batch thresholds before expanding multi-turn image-state review.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
 - [x] Capture V1 launch evidence against the explicit launch metrics.
-- [ ] Reuse the text-planning low-502 execution policy when future real-provider brief or blueprint planning leaves the current fake-first boundary.
+- [x] Encode and reuse the text-planning low-502 execution policy on the official SDK Responses text-planning path; future real-provider brief or blueprint planning must use this boundary when it leaves the current fake-first mode.
 
 ## V1 Documentation And Policy Alignment
 
@@ -326,6 +328,10 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract the review tab content into `ReviewView` while preserving existing bindings and review output.
   - [x] Extract the queue tab content into `QueueView` while preserving existing bindings and queue output.
   - [x] Extract the gallery tab content into `GalleryView` while preserving existing bindings and gallery selection output.
+  - [x] Extract the inspector side panel into `WorkbenchInspectorView` while preserving provider center, project setup, planning, document illustration, and review-approval bindings.
+  - [x] Extract the workspace navigation column into `WorkspaceNavigationView` while preserving localized shell labels and navigation rows.
+  - [x] Extract the bottom activity footer into `ActivityPanelView` while preserving activity summaries and shell layout behavior.
+  - [x] Extract the central tab host into `WorkbenchTabHostView` while preserving workflow view placement, empty-state rules, and tab binding behavior.
 - [x] Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
   - [x] Extract project create/load/list workflow methods into `ProjectWorkspaceApplicationService` while preserving the existing facade entrypoints.
   - [x] Extract series, item, prompt, and fake planning workflow methods into `SeriesWorkflowApplicationService` while preserving the existing facade entrypoints.

@@ -329,6 +329,7 @@ The codebase should now enter a modular maintenance period:
 - New features start in a module with a small use-case API, fake adapter, and focused tests.
 - When a new module touches old centralized logic, move the directly related old logic into the module in the same slice.
 - Split WPF views and view models by workflow tab or feature module instead of growing `MainWindowViewModel`.
+- Treat the shell grid and column layout as stable scaffolding, and move heavy inspector workflow content into feature-owned user controls when `MainWindow.xaml` starts carrying more than placement and navigation composition.
 - Split `ProjectApplicationService` into use-case services once a use case has independent state or tests.
 - Split EF Core mapping into `IEntityTypeConfiguration<T>` as models grow.
 - Keep provider configuration, secret storage, capability validation, and persistence configuration outside WPF.
