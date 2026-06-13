@@ -141,6 +141,34 @@ public sealed class MainWindowLocalizationCoordinator
         };
     }
 
+    public DocumentDefaultFields ResolveDocumentDefaults(
+        string currentSourceText,
+        string currentAudience,
+        string previousSourceTextDefault,
+        string previousAudienceDefault,
+        string currentSourceTextDefault,
+        string currentAudienceDefault)
+    {
+        var sourceText = string.IsNullOrWhiteSpace(currentSourceText)
+            || currentSourceText.Equals(previousSourceTextDefault, StringComparison.Ordinal)
+                ? currentSourceTextDefault
+                : currentSourceText;
+        var audience = string.IsNullOrWhiteSpace(currentAudience)
+            || currentAudience.Equals(previousAudienceDefault, StringComparison.Ordinal)
+                ? currentAudienceDefault
+                : currentAudience;
+
+        return new DocumentDefaultFields(sourceText, audience);
+    }
+
+    public DocumentStrictnessOptionViewModel SelectDocumentStrictnessOption(
+        IReadOnlyList<DocumentStrictnessOptionViewModel> options,
+        IllustrationStrictnessLevel selectedStrictness)
+    {
+        return options.FirstOrDefault(option => option.Value == selectedStrictness)
+            ?? options.First(option => option.Value is IllustrationStrictnessLevel.Educational);
+    }
+
     private IReadOnlyList<string> BuildNavigationItems()
     {
         return
@@ -358,3 +386,5 @@ public sealed class MainWindowLocalizationPayload
     public IReadOnlyList<StyleGuideOptionViewModel> StyleGuideOptions { get; init; } = [];
     public IReadOnlyList<GenerationRecipeOptionViewModel> GenerationRecipeOptions { get; init; } = [];
 }
+
+public sealed record DocumentDefaultFields(string SourceText, string Audience);

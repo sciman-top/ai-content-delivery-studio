@@ -1658,17 +1658,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private void RefreshDocumentDefaults(string previousSourceTextDefault, string previousAudienceDefault)
     {
-        if (string.IsNullOrWhiteSpace(NewDocumentSourceText)
-            || NewDocumentSourceText.Equals(previousSourceTextDefault, StringComparison.Ordinal))
-        {
-            NewDocumentSourceText = _defaultDocumentSourceText;
-        }
-
-        if (string.IsNullOrWhiteSpace(NewDocumentAudience)
-            || NewDocumentAudience.Equals(previousAudienceDefault, StringComparison.Ordinal))
-        {
-            NewDocumentAudience = _defaultDocumentAudience;
-        }
+        var defaults = _mainWindowLocalizationCoordinator.ResolveDocumentDefaults(
+            NewDocumentSourceText,
+            NewDocumentAudience,
+            previousSourceTextDefault,
+            previousAudienceDefault,
+            _defaultDocumentSourceText,
+            _defaultDocumentAudience);
+        NewDocumentSourceText = defaults.SourceText;
+        NewDocumentAudience = defaults.Audience;
     }
 
     private void RefreshDocumentStrictnessOptions(
@@ -1676,9 +1674,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IReadOnlyList<DocumentStrictnessOptionViewModel> options)
     {
         DocumentStrictnessOptions = options;
-        SelectedDocumentStrictnessOption =
-            DocumentStrictnessOptions.FirstOrDefault(option => option.Value == selectedStrictness)
-            ?? DocumentStrictnessOptions.First(option => option.Value is IllustrationStrictnessLevel.Educational);
+        SelectedDocumentStrictnessOption = _mainWindowLocalizationCoordinator.SelectDocumentStrictnessOption(
+            DocumentStrictnessOptions,
+            selectedStrictness);
     }
 
     private void RefreshStyleRecipeOptions(

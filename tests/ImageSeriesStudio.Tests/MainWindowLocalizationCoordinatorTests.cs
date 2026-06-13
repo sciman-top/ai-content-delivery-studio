@@ -37,4 +37,50 @@ public sealed class MainWindowLocalizationCoordinatorTests
         Assert.Equal("假标准 PNG", Assert.Single(payload.GenerationRecipeOptions).DisplayName);
         Assert.NotEmpty(payload.ImageTypePresetOptions);
     }
+
+    [Fact]
+    public void ResolveDocumentDefaults_ReusesTypedValuesAndRestoresLocalizedDefaults()
+    {
+        var coordinator = new MainWindowLocalizationCoordinator(new LocalizationService(() => new CultureInfo("en-US")));
+
+        var restored = coordinator.ResolveDocumentDefaults(
+            currentSourceText: "",
+            currentAudience: "teachers",
+            previousSourceTextDefault: "old source",
+            previousAudienceDefault: "teachers",
+            currentSourceTextDefault: "new source",
+            currentAudienceDefault: "new audience");
+
+        Assert.Equal("new source", restored.SourceText);
+        Assert.Equal("new audience", restored.Audience);
+
+        var preserved = coordinator.ResolveDocumentDefaults(
+            currentSourceText: "custom source",
+            currentAudience: "custom audience",
+            previousSourceTextDefault: "old source",
+            previousAudienceDefault: "old audience",
+            currentSourceTextDefault: "new source",
+            currentAudienceDefault: "new audience");
+
+        Assert.Equal("custom source", preserved.SourceText);
+        Assert.Equal("custom audience", preserved.Audience);
+    }
+
+    [Fact]
+    public void SelectDocumentStrictnessOption_RestoresRequestedValueOrFallsBackToEducational()
+    {
+        var coordinator = new MainWindowLocalizationCoordinator(new LocalizationService(() => new CultureInfo("en-US")));
+        var options = new[]
+        {
+            new DocumentStrictnessOptionViewModel(IllustrationStrictnessLevel.Editorial, "Editorial"),
+            new DocumentStrictnessOptionViewModel(IllustrationStrictnessLevel.Educational, "Educational"),
+        };
+
+        Assert.Equal(
+            IllustrationStrictnessLevel.Editorial,
+            coordinator.SelectDocumentStrictnessOption(options, IllustrationStrictnessLevel.Editorial).Value);
+        Assert.Equal(
+            IllustrationStrictnessLevel.Educational,
+            coordinator.SelectDocumentStrictnessOption(options, IllustrationStrictnessLevel.ScholarlyDraft).Value);
+    }
 }

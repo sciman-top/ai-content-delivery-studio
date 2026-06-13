@@ -318,6 +318,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract workbench projection building into `ProjectWorkbenchProjectionCoordinator` while preserving plan, prompt, gallery, review, and reload output.
   - [x] Extract selection-summary display building into `MainWindowSelectionSummaryCoordinator` while preserving item-title, style-recipe, and candidate-summary behavior.
   - [x] Extract current-project summary display building into `MainWindowSelectionSummaryCoordinator` while preserving empty-state and timestamp formatting behavior.
+  - [x] Extract document default/strictness localization restoration into `MainWindowLocalizationCoordinator` while preserving user-entered text and educational fallback behavior.
   - [x] Extract shell localization payload building into `MainWindowLocalizationCoordinator` while preserving language-switch behavior and selected-option restoration.
 - [ ] Split large WPF views into feature-owned user controls where needed.
   - [x] Extract the workflow graph tab content into `WorkflowGraphView` while preserving existing bindings and graph output.
