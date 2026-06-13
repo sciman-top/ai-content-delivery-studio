@@ -2,6 +2,15 @@ namespace ImageSeriesStudio.App.ViewModels;
 
 public sealed class MainWindowSelectionSummaryCoordinator
 {
+    public string BuildCurrentProjectSummary(
+        ProjectSummaryViewModel? selectedProject,
+        string noProjectLoadedText)
+    {
+        return selectedProject is null
+            ? noProjectLoadedText
+            : $"{selectedProject.Name} ({selectedProject.UpdatedAt.LocalDateTime:g})";
+    }
+
     public string BuildStyleRecipeSummary(
         ImageTypePresetOptionViewModel? preset,
         StyleGuideOptionViewModel? guide,

@@ -6,6 +6,21 @@ namespace ImageSeriesStudio.Tests;
 public sealed class MainWindowSelectionSummaryCoordinatorTests
 {
     [Fact]
+    public void BuildCurrentProjectSummary_ReturnsProjectNameAndFallback()
+    {
+        var coordinator = new MainWindowSelectionSummaryCoordinator();
+        var project = new ProjectSummaryViewModel(
+            Guid.NewGuid(),
+            "Demo project",
+            DateTimeOffset.Parse("2026-06-13T12:34:00Z"));
+
+        Assert.Equal(
+            $"Demo project ({project.UpdatedAt.LocalDateTime:g})",
+            coordinator.BuildCurrentProjectSummary(project, "No project loaded"));
+        Assert.Equal("No project loaded", coordinator.BuildCurrentProjectSummary(null, "No project loaded"));
+    }
+
+    [Fact]
     public void BuildStyleRecipeSummary_UsesSelectedDisplayNamesAndFallbacks()
     {
         var coordinator = new MainWindowSelectionSummaryCoordinator();

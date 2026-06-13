@@ -305,9 +305,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
-            CurrentProjectSummary = value is null
-                ? Text(LocalizationKey.NoProjectLoaded)
-                : $"{value.Name} ({value.UpdatedAt.LocalDateTime:g})";
+            CurrentProjectSummary = _mainWindowSelectionSummaryCoordinator.BuildCurrentProjectSummary(
+                value,
+                Text(LocalizationKey.NoProjectLoaded));
             if (value is not null && string.IsNullOrWhiteSpace(NewPlanningGoal))
             {
                 NewPlanningGoal = value.Name;
@@ -1628,9 +1628,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
             payload.ImageTypePresetOptions,
             payload.StyleGuideOptions,
             payload.GenerationRecipeOptions);
-        CurrentProjectSummary = SelectedProject is null
-            ? Text(LocalizationKey.NoProjectLoaded)
-            : $"{SelectedProject.Name} ({SelectedProject.UpdatedAt.LocalDateTime:g})";
+        CurrentProjectSummary = _mainWindowSelectionSummaryCoordinator.BuildCurrentProjectSummary(
+            SelectedProject,
+            Text(LocalizationKey.NoProjectLoaded));
         if (string.IsNullOrWhiteSpace(NewPlanningAudience))
         {
             NewPlanningAudience = Text(LocalizationKey.DefaultPlanningAudience);
