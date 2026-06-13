@@ -23,6 +23,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly PlanEditorWorkflowCoordinator _planEditorWorkflowCoordinator;
     private readonly WorkflowGraphCoordinator _workflowGraphCoordinator;
     private readonly ProjectWorkbenchProjectionCoordinator _projectWorkbenchProjectionCoordinator;
+    private readonly MainWindowLocalizationCoordinator _mainWindowLocalizationCoordinator;
 
     private string _appTitle = string.Empty;
     private string _providerMode = string.Empty;
@@ -208,6 +209,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _planEditorWorkflowCoordinator = new PlanEditorWorkflowCoordinator(projectService);
         _workflowGraphCoordinator = new WorkflowGraphCoordinator(localizationService);
         _projectWorkbenchProjectionCoordinator = new ProjectWorkbenchProjectionCoordinator(localizationService, projectService);
+        _mainWindowLocalizationCoordinator = new MainWindowLocalizationCoordinator(localizationService);
         ProviderCenter = providerCenter;
         RefreshLocalizedText();
         SelectedLanguageOption = LanguageOptions.First(option => option.Preference == _localizationService.Preference);
@@ -1500,124 +1502,128 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var previousDefaultDocumentSourceText = _defaultDocumentSourceText;
         var previousDefaultDocumentAudience = _defaultDocumentAudience;
         var previousDocumentStrictness = SelectedDocumentStrictnessOption?.Value ?? IllustrationStrictnessLevel.Educational;
+        var payload = _mainWindowLocalizationCoordinator.BuildPayload();
 
-        AppTitle = Text(LocalizationKey.AppTitle);
-        ProviderMode = Text(LocalizationKey.ProviderModeFake);
-        WorkspaceHeader = Text(LocalizationKey.Workspace);
-        InspectorTitle = Text(LocalizationKey.Inspector);
-        ActivityTitle = Text(LocalizationKey.Activity);
-        InspectorSummary = Text(LocalizationKey.NoItemSelected);
-        LanguageLabel = Text(LocalizationKey.LanguageLabel);
-        ProjectNameLabel = Text(LocalizationKey.ProjectName);
-        NewProjectNamePlaceholder = Text(LocalizationKey.NewProjectNamePlaceholder);
-        CreateProjectText = Text(LocalizationKey.CreateProject);
-        AvailableProjectsTitle = Text(LocalizationKey.AvailableProjects);
-        CurrentProjectTitle = Text(LocalizationKey.CurrentProject);
-        FakePlanningTitle = Text(LocalizationKey.FakePlanningTitle);
-        PlanningGoalLabel = Text(LocalizationKey.PlanningGoal);
-        PlanningAudienceLabel = Text(LocalizationKey.PlanningAudience);
-        PlanningItemCountLabel = Text(LocalizationKey.PlanningItemCount);
-        PlanningStyleBriefLabel = Text(LocalizationKey.PlanningStyleBrief);
-        DocumentIllustrationTitle = Text(LocalizationKey.DocumentIllustrationTitle);
-        DocumentSourceTextLabel = Text(LocalizationKey.DocumentSourceText);
-        DocumentAudienceLabel = Text(LocalizationKey.DocumentAudience);
-        DocumentStrictnessLabel = Text(LocalizationKey.DocumentStrictness);
-        RunFakeDocumentPlanningText = Text(LocalizationKey.RunFakeDocumentPlanning);
-        DocumentPlanningResultText = Text(LocalizationKey.DocumentPlanningResult);
-        _defaultDocumentSourceText = Text(LocalizationKey.DefaultDocumentSourceText);
-        _defaultDocumentAudience = Text(LocalizationKey.DefaultDocumentAudience);
-        BriefGoalLabel = Text(LocalizationKey.BriefGoal);
-        BriefAudienceLabel = Text(LocalizationKey.BriefAudience);
-        BriefStyleIntentLabel = Text(LocalizationKey.BriefStyleIntent);
-        CreateBriefText = Text(LocalizationKey.CreateBrief);
-        GenerateDesignBlueprintsText = Text(LocalizationKey.GenerateDesignBlueprints);
-        PromoteDesignBlueprintText = Text(LocalizationKey.PromoteDesignBlueprint);
-        BlueprintRoutesHeader = Text(LocalizationKey.BlueprintRoutesHeader);
-        NoBlueprintRowsText = Text(LocalizationKey.NoBlueprintRows);
-        GeneratePromptDirectionsText = Text(LocalizationKey.GeneratePromptDirections);
-        PromotePromptDirectionText = Text(LocalizationKey.PromotePromptDirection);
-        PromptDirectionsHeader = Text(LocalizationKey.PromptDirectionsHeader);
-        NoPromptDirectionRowsText = Text(LocalizationKey.NoPromptDirectionRows);
-        RunFakePlanningText = Text(LocalizationKey.RunFakePlanning);
-        RunFakeGenerationText = Text(LocalizationKey.RunFakeGeneration);
-        QueueItemColumn = Text(LocalizationKey.QueueItemColumn);
-        QueueStatusColumn = Text(LocalizationKey.QueueStatusColumn);
-        QueueAttemptsColumn = Text(LocalizationKey.QueueAttemptsColumn);
-        QueueOutputColumn = Text(LocalizationKey.QueueOutputColumn);
-        QueueErrorColumn = Text(LocalizationKey.QueueErrorColumn);
-        NoQueueRowsText = Text(LocalizationKey.NoQueueRows);
-        GalleryItemColumn = Text(LocalizationKey.GalleryItemColumn);
-        GalleryImageColumn = Text(LocalizationKey.GalleryImageColumn);
-        GalleryMetadataColumn = Text(LocalizationKey.GalleryMetadataColumn);
-        NoGalleryRowsText = Text(LocalizationKey.NoGalleryRows);
-        RunFakeReviewText = Text(LocalizationKey.RunFakeReview);
-        ReviewItemColumn = Text(LocalizationKey.ReviewItemColumn);
-        ReviewDecisionColumn = Text(LocalizationKey.ReviewDecisionColumn);
-        ReviewScoreColumn = Text(LocalizationKey.ReviewScoreColumn);
-        ReviewCommentsColumn = Text(LocalizationKey.ReviewCommentsColumn);
-        ReviewFixColumn = Text(LocalizationKey.ReviewFixColumn);
-        ReviewRouteColumn = Text(LocalizationKey.ReviewRouteColumn);
-        HumanApprovalColumn = Text(LocalizationKey.HumanApprovalColumn);
-        NoReviewRowsText = Text(LocalizationKey.NoReviewRows);
-        FinalApprovalReviewerLabel = Text(LocalizationKey.FinalApprovalReviewer);
-        FinalApprovalNotesLabel = Text(LocalizationKey.FinalApprovalNotes);
-        ApproveSelectedReviewText = Text(LocalizationKey.ApproveSelectedReview);
-        RejectSelectedReviewText = Text(LocalizationKey.RejectSelectedReview);
-        ExportDeliveryText = Text(LocalizationKey.ExportDelivery);
-        DeliveryPackageColumn = Text(LocalizationKey.DeliveryPackageColumn);
-        DeliveryManifestColumn = Text(LocalizationKey.DeliveryManifestColumn);
-        DeliveryReportColumn = Text(LocalizationKey.DeliveryReportColumn);
-        DeliveryFinalImagesColumn = Text(LocalizationKey.DeliveryFinalImagesColumn);
-        NoDeliveryRowsText = Text(LocalizationKey.NoDeliveryRows);
-        GraphNodeColumn = Text(LocalizationKey.GraphNodeColumn);
-        GraphSummaryColumn = Text(LocalizationKey.GraphSummaryColumn);
-        GraphLinksColumn = Text(LocalizationKey.GraphLinksColumn);
-        NoGraphRowsText = Text(LocalizationKey.NoGraphRows);
-        PlanEditorTitle = Text(LocalizationKey.PlanEditor);
-        SeriesTitleLabel = Text(LocalizationKey.SeriesTitle);
-        SeriesDescriptionLabel = Text(LocalizationKey.SeriesDescription);
-        CreateSeriesText = Text(LocalizationKey.CreateSeries);
-        AvailableSeriesTitle = Text(LocalizationKey.AvailableSeries);
-        ItemTitleLabel = Text(LocalizationKey.ItemTitle);
-        ItemBriefLabel = Text(LocalizationKey.ItemBrief);
-        AddItemText = Text(LocalizationKey.AddItem);
-        SeriesItemsTitle = Text(LocalizationKey.SeriesItems);
-        NoSeriesSelectedText = Text(LocalizationKey.NoSeriesSelected);
-        PlanSeriesColumn = Text(LocalizationKey.PlanSeriesColumn);
-        PlanItemColumn = Text(LocalizationKey.PlanItemColumn);
-        PlanBriefColumn = Text(LocalizationKey.PlanBriefColumn);
-        PlanKindColumn = Text(LocalizationKey.PlanKindColumn);
-        PlanStatusColumn = Text(LocalizationKey.PlanStatusColumn);
-        NoPlanRowsText = Text(LocalizationKey.NoPlanRows);
-        NoItemsInSeriesText = Text(LocalizationKey.NoItemsInSeries);
-        PromptEditorTitle = Text(LocalizationKey.PromptEditor);
-        SelectedItemTitle = Text(LocalizationKey.SelectedItem);
-        PromptTextLabel = Text(LocalizationKey.PromptText);
-        DefaultGenerationSettingsText = Text(LocalizationKey.DefaultGenerationSettings);
-        CreatePromptVersionText = Text(LocalizationKey.CreatePromptVersion);
-        PromptHistoryTitle = Text(LocalizationKey.PromptHistory);
-        PromptVersionColumn = Text(LocalizationKey.PromptVersionColumn);
-        PromptItemColumn = Text(LocalizationKey.PromptItemColumn);
-        PromptTextColumn = Text(LocalizationKey.PromptTextColumn);
-        PromptSettingsColumn = Text(LocalizationKey.PromptSettingsColumn);
-        PromptCreatedColumn = Text(LocalizationKey.PromptCreatedColumn);
-        NoPromptRowsText = Text(LocalizationKey.NoPromptRows);
-        NoItemSelectedForPromptText = Text(LocalizationKey.NoItemSelectedForPrompt);
-        StyleRecipeInspectorTitle = Text(LocalizationKey.StyleRecipeInspector);
-        ImageTypePresetLabel = Text(LocalizationKey.ImageTypePreset);
-        StyleGuideLabel = Text(LocalizationKey.StyleGuide);
-        GenerationRecipeLabel = Text(LocalizationKey.GenerationRecipe);
-        StyleRecipeSummaryTitle = Text(LocalizationKey.StyleRecipeSummary);
-        ImageEditTitle = Text(LocalizationKey.ImageEditTitle);
-        SelectedCandidateLabel = Text(LocalizationKey.SelectedCandidate);
-        ImageEditPromptLabel = Text(LocalizationKey.ImageEditPrompt);
-        ImageEditMaskPathLabel = Text(LocalizationKey.ImageEditMaskPath);
-        RunFakeImageEditText = Text(LocalizationKey.RunFakeImageEdit);
-        ImageEditResultText = Text(LocalizationKey.ImageEditResult);
+        AppTitle = payload.AppTitle;
+        ProviderMode = payload.ProviderMode;
+        WorkspaceHeader = payload.WorkspaceHeader;
+        InspectorTitle = payload.InspectorTitle;
+        ActivityTitle = payload.ActivityTitle;
+        InspectorSummary = payload.InspectorSummary;
+        LanguageLabel = payload.LanguageLabel;
+        ProjectNameLabel = payload.ProjectNameLabel;
+        NewProjectNamePlaceholder = payload.NewProjectNamePlaceholder;
+        CreateProjectText = payload.CreateProjectText;
+        AvailableProjectsTitle = payload.AvailableProjectsTitle;
+        CurrentProjectTitle = payload.CurrentProjectTitle;
+        FakePlanningTitle = payload.FakePlanningTitle;
+        PlanningGoalLabel = payload.PlanningGoalLabel;
+        PlanningAudienceLabel = payload.PlanningAudienceLabel;
+        PlanningItemCountLabel = payload.PlanningItemCountLabel;
+        PlanningStyleBriefLabel = payload.PlanningStyleBriefLabel;
+        DocumentIllustrationTitle = payload.DocumentIllustrationTitle;
+        DocumentSourceTextLabel = payload.DocumentSourceTextLabel;
+        DocumentAudienceLabel = payload.DocumentAudienceLabel;
+        DocumentStrictnessLabel = payload.DocumentStrictnessLabel;
+        RunFakeDocumentPlanningText = payload.RunFakeDocumentPlanningText;
+        DocumentPlanningResultText = payload.DocumentPlanningResultText;
+        _defaultDocumentSourceText = payload.DefaultDocumentSourceText;
+        _defaultDocumentAudience = payload.DefaultDocumentAudience;
+        BriefGoalLabel = payload.BriefGoalLabel;
+        BriefAudienceLabel = payload.BriefAudienceLabel;
+        BriefStyleIntentLabel = payload.BriefStyleIntentLabel;
+        CreateBriefText = payload.CreateBriefText;
+        GenerateDesignBlueprintsText = payload.GenerateDesignBlueprintsText;
+        PromoteDesignBlueprintText = payload.PromoteDesignBlueprintText;
+        BlueprintRoutesHeader = payload.BlueprintRoutesHeader;
+        NoBlueprintRowsText = payload.NoBlueprintRowsText;
+        GeneratePromptDirectionsText = payload.GeneratePromptDirectionsText;
+        PromotePromptDirectionText = payload.PromotePromptDirectionText;
+        PromptDirectionsHeader = payload.PromptDirectionsHeader;
+        NoPromptDirectionRowsText = payload.NoPromptDirectionRowsText;
+        RunFakePlanningText = payload.RunFakePlanningText;
+        RunFakeGenerationText = payload.RunFakeGenerationText;
+        QueueItemColumn = payload.QueueItemColumn;
+        QueueStatusColumn = payload.QueueStatusColumn;
+        QueueAttemptsColumn = payload.QueueAttemptsColumn;
+        QueueOutputColumn = payload.QueueOutputColumn;
+        QueueErrorColumn = payload.QueueErrorColumn;
+        NoQueueRowsText = payload.NoQueueRowsText;
+        GalleryItemColumn = payload.GalleryItemColumn;
+        GalleryImageColumn = payload.GalleryImageColumn;
+        GalleryMetadataColumn = payload.GalleryMetadataColumn;
+        NoGalleryRowsText = payload.NoGalleryRowsText;
+        RunFakeReviewText = payload.RunFakeReviewText;
+        ReviewItemColumn = payload.ReviewItemColumn;
+        ReviewDecisionColumn = payload.ReviewDecisionColumn;
+        ReviewScoreColumn = payload.ReviewScoreColumn;
+        ReviewCommentsColumn = payload.ReviewCommentsColumn;
+        ReviewFixColumn = payload.ReviewFixColumn;
+        ReviewRouteColumn = payload.ReviewRouteColumn;
+        HumanApprovalColumn = payload.HumanApprovalColumn;
+        NoReviewRowsText = payload.NoReviewRowsText;
+        FinalApprovalReviewerLabel = payload.FinalApprovalReviewerLabel;
+        FinalApprovalNotesLabel = payload.FinalApprovalNotesLabel;
+        ApproveSelectedReviewText = payload.ApproveSelectedReviewText;
+        RejectSelectedReviewText = payload.RejectSelectedReviewText;
+        ExportDeliveryText = payload.ExportDeliveryText;
+        DeliveryPackageColumn = payload.DeliveryPackageColumn;
+        DeliveryManifestColumn = payload.DeliveryManifestColumn;
+        DeliveryReportColumn = payload.DeliveryReportColumn;
+        DeliveryFinalImagesColumn = payload.DeliveryFinalImagesColumn;
+        NoDeliveryRowsText = payload.NoDeliveryRowsText;
+        GraphNodeColumn = payload.GraphNodeColumn;
+        GraphSummaryColumn = payload.GraphSummaryColumn;
+        GraphLinksColumn = payload.GraphLinksColumn;
+        NoGraphRowsText = payload.NoGraphRowsText;
+        PlanEditorTitle = payload.PlanEditorTitle;
+        SeriesTitleLabel = payload.SeriesTitleLabel;
+        SeriesDescriptionLabel = payload.SeriesDescriptionLabel;
+        CreateSeriesText = payload.CreateSeriesText;
+        AvailableSeriesTitle = payload.AvailableSeriesTitle;
+        ItemTitleLabel = payload.ItemTitleLabel;
+        ItemBriefLabel = payload.ItemBriefLabel;
+        AddItemText = payload.AddItemText;
+        SeriesItemsTitle = payload.SeriesItemsTitle;
+        NoSeriesSelectedText = payload.NoSeriesSelectedText;
+        PlanSeriesColumn = payload.PlanSeriesColumn;
+        PlanItemColumn = payload.PlanItemColumn;
+        PlanBriefColumn = payload.PlanBriefColumn;
+        PlanKindColumn = payload.PlanKindColumn;
+        PlanStatusColumn = payload.PlanStatusColumn;
+        NoPlanRowsText = payload.NoPlanRowsText;
+        NoItemsInSeriesText = payload.NoItemsInSeriesText;
+        PromptEditorTitle = payload.PromptEditorTitle;
+        SelectedItemTitle = payload.SelectedItemTitle;
+        PromptTextLabel = payload.PromptTextLabel;
+        DefaultGenerationSettingsText = payload.DefaultGenerationSettingsText;
+        CreatePromptVersionText = payload.CreatePromptVersionText;
+        PromptHistoryTitle = payload.PromptHistoryTitle;
+        PromptVersionColumn = payload.PromptVersionColumn;
+        PromptItemColumn = payload.PromptItemColumn;
+        PromptTextColumn = payload.PromptTextColumn;
+        PromptSettingsColumn = payload.PromptSettingsColumn;
+        PromptCreatedColumn = payload.PromptCreatedColumn;
+        NoPromptRowsText = payload.NoPromptRowsText;
+        NoItemSelectedForPromptText = payload.NoItemSelectedForPromptText;
+        StyleRecipeInspectorTitle = payload.StyleRecipeInspectorTitle;
+        ImageTypePresetLabel = payload.ImageTypePresetLabel;
+        StyleGuideLabel = payload.StyleGuideLabel;
+        GenerationRecipeLabel = payload.GenerationRecipeLabel;
+        StyleRecipeSummaryTitle = payload.StyleRecipeSummaryTitle;
+        ImageEditTitle = payload.ImageEditTitle;
+        SelectedCandidateLabel = payload.SelectedCandidateLabel;
+        ImageEditPromptLabel = payload.ImageEditPromptLabel;
+        ImageEditMaskPathLabel = payload.ImageEditMaskPathLabel;
+        RunFakeImageEditText = payload.RunFakeImageEditText;
+        ImageEditResultText = payload.ImageEditResultText;
         OnPropertyChanged(nameof(SelectedCandidateSummary));
         RefreshDocumentDefaults(previousDefaultDocumentSourceText, previousDefaultDocumentAudience);
-        RefreshDocumentStrictnessOptions(previousDocumentStrictness);
-        RefreshStyleRecipeOptions();
+        RefreshDocumentStrictnessOptions(previousDocumentStrictness, payload.DocumentStrictnessOptions);
+        RefreshStyleRecipeOptions(
+            payload.ImageTypePresetOptions,
+            payload.StyleGuideOptions,
+            payload.GenerationRecipeOptions);
         CurrentProjectSummary = SelectedProject is null
             ? Text(LocalizationKey.NoProjectLoaded)
             : $"{SelectedProject.Name} ({SelectedProject.UpdatedAt.LocalDateTime:g})";
@@ -1631,35 +1637,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
             NewPlanningStyleBrief = Text(LocalizationKey.DefaultPlanningStyleBrief);
         }
 
-        NavigationItems =
-        [
-            Text(LocalizationKey.Workspaces),
-            Text(LocalizationKey.Projects),
-            Text(LocalizationKey.Settings),
-        ];
-        WorkbenchTabs =
-        [
-            new(WorkbenchTabKind.Brief, Text(LocalizationKey.Brief), Text(LocalizationKey.BriefEmptyState)),
-            new(WorkbenchTabKind.Plan, Text(LocalizationKey.Plan), Text(LocalizationKey.PlanEmptyState)),
-            new(WorkbenchTabKind.Prompts, Text(LocalizationKey.Prompts), Text(LocalizationKey.PromptsEmptyState)),
-            new(WorkbenchTabKind.Queue, Text(LocalizationKey.Queue), Text(LocalizationKey.QueueEmptyState)),
-            new(WorkbenchTabKind.Gallery, Text(LocalizationKey.Gallery), Text(LocalizationKey.GalleryEmptyState)),
-            new(WorkbenchTabKind.Review, Text(LocalizationKey.Review), Text(LocalizationKey.ReviewEmptyState)),
-            new(WorkbenchTabKind.Delivery, Text(LocalizationKey.Delivery), Text(LocalizationKey.DeliveryEmptyState)),
-            new(WorkbenchTabKind.Graph, Text(LocalizationKey.Graph), Text(LocalizationKey.GraphEmptyState)),
-        ];
-        ActivityItems =
-        [
-            Text(LocalizationKey.GenericHostStarted),
-            Text(LocalizationKey.FakeProvidersRegistered),
-            Text(LocalizationKey.NoRealApiCalls),
-        ];
-        LanguageOptions =
-        [
-            new(LanguagePreference.System, Text(LocalizationKey.LanguageSystem)),
-            new(LanguagePreference.Chinese, Text(LocalizationKey.LanguageChinese)),
-            new(LanguagePreference.English, Text(LocalizationKey.LanguageEnglish)),
-        ];
+        NavigationItems = payload.NavigationItems;
+        WorkbenchTabs = payload.WorkbenchTabs;
+        ActivityItems = payload.ActivityItems;
+        LanguageOptions = payload.LanguageOptions;
 
         _selectedLanguageOption = LanguageOptions.First(option => option.Preference == previousPreference);
         OnPropertyChanged(nameof(SelectedLanguageOption));
@@ -1684,45 +1665,28 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    private void RefreshDocumentStrictnessOptions(IllustrationStrictnessLevel selectedStrictness)
+    private void RefreshDocumentStrictnessOptions(
+        IllustrationStrictnessLevel selectedStrictness,
+        IReadOnlyList<DocumentStrictnessOptionViewModel> options)
     {
-        DocumentStrictnessOptions =
-        [
-            new(IllustrationStrictnessLevel.Editorial, Text(LocalizationKey.DocumentStrictnessEditorial)),
-            new(IllustrationStrictnessLevel.Educational, Text(LocalizationKey.DocumentStrictnessEducational)),
-            new(IllustrationStrictnessLevel.ScholarlyDraft, Text(LocalizationKey.DocumentStrictnessScholarlyDraft)),
-        ];
+        DocumentStrictnessOptions = options;
         SelectedDocumentStrictnessOption =
             DocumentStrictnessOptions.FirstOrDefault(option => option.Value == selectedStrictness)
             ?? DocumentStrictnessOptions.First(option => option.Value is IllustrationStrictnessLevel.Educational);
     }
 
-    private void RefreshStyleRecipeOptions()
+    private void RefreshStyleRecipeOptions(
+        IReadOnlyList<ImageTypePresetOptionViewModel> imageTypePresetOptions,
+        IReadOnlyList<StyleGuideOptionViewModel> styleGuideOptions,
+        IReadOnlyList<GenerationRecipeOptionViewModel> generationRecipeOptions)
     {
         var previousPresetId = SelectedImageTypePresetOption?.Id;
         var previousStyleGuideId = SelectedStyleGuideOption?.Id;
         var previousRecipeId = SelectedGenerationRecipeOption?.Id;
 
-        ImageTypePresetOptions = ImageTypePresetCatalog.Defaults
-            .Select(preset => new ImageTypePresetOptionViewModel(
-                preset.Id,
-                preset.DisplayName,
-                $"{preset.DefaultAspectRatio}, {preset.DefaultOutputFormat}, {preset.TextPolicy}"))
-            .ToArray();
-        StyleGuideOptions =
-        [
-            new(
-                "default-editorial",
-                Text(LocalizationKey.DefaultStyleGuideName),
-                Text(LocalizationKey.DefaultStyleGuideSummary)),
-        ];
-        GenerationRecipeOptions =
-        [
-            new(
-                "fake-standard-png",
-                Text(LocalizationKey.DefaultGenerationRecipeName),
-                "fake-image-v1, 1024x1024, standard, png, auto"),
-        ];
+        ImageTypePresetOptions = imageTypePresetOptions;
+        StyleGuideOptions = styleGuideOptions;
+        GenerationRecipeOptions = generationRecipeOptions;
 
         SelectedImageTypePresetOption = SelectById(ImageTypePresetOptions, previousPresetId) ?? ImageTypePresetOptions.FirstOrDefault();
         SelectedStyleGuideOption = SelectById(StyleGuideOptions, previousStyleGuideId) ?? StyleGuideOptions.FirstOrDefault();

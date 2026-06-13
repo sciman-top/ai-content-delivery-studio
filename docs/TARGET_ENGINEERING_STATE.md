@@ -176,7 +176,7 @@ Packs should extend workflow behavior without forcing core-domain rewrites. In V
 
 - Avoid a giant `MainWindowViewModel`.
 - Avoid a giant `ProjectApplicationService`.
-- The current modular baseline already includes focused project/workflow coordinators for workspace, planning, brief, generation, review, delivery, plan editing, workflow graph, and workbench projection building; keep command ownership on the shell view model until a feature module can own the behavior end-to-end.
+- The current modular baseline already includes focused project/workflow coordinators for workspace, planning, brief, generation, review, delivery, plan editing, workflow graph, workbench projection building, and shell localization payload construction; keep command ownership and selected-state restoration on the shell view model until a feature module can own the behavior end-to-end.
 - Split features into module-owned views, services, and tests as the product grows.
 - Keep UI, infrastructure, and domain concerns separate.
 

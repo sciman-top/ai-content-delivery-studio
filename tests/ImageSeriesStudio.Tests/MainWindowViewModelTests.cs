@@ -502,6 +502,25 @@ public sealed class MainWindowViewModelTests
             row => row.Title == "Image provider" && row.SecretSummary == "4 keys + app credentials");
     }
 
+    [Fact]
+    public void LanguageSwitch_RefreshesLocalizedShellPayload()
+    {
+        var viewModel = CreateViewModel();
+
+        viewModel.SelectedDocumentStrictnessOption = viewModel.DocumentStrictnessOptions
+            .Single(option => option.Value == IllustrationStrictnessLevel.ScholarlyDraft);
+
+        viewModel.SelectedLanguageOption = viewModel.LanguageOptions
+            .Single(option => option.Preference == LanguagePreference.Chinese);
+
+        Assert.Equal("语言", viewModel.LanguageLabel);
+        Assert.Equal(["工作区", "项目", "设置"], viewModel.NavigationItems);
+        Assert.Equal("需求设计", viewModel.WorkbenchTabs.First(tab => tab.Kind is WorkbenchTabKind.Brief).Title);
+        Assert.Equal("图视图", viewModel.WorkbenchTabs.First(tab => tab.Kind is WorkbenchTabKind.Graph).Title);
+        Assert.Equal(["跟随系统", "中文", "英文"], viewModel.LanguageOptions.Select(option => option.DisplayName));
+        Assert.Equal("学术草稿", viewModel.SelectedDocumentStrictnessOption?.DisplayName);
+    }
+
     private static MainWindowViewModel CreateViewModel(
         bool reviewPasses = true,
         ProviderCenterViewModel? providerCenter = null,
