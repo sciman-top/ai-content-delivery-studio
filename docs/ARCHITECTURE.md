@@ -310,7 +310,7 @@ Migration limits:
 - Keep `.env`, SQLite databases, workspaces, and outputs ignored by git.
 - Redact secrets from logs and exported manifests.
 - Record provider profile and model settings without exposing credentials.
-- Treat provider credentials as role-scoped. `TEXT_PROVIDER_API_KEY` is for text/vision only, while `IMAGE_PROVIDER_API_KEY*` is for image generation only; see `docs/PROVIDER_CONFIGURATION.md`.
+- Treat provider credentials as role-scoped. `TEXT_PROVIDER_API_KEY` is the default text/vision secret and can also back image generation through the built-in single-key fallback when no `IMAGE_PROVIDER_API_KEY*` is configured; explicit `IMAGE_PROVIDER_API_KEY*` values still take precedence for image generation. See `docs/PROVIDER_CONFIGURATION.md`.
 
 ## Diagnostics Export
 
@@ -330,7 +330,7 @@ The codebase should now enter a modular maintenance period:
 - When a new module touches old centralized logic, move the directly related old logic into the module in the same slice.
 - Split WPF views and view models by workflow tab or feature module instead of growing `MainWindowViewModel`.
 - Treat the shell grid and column layout as stable scaffolding, and move heavy inspector workflow content into feature-owned user controls when `MainWindow.xaml` starts carrying more than placement and navigation composition.
-- Inside already-extracted tab views, keep splitting repeated or dense stage regions into narrower user controls before introducing new shell-level tabs or layout branches. The brief workflow blueprint list and prompt-direction list are the current reference pattern for this finer-grained split.
+- Inside already-extracted tab views, keep splitting repeated or dense stage regions into narrower user controls before introducing new shell-level tabs or layout branches. The brief workflow blueprint list, prompt-direction list, inspector project setup panel, style-recipe panel, fake-planning panel, and document-illustration panel are the current reference patterns for this finer-grained split.
 - As shell views split out, move the corresponding shell command orchestration into focused coordinators instead of leaving `MainWindowViewModel` to directly coordinate project creation, provider-center refresh, document-planning refresh, or image-edit inspector actions.
 - Apply the same rule to shell localization: keep payload construction and localized selection restoration in dedicated coordinators instead of burying option-reset logic inside `MainWindowViewModel`.
 - Apply the same rule to workbench reload paths: keep project-to-workbench state composition in a focused coordinator so `MainWindowViewModel` applies projected state and command enablement without rebuilding plan, prompt, gallery, review, delivery, and active-brief selections inline.

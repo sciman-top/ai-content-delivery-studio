@@ -81,6 +81,7 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
     string Model,
     string? ApiKeySecretName,
     IReadOnlyList<string> ApiKeySecretNames,
+    bool UsesSharedTextApiKeyFallback,
     string? AppIdSecretName,
     string? AppSecretSecretName,
     int ConcurrencyPerKey,
@@ -96,6 +97,7 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             GetValue(values, "TEXT_PROVIDER_MODEL", string.Empty),
             keyNames.FirstOrDefault(),
             keyNames,
+            UsesSharedTextApiKeyFallback: false,
             GetPresentSecretName(values, "TEXT_PROVIDER_APP_ID"),
             GetPresentSecretName(values, "TEXT_PROVIDER_APP_SECRET"),
             GetPositiveInt(values, "TEXT_PROVIDER_CONCURRENCY_PER_KEY", 1),
@@ -110,6 +112,13 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             keyNames = GetPresentSecretNames(values, "IMAGE_PROVIDER_API_KEY");
         }
 
+        var usesSharedTextApiKeyFallback = false;
+        if (keyNames.Count == 0)
+        {
+            keyNames = GetPresentSecretNames(values, "TEXT_PROVIDER_API_KEY");
+            usesSharedTextApiKeyFallback = keyNames.Count > 0;
+        }
+
         var concurrencyPerKey = GetPositiveInt(values, "IMAGE_PROVIDER_CONCURRENCY_PER_KEY", 1);
         return new ProviderEndpointEnvironmentConfiguration(
             "IMAGE_PROVIDER",
@@ -118,6 +127,7 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             GetValue(values, "IMAGE_PROVIDER_MODEL", string.Empty),
             keyNames.FirstOrDefault(),
             keyNames,
+            usesSharedTextApiKeyFallback,
             GetPresentSecretName(values, "IMAGE_PROVIDER_APP_ID"),
             GetPresentSecretName(values, "IMAGE_PROVIDER_APP_SECRET"),
             concurrencyPerKey,

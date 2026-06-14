@@ -177,6 +177,116 @@ public sealed class MainWindowLayoutTests
     }
 
     [Fact]
+    public void WorkbenchInspectorXaml_UsesStyleRecipeInspectorPanelUserControl()
+    {
+        var mainWindowXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "MainWindow.xaml");
+        var inspectorViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchInspectorView.xaml");
+
+        Assert.DoesNotContain("<views:StyleRecipeInspectorPanelView />", mainWindowXaml);
+        Assert.DoesNotContain("ItemsSource=\"{Binding ImageTypePresetOptions}\"", mainWindowXaml);
+        Assert.DoesNotContain("ItemsSource=\"{Binding ImageTypePresetOptions}\"", inspectorViewXaml);
+
+        var styleRecipeInspectorPanelViewPath = GetRepoFilePath(
+            "src",
+            "ImageSeriesStudio.App",
+            "Views",
+            "StyleRecipeInspectorPanelView.xaml");
+        Assert.True(File.Exists(styleRecipeInspectorPanelViewPath));
+
+        Assert.Contains("<views:StyleRecipeInspectorPanelView />", inspectorViewXaml);
+
+        var styleRecipeInspectorPanelViewXaml = File.ReadAllText(styleRecipeInspectorPanelViewPath);
+        Assert.Contains("ItemsSource=\"{Binding ImageTypePresetOptions}\"", styleRecipeInspectorPanelViewXaml);
+        Assert.Contains("SelectedItem=\"{Binding SelectedImageTypePresetOption, Mode=TwoWay}\"", styleRecipeInspectorPanelViewXaml);
+        Assert.Contains("SelectedItem=\"{Binding SelectedStyleGuideOption, Mode=TwoWay}\"", styleRecipeInspectorPanelViewXaml);
+        Assert.Contains("SelectedItem=\"{Binding SelectedGenerationRecipeOption, Mode=TwoWay}\"", styleRecipeInspectorPanelViewXaml);
+        Assert.Contains("Text=\"{Binding StyleRecipeSummaryText}\"", styleRecipeInspectorPanelViewXaml);
+    }
+
+    [Fact]
+    public void WorkbenchInspectorXaml_UsesFakePlanningPanelUserControl()
+    {
+        var mainWindowXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "MainWindow.xaml");
+        var inspectorViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchInspectorView.xaml");
+
+        Assert.DoesNotContain("<views:FakePlanningPanelView />", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding NewPlanningGoal, UpdateSourceTrigger=PropertyChanged}\"", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding NewPlanningGoal, UpdateSourceTrigger=PropertyChanged}\"", inspectorViewXaml);
+
+        var fakePlanningPanelViewPath = GetRepoFilePath(
+            "src",
+            "ImageSeriesStudio.App",
+            "Views",
+            "FakePlanningPanelView.xaml");
+        Assert.True(File.Exists(fakePlanningPanelViewPath));
+
+        Assert.Contains("<views:FakePlanningPanelView />", inspectorViewXaml);
+
+        var fakePlanningPanelViewXaml = File.ReadAllText(fakePlanningPanelViewPath);
+        Assert.Contains("Text=\"{Binding NewPlanningGoal, UpdateSourceTrigger=PropertyChanged}\"", fakePlanningPanelViewXaml);
+        Assert.Contains("Text=\"{Binding NewPlanningAudience, UpdateSourceTrigger=PropertyChanged}\"", fakePlanningPanelViewXaml);
+        Assert.Contains("Text=\"{Binding NewPlanningItemCount, UpdateSourceTrigger=PropertyChanged}\"", fakePlanningPanelViewXaml);
+        Assert.Contains("Text=\"{Binding NewPlanningStyleBrief, UpdateSourceTrigger=PropertyChanged}\"", fakePlanningPanelViewXaml);
+        Assert.Contains("Command=\"{Binding RunFakePlanningCommand}\"", fakePlanningPanelViewXaml);
+    }
+
+    [Fact]
+    public void WorkbenchInspectorXaml_UsesDocumentIllustrationPanelUserControl()
+    {
+        var mainWindowXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "MainWindow.xaml");
+        var inspectorViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchInspectorView.xaml");
+
+        Assert.DoesNotContain("<views:DocumentIllustrationPanelView />", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding DocumentIllustrationTitle}\"", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding DocumentIllustrationTitle}\"", inspectorViewXaml);
+
+        var documentIllustrationPanelViewPath = GetRepoFilePath(
+            "src",
+            "ImageSeriesStudio.App",
+            "Views",
+            "DocumentIllustrationPanelView.xaml");
+        Assert.True(File.Exists(documentIllustrationPanelViewPath));
+
+        Assert.Contains("<views:DocumentIllustrationPanelView />", inspectorViewXaml);
+
+        var documentIllustrationPanelViewXaml = File.ReadAllText(documentIllustrationPanelViewPath);
+        Assert.Contains("Text=\"{Binding NewDocumentSourceText, UpdateSourceTrigger=PropertyChanged}\"", documentIllustrationPanelViewXaml);
+        Assert.Contains("Text=\"{Binding NewDocumentAudience, UpdateSourceTrigger=PropertyChanged}\"", documentIllustrationPanelViewXaml);
+        Assert.Contains("ItemsSource=\"{Binding DocumentStrictnessOptions}\"", documentIllustrationPanelViewXaml);
+        Assert.Contains("SelectedItem=\"{Binding SelectedDocumentStrictnessOption, Mode=TwoWay}\"", documentIllustrationPanelViewXaml);
+        Assert.Contains("Command=\"{Binding RunFakeDocumentPlanningCommand}\"", documentIllustrationPanelViewXaml);
+        Assert.Contains("Text=\"{Binding DocumentPlanningResultSummary}\"", documentIllustrationPanelViewXaml);
+    }
+
+    [Fact]
+    public void WorkbenchInspectorXaml_UsesProjectSetupPanelUserControl()
+    {
+        var mainWindowXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "MainWindow.xaml");
+        var inspectorViewXaml = ReadRepoFile("src", "ImageSeriesStudio.App", "Views", "WorkbenchInspectorView.xaml");
+
+        Assert.DoesNotContain("<views:ProjectSetupPanelView />", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding NewProjectName, UpdateSourceTrigger=PropertyChanged}\"", mainWindowXaml);
+        Assert.DoesNotContain("Text=\"{Binding NewProjectName, UpdateSourceTrigger=PropertyChanged}\"", inspectorViewXaml);
+        Assert.DoesNotContain("ItemsSource=\"{Binding Projects}\"", inspectorViewXaml);
+
+        var projectSetupPanelViewPath = GetRepoFilePath(
+            "src",
+            "ImageSeriesStudio.App",
+            "Views",
+            "ProjectSetupPanelView.xaml");
+        Assert.True(File.Exists(projectSetupPanelViewPath));
+
+        Assert.Contains("<views:ProjectSetupPanelView />", inspectorViewXaml);
+
+        var projectSetupPanelViewXaml = File.ReadAllText(projectSetupPanelViewPath);
+        Assert.Contains("Text=\"{Binding NewProjectName, UpdateSourceTrigger=PropertyChanged}\"", projectSetupPanelViewXaml);
+        Assert.Contains("Command=\"{Binding CreateProjectCommand}\"", projectSetupPanelViewXaml);
+        Assert.Contains("Text=\"{Binding CurrentProjectSummary}\"", projectSetupPanelViewXaml);
+        Assert.Contains("ItemsSource=\"{Binding Projects}\"", projectSetupPanelViewXaml);
+        Assert.Contains("SelectedItem=\"{Binding SelectedProject, Mode=TwoWay}\"", projectSetupPanelViewXaml);
+    }
+
+    [Fact]
     public void MainWindowXaml_UsesWorkflowGraphUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ImageSeriesStudio.App", "MainWindow.xaml");
@@ -321,9 +431,12 @@ public sealed class MainWindowLayoutTests
 
         var inspectorViewXaml = File.ReadAllText(inspectorViewPath);
         Assert.Contains("<views:ProviderCenterPanelView />", inspectorViewXaml);
+        Assert.Contains("<views:ProjectSetupPanelView />", inspectorViewXaml);
+        Assert.Contains("<views:StyleRecipeInspectorPanelView />", inspectorViewXaml);
+        Assert.Contains("<views:FakePlanningPanelView />", inspectorViewXaml);
+        Assert.Contains("<views:DocumentIllustrationPanelView />", inspectorViewXaml);
         Assert.DoesNotContain("Text=\"Provider Center\"", inspectorViewXaml);
-        Assert.Contains("Text=\"{Binding DocumentIllustrationTitle}\"", inspectorViewXaml);
-        Assert.Contains("Text=\"{Binding CurrentProjectSummary}\"", inspectorViewXaml);
+        Assert.DoesNotContain("Text=\"{Binding CurrentProjectSummary}\"", inspectorViewXaml);
 
         var providerCenterPanelViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "ProviderCenterPanelView.xaml");
         Assert.True(File.Exists(providerCenterPanelViewPath));

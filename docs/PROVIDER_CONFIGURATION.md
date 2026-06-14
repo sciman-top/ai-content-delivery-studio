@@ -3,6 +3,7 @@
 This file defines credential naming and role boundaries. Request routing, statefulness defaults, and surface-selection rules live in [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md).
 
 This project treats provider credentials as role-scoped, not just vendor-scoped. A key that is licensed only for image generation must never be used for text planning or vision review.
+The default configuration path is now single-key friendly: if no image-specific API key is configured, image generation falls back to `TEXT_PROVIDER_API_KEY`. Explicit image keys still override that fallback.
 
 ## Role-Scoped `.env` Format
 
@@ -30,7 +31,7 @@ IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 - `TEXT_PROVIDER_API_KEY` is reserved for text planning and vision review operations.
 - `IMAGE_PROVIDER_API_KEY` and `IMAGE_PROVIDER_API_KEY_1..N` are reserved for image generation operations.
 - `IMAGE_PROVIDER_API_KEY*` cannot be used by `OpenAiTextPlanningProvider` or `OpenAiVisionReviewProvider`, even if code manually sets broad provider permissions.
-- `TEXT_PROVIDER_API_KEY` cannot be used by `OpenAiImageGenerationProvider`, even if code manually sets broad provider permissions.
+- `TEXT_PROVIDER_API_KEY` can be used by `OpenAiImageGenerationProvider` only through the built-in image-provider fallback path when no `IMAGE_PROVIDER_API_KEY*` value is configured.
 - `OpenAiProviderOptions.FromTextProviderEnvironment(...)` creates options for `TextPlanning | VisionReview` only.
 - `OpenAiProviderOptions.FromImageProviderEnvironment(...)` creates options for `ImageGeneration` only.
 
@@ -55,9 +56,22 @@ Credential placement alone does not justify stateful review. If a workflow later
 
 ## Same-Key Providers
 
-Some official or full OpenAI-compatible providers may license the same key for text, vision, and image operations. In split environment profiles, duplicate the same secret value under the role-specific names only when the provider contract explicitly permits both roles.
+Some official or full OpenAI-compatible providers may license the same key for text, vision, and image operations.
+
+Supported configuration shapes are:
+
+- default single-key mode: configure `TEXT_PROVIDER_API_KEY`; image generation reuses it automatically when no `IMAGE_PROVIDER_API_KEY*` is present
+- explicit dual-key mode: configure `TEXT_PROVIDER_API_KEY` plus `IMAGE_PROVIDER_API_KEY` or `IMAGE_PROVIDER_API_KEY_1..N`; image generation uses the explicit image key pool
+
+When a provider contract explicitly permits both roles, dual-key mode may still reuse the same underlying secret value under both names. The runtime now no longer requires that duplication for the default single-key path.
 
 Do not put an image-only merchant key under `TEXT_PROVIDER_API_KEY` or generic `OPENAI_API_KEY`. That bypasses the user's license intent and should be treated as misconfiguration.
+
+Implementation guardrail:
+
+- `ProviderEnvironmentConfiguration.Image.UsesSharedTextApiKeyFallback` is true only when no `IMAGE_PROVIDER_API_KEY*` value is present and `TEXT_PROVIDER_API_KEY` is present.
+- `OpenAiProviderGuard` allows image generation with `TEXT_PROVIDER_API_KEY` only when `OpenAiProviderOptions.UsesSharedTextApiKeyFallback` is true.
+- Adding any explicit `IMAGE_PROVIDER_API_KEY` or `IMAGE_PROVIDER_API_KEY_1..N` disables the fallback and restores the image key pool as the image-generation credential source.
 
 ## Statefulness Reminder
 

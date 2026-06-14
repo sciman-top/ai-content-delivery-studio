@@ -48,6 +48,37 @@ public sealed class ProviderCenterViewModelTests
     }
 
     [Fact]
+    public async Task DotEnvProviderCenterConfigurationService_UsesSingleKeyFallbackForImageSummary()
+    {
+        var envPath = Path.Combine(Path.GetTempPath(), $"provider-center-{Guid.NewGuid():N}.env");
+        await File.WriteAllTextAsync(
+            envPath,
+            """
+            TEXT_PROVIDER_BASE_URL=https://gateway.example/v1
+            TEXT_PROVIDER_API_KEY=sk-shared-secret
+            TEXT_PROVIDER_MODEL=gpt-5.5
+            IMAGE_PROVIDER_BASE_URL=https://gateway.example/v1
+            IMAGE_PROVIDER_MODEL=gpt-image-2
+            """);
+
+        try
+        {
+            var service = new DotEnvProviderCenterConfigurationService(envPath);
+
+            var snapshot = await service.LoadAsync(CancellationToken.None);
+
+            Assert.Equal(1, snapshot.Text.ApiKeyCount);
+            Assert.Equal(1, snapshot.Image.ApiKeyCount);
+            Assert.Empty(snapshot.ValidationMessages);
+            Assert.DoesNotContain("sk-", JsonSerializer.Serialize(snapshot), StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            File.Delete(envPath);
+        }
+    }
+
+    [Fact]
     public async Task ProviderCenterViewModel_RefreshAsync_BuildsRowsAndSummary()
     {
         var snapshot = new ProviderCenterSnapshot(

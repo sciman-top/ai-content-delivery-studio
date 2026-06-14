@@ -1,0 +1,33 @@
+<UserControl x:Class="ImageSeriesStudio.App.Views.DocumentIllustrationPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <StackPanel>
+        <TextBlock Text="{Binding DocumentIllustrationTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
+        <TextBlock Text="{Binding DocumentSourceTextLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding NewDocumentSourceText, UpdateSourceTrigger=PropertyChanged}"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 MinHeight="88"
+                 Margin="0,0,0,6" />
+        <TextBlock Text="{Binding DocumentAudienceLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding NewDocumentAudience, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+        <TextBlock Text="{Binding DocumentStrictnessLabel}" Margin="0,0,0,4" />
+        <ComboBox ItemsSource="{Binding DocumentStrictnessOptions}"
+                  SelectedItem="{Binding SelectedDocumentStrictnessOption, Mode=TwoWay}"
+                  DisplayMemberPath="DisplayName"
+                  MinHeight="28"
+                  Margin="0,0,0,8" />
+        <Button Content="{Binding RunFakeDocumentPlanningText}"
+                Command="{Binding RunFakeDocumentPlanningCommand}"
+                HorizontalAlignment="Stretch"
+                Margin="0,0,0,8" />
+        <TextBlock Text="{Binding DocumentPlanningResultText}" FontWeight="SemiBold" Margin="0,0,0,4" />
+        <TextBlock Text="{Binding DocumentPlanningResultSummary}"
+                   TextWrapping="Wrap"
+                   Foreground="#4B5563"
+                   Margin="0,0,0,14" />
+    </StackPanel>
+</UserControl>

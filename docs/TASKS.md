@@ -138,7 +138,7 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Replace environment-variable-only production secret retrieval.
 - [x] Add `.env` secret store fallback for local provider credentials.
 - [x] Add separated text/image provider environment configuration with image key-pool concurrency validation.
-- [x] Enforce role-scoped provider options so image-only keys cannot be used for text or vision calls.
+- [x] Enforce role-scoped provider options so image-only keys cannot be used for text or vision calls, while allowing the image provider to fall back to `TEXT_PROVIDER_API_KEY` in the default single-key configuration path.
 - [x] Add non-generating `/v1/models` health checks for text providers and image key pools.
 - [x] Add Provider Center configuration summary model/view-model without exposing secret values.
 - [x] Add Provider Center manual health summary state for mixed text/image key-pool results.
@@ -331,6 +331,10 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract the review-tab results list into `ReviewResultsListView` while preserving existing bindings and selection behavior.
   - [x] Extract the delivery-tab results list into `DeliveryResultsListView` while preserving existing bindings and output display behavior.
   - [x] Extract the inspector provider-center panel into `ProviderCenterPanelView` while preserving configuration summary, health rows, and refresh/test bindings.
+  - [x] Extract the inspector project setup panel into `ProjectSetupPanelView` while preserving project creation, current-project summary, and project-list selection bindings.
+  - [x] Extract the inspector style-recipe panel into `StyleRecipeInspectorPanelView` while preserving preset, guide, recipe selection, and summary bindings.
+  - [x] Extract the inspector fake-planning panel into `FakePlanningPanelView` while preserving planning input and run-command bindings.
+  - [x] Extract the inspector document-illustration panel into `DocumentIllustrationPanelView` while preserving source text, strictness, run-command, and result bindings.
   - [x] Extract the workflow graph tab content into `WorkflowGraphView` while preserving existing bindings and graph output.
   - [x] Extract the delivery tab content into `DeliveryView` while preserving existing bindings and delivery output.
   - [x] Extract the review tab content into `ReviewView` while preserving existing bindings and review output.

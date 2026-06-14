@@ -68,10 +68,50 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Equal("gpt-5.5", configuration.Text.Model);
         Assert.Equal("TEXT_PROVIDER_API_KEY", configuration.Text.ApiKeySecretName);
         Assert.Equal(4, configuration.Image.ApiKeySecretNames.Count);
+        Assert.False(configuration.Image.UsesSharedTextApiKeyFallback);
         Assert.Equal(10, configuration.Image.ConcurrencyPerKey);
         Assert.Equal(40, configuration.Image.TotalConcurrency);
         Assert.Equal("IMAGE_PROVIDER_APP_ID", configuration.Image.AppIdSecretName);
         Assert.Equal("IMAGE_PROVIDER_APP_SECRET", configuration.Image.AppSecretSecretName);
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_FallsBackToTextApiKeyWhenImageKeyIsMissing()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://text.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-shared",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://image.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Empty(configuration.Validate());
+        Assert.Equal("TEXT_PROVIDER_API_KEY", configuration.Image.ApiKeySecretName);
+        Assert.Equal(["TEXT_PROVIDER_API_KEY"], configuration.Image.ApiKeySecretNames);
+        Assert.True(configuration.Image.UsesSharedTextApiKeyFallback);
+        Assert.Equal(1, configuration.Image.TotalConcurrency);
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_PrefersExplicitImageKeyOverSharedTextKey()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://text.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-shared",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://image.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+                ["IMAGE_PROVIDER_API_KEY_1"] = "sk-image-1",
+            });
+
+        Assert.Equal("IMAGE_PROVIDER_API_KEY_1", configuration.Image.ApiKeySecretName);
+        Assert.Equal(["IMAGE_PROVIDER_API_KEY_1"], configuration.Image.ApiKeySecretNames);
+        Assert.False(configuration.Image.UsesSharedTextApiKeyFallback);
     }
 
     [Fact]
@@ -166,6 +206,7 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Equal("https://image.example/v1", imageOptions.BaseUri.ToString().TrimEnd('/'));
         Assert.Equal("IMAGE_PROVIDER_API_KEY_1", imageOptions.ApiKeySecretName);
         Assert.Equal("image-model", imageOptions.ImageGenerationModel);
+        Assert.False(imageOptions.UsesSharedTextApiKeyFallback);
         Assert.True(textOptions.RealApiEnabled);
         Assert.True(imageOptions.RealApiEnabled);
         Assert.True(textOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.TextPlanning));
@@ -174,6 +215,25 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.True(imageOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.ImageGeneration));
         Assert.False(imageOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.TextPlanning));
         Assert.False(imageOptions.AllowedOperations.HasFlag(OpenAiProviderOperation.VisionReview));
+    }
+
+    [Fact]
+    public void OpenAiProviderOptions_UsesSharedTextKeyForImageProviderWhenNoImageKeyIsConfigured()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-shared",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        var imageOptions = OpenAiProviderOptions.FromImageProviderEnvironment(configuration, realApiEnabled: true);
+
+        Assert.Equal("TEXT_PROVIDER_API_KEY", imageOptions.ApiKeySecretName);
+        Assert.True(imageOptions.UsesSharedTextApiKeyFallback);
     }
 
     [Fact]
@@ -253,6 +313,19 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Contains("IMAGE_PROVIDER_API_KEY", textException.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("IMAGE_PROVIDER_API_KEY", visionException.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("TEXT_PROVIDER_API_KEY", imageException.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void OpenAiProviderGuard_AllowsImageGenerationWhenImageProviderFallsBackToTextKey()
+    {
+        var fallbackImageOptions = new OpenAiProviderOptions
+        {
+            ApiKeySecretName = "TEXT_PROVIDER_API_KEY",
+            UsesSharedTextApiKeyFallback = true,
+            AllowedOperations = OpenAiProviderOperation.ImageGeneration,
+        };
+
+        OpenAiProviderGuard.EnsureAllowsOperation(fallbackImageOptions, OpenAiProviderOperation.ImageGeneration);
     }
 
     [Fact]

@@ -71,6 +71,31 @@ public sealed class ProviderHealthCheckTests
         Assert.Equal(["IMAGE_PROVIDER_API_KEY_1", "IMAGE_PROVIDER_API_KEY_2"], results.Select(result => result.ApiKeySecretName));
     }
 
+    [Fact]
+    public async Task CheckKeyPoolModelsEndpointAsync_UsesSharedTextKeyWhenImageKeyPoolFallsBack()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-shared",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+        var handler = new CaptureHandler(_ => new HttpResponseMessage(HttpStatusCode.OK));
+        var service = new ProviderHealthCheckService(
+            new HttpClient(handler),
+            new DictionarySecretStore(new Dictionary<string, string?> { ["TEXT_PROVIDER_API_KEY"] = "shared-secret" }));
+
+        var results = await service.CheckKeyPoolModelsEndpointAsync(configuration.Image, CancellationToken.None);
+
+        var result = Assert.Single(results);
+        Assert.Equal(ProviderHealthStatus.Healthy, result.Status);
+        Assert.Equal("TEXT_PROVIDER_API_KEY", result.ApiKeySecretName);
+        Assert.Equal("shared-secret", handler.LastRequest!.Headers.Authorization?.Parameter);
+    }
+
     private sealed class DictionarySecretStore(IReadOnlyDictionary<string, string?> secrets) : IOpenAiSecretStore
     {
         public Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)

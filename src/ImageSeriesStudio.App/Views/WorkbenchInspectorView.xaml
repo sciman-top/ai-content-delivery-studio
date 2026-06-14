@@ -16,87 +16,15 @@
 
             <Separator Margin="0,12,0,14" />
 
-            <TextBlock Text="{Binding ProjectNameLabel}" FontWeight="SemiBold" Margin="0,0,0,6" />
-            <TextBox Text="{Binding NewProjectName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
-            <Button Content="{Binding CreateProjectText}"
-                    Command="{Binding CreateProjectCommand}"
-                    HorizontalAlignment="Stretch"
-                    Margin="0,0,0,18" />
+            <views:ProjectSetupPanelView />
 
-            <TextBlock Text="{Binding CurrentProjectTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
-            <TextBlock Text="{Binding CurrentProjectSummary}" TextWrapping="Wrap" Foreground="#4B5563" Margin="0,0,0,14" />
+            <views:StyleRecipeInspectorPanelView />
 
-            <TextBlock Text="{Binding StyleRecipeInspectorTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
-            <TextBlock Text="{Binding ImageTypePresetLabel}" Margin="0,0,0,4" />
-            <ComboBox ItemsSource="{Binding ImageTypePresetOptions}"
-                      SelectedItem="{Binding SelectedImageTypePresetOption, Mode=TwoWay}"
-                      DisplayMemberPath="DisplayName"
-                      MinHeight="28"
-                      Margin="0,0,0,6" />
-            <TextBlock Text="{Binding StyleGuideLabel}" Margin="0,0,0,4" />
-            <ComboBox ItemsSource="{Binding StyleGuideOptions}"
-                      SelectedItem="{Binding SelectedStyleGuideOption, Mode=TwoWay}"
-                      DisplayMemberPath="Name"
-                      MinHeight="28"
-                      Margin="0,0,0,6" />
-            <TextBlock Text="{Binding GenerationRecipeLabel}" Margin="0,0,0,4" />
-            <ComboBox ItemsSource="{Binding GenerationRecipeOptions}"
-                      SelectedItem="{Binding SelectedGenerationRecipeOption, Mode=TwoWay}"
-                      DisplayMemberPath="DisplayName"
-                      MinHeight="28"
-                      Margin="0,0,0,6" />
-            <TextBlock Text="{Binding StyleRecipeSummaryTitle}" FontWeight="SemiBold" Margin="0,4,0,4" />
-            <TextBlock Text="{Binding StyleRecipeSummaryText}"
-                       TextWrapping="Wrap"
-                       Foreground="#4B5563"
-                       Margin="0,0,0,14" />
-
-            <TextBlock Text="{Binding FakePlanningTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
-            <TextBlock Text="{Binding PlanningGoalLabel}" Margin="0,0,0,4" />
-            <TextBox Text="{Binding NewPlanningGoal, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
-            <TextBlock Text="{Binding PlanningAudienceLabel}" Margin="0,0,0,4" />
-            <TextBox Text="{Binding NewPlanningAudience, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
-            <TextBlock Text="{Binding PlanningItemCountLabel}" Margin="0,0,0,4" />
-            <TextBox Text="{Binding NewPlanningItemCount, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
-            <TextBlock Text="{Binding PlanningStyleBriefLabel}" Margin="0,0,0,4" />
-            <TextBox Text="{Binding NewPlanningStyleBrief, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
-            <Button Content="{Binding RunFakePlanningText}"
-                    Command="{Binding RunFakePlanningCommand}"
-                    HorizontalAlignment="Stretch"
-                    Margin="0,0,0,14" />
+            <views:FakePlanningPanelView />
 
             <Separator Margin="0,18,0,14" />
 
-            <TextBlock Text="{Binding DocumentIllustrationTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
-            <TextBlock Text="{Binding DocumentSourceTextLabel}" Margin="0,0,0,4" />
-            <TextBox Text="{Binding NewDocumentSourceText, UpdateSourceTrigger=PropertyChanged}"
-                     AcceptsReturn="True"
-                     TextWrapping="Wrap"
-                     MinHeight="88"
-                     Margin="0,0,0,6" />
-            <TextBlock Text="{Binding DocumentAudienceLabel}" Margin="0,0,0,4" />
-            <TextBox Text="{Binding NewDocumentAudience, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
-            <TextBlock Text="{Binding DocumentStrictnessLabel}" Margin="0,0,0,4" />
-            <ComboBox ItemsSource="{Binding DocumentStrictnessOptions}"
-                      SelectedItem="{Binding SelectedDocumentStrictnessOption, Mode=TwoWay}"
-                      DisplayMemberPath="DisplayName"
-                      MinHeight="28"
-                      Margin="0,0,0,8" />
-            <Button Content="{Binding RunFakeDocumentPlanningText}"
-                    Command="{Binding RunFakeDocumentPlanningCommand}"
-                    HorizontalAlignment="Stretch"
-                    Margin="0,0,0,8" />
-            <TextBlock Text="{Binding DocumentPlanningResultText}" FontWeight="SemiBold" Margin="0,0,0,4" />
-            <TextBlock Text="{Binding DocumentPlanningResultSummary}"
-                       TextWrapping="Wrap"
-                       Foreground="#4B5563"
-                       Margin="0,0,0,14" />
-
-            <TextBlock Text="{Binding AvailableProjectsTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
-            <ListBox ItemsSource="{Binding Projects}"
-                     SelectedItem="{Binding SelectedProject, Mode=TwoWay}"
-                     DisplayMemberPath="Name"
-                     MinHeight="120" />
+            <views:DocumentIllustrationPanelView />
 
             <Separator Margin="0,18,0,14" />
 

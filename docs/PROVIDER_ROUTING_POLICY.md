@@ -152,7 +152,7 @@ V1 does not require:
 
 ## Implementation Notes For The Current Repository
 
-- Keep role-scoped credential separation intact.
+- Keep role-scoped credential separation intact. The same-provider single-key fallback is allowed only through the documented provider-configuration path where no `IMAGE_PROVIDER_API_KEY*` is present; explicit image keys still take precedence.
 - Keep the fake-first gate as the default regression path.
 - Use the official OpenAI .NET SDK for the stable Images API path; keep raw `HttpClient` on Responses-backed planning and review until the SDK surface no longer requires the current `OPENAI001` evaluation fallback.
 - Allow one bounded retry for transient official SDK Images `502 upstream_error` failures before surfacing the error to the live route.

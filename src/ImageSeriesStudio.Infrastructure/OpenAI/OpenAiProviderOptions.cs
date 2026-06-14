@@ -22,6 +22,8 @@ public sealed record OpenAiProviderOptions
 
     public string? AppSecretSecretName { get; init; }
 
+    public bool UsesSharedTextApiKeyFallback { get; init; }
+
     public OpenAiProviderOperation AllowedOperations { get; init; } = OpenAiProviderOperation.All;
 
     public string TextPlanningModel { get; init; } = "gpt-5";
@@ -55,6 +57,7 @@ public sealed record OpenAiProviderOptions
             ApiKeySecretName = RequireApiKeySecretName(configuration.Text, "Text provider"),
             AppIdSecretName = configuration.Text.AppIdSecretName,
             AppSecretSecretName = configuration.Text.AppSecretSecretName,
+            UsesSharedTextApiKeyFallback = false,
             TextPlanningModel = RequireModel(configuration.Text, "Text provider"),
             ImageGenerationModel = string.Empty,
             VisionReviewModel = RequireModel(configuration.Text, "Text provider"),
@@ -75,6 +78,7 @@ public sealed record OpenAiProviderOptions
             ApiKeySecretName = RequireApiKeySecretName(configuration.Image, "Image provider"),
             AppIdSecretName = configuration.Image.AppIdSecretName,
             AppSecretSecretName = configuration.Image.AppSecretSecretName,
+            UsesSharedTextApiKeyFallback = configuration.Image.UsesSharedTextApiKeyFallback,
             TextPlanningModel = string.Empty,
             ImageGenerationModel = RequireModel(configuration.Image, "Image provider"),
             VisionReviewModel = string.Empty,
@@ -298,11 +302,12 @@ public static class OpenAiProviderGuard
                 $"OpenAI provider options are not allowed for {requiredOperation}. Configure a separate provider profile and secret for this operation.");
         }
 
-        EnsureSecretNameMatchesOperation(options.ApiKeySecretName, requiredOperation);
+        EnsureSecretNameMatchesOperation(options.ApiKeySecretName, options.UsesSharedTextApiKeyFallback, requiredOperation);
     }
 
     private static void EnsureSecretNameMatchesOperation(
         string apiKeySecretName,
+        bool usesSharedTextApiKeyFallback,
         OpenAiProviderOperation requiredOperation)
     {
         if (apiKeySecretName.StartsWith("IMAGE_PROVIDER_API_KEY", StringComparison.Ordinal)
@@ -313,6 +318,7 @@ public static class OpenAiProviderGuard
         }
 
         if (apiKeySecretName.StartsWith("TEXT_PROVIDER_API_KEY", StringComparison.Ordinal)
+            && !usesSharedTextApiKeyFallback
             && requiredOperation is OpenAiProviderOperation.ImageGeneration)
         {
             throw new InvalidOperationException(
