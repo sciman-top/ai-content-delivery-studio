@@ -290,6 +290,7 @@ Operator surfaces must be small and auditable:
 Every operator action should declare risk level, dry-run support, input files, output files, side effects, required approvals, timeout, and rollback or cleanup path.
 
 The execution boundary and first real low-risk operator slice are defined in [OPERATOR_RISK_POLICY.md](./OPERATOR_RISK_POLICY.md).
+The same host-owned execution boundary now includes a provider-neutral `IRemoteWorkflowEngineAdapter` seam with a fake no-network default registration, so future hosted workflow engines can plug into the app without requiring local model installs or changing the current fake-first safety posture.
 
 ## Physics Project Migration Limits
 
@@ -330,7 +331,7 @@ The codebase should now enter a modular maintenance period:
 - When a new module touches old centralized logic, move the directly related old logic into the module in the same slice.
 - Split WPF views and view models by workflow tab or feature module instead of growing `MainWindowViewModel`.
 - Treat the shell grid and column layout as stable scaffolding, and move heavy inspector workflow content into feature-owned user controls when `MainWindow.xaml` starts carrying more than placement and navigation composition.
-- Inside already-extracted tab views, keep splitting repeated or dense stage regions into narrower user controls before introducing new shell-level tabs or layout branches. The brief workflow blueprint list, prompt-direction list, inspector project setup panel, style-recipe panel, fake-planning panel, and document-illustration panel are the current reference patterns for this finer-grained split.
+- Inside already-extracted tab views, keep splitting repeated or dense stage regions into narrower user controls before introducing new shell-level tabs or layout branches. The brief workflow actions bar, blueprint panel, prompt-directions panel, plan header, plan rows list, prompts header, prompt rows list, queue header, queue rows list, gallery header, gallery rows list, workflow-graph header, workflow-graph rows list, review header, delivery header, inspector project setup panel, style-recipe panel, fake-planning panel, and document-illustration panel are the current reference patterns for this finer-grained split.
 - As shell views split out, move the corresponding shell command orchestration into focused coordinators instead of leaving `MainWindowViewModel` to directly coordinate project creation, provider-center refresh, document-planning refresh, or image-edit inspector actions.
 - Apply the same rule to shell localization: keep payload construction and localized selection restoration in dedicated coordinators instead of burying option-reset logic inside `MainWindowViewModel`.
 - Apply the same rule to workbench reload paths: keep project-to-workbench state composition in a focused coordinator so `MainWindowViewModel` applies projected state and command enablement without rebuilding plan, prompt, gallery, review, delivery, and active-brief selections inline.

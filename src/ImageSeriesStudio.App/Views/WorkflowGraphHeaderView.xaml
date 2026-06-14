@@ -1,0 +1,30 @@
+<UserControl x:Class="ImageSeriesStudio.App.Views.WorkflowGraphHeaderView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Border Background="#E9EDF3" BorderBrush="#D4DAE5" BorderThickness="1">
+        <Grid Margin="12,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.1*" />
+                <ColumnDefinition Width="2.2*" />
+                <ColumnDefinition Width="1.4*" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0"
+                       Text="{Binding DataContext.GraphNodeColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       VerticalAlignment="Center"
+                       FontWeight="SemiBold" />
+            <TextBlock Grid.Column="1"
+                       Text="{Binding DataContext.GraphSummaryColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       VerticalAlignment="Center"
+                       FontWeight="SemiBold"
+                       Margin="10,0,0,0" />
+            <TextBlock Grid.Column="2"
+                       Text="{Binding DataContext.GraphLinksColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       VerticalAlignment="Center"
+                       FontWeight="SemiBold"
+                       Margin="10,0,0,0" />
+        </Grid>
+    </Border>
+</UserControl>

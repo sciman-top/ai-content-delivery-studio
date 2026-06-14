@@ -24,14 +24,50 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:BriefWorkflowView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var briefWorkflowViewXaml = File.ReadAllText(briefWorkflowViewPath);
-        Assert.Contains("<views:BlueprintRoutesView Grid.Row=\"3\" />", briefWorkflowViewXaml);
-        Assert.Contains("<views:PromptDirectionsView Grid.Row=\"5\" />", briefWorkflowViewXaml);
+        Assert.Contains("<views:BriefWorkflowActionsView Grid.Row=\"1\" />", briefWorkflowViewXaml);
+        Assert.Contains("<views:BlueprintRoutesPanelView Grid.Row=\"2\" Grid.RowSpan=\"2\" />", briefWorkflowViewXaml);
+        Assert.Contains("<views:PromptDirectionsPanelView Grid.Row=\"4\" Grid.RowSpan=\"2\" />", briefWorkflowViewXaml);
+        Assert.DoesNotContain(
+            "Command=\"{Binding DataContext.CreateBriefCommand, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            briefWorkflowViewXaml);
+        Assert.DoesNotContain(
+            "Text=\"{Binding DataContext.BlueprintRoutesHeader, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            briefWorkflowViewXaml);
+        Assert.DoesNotContain(
+            "Text=\"{Binding DataContext.PromptDirectionsHeader, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            briefWorkflowViewXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.DesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             briefWorkflowViewXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.PromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             briefWorkflowViewXaml);
+
+        var briefWorkflowActionsViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "BriefWorkflowActionsView.xaml");
+        Assert.True(File.Exists(briefWorkflowActionsViewPath));
+        var briefWorkflowActionsViewXaml = File.ReadAllText(briefWorkflowActionsViewPath);
+        Assert.Contains(
+            "Command=\"{Binding DataContext.CreateBriefCommand, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            briefWorkflowActionsViewXaml);
+        Assert.Contains(
+            "Command=\"{Binding DataContext.GeneratePromptDirectionsCommand, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            briefWorkflowActionsViewXaml);
+
+        var blueprintRoutesPanelViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "BlueprintRoutesPanelView.xaml");
+        Assert.True(File.Exists(blueprintRoutesPanelViewPath));
+        var blueprintRoutesPanelViewXaml = File.ReadAllText(blueprintRoutesPanelViewPath);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.BlueprintRoutesHeader, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            blueprintRoutesPanelViewXaml);
+        Assert.Contains("<views:BlueprintRoutesView Grid.Row=\"1\" />", blueprintRoutesPanelViewXaml);
+
+        var promptDirectionsPanelViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "PromptDirectionsPanelView.xaml");
+        Assert.True(File.Exists(promptDirectionsPanelViewPath));
+        var promptDirectionsPanelViewXaml = File.ReadAllText(promptDirectionsPanelViewPath);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.PromptDirectionsHeader, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            promptDirectionsPanelViewXaml);
+        Assert.Contains("<views:PromptDirectionsView Grid.Row=\"1\" />", promptDirectionsPanelViewXaml);
 
         var blueprintRoutesViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "BlueprintRoutesView.xaml");
         Assert.True(File.Exists(blueprintRoutesViewPath));
@@ -65,9 +101,37 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:PlanView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var planViewXaml = File.ReadAllText(planViewPath);
-        Assert.Contains(
+        Assert.Contains("<views:PlanHeaderView Grid.Row=\"0\" />", planViewXaml);
+        Assert.Contains("<views:PlanRowsListView Grid.Row=\"2\" />", planViewXaml);
+        Assert.DoesNotContain(
+            "Text=\"{Binding DataContext.PlanSeriesColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            planViewXaml);
+        Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.PlanRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             planViewXaml);
+
+        var planHeaderViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "PlanHeaderView.xaml");
+        Assert.True(File.Exists(planHeaderViewPath));
+        var planHeaderViewXaml = File.ReadAllText(planHeaderViewPath);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.PlanSeriesColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            planHeaderViewXaml);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.PlanStatusColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            planHeaderViewXaml);
+
+        var planRowsListViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "PlanRowsListView.xaml");
+        Assert.True(File.Exists(planRowsListViewPath));
+
+        var planRowsListViewXaml = File.ReadAllText(planRowsListViewPath);
+        Assert.Contains(
+            "ItemsSource=\"{Binding DataContext.PlanRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            planRowsListViewXaml);
+        Assert.Contains(
+            "Binding DataContext.HasPlanRows, RelativeSource={RelativeSource AncestorType=TabControl}",
+            planRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding SeriesTitle}\"", planRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding StatusText}\"", planRowsListViewXaml);
     }
 
     [Fact]
@@ -87,9 +151,38 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:PromptsView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var promptsViewXaml = File.ReadAllText(promptsViewPath);
-        Assert.Contains(
+        Assert.Contains("<views:PromptsHeaderView Grid.Row=\"0\" />", promptsViewXaml);
+        Assert.Contains("<views:PromptRowsListView Grid.Row=\"2\" />", promptsViewXaml);
+        Assert.DoesNotContain(
+            "Text=\"{Binding DataContext.PromptVersionColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            promptsViewXaml);
+        Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.PromptRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             promptsViewXaml);
+
+        var promptsHeaderViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "PromptsHeaderView.xaml");
+        Assert.True(File.Exists(promptsHeaderViewPath));
+        var promptsHeaderViewXaml = File.ReadAllText(promptsHeaderViewPath);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.PromptVersionColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            promptsHeaderViewXaml);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.PromptCreatedColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            promptsHeaderViewXaml);
+
+        var promptRowsListViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "PromptRowsListView.xaml");
+        Assert.True(File.Exists(promptRowsListViewPath));
+
+        var promptRowsListViewXaml = File.ReadAllText(promptRowsListViewPath);
+        Assert.Contains(
+            "ItemsSource=\"{Binding DataContext.PromptRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            promptRowsListViewXaml);
+        Assert.Contains(
+            "Binding DataContext.HasPromptRows, RelativeSource={RelativeSource AncestorType=TabControl}",
+            promptRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding Version}\"", promptRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding PromptText}\"", promptRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding CreatedAt}\"", promptRowsListViewXaml);
     }
 
     [Fact]
@@ -304,9 +397,37 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:WorkflowGraphView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var workflowGraphViewXaml = File.ReadAllText(workflowGraphViewPath);
-        Assert.Contains(
+        Assert.Contains("<views:WorkflowGraphHeaderView Grid.Row=\"0\" />", workflowGraphViewXaml);
+        Assert.Contains("<views:WorkflowGraphRowsListView Grid.Row=\"2\" />", workflowGraphViewXaml);
+        Assert.DoesNotContain(
+            "Text=\"{Binding DataContext.GraphNodeColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            workflowGraphViewXaml);
+        Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.WorkflowGraphRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             workflowGraphViewXaml);
+
+        var workflowGraphHeaderViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "WorkflowGraphHeaderView.xaml");
+        Assert.True(File.Exists(workflowGraphHeaderViewPath));
+        var workflowGraphHeaderViewXaml = File.ReadAllText(workflowGraphHeaderViewPath);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.GraphNodeColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            workflowGraphHeaderViewXaml);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.GraphLinksColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            workflowGraphHeaderViewXaml);
+
+        var workflowGraphRowsListViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "WorkflowGraphRowsListView.xaml");
+        Assert.True(File.Exists(workflowGraphRowsListViewPath));
+
+        var workflowGraphRowsListViewXaml = File.ReadAllText(workflowGraphRowsListViewPath);
+        Assert.Contains(
+            "ItemsSource=\"{Binding DataContext.WorkflowGraphRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            workflowGraphRowsListViewXaml);
+        Assert.Contains(
+            "Binding DataContext.HasWorkflowGraphRows, RelativeSource={RelativeSource AncestorType=TabControl}",
+            workflowGraphRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding NodeType}\"", workflowGraphRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding LinksTo}\"", workflowGraphRowsListViewXaml);
     }
 
     [Fact]
@@ -326,10 +447,24 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:DeliveryView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var deliveryViewXaml = File.ReadAllText(deliveryViewPath);
+        Assert.Contains("<views:DeliveryHeaderView Grid.Row=\"0\" />", deliveryViewXaml);
         Assert.Contains("<views:DeliveryResultsListView Grid.Row=\"2\" />", deliveryViewXaml);
+        Assert.DoesNotContain(
+            "Text=\"{Binding DataContext.DeliveryPackageColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            deliveryViewXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.DeliveryRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             deliveryViewXaml);
+
+        var deliveryHeaderViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "DeliveryHeaderView.xaml");
+        Assert.True(File.Exists(deliveryHeaderViewPath));
+        var deliveryHeaderViewXaml = File.ReadAllText(deliveryHeaderViewPath);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.DeliveryPackageColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            deliveryHeaderViewXaml);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.DeliveryFinalImagesColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            deliveryHeaderViewXaml);
 
         var deliveryResultsListViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "DeliveryResultsListView.xaml");
         Assert.True(File.Exists(deliveryResultsListViewPath));
@@ -356,10 +491,24 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:ReviewView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var reviewViewXaml = File.ReadAllText(reviewViewPath);
+        Assert.Contains("<views:ReviewHeaderView Grid.Row=\"0\" />", reviewViewXaml);
         Assert.Contains("<views:ReviewResultsListView Grid.Row=\"2\" />", reviewViewXaml);
+        Assert.DoesNotContain(
+            "Text=\"{Binding DataContext.ReviewItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            reviewViewXaml);
         Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.ReviewRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             reviewViewXaml);
+
+        var reviewHeaderViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "ReviewHeaderView.xaml");
+        Assert.True(File.Exists(reviewHeaderViewPath));
+        var reviewHeaderViewXaml = File.ReadAllText(reviewHeaderViewPath);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.ReviewItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            reviewHeaderViewXaml);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.HumanApprovalColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            reviewHeaderViewXaml);
 
         var reviewResultsListViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "ReviewResultsListView.xaml");
         Assert.True(File.Exists(reviewResultsListViewPath));
@@ -386,9 +535,37 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:QueueView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var queueViewXaml = File.ReadAllText(queueViewPath);
-        Assert.Contains(
+        Assert.Contains("<views:QueueHeaderView Grid.Row=\"0\" />", queueViewXaml);
+        Assert.Contains("<views:QueueRowsListView Grid.Row=\"2\" />", queueViewXaml);
+        Assert.DoesNotContain(
+            "Text=\"{Binding DataContext.QueueItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            queueViewXaml);
+        Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.QueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             queueViewXaml);
+
+        var queueHeaderViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "QueueHeaderView.xaml");
+        Assert.True(File.Exists(queueHeaderViewPath));
+        var queueHeaderViewXaml = File.ReadAllText(queueHeaderViewPath);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.QueueItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            queueHeaderViewXaml);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.QueueErrorColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            queueHeaderViewXaml);
+
+        var queueRowsListViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "QueueRowsListView.xaml");
+        Assert.True(File.Exists(queueRowsListViewPath));
+
+        var queueRowsListViewXaml = File.ReadAllText(queueRowsListViewPath);
+        Assert.Contains(
+            "ItemsSource=\"{Binding DataContext.QueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            queueRowsListViewXaml);
+        Assert.Contains(
+            "Binding DataContext.HasQueueRows, RelativeSource={RelativeSource AncestorType=TabControl}",
+            queueRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding ItemTitle}\"", queueRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding ErrorMessage}\"", queueRowsListViewXaml);
     }
 
     [Fact]
@@ -408,12 +585,43 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:GalleryView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var galleryViewXaml = File.ReadAllText(galleryViewPath);
-        Assert.Contains(
+        Assert.Contains("<views:GalleryHeaderView Grid.Row=\"0\" />", galleryViewXaml);
+        Assert.Contains("<views:GalleryRowsListView Grid.Row=\"2\" />", galleryViewXaml);
+        Assert.DoesNotContain(
+            "Text=\"{Binding DataContext.GalleryItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            galleryViewXaml);
+        Assert.DoesNotContain(
             "ItemsSource=\"{Binding DataContext.GalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             galleryViewXaml);
-        Assert.Contains(
+        Assert.DoesNotContain(
             "SelectedItem=\"{Binding DataContext.SelectedGalleryRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}\"",
             galleryViewXaml);
+
+        var galleryHeaderViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "GalleryHeaderView.xaml");
+        Assert.True(File.Exists(galleryHeaderViewPath));
+        var galleryHeaderViewXaml = File.ReadAllText(galleryHeaderViewPath);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.GalleryItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            galleryHeaderViewXaml);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.GalleryMetadataColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            galleryHeaderViewXaml);
+
+        var galleryRowsListViewPath = GetRepoFilePath("src", "ImageSeriesStudio.App", "Views", "GalleryRowsListView.xaml");
+        Assert.True(File.Exists(galleryRowsListViewPath));
+
+        var galleryRowsListViewXaml = File.ReadAllText(galleryRowsListViewPath);
+        Assert.Contains(
+            "ItemsSource=\"{Binding DataContext.GalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            galleryRowsListViewXaml);
+        Assert.Contains(
+            "SelectedItem=\"{Binding DataContext.SelectedGalleryRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}\"",
+            galleryRowsListViewXaml);
+        Assert.Contains(
+            "Binding DataContext.HasGalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}",
+            galleryRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding ItemTitle}\"", galleryRowsListViewXaml);
+        Assert.Contains("Source=\"{Binding AssetPath}\"", galleryRowsListViewXaml);
     }
 
     [Fact]

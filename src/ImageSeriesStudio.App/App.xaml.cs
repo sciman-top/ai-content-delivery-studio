@@ -15,6 +15,7 @@ using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
 using ImageSeriesStudio.Infrastructure.OpenAI;
 using ImageSeriesStudio.Infrastructure.Persistence;
+using ImageSeriesStudio.Infrastructure.RemoteWorkflows;
 using ImageSeriesStudio.Infrastructure.ToolAdapters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -62,6 +63,7 @@ public partial class App : System.Windows.Application
         // Keep the currently executable local operator adapters wired into the desktop host, including the
         // read-only OpenAI launch preflight that only inspects readiness and writes local diagnostics.
         builder.Services.AddBuiltInLocalToolAdapters();
+        builder.Services.AddBuiltInRemoteWorkflowEngineAdapters();
         builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
         builder.Services.AddTransient<ProviderCenterViewModel>();
         builder.Services.AddTransient<MainWindowViewModel>();

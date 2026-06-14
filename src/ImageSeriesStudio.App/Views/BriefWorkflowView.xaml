@@ -49,45 +49,10 @@
             </Grid>
         </Border>
 
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,0">
-            <Button Content="{Binding DataContext.CreateBriefText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    Command="{Binding DataContext.CreateBriefCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    MinWidth="112"
-                    Height="30"
-                    Margin="0,0,8,0" />
-            <Button Content="{Binding DataContext.GenerateDesignBlueprintsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    Command="{Binding DataContext.GenerateDesignBlueprintsCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    MinWidth="132"
-                    Height="30"
-                    Margin="0,0,8,0" />
-            <Button Content="{Binding DataContext.PromoteDesignBlueprintText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    Command="{Binding DataContext.PromoteDesignBlueprintCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    MinWidth="132"
-                    Height="30"
-                    Margin="0,0,8,0" />
-            <Button Content="{Binding DataContext.GeneratePromptDirectionsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    Command="{Binding DataContext.GeneratePromptDirectionsCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    MinWidth="128"
-                    Height="30"
-                    Margin="0,0,8,0" />
-            <Button Content="{Binding DataContext.PromotePromptDirectionText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    Command="{Binding DataContext.PromotePromptDirectionCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                    MinWidth="128"
-                    Height="30" />
-        </StackPanel>
+        <views:BriefWorkflowActionsView Grid.Row="1" />
 
-        <TextBlock Grid.Row="2"
-                   Text="{Binding DataContext.BlueprintRoutesHeader, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                   FontWeight="SemiBold"
-                   Margin="0,18,0,8" />
+        <views:BlueprintRoutesPanelView Grid.Row="2" Grid.RowSpan="2" />
 
-        <views:BlueprintRoutesView Grid.Row="3" />
-
-        <TextBlock Grid.Row="4"
-                   Text="{Binding DataContext.PromptDirectionsHeader, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                   FontWeight="SemiBold"
-                   Margin="0,18,0,8" />
-
-        <views:PromptDirectionsView Grid.Row="5" />
+        <views:PromptDirectionsPanelView Grid.Row="4" Grid.RowSpan="2" />
     </Grid>
 </UserControl>

@@ -62,7 +62,7 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add `aspire` as a code-level reference before the next OTLP or local dashboard observability slice.
 - [x] Add `SkiaSharp` reference-source coverage before the next deterministic composition expansion beyond the current poster proof path.
 - [ ] Add OCR reference coverage such as `Tesseract` or `OCRmyPDF` only when scanned-document hardening enters the active near-term roadmap.
-- [ ] Decide whether `Cockpit-Tools-Local-references` should gain a machine-readable manifest next.
+- [x] Decide whether `Cockpit-Tools-Local-references` should gain a machine-readable manifest next.
 
 ## Frozen Until Post-V1
 
@@ -150,7 +150,7 @@ These items are still valuable, but they are not the same thing as the current V
   - [x] Add .NET `ActivitySource` and `Meter` instrumentation for provider calls.
   - [x] Add local OTLP/Aspire dashboard profile.
 - [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits and where the provider routing policy calls for it.
-- [ ] Add a remote workflow-engine adapter boundary without requiring local model installs.
+- [x] Add a remote workflow-engine adapter boundary without requiring local model installs.
 - [x] Run full build, test, and format gates for the implementation slice.
 
 ## Phase 4: Quality Loop
@@ -330,11 +330,26 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract the brief-tab prompt-direction list into `PromptDirectionsView` while preserving existing bindings and selection behavior.
   - [x] Extract the review-tab results list into `ReviewResultsListView` while preserving existing bindings and selection behavior.
   - [x] Extract the delivery-tab results list into `DeliveryResultsListView` while preserving existing bindings and output display behavior.
+  - [x] Extract the brief-tab actions bar into `BriefWorkflowActionsView` while preserving create, blueprint, and prompt-direction command bindings.
+  - [x] Extract the brief-tab blueprint panel into `BlueprintRoutesPanelView` while preserving section header and blueprint-list composition.
+  - [x] Extract the brief-tab prompt-directions panel into `PromptDirectionsPanelView` while preserving section header and prompt-direction-list composition.
+  - [x] Extract the review-tab header into `ReviewHeaderView` while preserving review column bindings.
+  - [x] Extract the delivery-tab header into `DeliveryHeaderView` while preserving delivery column bindings.
+  - [x] Extract the plan-tab header into `PlanHeaderView` while preserving plan column bindings.
+  - [x] Extract the prompts-tab header into `PromptsHeaderView` while preserving prompt column bindings.
+  - [x] Extract the queue-tab header into `QueueHeaderView` while preserving queue column bindings.
+  - [x] Extract the gallery-tab header into `GalleryHeaderView` while preserving gallery column bindings.
+  - [x] Extract the workflow-graph header into `WorkflowGraphHeaderView` while preserving graph column bindings.
   - [x] Extract the inspector provider-center panel into `ProviderCenterPanelView` while preserving configuration summary, health rows, and refresh/test bindings.
   - [x] Extract the inspector project setup panel into `ProjectSetupPanelView` while preserving project creation, current-project summary, and project-list selection bindings.
   - [x] Extract the inspector style-recipe panel into `StyleRecipeInspectorPanelView` while preserving preset, guide, recipe selection, and summary bindings.
   - [x] Extract the inspector fake-planning panel into `FakePlanningPanelView` while preserving planning input and run-command bindings.
   - [x] Extract the inspector document-illustration panel into `DocumentIllustrationPanelView` while preserving source text, strictness, run-command, and result bindings.
+  - [x] Extract the plan-tab rows list into `PlanRowsListView` while preserving plan row visibility and row bindings.
+  - [x] Extract the prompts-tab rows list into `PromptRowsListView` while preserving prompt row visibility and row bindings.
+  - [x] Extract the queue-tab rows list into `QueueRowsListView` while preserving queue row visibility and row bindings.
+  - [x] Extract the gallery-tab rows list into `GalleryRowsListView` while preserving gallery row visibility and selected-row bindings.
+  - [x] Extract the workflow-graph rows list into `WorkflowGraphRowsListView` while preserving graph row visibility and row bindings.
   - [x] Extract the workflow graph tab content into `WorkflowGraphView` while preserving existing bindings and graph output.
   - [x] Extract the delivery tab content into `DeliveryView` while preserving existing bindings and delivery output.
   - [x] Extract the review tab content into `ReviewView` while preserving existing bindings and review output.
