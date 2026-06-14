@@ -23,6 +23,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly PlanEditorWorkflowCoordinator _planEditorWorkflowCoordinator;
     private readonly WorkflowGraphCoordinator _workflowGraphCoordinator;
     private readonly ProjectWorkbenchProjectionCoordinator _projectWorkbenchProjectionCoordinator;
+    private readonly ProjectWorkbenchStateCoordinator _projectWorkbenchStateCoordinator;
     private readonly WorkbenchInspectorCoordinator _workbenchInspectorCoordinator;
     private readonly MainWindowLocalizationCoordinator _mainWindowLocalizationCoordinator;
     private readonly MainWindowSelectionSummaryCoordinator _mainWindowSelectionSummaryCoordinator;
@@ -211,6 +212,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _planEditorWorkflowCoordinator = new PlanEditorWorkflowCoordinator(projectService);
         _workflowGraphCoordinator = new WorkflowGraphCoordinator(localizationService);
         _projectWorkbenchProjectionCoordinator = new ProjectWorkbenchProjectionCoordinator(localizationService, projectService);
+        _projectWorkbenchStateCoordinator = new ProjectWorkbenchStateCoordinator(
+            localizationService,
+            projectService,
+            _projectWorkbenchProjectionCoordinator);
         _workbenchInspectorCoordinator = new WorkbenchInspectorCoordinator(
             _projectWorkspaceCoordinator,
             _planningWorkflowCoordinator,
@@ -2205,58 +2210,29 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private async Task LoadPlanAsync(Guid projectId, Guid? selectedSeriesId = null, Guid? selectedItemId = null)
     {
-        var project = await _projectService.LoadProjectAsync(projectId, CancellationToken.None);
-        if (project is null)
+        var state = await _projectWorkbenchStateCoordinator.LoadAsync(
+            projectId,
+            selectedSeriesId,
+            selectedItemId,
+            _activeCreativeBriefId,
+            NoItemsInSeriesText,
+            CancellationToken.None);
+        if (state.Series.Count == 0)
         {
             await ClearPlanAsync();
             return;
         }
 
-        Series = _projectWorkbenchProjectionCoordinator.BuildSeries(project);
-        DesignBlueprintRows = BriefWorkflowCoordinator.BuildDesignBlueprintRows(
-            project,
-            Text(LocalizationKey.BlueprintPromoted),
-            Text(LocalizationKey.BlueprintCandidate));
-        PromptDirectionRows = BriefWorkflowCoordinator.BuildPromptDirectionRows(project);
-        RebuildPlanRows();
-        RebuildPromptRows();
-        GalleryRows = _projectWorkbenchProjectionCoordinator.BuildGalleryRows(project);
-        ReviewRows = _projectWorkbenchProjectionCoordinator.BuildReviewRows(project);
-        DeliveryRows = [];
-
-        SelectedSeries = selectedSeriesId is null
-            ? Series.FirstOrDefault()
-            : Series.FirstOrDefault(series => series.Id == selectedSeriesId);
-        if (selectedItemId is not null)
-        {
-            SelectedSeriesItem = SelectedSeries?.Items.FirstOrDefault(item => item.Id == selectedItemId) ?? SelectedSeriesItem;
-        }
-
-        SelectedPromptDirection = PromptDirectionRows.FirstOrDefault(direction =>
-            _activeCreativeBriefId is null || direction.CreativeBriefId == _activeCreativeBriefId);
-        SelectedDesignBlueprint = DesignBlueprintRows.FirstOrDefault(blueprint =>
-            _activeCreativeBriefId is null || blueprint.CreativeBriefId == _activeCreativeBriefId);
+        ApplyWorkbenchState(state);
         CreateSeriesCommand.NotifyCanExecuteChanged();
         RebuildWorkflowGraphRows();
     }
 
     private Task ClearPlanAsync()
     {
-        Series = [];
-        SelectedSeries = null;
-        SeriesItems = [];
-        SelectedSeriesItem = null;
+        ApplyWorkbenchState(_projectWorkbenchStateCoordinator.CreateEmptyState());
         QueueRows = [];
-        GalleryRows = [];
-        ReviewRows = [];
-        DeliveryRows = [];
-        DesignBlueprintRows = [];
-        SelectedDesignBlueprint = null;
-        PromptDirectionRows = [];
-        SelectedPromptDirection = null;
         _activeCreativeBriefId = null;
-        RebuildPlanRows();
-        RebuildPromptRows();
         RebuildWorkflowGraphRows();
         CreateSeriesCommand.NotifyCanExecuteChanged();
         AddItemCommand.NotifyCanExecuteChanged();
@@ -2267,6 +2243,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
         GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
         PromotePromptDirectionCommand.NotifyCanExecuteChanged();
         return Task.CompletedTask;
+    }
+
+    private void ApplyWorkbenchState(ProjectWorkbenchStateResult state)
+    {
+        Series = state.Series;
+        DesignBlueprintRows = state.DesignBlueprintRows;
+        PromptDirectionRows = state.PromptDirectionRows;
+        PlanRows = state.PlanRows;
+        PromptRows = state.PromptRows;
+        GalleryRows = state.GalleryRows;
+        ReviewRows = state.ReviewRows;
+        DeliveryRows = state.DeliveryRows;
+        SelectedSeries = state.SelectedSeries;
+        SelectedSeriesItem = state.SelectedSeriesItem;
+        SelectedPromptDirection = state.SelectedPromptDirection;
+        SelectedDesignBlueprint = state.SelectedDesignBlueprint;
     }
 
     private void RebuildPlanRows()

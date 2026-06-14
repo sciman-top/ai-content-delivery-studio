@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:ImageSeriesStudio.App.Views"
              mc:Ignorable="d">
     <Grid>
         <Grid.Style>
@@ -90,73 +91,6 @@
             </TextBlock.Style>
         </TextBlock>
 
-        <Border Grid.Row="2" BorderBrush="#D4DAE5" BorderThickness="1,0,1,1">
-            <Border.Style>
-                <Style TargetType="Border">
-                    <Setter Property="Visibility" Value="Collapsed" />
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding DataContext.HasReviewRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
-                            <Setter Property="Visibility" Value="Visible" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
-            <ListBox ItemsSource="{Binding DataContext.ReviewRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                     SelectedItem="{Binding DataContext.SelectedReviewRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
-                     BorderThickness="0"
-                     Background="Transparent"
-                     ScrollViewer.VerticalScrollBarVisibility="Auto">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1.1*" />
-                                    <ColumnDefinition Width="90" />
-                                    <ColumnDefinition Width="1.1*" />
-                                    <ColumnDefinition Width="1.7*" />
-                                    <ColumnDefinition Width="1.4*" />
-                                    <ColumnDefinition Width="1.5*" />
-                                    <ColumnDefinition Width="1.2*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
-                                           Text="{Binding ItemTitle}"
-                                           FontWeight="SemiBold"
-                                           TextTrimming="CharacterEllipsis" />
-                                <TextBlock Grid.Column="1"
-                                           Text="{Binding Decision}"
-                                           TextTrimming="CharacterEllipsis"
-                                           Margin="10,0,0,0" />
-                                <TextBlock Grid.Column="2"
-                                           Text="{Binding ScoreText}"
-                                           TextWrapping="Wrap"
-                                           Foreground="#4B5563"
-                                           Margin="10,0,0,0" />
-                                <TextBlock Grid.Column="3"
-                                           Text="{Binding Comments}"
-                                           TextWrapping="Wrap"
-                                           Foreground="#4B5563"
-                                           Margin="10,0,0,0" />
-                                <TextBlock Grid.Column="4"
-                                           Text="{Binding SuggestedFix}"
-                                           TextWrapping="Wrap"
-                                           Foreground="#4B5563"
-                                           Margin="10,0,0,0" />
-                                <TextBlock Grid.Column="5"
-                                           Text="{Binding RouteSummary}"
-                                           TextWrapping="Wrap"
-                                           Foreground="#4B5563"
-                                           Margin="10,0,0,0" />
-                                <TextBlock Grid.Column="6"
-                                           Text="{Binding HumanApprovalStatus}"
-                                           TextWrapping="Wrap"
-                                           Foreground="#4B5563"
-                                           Margin="10,0,0,0" />
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-        </Border>
+        <views:ReviewResultsListView Grid.Row="2" />
     </Grid>
 </UserControl>

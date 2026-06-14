@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:ImageSeriesStudio.App.Views"
              mc:Ignorable="d">
     <Grid>
         <Grid.Style>
@@ -80,163 +81,13 @@
                    FontWeight="SemiBold"
                    Margin="0,18,0,8" />
 
-        <Border Grid.Row="3" BorderBrush="#D4DAE5" BorderThickness="1" Background="#FFFFFF">
-            <Grid>
-                <TextBlock Text="{Binding DataContext.NoBlueprintRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                           Foreground="#5E6978"
-                           Margin="12"
-                           TextWrapping="Wrap">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding DataContext.HasDesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <ListBox ItemsSource="{Binding DataContext.DesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                         SelectedItem="{Binding DataContext.SelectedDesignBlueprint, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
-                         BorderThickness="0"
-                         Background="Transparent">
-                    <ListBox.Style>
-                        <Style TargetType="ListBox">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding DataContext.HasDesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListBox.Style>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
-                                <StackPanel>
-                                    <DockPanel LastChildFill="True">
-                                        <TextBlock DockPanel.Dock="Right"
-                                                   Text="{Binding PromotionStatus}"
-                                                   Foreground="#2D5E44"
-                                                   FontWeight="SemiBold"
-                                                   Margin="12,0,0,0" />
-                                        <TextBlock Text="{Binding DisplayName}"
-                                                   FontWeight="SemiBold"
-                                                   TextWrapping="Wrap" />
-                                    </DockPanel>
-                                    <TextBlock Text="{Binding Summary}"
-                                               Foreground="#4B5563"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0" />
-                                    <TextBlock Text="{Binding IntendedUse}"
-                                               Foreground="#4B5563"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0" />
-                                    <TextBlock Text="{Binding Category}"
-                                               Foreground="#1F2937"
-                                               TextWrapping="Wrap"
-                                               Margin="0,8,0,0" />
-                                    <TextBlock Foreground="#4B5563"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0">
-                                        <Run Text="{Binding ItemCountRange}" />
-                                        <Run Text=" / " />
-                                        <Run Text="{Binding SequenceMode}" />
-                                        <Run Text=" / " />
-                                        <Run Text="{Binding TextPolicy}" />
-                                        <Run Text=" / " />
-                                        <Run Text="{Binding ReviewRubricTemplateId}" />
-                                    </TextBlock>
-                                    <TextBlock Text="{Binding ConsistencySummary}"
-                                               Foreground="#1F2937"
-                                               TextWrapping="Wrap"
-                                               Margin="0,6,0,0" />
-                                    <TextBlock Text="{Binding VariationSummary}"
-                                               Foreground="#4B5563"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0" />
-                                    <TextBlock Text="{Binding RiskSummary}"
-                                               Foreground="#8A4B00"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0" />
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Grid>
-        </Border>
+        <views:BlueprintRoutesView Grid.Row="3" />
 
         <TextBlock Grid.Row="4"
                    Text="{Binding DataContext.PromptDirectionsHeader, RelativeSource={RelativeSource AncestorType=TabControl}}"
                    FontWeight="SemiBold"
                    Margin="0,18,0,8" />
 
-        <Border Grid.Row="5" BorderBrush="#D4DAE5" BorderThickness="1" Background="#FFFFFF">
-            <Grid>
-                <TextBlock Text="{Binding DataContext.NoPromptDirectionRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                           Foreground="#5E6978"
-                           Margin="12"
-                           TextWrapping="Wrap">
-                    <TextBlock.Style>
-                        <Style TargetType="TextBlock">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding DataContext.HasPromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-                <ListBox ItemsSource="{Binding DataContext.PromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                         SelectedItem="{Binding DataContext.SelectedPromptDirection, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
-                         BorderThickness="0"
-                         Background="Transparent">
-                    <ListBox.Style>
-                        <Style TargetType="ListBox">
-                            <Setter Property="Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding DataContext.HasPromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </ListBox.Style>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
-                                <StackPanel>
-                                    <TextBlock Text="{Binding Name}"
-                                               FontWeight="SemiBold"
-                                               TextWrapping="Wrap" />
-                                    <TextBlock Text="{Binding IntendedUse}"
-                                               Foreground="#4B5563"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0" />
-                                    <TextBlock Text="{Binding RecommendationSummary}"
-                                               Foreground="#1F2937"
-                                               TextWrapping="Wrap"
-                                               Margin="0,8,0,0" />
-                                    <TextBlock Text="{Binding RecommendationReason}"
-                                               Foreground="#4B5563"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0" />
-                                    <TextBlock Text="{Binding CapabilityWarningSummary}"
-                                               Foreground="#8A4B00"
-                                               TextWrapping="Wrap"
-                                               Margin="0,6,0,0" />
-                                    <TextBlock Text="{Binding NonExecutableSuggestionSummary}"
-                                               Foreground="#5E6978"
-                                               TextWrapping="Wrap"
-                                               Margin="0,4,0,0" />
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-            </Grid>
-        </Border>
+        <views:PromptDirectionsView Grid.Row="5" />
     </Grid>
 </UserControl>

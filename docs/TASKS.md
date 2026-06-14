@@ -319,12 +319,18 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract plan editor command orchestration into `PlanEditorWorkflowCoordinator` while preserving existing bindings and commands.
   - [x] Extract workflow graph row construction into `WorkflowGraphCoordinator` while preserving existing bindings and graph output.
   - [x] Extract workbench projection building into `ProjectWorkbenchProjectionCoordinator` while preserving plan, prompt, gallery, review, and reload output.
+  - [x] Extract workbench load/clear state composition into `ProjectWorkbenchStateCoordinator` while preserving plan, prompt, gallery, review, delivery, and active-brief selection behavior.
   - [x] Extract selection-summary display building into `MainWindowSelectionSummaryCoordinator` while preserving item-title, style-recipe, and candidate-summary behavior.
   - [x] Extract current-project summary display building into `MainWindowSelectionSummaryCoordinator` while preserving empty-state and timestamp formatting behavior.
   - [x] Extract document default/strictness localization restoration into `MainWindowLocalizationCoordinator` while preserving user-entered text and educational fallback behavior.
   - [x] Extract shell localization payload building into `MainWindowLocalizationCoordinator` while preserving language-switch behavior and selected-option restoration.
   - [x] Extract localized selection and option restoration into `MainWindowLocalizationCoordinator` while preserving language-switch behavior and current inspector selections.
 - [ ] Split large WPF views into feature-owned user controls where needed.
+  - [x] Extract the brief-tab blueprint list into `BlueprintRoutesView` while preserving existing bindings and selection behavior.
+  - [x] Extract the brief-tab prompt-direction list into `PromptDirectionsView` while preserving existing bindings and selection behavior.
+  - [x] Extract the review-tab results list into `ReviewResultsListView` while preserving existing bindings and selection behavior.
+  - [x] Extract the delivery-tab results list into `DeliveryResultsListView` while preserving existing bindings and output display behavior.
+  - [x] Extract the inspector provider-center panel into `ProviderCenterPanelView` while preserving configuration summary, health rows, and refresh/test bindings.
   - [x] Extract the workflow graph tab content into `WorkflowGraphView` while preserving existing bindings and graph output.
   - [x] Extract the delivery tab content into `DeliveryView` while preserving existing bindings and delivery output.
   - [x] Extract the review tab content into `ReviewView` while preserving existing bindings and review output.
