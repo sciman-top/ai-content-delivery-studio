@@ -12,7 +12,8 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
     {
         WriteIndented = true,
     };
-    private static readonly OpenAiRoutingDecision Routing = OpenAiProviderRoutingPolicy.ForImageGeneration();
+    private static readonly OpenAiRoutingDecision SingleShotRouting = OpenAiProviderRoutingPolicy.ForImageGeneration();
+    private static readonly OpenAiRoutingDecision StatefulRouting = OpenAiProviderRoutingPolicy.ForStatefulImageGeneration();
 
     private readonly HttpClient _httpClient;
     private readonly OpenAiProviderOptions _options;
@@ -37,12 +38,12 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         Capabilities = new ProviderCapabilities(
             "openai-image",
             "OpenAI Image Generation Provider",
-            [_options.ImageGenerationModel],
+            GetCapabilityModelIds(_options),
             SupportsTextPlanning: false,
             SupportsImageGeneration: true,
             SupportsVisionReview: false,
             SupportsImageEditing: false,
-            SupportsStreaming: false,
+            SupportsStreaming: _options.ImageGenerationAllowsResponsesState,
             supportedSizes:
             [
                 new ImageOutputSize(1024, 1024),
@@ -72,31 +73,152 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         var appId = await GetOptionalSecretAsync(_options.AppIdSecretName, cancellationToken);
         var appSecret = await GetOptionalSecretAsync(_options.AppSecretSecretName, cancellationToken);
 
-        var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
+        return request.UseResponsesApi
+            ? await GenerateStatefulImageAsync(request, apiKey, appId, appSecret, cancellationToken)
+            : await GenerateSingleShotImageAsync(request, apiKey, appId, appSecret, cancellationToken);
+    }
+
+    private async Task<ImageGenerationResult> GenerateSingleShotImageAsync(
+        ImageGenerationRequest request,
+        string apiKey,
+        string? appId,
+        string? appSecret,
+        CancellationToken cancellationToken)
+    {
+        var endpoint = new Uri(_options.BaseUri, SingleShotRouting.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         AddOptionalAppHeaders(httpRequest, appId, appSecret);
-        httpRequest.Content = JsonContent.Create(CreatePayload(request), options: JsonOptions);
+        httpRequest.Content = JsonContent.Create(CreateSingleShotPayload(request), options: JsonOptions);
 
         var stopwatch = Stopwatch.StartNew();
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         stopwatch.Stop();
         if (!response.IsSuccessStatusCode)
         {
-            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, model: _options.ImageGenerationModel, latency: stopwatch.Elapsed);
             throw new HttpRequestException(
                 $"OpenAI image generation request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-        var imageBase64 = ExtractImageBase64(document.RootElement);
+        var providerTraceId = ExtractTraceId(document.RootElement);
+        var telemetry = CreateTelemetry(endpoint, response, document.RootElement, providerTraceId, _options.ImageGenerationModel, stopwatch.Elapsed);
+        _telemetrySink.Record(telemetry);
+
+        return await PersistImageResultAsync(
+            request,
+            document.RootElement,
+            telemetry,
+            SingleShotRouting,
+            _options.ImageGenerationModel,
+            cancellationToken);
+    }
+
+    private async Task<ImageGenerationResult> GenerateStatefulImageAsync(
+        ImageGenerationRequest request,
+        string apiKey,
+        string? appId,
+        string? appSecret,
+        CancellationToken cancellationToken)
+    {
+        if (!_options.ImageGenerationAllowsResponsesState)
+        {
+            throw new InvalidOperationException(
+                "Responses API image state is disabled by default. Configure a Responses image generation model explicitly before dispatch.");
+        }
+
+        var responsesModel = _options.ImageGenerationResponsesModel
+            ?? throw new InvalidOperationException("Responses image generation model is required for stateful image generation.");
+        var endpoint = new Uri(_options.BaseUri, StatefulRouting.RelativePath);
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        AddOptionalAppHeaders(httpRequest, appId, appSecret);
+        httpRequest.Content = JsonContent.Create(CreateStatefulPayload(request, responsesModel), options: JsonOptions);
+
+        var stopwatch = Stopwatch.StartNew();
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        stopwatch.Stop();
+        if (!response.IsSuccessStatusCode)
+        {
+            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, model: responsesModel, latency: stopwatch.Elapsed);
+            throw new HttpRequestException(
+                $"OpenAI stateful image generation request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        var providerTraceId = ExtractTraceId(document.RootElement);
+        var telemetry = CreateTelemetry(endpoint, response, document.RootElement, providerTraceId, responsesModel, stopwatch.Elapsed);
+        _telemetrySink.Record(telemetry);
+
+        return await PersistImageResultAsync(
+            request,
+            document.RootElement,
+            telemetry,
+            StatefulRouting,
+            responsesModel,
+            cancellationToken);
+    }
+
+    private Dictionary<string, object?> CreateSingleShotPayload(ImageGenerationRequest request)
+    {
+        return new Dictionary<string, object?>
+        {
+            ["model"] = _options.ImageGenerationModel,
+            ["prompt"] = request.PromptText,
+            ["n"] = 1,
+            ["store"] = SingleShotRouting.Store,
+            ["size"] = BuildSize(request),
+            ["quality"] = NormalizeQuality(request.Settings.Quality),
+            ["output_format"] = NormalizeOutputFormat(request.Settings.OutputFormat),
+        };
+    }
+
+    private Dictionary<string, object?> CreateStatefulPayload(ImageGenerationRequest request, string responsesModel)
+    {
+        var tool = new Dictionary<string, object?>
+        {
+            ["type"] = "image_generation",
+            ["size"] = BuildSize(request),
+            ["quality"] = NormalizeQuality(request.Settings.Quality),
+            ["output_format"] = NormalizeOutputFormat(request.Settings.OutputFormat),
+            ["partial_images"] = request.Settings.Seed.HasValue ? 0 : 1,
+            ["action"] = request.PreviousResponseId is null ? "generate" : "auto",
+        };
+
+        var payload = new Dictionary<string, object?>
+        {
+            ["model"] = responsesModel,
+            ["input"] = request.PromptText,
+            ["tools"] = new object[] { tool },
+            ["store"] = StatefulRouting.Store,
+        };
+
+        if (!string.IsNullOrWhiteSpace(request.PreviousResponseId))
+        {
+            payload["previous_response_id"] = request.PreviousResponseId;
+        }
+
+        return payload;
+    }
+
+    private async Task<ImageGenerationResult> PersistImageResultAsync(
+        ImageGenerationRequest request,
+        JsonElement root,
+        ProviderCallTelemetry telemetry,
+        OpenAiRoutingDecision routing,
+        string model,
+        CancellationToken cancellationToken)
+    {
+        var imageBase64 = ExtractImageBase64(root);
         var imageBytes = Convert.FromBase64String(imageBase64);
         var generatedAt = DateTimeOffset.UtcNow;
         var outputFormat = NormalizeOutputFormat(request.Settings.OutputFormat);
-        var providerTraceId = ExtractTraceId(document.RootElement);
-        var telemetry = CreateTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
-        _telemetrySink.Record(telemetry);
+        var providerTraceId = ExtractTraceId(root);
+        var revisedPrompt = ExtractRevisedPrompt(root);
+        var toolCallId = ExtractToolCallId(root);
 
         Directory.CreateDirectory(request.OutputDirectory);
 
@@ -112,10 +234,14 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
                 new
                 {
                     providerId = Capabilities.ProviderId,
-                    endpointFamily = Routing.EndpointFamily.ToString().ToLowerInvariant(),
-                    store = Routing.Store,
-                    model = _options.ImageGenerationModel,
+                    endpointFamily = routing.EndpointFamily.ToString().ToLowerInvariant(),
+                    store = routing.Store,
+                    model,
                     providerTraceId,
+                    toolCallId,
+                    revisedPrompt,
+                    previousResponseId = request.PreviousResponseId,
+                    usedResponsesApi = request.UseResponsesApi,
                     seriesItemId = request.SeriesItemId,
                     promptVersionId = request.PromptVersionId,
                     promptText = request.PromptText,
@@ -146,21 +272,9 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             assetPath,
             metadataPath,
             providerTraceId,
-            generatedAt);
-    }
-
-    private Dictionary<string, object?> CreatePayload(ImageGenerationRequest request)
-    {
-        return new Dictionary<string, object?>
-        {
-            ["model"] = _options.ImageGenerationModel,
-            ["prompt"] = request.PromptText,
-            ["n"] = 1,
-            ["store"] = Routing.Store,
-            ["size"] = BuildSize(request),
-            ["quality"] = NormalizeQuality(request.Settings.Quality),
-            ["output_format"] = NormalizeOutputFormat(request.Settings.OutputFormat),
-        };
+            generatedAt,
+            revisedPrompt,
+            toolCallId);
     }
 
     private static string BuildSize(ImageGenerationRequest request)
@@ -209,6 +323,22 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
 
     private static string ExtractImageBase64(JsonElement root)
     {
+        if (root.TryGetProperty("output", out var outputElement)
+            && outputElement.ValueKind is JsonValueKind.Array)
+        {
+            foreach (var item in outputElement.EnumerateArray())
+            {
+                if (item.TryGetProperty("type", out var typeElement)
+                    && typeElement.ValueKind is JsonValueKind.String
+                    && string.Equals(typeElement.GetString(), "image_generation_call", StringComparison.Ordinal)
+                    && item.TryGetProperty("result", out var resultElement)
+                    && resultElement.ValueKind is JsonValueKind.String)
+                {
+                    return resultElement.GetString()!;
+                }
+            }
+        }
+
         if (root.TryGetProperty("data", out var dataElement)
             && dataElement.ValueKind is JsonValueKind.Array)
         {
@@ -223,6 +353,48 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         }
 
         throw new InvalidOperationException("OpenAI image generation response did not include base64 image data.");
+    }
+
+    private static string? ExtractRevisedPrompt(JsonElement root)
+    {
+        if (root.TryGetProperty("output", out var outputElement)
+            && outputElement.ValueKind is JsonValueKind.Array)
+        {
+            foreach (var item in outputElement.EnumerateArray())
+            {
+                if (item.TryGetProperty("type", out var typeElement)
+                    && typeElement.ValueKind is JsonValueKind.String
+                    && string.Equals(typeElement.GetString(), "image_generation_call", StringComparison.Ordinal)
+                    && item.TryGetProperty("revised_prompt", out var revisedPromptElement)
+                    && revisedPromptElement.ValueKind is JsonValueKind.String)
+                {
+                    return revisedPromptElement.GetString();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static string? ExtractToolCallId(JsonElement root)
+    {
+        if (root.TryGetProperty("output", out var outputElement)
+            && outputElement.ValueKind is JsonValueKind.Array)
+        {
+            foreach (var item in outputElement.EnumerateArray())
+            {
+                if (item.TryGetProperty("type", out var typeElement)
+                    && typeElement.ValueKind is JsonValueKind.String
+                    && string.Equals(typeElement.GetString(), "image_generation_call", StringComparison.Ordinal)
+                    && item.TryGetProperty("id", out var idElement)
+                    && idElement.ValueKind is JsonValueKind.String)
+                {
+                    return idElement.GetString();
+                }
+            }
+        }
+
+        return null;
     }
 
     private static string ExtractTraceId(JsonElement root)
@@ -265,9 +437,10 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         HttpResponseMessage response,
         JsonElement? body,
         string? providerTraceId,
+        string model,
         TimeSpan latency)
     {
-        _telemetrySink.Record(CreateTelemetry(endpoint, response, body, providerTraceId, latency));
+        _telemetrySink.Record(CreateTelemetry(endpoint, response, body, providerTraceId, model, latency));
     }
 
     private ProviderCallTelemetry CreateTelemetry(
@@ -275,12 +448,13 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         HttpResponseMessage response,
         JsonElement? body,
         string? providerTraceId,
+        string model,
         TimeSpan latency)
     {
         return OpenAiProviderTelemetry.Create(
             Capabilities.ProviderId,
             "image-generation",
-            _options.ImageGenerationModel,
+            model,
             endpoint,
             response,
             body,
@@ -288,5 +462,19 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             latency,
             _rateCard.ImageGenerationRequestUsd,
             _rateCard.Name);
+    }
+
+    private static IReadOnlyList<string> GetCapabilityModelIds(OpenAiProviderOptions options)
+    {
+        var models = new List<string> { options.ImageGenerationModel };
+        if (!string.IsNullOrWhiteSpace(options.ImageGenerationResponsesModel))
+        {
+            models.Add(options.ImageGenerationResponsesModel);
+        }
+
+        return models
+            .Where(model => !string.IsNullOrWhiteSpace(model))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 }

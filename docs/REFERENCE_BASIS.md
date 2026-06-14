@@ -29,6 +29,14 @@ The local enforcement entrypoint is:
 .\scripts\verify-reference-evidence.ps1
 ```
 
+The machine-sync entrypoint is:
+
+```powershell
+.\scripts\sync-reference-governance.ps1
+```
+
+That script owns the generated summary block in this document and the repo-side snapshot at `scripts/external-reference-shelf.snapshot.json`.
+
 ## Reuse Levels
 
 | Level | Meaning |
@@ -36,6 +44,84 @@ The local enforcement entrypoint is:
 | `direct-pattern` | Safe to borrow structure or API usage patterns with light adaptation. |
 | `adapt-with-review` | Useful reference, but local constraints and contracts must be rechecked before reuse. |
 | `inspiration-only` | Study architecture or UX ideas only. Do not treat as implementation default. |
+
+<!-- BEGIN GENERATED REFERENCE BASIS SUMMARY -->
+
+## Machine-Checked Summary
+
+This section is generated from `scripts/reference-basis.json` by `scripts/sync-reference-governance.ps1`.
+Do not edit this block by hand. Update the JSON manifest and rerun the sync script instead.
+
+- Manifest version: `1`
+- Manifest updatedAt: `2026-06-09T23:10:00+08:00`
+
+### `openai-provider`
+
+- `required`: `true`
+- Source rules: `src/ImageSeriesStudio.Infrastructure/OpenAI/`, `src/ImageSeriesStudio.Core/Providers/`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/PROVIDER_CONFIGURATION.md`, `docs/PROVIDER_ROUTING_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Required triggers: `request-response-shape`, `images-vs-responses-routing`, `store-or-previous-response-id`, `structured-output`, `vision-review`, `real-provider-enablement`
+- Local references:
+  - `D:/CODE/external/ai-content-delivery-studio-references/01-openai/openai-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/01-openai/openai-cookbook-selected` (kind: `official-examples`; reuse: `adapt-with-review`)
+  - `D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
+
+### `host-and-observability`
+
+- `required`: `true`
+- Source rules: `src/ImageSeriesStudio.App/App.xaml.cs`, `src/ImageSeriesStudio.App/Telemetry/`, `src/ImageSeriesStudio.App/Services/ProviderCenterServices.cs`, `src/ImageSeriesStudio.App/Properties/launchSettings.json`, `src/ImageSeriesStudio.Infrastructure/Diagnostics/`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Required triggers: `host-startup`, `dependency-injection`, `telemetry-registration`, `otlp-export`, `aspire-dashboard`, `http-resilience`, `health-diagnostics`
+- Local references:
+  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/docs-desktop` (kind: `official-doc-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/WPF-Samples` (kind: `official-samples`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet` (kind: `official-toolkit-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/dotnet-extensions` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/opentelemetry-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/aspire` (kind: `official-source`; reuse: `direct-pattern`)
+
+### `persistence-and-schema`
+
+- `required`: `true`
+- Source rules: `src/ImageSeriesStudio.Infrastructure/Persistence/`, `src/ImageSeriesStudio.Core/Projects/`, `src/ImageSeriesStudio.Core/Artifacts/`, `src/ImageSeriesStudio.Core/Sources/`, `src/ImageSeriesStudio.Core/Documents/`, `src/ImageSeriesStudio.Core/Packs/`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Required triggers: `entity-configuration`, `aggregate-shape`, `migration-behavior`, `sqlite-limitation`, `project-load-save-contract`
+- Local references:
+  - `D:/CODE/external/ai-content-delivery-studio-references/03-data-persistence/EntityFramework.Docs` (kind: `official-doc-source`; reuse: `direct-pattern`)
+  - `D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
+
+### `tooling-and-operator`
+
+- `required`: `true`
+- Source rules: `src/ImageSeriesStudio.Application/ToolAdapters/`, `src/ImageSeriesStudio.Infrastructure/ToolAdapters/`, `src/ImageSeriesStudio.Core/Operators/`, `src/ImageSeriesStudio.Infrastructure/Composition/`, `src/ImageSeriesStudio.Infrastructure/Delivery/`, `src/ImageSeriesStudio.Infrastructure/Import/`, `src/ImageSeriesStudio.Infrastructure/Sources/`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/OPERATOR_RISK_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Required triggers: `deterministic-composition`, `document-conversion`, `artifact-validation`, `delivery-packaging`, `diagnostics-export`, `browser-automation`, `desktop-automation`
+- Local references:
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling` (kind: `community-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig` (kind: `community-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/QuestPDF` (kind: `community-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/SkiaSharp` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/06-automation-testing/playwright-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/06-automation-testing/FlaUI` (kind: `community-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/ComfyUI` (kind: `community-source`; reuse: `inspiration-only`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/InvokeAI` (kind: `community-source`; reuse: `inspiration-only`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/diffusers` (kind: `community-source`; reuse: `inspiration-only`)
+
+### `workflow-and-ux-architecture`
+
+- `required`: `true`
+- Source rules: `src/ImageSeriesStudio.App/MainWindow.xaml`, `src/ImageSeriesStudio.App/MainWindow.xaml.cs`, `src/ImageSeriesStudio.App/ViewModels/`, `src/ImageSeriesStudio.App/Views/`, `src/ImageSeriesStudio.Application/Modules/`, `src/ImageSeriesStudio.Application/Workflows/`
+- Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Required triggers: `large-viewmodel-split`, `large-view-split`, `shell-view-structure`, `workflow-graph`, `queue-gallery-stage-composition`, `module-boundary-change`
+- Local references:
+  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/docs-desktop` (kind: `official-doc-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet` (kind: `official-toolkit-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/WPF-Samples` (kind: `official-samples`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/ComfyUI` (kind: `community-source`; reuse: `inspiration-only`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/InvokeAI` (kind: `community-source`; reuse: `inspiration-only`)
+
+<!-- END GENERATED REFERENCE BASIS SUMMARY -->
 
 ## Reference Areas
 

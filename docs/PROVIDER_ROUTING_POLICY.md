@@ -56,6 +56,8 @@ Only switch generation to Responses when the workflow gains meaningful value fro
 - Multi-turn image tool context.
 - Partial-image streaming in the workbench.
 
+The current repository now carries an explicit opt-in image-generation request path for those stateful cases. It stays fail-closed unless the image provider configuration also supplies a Responses-capable mainline model, and single-shot generation continues to default to the simpler Images API path.
+
 ## Statefulness Policy
 
 ### Default
@@ -119,6 +121,8 @@ Every provider result persisted to project state should capture as many of these
 - cost estimate
 - capability warnings
 - redacted error details when a call fails
+
+For the current implementation slice, stateful Responses image-generation metadata records `previous_response_id`, `revised_prompt`, and the image-generation tool call id when the upstream response exposes them.
 
 ## Privacy And Retention Defaults
 

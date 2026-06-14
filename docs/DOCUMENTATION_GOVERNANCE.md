@@ -43,6 +43,7 @@ Use these documents in this order:
 - `TARGET_ENGINEERING_STATE.md` is the best-end-state target, not a near-term commitment list.
 - `REFERENCE_EVIDENCE_POLICY.md` defines when high-drift engineering changes must leave a visible evidence trail and points to the local verification gate.
 - `REFERENCE_BASIS.md` defines the durable `task/code area -> local reference shelf -> reuse level` mapping and should be refreshed when hard-drift engineering areas or the reference shelf change.
+- `scripts/sync-reference-governance.ps1` is the machine-sync companion for those two docs. It regenerates the managed summary inside `REFERENCE_BASIS.md` and refreshes the repo-side snapshot of the external shelf manifest.
 
 ## Review Shortcut
 

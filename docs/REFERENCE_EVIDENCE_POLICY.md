@@ -116,6 +116,17 @@ The gate passes when:
 - no enforced engineering area is touched
 - or the change set contains at least one acceptable evidence-file update for each touched area
 
+Before area matching runs, the repository also checks reference-governance parity through:
+
+```powershell
+.\scripts\sync-reference-governance.ps1 -Check
+```
+
+That parity check currently enforces two repository-owned truths:
+
+- the generated summary block inside `docs/REFERENCE_BASIS.md` must stay in sync with `scripts/reference-basis.json`
+- `scripts/external-reference-shelf.snapshot.json` must stay in sync with the external shelf manifest at `D:\CODE\external\ai-content-delivery-studio-references\references.manifest.json` when that shelf is available on the local machine
+
 The gate fails when:
 
 - an enforced engineering area is touched

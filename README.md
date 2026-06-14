@@ -48,6 +48,8 @@ Use the canonical local full gate:
 .\scripts\verify-repo.ps1
 ```
 
+That gate now checks reference-governance parity first through `.\scripts\sync-reference-governance.ps1 -Check`, then runs reference evidence, build, test, and format verification.
+
 This runs the repository-local reference-evidence gate first, then `dotnet build`, `dotnet test`, and `dotnet format --verify-no-changes`.
 
 ### Run The Stronger Release-Style Preflight
@@ -55,6 +57,8 @@ This runs the repository-local reference-evidence gate first, then `dotnet build
 ```powershell
 .\scripts\preflight-release.ps1
 ```
+
+The release-style preflight also checks reference-governance parity before placeholder, merge-conflict, publish dry-run, and diff-hygiene checks.
 
 This adds placeholder and merge-conflict scans, reuses the reference-evidence gate, runs the canonical repository verification path, performs a publish dry run, and finishes with diff-hygiene checks.
 
@@ -160,5 +164,11 @@ The authoritative V1 launch frame lives in:
 A local external reference shelf is available at:
 
 `D:\CODE\external\ai-content-delivery-studio-references`
+
+The repository keeps a repo-side snapshot of that shelf manifest at `scripts/external-reference-shelf.snapshot.json`. Refresh it together with `docs/REFERENCE_BASIS.md` by running:
+
+```powershell
+.\scripts\sync-reference-governance.ps1
+```
 
 Use it for quick local lookup of official SDKs, WPF and host patterns, EF Core and SQLite references, resilience and observability internals, deterministic document tooling, and image workflow architecture references. These materials inform engineering decisions, but they do not override this repository's source, tests, ADRs, or project rules.

@@ -9,6 +9,8 @@ public static class OpenAiRoutingDefaults
 
     public const string SingleShotImageGenerationEndpointPath = "images/generations";
 
+    public const string StatefulImageGenerationEndpointPath = "responses";
+
     public const bool StoreRemoteStateByDefault = false;
 
     public const bool UsePreviousResponseIdByDefault = false;

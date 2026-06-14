@@ -32,6 +32,10 @@ function Invoke-Step {
     }
 }
 
+Invoke-Step -Label "Reference governance parity" -Action {
+    & ".\scripts\sync-reference-governance.ps1" -Check
+}
+
 if (-not $SkipReferenceEvidence) {
     Invoke-Step -Label "Reference evidence gate" -Action {
         if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef) -or -not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {

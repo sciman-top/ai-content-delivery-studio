@@ -113,6 +113,23 @@ function Test-MatchAnyRule {
     return $false
 }
 
+function Invoke-ReferenceGovernanceSyncCheck {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$RepoRoot
+    )
+
+    $syncPath = Join-Path $RepoRoot "scripts/sync-reference-governance.ps1"
+    if (-not (Test-Path -LiteralPath $syncPath)) {
+        throw "Missing reference governance sync script: $syncPath"
+    }
+
+    & $syncPath -Check
+    if ($LASTEXITCODE -ne 0) {
+        throw "Reference governance parity check failed."
+    }
+}
+
 function Get-AreaDefinitions {
     param(
         [Parameter(Mandatory = $true)]
@@ -174,6 +191,8 @@ if (-not $changedPaths -or $changedPaths.Count -eq 0) {
     Write-Host "[OK] No changed paths detected. Reference evidence gate passed."
     exit 0
 }
+
+Invoke-ReferenceGovernanceSyncCheck -RepoRoot $repoRoot
 
 $areas = Get-AreaDefinitions -RepoRoot $repoRoot
 $touchedAreas = @()

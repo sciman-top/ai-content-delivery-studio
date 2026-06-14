@@ -79,6 +79,7 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
     string Kind,
     Uri? BaseUri,
     string Model,
+    string? ResponsesModel,
     string? ApiKeySecretName,
     IReadOnlyList<string> ApiKeySecretNames,
     bool UsesSharedTextApiKeyFallback,
@@ -95,6 +96,7 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             GetValue(values, "TEXT_PROVIDER_KIND", "openai_compatible"),
             GetUri(values, "TEXT_PROVIDER_BASE_URL"),
             GetValue(values, "TEXT_PROVIDER_MODEL", string.Empty),
+            ResponsesModel: null,
             keyNames.FirstOrDefault(),
             keyNames,
             UsesSharedTextApiKeyFallback: false,
@@ -125,6 +127,7 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             GetValue(values, "IMAGE_PROVIDER_KIND", "openai_compatible_image_only"),
             GetUri(values, "IMAGE_PROVIDER_BASE_URL"),
             GetValue(values, "IMAGE_PROVIDER_MODEL", string.Empty),
+            GetPresentValue(values, "IMAGE_PROVIDER_RESPONSES_MODEL"),
             keyNames.FirstOrDefault(),
             keyNames,
             usesSharedTextApiKeyFallback,
@@ -226,5 +229,11 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
         return values.TryGetValue(name, out var value) && value is not null
             ? value.Trim()
             : defaultValue;
+    }
+
+    private static string? GetPresentValue(IReadOnlyDictionary<string, string?> values, string name)
+    {
+        var value = GetValue(values, name, string.Empty);
+        return string.IsNullOrWhiteSpace(value) ? null : value;
     }
 }

@@ -750,6 +750,111 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task ImageGenerationProvider_UsesResponsesStatefulPathWhenExplicitlyEnabled()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_image_stateful_123",
+              "output": [
+                {
+                  "id": "ig_call_123",
+                  "type": "image_generation_call",
+                  "revised_prompt": "A cleaner revised prompt for the final render.",
+                  "result": "iVBORw=="
+                }
+              ],
+              "usage": {
+                "input_tokens": 20,
+                "output_tokens": 10,
+                "total_tokens": 30
+              }
+            }
+            """,
+            requestId: "req_image_stateful_123"));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiImageGenerationProvider(
+            httpClient,
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                ImageGenerationResponsesModel = "gpt-5.5",
+                ImageGenerationAllowsResponsesState = true,
+            },
+            new StaticSecretStore("test-openai-key"));
+
+        try
+        {
+            var result = await provider.GenerateImageAsync(
+                new ImageGenerationRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "Make the poster look more realistic.",
+                    new GenerationSettings(1024, 1024, "medium", "png"),
+                    rootDirectory,
+                    "stateful.png",
+                    UseResponsesApi: true,
+                    PreviousResponseId: "resp_prev_image_123"),
+                CancellationToken.None);
+
+            Assert.Equal("resp_image_stateful_123", result.ProviderTraceId);
+            Assert.Equal("A cleaner revised prompt for the final render.", result.RevisedPrompt);
+            Assert.Equal("ig_call_123", result.ToolCallId);
+
+            Assert.Equal("https://api.openai.com/v1/responses", handler.LastRequest!.RequestUri!.ToString());
+            using var payload = JsonDocument.Parse(handler.LastRequestBody!);
+            Assert.Equal("gpt-5.5", payload.RootElement.GetProperty("model").GetString());
+            Assert.True(payload.RootElement.GetProperty("store").GetBoolean());
+            Assert.Equal("resp_prev_image_123", payload.RootElement.GetProperty("previous_response_id").GetString());
+            Assert.Equal("Make the poster look more realistic.", payload.RootElement.GetProperty("input").GetString());
+
+            var tool = payload.RootElement.GetProperty("tools")[0];
+            Assert.Equal("image_generation", tool.GetProperty("type").GetString());
+            Assert.Equal("auto", tool.GetProperty("action").GetString());
+            Assert.Equal(1, tool.GetProperty("partial_images").GetInt32());
+
+            using var metadata = JsonDocument.Parse(await File.ReadAllTextAsync(result.MetadataPath, CancellationToken.None));
+            Assert.Equal("responses", metadata.RootElement.GetProperty("endpointFamily").GetString());
+            Assert.True(metadata.RootElement.GetProperty("store").GetBoolean());
+            Assert.Equal("gpt-5.5", metadata.RootElement.GetProperty("model").GetString());
+            Assert.Equal("ig_call_123", metadata.RootElement.GetProperty("toolCallId").GetString());
+            Assert.Equal("A cleaner revised prompt for the final render.", metadata.RootElement.GetProperty("revisedPrompt").GetString());
+            Assert.Equal("resp_prev_image_123", metadata.RootElement.GetProperty("previousResponseId").GetString());
+            Assert.True(metadata.RootElement.GetProperty("usedResponsesApi").GetBoolean());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ImageGenerationProvider_RejectsResponsesStateWhenProviderOptionIsNotEnabled()
+    {
+        using var handler = new CaptureHandler(_ => JsonResponse("{}"));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateImageProvider(httpClient);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GenerateImageAsync(
+                new ImageGenerationRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "prompt",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    Path.GetTempPath(),
+                    UseResponsesApi: true),
+                CancellationToken.None));
+
+        Assert.Contains("disabled by default", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, handler.CallCount);
+    }
+
+    [Fact]
     public async Task VisionReviewProvider_UsesExplicitStatefulReviewOptionsWhenEnabled()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));

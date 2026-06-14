@@ -235,7 +235,9 @@ public sealed record ImageGenerationRequest(
     GenerationSettings Settings,
     string OutputDirectory,
     string OutputFileName = "",
-    GenerationRecipe? Recipe = null);
+    GenerationRecipe? Recipe = null,
+    bool UseResponsesApi = false,
+    string? PreviousResponseId = null);
 
 public sealed record ImageEditRequest(
     Guid SeriesItemId,
@@ -256,7 +258,9 @@ public sealed record ImageGenerationResult(
     string AssetPath,
     string MetadataPath,
     string ProviderTraceId,
-    DateTimeOffset GeneratedAt);
+    DateTimeOffset GeneratedAt,
+    string? RevisedPrompt = null,
+    string? ToolCallId = null);
 
 public sealed record VisionReviewRequest(
     Guid CandidateImageId,

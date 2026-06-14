@@ -237,6 +237,49 @@ public sealed class OpenAiProviderConfigurationTests
     }
 
     [Fact]
+    public void OpenAiProviderOptions_DefaultsStatefulImageGenerationToFailClosed()
+    {
+        var options = new OpenAiProviderOptions();
+
+        Assert.Null(options.ImageGenerationResponsesModel);
+        Assert.False(options.ImageGenerationAllowsResponsesState);
+    }
+
+    [Fact]
+    public void OpenAiProviderOptions_FromImageProviderEnvironment_EnablesStatefulImageGenerationOnlyWhenResponsesModelExists()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-shared",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+                ["IMAGE_PROVIDER_RESPONSES_MODEL"] = "gpt-5.5",
+            });
+
+        var imageOptions = OpenAiProviderOptions.FromImageProviderEnvironment(configuration, realApiEnabled: true);
+
+        Assert.Equal("gpt-5.5", imageOptions.ImageGenerationResponsesModel);
+        Assert.True(imageOptions.ImageGenerationAllowsResponsesState);
+    }
+
+    [Fact]
+    public void OpenAiProviderOptions_RejectsEnabledStatefulImageGenerationWithoutResponsesModel()
+    {
+        var options = new OpenAiProviderOptions
+        {
+            ImageGenerationAllowsResponsesState = true,
+            ImageGenerationResponsesModel = null,
+        };
+
+        var errors = options.Validate();
+
+        Assert.Contains(errors, error => error.Contains("Responses image generation model", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public void OpenAiProviderOptions_DefaultsVisionReviewToStatelessBoundedRequests()
     {
         var options = new OpenAiProviderOptions();

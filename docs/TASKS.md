@@ -7,6 +7,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - Latest recorded release-verification snapshot: `2026-06-11`
 - Current readout: no open V1 release-claim gaps remain in that snapshot; all `5 / 5` launch metrics are verified, including the fresh opt-in OpenAI `2-item` sample under `artifacts/live-openai-v1-sample/20260611-132947`
 - Reopen this as a release-gap section only when provider behavior materially changes, a newer launch snapshot is needed, or a regression invalidates the existing evidence
+- Remaining non-release work is intentionally grouped into three lanes: conditional OCR reference coverage when scanned-document hardening enters the active roadmap, later real-provider plus support-matrix binary document extraction slices, and post-V1 repository/namespace rename compatibility work.
 
 ## Near-Term Hardening (Not Current Release Blockers)
 
@@ -18,7 +19,7 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [x] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [x] Add a bounded transient `502 upstream_error` retry on the official SDK Images path before failing the live OpenAI route.
-- [ ] Add Responses API multi-turn image state only where it improves provenance, revision loops, or partial preview UX.
+- [x] Add Responses API multi-turn image state only where it improves provenance or revision loops.
 - [x] Add bounded local review-prep artifacts and review-batch thresholds before expanding multi-turn image-state review.
 - [x] Run the first real low-risk operator adapter end-to-end with audit evidence and rollback notes.
 - [x] Capture V1 launch evidence against the explicit launch metrics.
@@ -57,6 +58,8 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add a canonical local full-gate script that runs reference evidence checks before build, test, and format verification.
 - [x] Add a GitHub Actions verification workflow that reuses the repository gate on normal `push` and `pull_request` events.
 - [x] Add a stronger release-style preflight script that layers placeholder, merge-conflict, publish-dry-run, and diff-hygiene checks on top of the canonical gate.
+- [x] Add machine-checked parity between `docs/REFERENCE_BASIS.md` and `scripts/reference-basis.json`.
+- [x] Add a repo-side snapshot of the external reference shelf manifest and check it in local verification gates.
 - [x] Add `dotnet/extensions` as a code-level reference before the next host/options/resilience hardening slice.
 - [x] Add `opentelemetry-dotnet` as a code-level reference before the next telemetry or diagnostics slice.
 - [x] Add `aspire` as a code-level reference before the next OTLP or local dashboard observability slice.
@@ -149,7 +152,8 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add OpenTelemetry instrumentation and a local OTLP/Aspire dashboard profile.
   - [x] Add .NET `ActivitySource` and `Meter` instrumentation for provider calls.
   - [x] Add local OTLP/Aspire dashboard profile.
-- [ ] Support Responses API multi-turn image state and partial-image streaming where the product benefits and where the provider routing policy calls for it.
+- [x] Support opt-in Responses API multi-turn image state where the product benefits and where the provider routing policy calls for it.
+- [ ] Add partial-image streaming UX only if a future workbench flow gains clear product value from progressive previews.
 - [x] Add a remote workflow-engine adapter boundary without requiring local model installs.
 - [x] Run full build, test, and format gates for the implementation slice.
 
@@ -308,7 +312,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Guard built-in module folder declarations against stale repository paths.
 - [x] Define reusable `WorkflowViewSlot` names for source list, stage workspace, inspector, activity panel, approval panel, and artifact preview.
 - [x] Add `FeatureViewModule` contract for WPF view, view model, localization keys, commands, and fake-service tests.
-- [ ] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
+- [x] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
   - [x] Extract project workspace command orchestration into `ProjectWorkspaceCoordinator` while preserving existing bindings and commands.
   - [x] Extract shell-inspector project creation, provider-center, document planning, and image-edit orchestration into `WorkbenchInspectorCoordinator` while preserving existing bindings and inspector behavior.
   - [x] Extract planning and document-planning orchestration into `PlanningWorkflowCoordinator` while preserving existing bindings and commands.
@@ -325,7 +329,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Extract document default/strictness localization restoration into `MainWindowLocalizationCoordinator` while preserving user-entered text and educational fallback behavior.
   - [x] Extract shell localization payload building into `MainWindowLocalizationCoordinator` while preserving language-switch behavior and selected-option restoration.
   - [x] Extract localized selection and option restoration into `MainWindowLocalizationCoordinator` while preserving language-switch behavior and current inspector selections.
-- [ ] Split large WPF views into feature-owned user controls where needed.
+- [x] Split large WPF views into feature-owned user controls where needed.
   - [x] Extract the brief-tab blueprint list into `BlueprintRoutesView` while preserving existing bindings and selection behavior.
   - [x] Extract the brief-tab prompt-direction list into `PromptDirectionsView` while preserving existing bindings and selection behavior.
   - [x] Extract the review-tab results list into `ReviewResultsListView` while preserving existing bindings and selection behavior.
@@ -390,8 +394,8 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
   - [x] Cover `BriefWorkflowApplicationService` directly while keeping facade workflow tests.
   - [x] Cover `GenerationWorkflowApplicationService` directly while keeping facade workflow tests.
   - [x] Cover `ReviewWorkflowApplicationService` directly while keeping facade workflow tests.
-- [ ] Keep each refactor slice behavior-preserving and tied to a new feature or touched old logic.
-- [ ] Run build, test, and format gates after each module split.
+- [x] Keep each refactor slice behavior-preserving and tied to a new feature or touched old logic.
+- [x] Run build, test, and format gates after each module split.
 
 ## Phase 13: Review, Repair, And Operator Automation
 

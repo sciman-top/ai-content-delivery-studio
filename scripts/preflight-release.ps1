@@ -72,6 +72,10 @@ function Invoke-RgFilteredCheck {
     return $lines
 }
 
+Invoke-Step -Label "Reference governance parity" -Action {
+    & ".\scripts\sync-reference-governance.ps1" -Check
+}
+
 Invoke-Step -Label "Placeholder scan" -Action {
     $hits = @(Invoke-RgFilteredCheck -Pattern "\b(TBD|TODO|PLACEHOLDER)\b" -Targets @("docs", "src", "tests", "scripts", "README.md", "AGENTS.md") -IgnorePatterns @(
         "^scripts[\\\\/]preflight-release\.ps1:",

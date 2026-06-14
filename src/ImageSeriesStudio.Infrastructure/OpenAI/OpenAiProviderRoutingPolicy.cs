@@ -40,4 +40,13 @@ public static class OpenAiProviderRoutingPolicy
             UseStructuredOutputs: false,
             Store: false);
     }
+
+    public static OpenAiRoutingDecision ForStatefulImageGeneration()
+    {
+        return new OpenAiRoutingDecision(
+            OpenAiEndpointFamily.Responses,
+            "responses",
+            UseStructuredOutputs: false,
+            Store: true);
+    }
 }

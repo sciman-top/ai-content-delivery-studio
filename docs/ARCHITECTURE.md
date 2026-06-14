@@ -99,6 +99,8 @@ The generalized design workflow should treat provider adapters as execution and 
 
 Provider contracts should return structured provenance: model, provider profile, capability warnings, request ID where available, input references, output references, token/cost hints, latency, and redacted errors.
 
+For image generation, the current OpenAI boundary now supports both the default single-shot Images API path and an explicit opt-in Responses API path for stateful revision loops. That stateful path captures `previous_response_id`, `revised_prompt`, and image-generation tool call ids in local metadata while keeping local project persistence authoritative by default.
+
 The detailed routing policy for choosing between the Images API and the Responses API, plus `store` and `previous_response_id` defaults, lives in [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md).
 
 ## Multimodal Source And Artifact Model
@@ -339,6 +341,8 @@ The codebase should now enter a modular maintenance period:
 - Split EF Core mapping into `IEntityTypeConfiguration<T>` as models grow.
 - Keep provider configuration, secret storage, capability validation, and persistence configuration outside WPF.
 - Avoid one central orchestrator that knows every provider, tool, UI tab, artifact type, and repair path.
+
+The current repository baseline has now completed the first major shell decomposition pass: `MainWindowViewModel` delegates workflow-specific orchestration to focused coordinators, and the densest brief, plan, prompt, queue, gallery, workflow-graph, review, delivery, and inspector regions already live in feature-owned child views. Future slices should extend this pattern only when new touched logic would otherwise re-centralize responsibilities.
 
 This is not a call for a large rewrite. The rule is: new feature, new module; while editing nearby old logic, move only the directly related piece.
 

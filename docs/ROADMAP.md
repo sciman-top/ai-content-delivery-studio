@@ -76,16 +76,17 @@ The current recorded answer is "yes" for the `2026-06-11` snapshot in [V1_LAUNCH
 - Keep the verified short requirement -> brief -> blueprint -> series -> review -> delivery route stable as the primary launch spine.
 - Keep the article or plain-text route focused on evidence-backed planning that promotes into the same downstream workflow, and only widen it when real-provider or extraction slices are explicitly activated.
 - Keep Phase 4A deterministic composition, readability checks, reviewer notes, and approval evidence export stable, adding stronger user-visible collateral only when release review or onboarding actually needs it.
-- Keep the stable Images API path on the official OpenAI .NET SDK, while limiting raw `HttpClient` usage to lagging Responses surfaces and evaluating multi-turn image state only where it materially improves provenance, revision loops, or partial preview UX.
+- Keep the stable Images API path on the official OpenAI .NET SDK, while limiting raw `HttpClient` usage to lagging Responses surfaces; the current opt-in Responses image path is for stateful revision metadata, and partial-preview streaming remains a future UX slice.
 - Keep the first low-risk operator execution slice bounded and auditable, and refresh live evidence only when provider behavior or release-claim snapshots change.
 - Continue modular splits in Phase 12 only when new slices touch large WPF views or orchestration-heavy services.
 - Keep the external reference system focused, deduplicated, and machine-readable instead of widening it ad hoc.
+- Keep `REFERENCE_BASIS.md`, `scripts/reference-basis.json`, and the repo-side external-shelf snapshot in machine-checked parity rather than relying on manual drift review alone.
 
 ## Next
 
 - Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
 - Reuse the text-planning low-502 execution policy if future real-provider brief or blueprint planning moves beyond the current fake-first boundary.
-- Evaluate Responses API multi-turn image state only for workflows that gain meaningful provenance, revision, or preview value.
+- Extend Responses image workflows only when a route gains meaningful provenance, revision, or preview value beyond the current opt-in stateful path.
 - Add targeted binary extraction hardening only for formats promoted by the support matrix.
 - Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
 - Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.
@@ -173,7 +174,7 @@ Exit gate:
 
 Goal: make the real-provider path robust on low-hardware Windows machines without requiring local model installs.
 
-Status: started with DPAPI and `.env` secret resolution, split text/image provider profiles, image key-pool validation, role-scoped provider operation guards, non-generating provider health checks, Provider Center summaries, operation-scoped provider options, resilient HTTP clients, safe provider call telemetry capture for request IDs, token usage, latency, and configured cost estimates, plus .NET `ActivitySource`/`Meter` instrumentation hooks for provider tracing and metrics and a local Aspire Dashboard launch profile for OTLP export. User-visible real-provider hardening is not complete yet.
+Status: started with DPAPI and `.env` secret resolution, split text/image provider profiles, image key-pool validation, role-scoped provider operation guards, non-generating provider health checks, Provider Center summaries, operation-scoped provider options, resilient HTTP clients, safe provider call telemetry capture for request IDs, token usage, latency, and configured cost estimates, .NET `ActivitySource`/`Meter` instrumentation hooks for provider tracing and metrics, a local Aspire Dashboard launch profile for OTLP export, and an opt-in raw-HTTP Responses image path that records stateful revision metadata. User-visible real-provider hardening is not complete yet.
 
 Deliverables:
 
@@ -189,7 +190,8 @@ Deliverables:
 - `Microsoft.Extensions.Http.Resilience` integration for named provider clients.
 - Provider request ID, latency, token, and cost telemetry capture.
 - OpenTelemetry-based traces and metrics for provider calls and queue execution.
-- Responses API streaming and multi-turn image workflow support where provider capabilities allow it and where the extra state improves review or revision loops.
+- Responses API multi-turn image workflow support where provider capabilities allow it and where the extra state improves review or revision loops.
+- Partial-image streaming support only when a future workbench preview flow justifies progressive image events.
 - Remote workflow-engine adapter boundary for optional managed or hosted integrations.
 
 Exit gate:

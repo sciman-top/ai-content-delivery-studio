@@ -30,6 +30,11 @@ public sealed record OpenAiProviderOptions
 
     public string ImageGenerationModel { get; init; } = "gpt-image-2";
 
+    // Stateful Responses image generation is opt-in and fail-closed until a slice explicitly enables it.
+    public string? ImageGenerationResponsesModel { get; init; }
+
+    public bool ImageGenerationAllowsResponsesState { get; init; }
+
     public string VisionReviewModel { get; init; } = "gpt-5";
 
     // Keep remote visual review in small local-direct batches unless a later slice explicitly widens it.
@@ -81,6 +86,8 @@ public sealed record OpenAiProviderOptions
             UsesSharedTextApiKeyFallback = configuration.Image.UsesSharedTextApiKeyFallback,
             TextPlanningModel = string.Empty,
             ImageGenerationModel = RequireModel(configuration.Image, "Image provider"),
+            ImageGenerationResponsesModel = configuration.Image.ResponsesModel,
+            ImageGenerationAllowsResponsesState = !string.IsNullOrWhiteSpace(configuration.Image.ResponsesModel),
             VisionReviewModel = string.Empty,
             AllowedOperations = OpenAiProviderOperation.ImageGeneration,
             RealApiEnabled = realApiEnabled,
@@ -120,6 +127,11 @@ public sealed record OpenAiProviderOptions
             && string.IsNullOrWhiteSpace(ImageGenerationModel))
         {
             errors.Add("Image generation model is required.");
+        }
+
+        if (ImageGenerationAllowsResponsesState && string.IsNullOrWhiteSpace(ImageGenerationResponsesModel))
+        {
+            errors.Add("Responses image generation model is required when stateful image generation is enabled.");
         }
 
         if (AllowedOperations.HasFlag(OpenAiProviderOperation.VisionReview)
