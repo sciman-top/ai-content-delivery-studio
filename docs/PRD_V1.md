@@ -230,7 +230,7 @@ The release is blocked if any of these remain unresolved:
 
 ## Assumptions Used In This PRD
 
-- The active implementation root remains `D:\CODE\ai-image-series-studio` until ADR 0008 rename gates are executed later.
+- The active implementation root is now `D:\CODE\ai-content-delivery-studio`. Historical pre-rename docs may still mention `D:\CODE\ai-image-series-studio` where they describe older evidence.
 - Fake providers remain the default safety and regression path.
 - Pack infrastructure exists but is treated as internal reusable configuration in V1, not as a public product surface.
 - Binary document extraction quality is valuable, but not a V1 launch gate.

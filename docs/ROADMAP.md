@@ -378,7 +378,7 @@ Exit gate:
 
 Goal: align product-facing naming, local repository identity, and code namespace with the multimodal content delivery end state without breaking existing workspaces or active tools.
 
-Status: started with ADR 0008 and product-facing title updates. The active checkout remains `D:\CODE\ai-image-series-studio`; the intended medium-term root is `D:\CODE\ai-content-delivery-studio`.
+Status: started with ADR 0008 and product-facing title updates. The active checkout now lives at `D:\CODE\ai-content-delivery-studio`; the remaining rename work is the later solution/namespace/mechanical migration.
 
 Deliverables:
 

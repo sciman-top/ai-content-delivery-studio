@@ -64,7 +64,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/01-openai/openai-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/01-openai/openai-cookbook-selected` (kind: `official-examples`; reuse: `adapt-with-review`)
-  - `D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
+  - `D:/CODE/ai-content-delivery-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
 
 ### `host-and-observability`
 
@@ -88,7 +88,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 - Required triggers: `entity-configuration`, `aggregate-shape`, `migration-behavior`, `sqlite-limitation`, `project-load-save-contract`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/03-data-persistence/EntityFramework.Docs` (kind: `official-doc-source`; reuse: `direct-pattern`)
-  - `D:/CODE/ai-image-series-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
+  - `D:/CODE/ai-content-delivery-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
 
 ### `tooling-and-operator`
 

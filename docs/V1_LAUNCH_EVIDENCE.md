@@ -17,7 +17,7 @@ The goal is to keep launch readiness honest. Completed implementation slices are
 ## Snapshot
 
 - Snapshot date: `2026-06-11`
-- Repository root: `D:\CODE\ai-image-series-studio`
+- Repository root: `D:\CODE\ai-content-delivery-studio`
 - Latest live provider sample run: `artifacts/live-openai-v1-sample/20260611-132947`
 - Fresh gate for this snapshot:
   - `dotnet build --no-restore`

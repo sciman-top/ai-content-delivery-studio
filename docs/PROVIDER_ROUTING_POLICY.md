@@ -4,7 +4,7 @@
 
 This document defines how AI Content Delivery Studio chooses between OpenAI surfaces for planning, generation, and review in V1 and near-term hardening slices.
 
-This policy is about request routing, statefulness, provenance, and safe defaults. Role-scoped credential naming stays in [PROVIDER_CONFIGURATION.md](/D:/CODE/ai-image-series-studio/docs/PROVIDER_CONFIGURATION.md).
+This policy is about request routing, statefulness, provenance, and safe defaults. Role-scoped credential naming stays in [PROVIDER_CONFIGURATION.md](/D:/CODE/ai-content-delivery-studio/docs/PROVIDER_CONFIGURATION.md).
 
 ## Guiding Rules
 

@@ -419,7 +419,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Record ADR for `AI Content Delivery Studio` product identity and staged rename path.
 - [x] Update product-facing README, product design, architecture, roadmap, and user guide naming.
 - [x] Update WPF app title localization to `AI Content Delivery Studio` / `AI 内容交付工作台`.
-- [ ] Post-V1: rename local root directory from `D:\CODE\ai-image-series-studio` to `D:\CODE\ai-content-delivery-studio` after confirming a clean worktree and no active tools depend on the old path.
+- [x] Post-V1: rename local root directory from `D:\CODE\ai-image-series-studio` to `D:\CODE\ai-content-delivery-studio` after confirming a clean worktree and no active tools depend on the old path.
 - [ ] Post-V1: reopen the workspace from `D:\CODE\ai-content-delivery-studio` and verify `git status --short`.
 - [ ] Post-V1: rename solution, project folders, project names, assemblies, namespaces, tests, scripts, and publish output from `ImageSeriesStudio.*` to `ContentDeliveryStudio.*`.
 - [ ] Post-V1: preserve compatibility notes for existing workspaces, diagnostics packages, and historical documents that still mention `ImageSeriesStudio`.

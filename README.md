@@ -6,7 +6,7 @@ This repository is the active implementation home for the product. It is intenti
 
 ## Current Readout
 
-- Active implementation root: `D:\CODE\ai-image-series-studio`
+- Active implementation root: `D:\CODE\ai-content-delivery-studio`
 - Intended medium-term root after the rename gate: `D:\CODE\ai-content-delivery-studio`
 - Latest local repository verification: `2026-06-13` via `.\scripts\verify-repo.ps1` with `382 / 382` tests passing
 - Latest recorded V1 release-verification snapshot: `2026-06-11`
