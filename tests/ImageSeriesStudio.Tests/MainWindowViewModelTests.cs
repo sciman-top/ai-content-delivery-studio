@@ -37,6 +37,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task WorkflowGraphView_ShowsPlanAndCandidateNodes()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
 
         viewModel.NewProjectName = "Graph UI demo";
@@ -74,6 +75,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task ImageEditWorkflow_RunsFakeEditForSelectedGalleryRow()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
 
         viewModel.NewProjectName = "Edit UI demo";
@@ -118,6 +120,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task SelectionDerivedSummaries_ShowCurrentItemStyleRecipeAndCandidate()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
 
         viewModel.NewProjectName = "Selection summary demo";
@@ -146,6 +149,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task FinalApprovalWorkflow_BlocksDeliveryUntilHumanApprovesReview()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
 
         viewModel.NewProjectName = "Approval UI demo";
@@ -202,6 +206,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task ReviewWorkflow_ShowsRepairRouteSummary()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel(reviewPasses: false);
 
         viewModel.NewProjectName = "Review route UI demo";
@@ -236,6 +241,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task FinalApprovalWorkflow_ExportsPromotedBlueprintMetadata()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
 
         viewModel.NewProjectName = "Blueprint delivery demo";
@@ -293,6 +299,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task FinalApprovalWorkflow_RejectsReviewWithNotesAndKeepsDeliveryBlocked()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
 
         viewModel.NewProjectName = "Reject UI demo";
@@ -335,6 +342,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public async Task FinalApprovalWorkflow_ReloadedProjectRestoresPersistedHumanDecision()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var repository = new InMemoryProjectRepository();
         var viewModel = CreateViewModel(repository: repository);
 
@@ -603,13 +611,9 @@ public sealed class MainWindowViewModelTests
             return;
         }
 
-        var appDataDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio");
-
-        foreach (var folder in new[] { "generated", "edited", "deliveries" })
+        foreach (var folder in new[] { "generated", "edited", "deliveries", "review-prep" })
         {
-            var directory = Path.Combine(appDataDirectory, folder, projectId.Value.ToString("N"));
+            var directory = LocalStudioDataPaths.ResolveProjectDirectory(folder, projectId.Value);
             if (Directory.Exists(directory))
             {
                 Directory.Delete(directory, recursive: true);

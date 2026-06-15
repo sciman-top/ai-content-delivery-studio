@@ -4,9 +4,12 @@ using ImageSeriesStudio.Application.Projects;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Core.Styles;
+using ImageSeriesStudio.Core.Sources;
+using ImageSeriesStudio.Application.Sources;
 using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
 using ImageSeriesStudio.Infrastructure.Persistence;
+using ImageSeriesStudio.Infrastructure.Sources;
 using Microsoft.EntityFrameworkCore;
 
 namespace ImageSeriesStudio.Tests;
@@ -48,6 +51,65 @@ public sealed class ProjectApplicationServiceTests
             if (Directory.Exists(databaseDirectory))
             {
                 Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ProjectApplicationService_IngestsPdfSourceThroughSupportMatrixProvider()
+    {
+        var repository = new InMemoryProjectRepository();
+        var service = new ProjectApplicationService(
+            repository,
+            textPlanningProvider: null,
+            imageGenerationProvider: null,
+            visionReviewProvider: null,
+            deliveryPackageWriter: null,
+            imageEditProvider: null,
+            sourceIngestionApplicationService: new SourceIngestionApplicationService(
+                repository,
+                new SupportMatrixSourceIngestionProvider(
+                    new LocalBinaryDocumentExtractionProvider(),
+                    new FakeSourceIngestionProvider())));
+        var timestamp = new DateTimeOffset(2026, 6, 16, 0, 40, 0, TimeSpan.Zero);
+        var project = await service.CreateProjectAsync("Facade source ingestion demo", timestamp, CancellationToken.None);
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var pdfPath = Path.Combine(rootDirectory, "facade.pdf");
+
+        try
+        {
+            await BinaryDocumentTestFixtureBuilder.CreateSimplePdfAsync(
+                pdfPath,
+                "Facade path should preserve the real PDF extraction result.",
+                CancellationToken.None);
+
+            var result = await service.IngestSourceAsync(
+                project.Id,
+                new SourceIngestionRequest(
+                    SourceAssetKind.Pdf,
+                    "facade.pdf",
+                    "Fallback text should not win when the facade sees a local PDF.",
+                    OriginalPath: pdfPath,
+                    MimeType: "application/pdf",
+                    SizeBytes: 1024,
+                    Sha256: "facade-pdf"),
+                timestamp.AddMinutes(1),
+                CancellationToken.None);
+
+            var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
+            var asset = Assert.Single(loaded!.SourceAssets);
+            var content = Assert.Single(asset.ExtractedContents);
+
+            Assert.Equal("local-binary-pdf-extraction", result.ProviderTraceId);
+            Assert.Contains("real PDF extraction result", content.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal("facade.pdf: page 1", content.LocationHint);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
             }
         }
     }

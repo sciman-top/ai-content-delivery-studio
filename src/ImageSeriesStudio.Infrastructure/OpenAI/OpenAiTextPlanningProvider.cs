@@ -124,10 +124,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
     public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
         DocumentIllustrationPlanningRequest request,
         CancellationToken cancellationToken)
-    {
-        throw new InvalidOperationException(
-            "OpenAI document illustration planning is not enabled in the first fake-provider implementation.");
-    }
+        => CreateDocumentIllustrationPlanInternalAsync(request, cancellationToken);
 
     private Dictionary<string, object?> CreatePayload(PlanningRequest request)
     {
@@ -148,6 +145,42 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
                 },
             },
         };
+    }
+
+    private async Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanInternalAsync(
+        DocumentIllustrationPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
+            _options,
+            _secretStore,
+            OpenAiProviderOperation.TextPlanning,
+            cancellationToken);
+        var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
+            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
+
+        var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
+        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        httpRequest.Content = JsonContent.Create(
+            OpenAiTextPlanningRequestMapper.CreateDocumentIllustrationResponsesPayload(_options, request),
+            options: JsonOptions);
+
+        var stopwatch = Stopwatch.StartNew();
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        stopwatch.Stop();
+        if (!response.IsSuccessStatusCode)
+        {
+            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed);
+            throw new HttpRequestException(
+                $"OpenAI text planning request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        var providerTraceId = ExtractTraceId(document.RootElement);
+        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
+        return OpenAiTextPlanningResponseMapper.ParseDocumentIllustrationPlan(document.RootElement);
     }
 
     private static string BuildInput(PlanningRequest request)

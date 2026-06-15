@@ -4,6 +4,7 @@ using ImageSeriesStudio.Core.Providers;
 using ImageSeriesStudio.Core.Styles;
 using ImageSeriesStudio.Application.Delivery;
 using ImageSeriesStudio.Application.RepairRouting;
+using ImageSeriesStudio.Application.Sources;
 
 namespace ImageSeriesStudio.Application.Projects;
 
@@ -17,6 +18,7 @@ public sealed class ProjectApplicationService
     private readonly BriefWorkflowApplicationService _briefWorkflowApplicationService;
     private readonly GenerationWorkflowApplicationService _generationWorkflowApplicationService;
     private readonly ReviewWorkflowApplicationService _reviewWorkflowApplicationService;
+    private readonly SourceIngestionWorkflowApplicationService _sourceIngestionWorkflowApplicationService;
 
     public ProjectApplicationService(IProjectRepository repository)
         : this(repository, textPlanningProvider: null, imageGenerationProvider: null, visionReviewProvider: null, deliveryPackageWriter: null)
@@ -53,7 +55,8 @@ public sealed class ProjectApplicationService
         IImageGenerationProvider? imageGenerationProvider,
         IVisionReviewProvider? visionReviewProvider,
         IDeliveryPackageWriter? deliveryPackageWriter,
-        IImageEditProvider? imageEditProvider = null)
+        IImageEditProvider? imageEditProvider = null,
+        SourceIngestionApplicationService? sourceIngestionApplicationService = null)
     {
         _projectWorkspaceApplicationService = new ProjectWorkspaceApplicationService(repository);
         _reviewRepairApplicationService = new ReviewRepairApplicationService(repository);
@@ -63,6 +66,7 @@ public sealed class ProjectApplicationService
         _briefWorkflowApplicationService = new BriefWorkflowApplicationService(repository, textPlanningProvider);
         _generationWorkflowApplicationService = new GenerationWorkflowApplicationService(repository, imageGenerationProvider, imageEditProvider);
         _reviewWorkflowApplicationService = new ReviewWorkflowApplicationService(repository, visionReviewProvider);
+        _sourceIngestionWorkflowApplicationService = new SourceIngestionWorkflowApplicationService(sourceIngestionApplicationService);
     }
 
     public async Task<ImageProject> CreateProjectAsync(
@@ -283,6 +287,19 @@ public sealed class ProjectApplicationService
             projectId,
             request,
             approveAllTargets,
+            timestamp,
+            cancellationToken);
+    }
+
+    public async Task<SourceIngestionWorkflowResult> IngestSourceAsync(
+        Guid projectId,
+        SourceIngestionRequest request,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken)
+    {
+        return await _sourceIngestionWorkflowApplicationService.IngestSourceAsync(
+            projectId,
+            request,
             timestamp,
             cancellationToken);
     }

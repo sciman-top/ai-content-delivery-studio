@@ -76,6 +76,160 @@ public sealed class SourceIngestionWorkflowTests
         Assert.Empty(loaded!.SourceAssets);
     }
 
+    [Fact]
+    public async Task SourceIngestionApplicationService_UsesLocalBinaryExtractionForPdfWhenLocalFileExists()
+    {
+        var repository = new InMemoryProjectRepository();
+        var project = ImageProject.Create(
+            "Binary PDF demo",
+            DateTimeOffset.Parse("2026-06-16T00:20:00Z"));
+        await repository.SaveAsync(project, CancellationToken.None);
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var pdfPath = Path.Combine(rootDirectory, "lesson.pdf");
+
+        try
+        {
+            await BinaryDocumentTestFixtureBuilder.CreateSimplePdfAsync(
+                pdfPath,
+                "Local PDF extraction should preserve source evidence for planning.",
+                CancellationToken.None);
+            var service = new SourceIngestionApplicationService(
+                repository,
+                new SupportMatrixSourceIngestionProvider(
+                    new LocalBinaryDocumentExtractionProvider(),
+                    new FakeSourceIngestionProvider()));
+
+            var result = await service.IngestSourceAsync(
+                project.Id,
+                new SourceIngestionRequest(
+                    SourceAssetKind.Pdf,
+                    "lesson.pdf",
+                    "Fake fixture text should not win when a local PDF is present.",
+                    OriginalPath: pdfPath,
+                    MimeType: "application/pdf",
+                    SizeBytes: 2048,
+                    Sha256: "pdf-sha"),
+                DateTimeOffset.Parse("2026-06-16T00:21:00Z"),
+                CancellationToken.None);
+
+            var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+            var asset = Assert.Single(loaded!.SourceAssets);
+            var content = Assert.Single(asset.ExtractedContents);
+            var anchor = Assert.Single(asset.EvidenceAnchors);
+
+            Assert.Equal("local-binary-pdf-extraction", result.ProviderTraceId);
+            Assert.Contains("preserve source evidence", content.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Fake fixture text", content.Text, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal("lesson.pdf: page 1", content.LocationHint);
+            Assert.Equal(1, content.PageNumber);
+            Assert.Equal(content.Id, anchor.ExtractedContentId);
+            Assert.Equal("lesson.pdf: page 1", anchor.LocationHint);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task SourceIngestionApplicationService_UsesLocalBinaryExtractionForDocxWhenLocalFileExists()
+    {
+        var repository = new InMemoryProjectRepository();
+        var project = ImageProject.Create(
+            "Binary DOCX demo",
+            DateTimeOffset.Parse("2026-06-16T00:25:00Z"));
+        await repository.SaveAsync(project, CancellationToken.None);
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var docxPath = Path.Combine(rootDirectory, "brief.docx");
+
+        try
+        {
+            await BinaryDocumentTestFixtureBuilder.CreateSimpleDocxAsync(
+                docxPath,
+                [
+                    "First paragraph establishes the source-backed teaching claim.",
+                    "Second paragraph preserves the supporting classroom context.",
+                ],
+                CancellationToken.None);
+            var service = new SourceIngestionApplicationService(
+                repository,
+                new SupportMatrixSourceIngestionProvider(
+                    new LocalBinaryDocumentExtractionProvider(),
+                    new FakeSourceIngestionProvider()));
+
+            var result = await service.IngestSourceAsync(
+                project.Id,
+                new SourceIngestionRequest(
+                    SourceAssetKind.Docx,
+                    "brief.docx",
+                    "Fixture fallback should not win when a local DOCX is present.",
+                    OriginalPath: docxPath,
+                    MimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    SizeBytes: 4096,
+                    Sha256: "docx-sha"),
+                DateTimeOffset.Parse("2026-06-16T00:26:00Z"),
+                CancellationToken.None);
+
+            var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+            var asset = Assert.Single(loaded!.SourceAssets);
+
+            Assert.Equal("local-binary-docx-extraction", result.ProviderTraceId);
+            Assert.Equal(2, asset.ExtractedContents.Count);
+            Assert.Contains(asset.ExtractedContents, content => content.LocationHint == "brief.docx: paragraph 1");
+            Assert.Contains(asset.ExtractedContents, content => content.LocationHint == "brief.docx: paragraph 2");
+            Assert.DoesNotContain(asset.ExtractedContents, content => content.Text.Contains("Fixture fallback", StringComparison.OrdinalIgnoreCase));
+            Assert.Equal(2, asset.EvidenceAnchors.Count);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task SourceIngestionApplicationService_FallsBackToFakeExtractionWhenBinaryFileIsUnavailable()
+    {
+        var repository = new InMemoryProjectRepository();
+        var project = ImageProject.Create(
+            "Binary fallback demo",
+            DateTimeOffset.Parse("2026-06-16T00:30:00Z"));
+        await repository.SaveAsync(project, CancellationToken.None);
+        var service = new SourceIngestionApplicationService(
+            repository,
+            new SupportMatrixSourceIngestionProvider(
+                new LocalBinaryDocumentExtractionProvider(),
+                new FakeSourceIngestionProvider()));
+
+        var result = await service.IngestSourceAsync(
+            project.Id,
+            new SourceIngestionRequest(
+                SourceAssetKind.Pdf,
+                "missing-paper.pdf",
+                "Fallback fixture text should remain usable when no local binary file exists.",
+                OriginalPath: @"D:\missing\missing-paper.pdf",
+                MimeType: "application/pdf",
+                SizeBytes: 512,
+                Sha256: "missing-sha"),
+            DateTimeOffset.Parse("2026-06-16T00:31:00Z"),
+            CancellationToken.None);
+
+        var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+        var asset = Assert.Single(loaded!.SourceAssets);
+        var content = Assert.Single(asset.ExtractedContents);
+
+        Assert.Equal("fake-source-ingestion", result.ProviderTraceId);
+        Assert.Contains("Fallback fixture text", content.Text, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("missing-paper.pdf", asset.DisplayName);
+    }
+
     private sealed class ApprovalRequiredSourceIngestionProvider : ISourceIngestionProvider
     {
         public int CallCount { get; private set; }

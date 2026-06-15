@@ -29,7 +29,7 @@ Domain identifiers, provider IDs, model IDs, and error strings remain in English
 
 ## Document Illustration
 
-The first document illustration release is fake-provider first. The default path uses fake providers so you can validate the workflow without paid API calls or live provider credentials.
+The first document illustration release is fake-provider first. The default path uses fake providers so you can validate the workflow without paid API calls or live provider credentials. The current OpenAI text-planning providers now also support the same document-illustration contract when a real-provider path is explicitly enabled.
 
 Use the document illustration entry when you want to turn pasted text into illustration directions before promoting approved targets into the existing Plan and Prompts workflow.
 
@@ -37,7 +37,7 @@ Use the document illustration entry when you want to turn pasted text into illus
 - The current slice is designed for concept illustrations and graphical abstract drafts.
 - Approved targets are promoted into the existing plan structure instead of creating a separate downstream pipeline.
 - Source text should be treated as planning evidence, not as permission to skip review or provenance tracking.
-- Real provider execution and binary document extraction are reserved for later slices.
+- Real provider execution is now contract-ready for the planning path; local `pdf` / `docx` text extraction is available for the bounded support-matrix slice, while OCR-heavy and high-fidelity binary extraction remain later work.
 
 Recommended flow:
 

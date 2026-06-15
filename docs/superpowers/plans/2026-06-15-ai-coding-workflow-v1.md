@@ -76,22 +76,27 @@ Land a repository-owned AI coding workflow reference that keeps Superpowers as t
 
 **Inputs:** modified docs and repository verification scripts.
 
-**Outputs:** fresh verification evidence.
+**Outputs:** fresh verification evidence and a resilient canonical repository gate for transient local build-file locks.
 
 **Acceptance**
 
-- [ ] `.\scripts\verify-repo.ps1` passes.
-- [ ] `.\scripts\preflight-release.ps1` passes.
-- [ ] Final report distinguishes repository-side completion from broader future work.
+- [x] `.\scripts\verify-repo.ps1` passes.
+- [x] `.\scripts\preflight-release.ps1` passes.
+- [x] Final report distinguishes repository-side completion from broader future work.
 
 **Verification**
 
-- [ ] Run the canonical repo gate.
-- [ ] Run the stronger release-style gate.
+- [x] Run the canonical repo gate.
+- [x] Run the stronger release-style gate.
 
 **Evidence**
 
-- [ ] Fresh gate output in this implementation run.
+- [x] Fresh gate output in this implementation run.
+- [x] `tests/ImageSeriesStudio.Tests/VerifyRepoScriptTests.cs` reproduces a transient `dotnet build` file-lock failure and verifies the retry-hardened `.\scripts\verify-repo.ps1` path.
+
+**Completion note**
+
+The closeout run on `2026-06-15` hit a real transient Windows build-file lock on `ImageSeriesStudio.Infrastructure.dll`. The canonical verification gate now retries only that bounded failure shape before failing closed for all other build errors.
 
 **Not in scope**
 

@@ -28,12 +28,11 @@ public sealed class DeliveryWorkflowCoordinator
         ArgumentNullException.ThrowIfNull(designBlueprintRows);
 
         var reviewByCandidate = reviewRows.ToDictionary(row => row.CandidateImageId);
-        var outputDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
+        var exportTimestamp = DateTimeOffset.UtcNow;
+        var outputDirectory = LocalStudioDataPaths.ResolveTimestampedProjectDirectory(
             "deliveries",
-            projectId.ToString("N"),
-            DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss"));
+            projectId,
+            exportTimestamp);
         var blueprint = ResolvePromotedDeliveryBlueprint(designBlueprintRows, activeCreativeBriefId);
         var items = galleryRows
             .Where(row => reviewByCandidate.TryGetValue(row.CandidateImageId, out var review)

@@ -77,8 +77,8 @@ These items are still valuable, but they are not the same thing as the current V
 
 ## Active Follow-Through Queue
 
-- [ ] Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
-- [ ] Add targeted binary extraction hardening only for formats promoted by the support matrix.
+- [x] Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
+- [x] Add targeted binary extraction hardening only for formats promoted by the support matrix.
 - [ ] Add partial-image streaming UX only if a future workbench flow gains clear product value from progressive previews.
 - [ ] Add pack and policy modeling hardening only when a scenario-specific slice has a repo-owned spec and a bounded implementation plan.
 
@@ -268,7 +268,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Add document illustration UI entry, localization, and draft-mode guidance.
 - [x] Add user documentation for document illustration workflow safety boundaries and first-run fake-provider behavior.
 - [x] Run full build, test, and format gates for the implementation slice.
-- [ ] Add real provider integration and support-matrix-approved binary document extraction in later slices.
+- [x] Add real provider integration and support-matrix-approved binary document extraction in later slices.
 
 ## Phase 9: Blueprint-First Generalized Series Workflow
 
@@ -435,7 +435,7 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Update product-facing README, product design, architecture, roadmap, and user guide naming.
 - [x] Update WPF app title localization to `AI Content Delivery Studio` / `AI 内容交付工作台`.
 - [x] Post-V1: rename local root directory from `D:\CODE\ai-image-series-studio` to `D:\CODE\ai-content-delivery-studio` after confirming a clean worktree and no active tools depend on the old path.
-- [ ] Post-V1: reopen the workspace from `D:\CODE\ai-content-delivery-studio` and verify `git status --short`.
+- [x] Post-V1: reopen the workspace from `D:\CODE\ai-content-delivery-studio` and verify `git status --short`.
 - [ ] Post-V1: rename solution, project folders, project names, assemblies, namespaces, tests, scripts, and publish output from `ImageSeriesStudio.*` to `ContentDeliveryStudio.*`.
 - [ ] Post-V1: preserve compatibility notes for existing workspaces, diagnostics packages, and historical documents that still mention `ImageSeriesStudio`.
 - [ ] Post-V1: run full rename gate: `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes`, and a targeted search for unintended old-name references.

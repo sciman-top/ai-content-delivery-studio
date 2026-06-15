@@ -14,6 +14,7 @@ public sealed class ReviewWorkflowCoordinatorTests
     [Fact]
     public async Task RunFakeReviewAsync_BuildsReviewRowsWithRepairRouteSummary()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var repository = new InMemoryProjectRepository();
         var projectService = new ProjectApplicationService(
             repository,
@@ -48,6 +49,7 @@ public sealed class ReviewWorkflowCoordinatorTests
     [Fact]
     public async Task RunFakeReviewAsync_WritesLocalReviewPrepManifest()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var repository = new InMemoryProjectRepository();
         var capturingProvider = new CapturingVisionReviewProvider();
         var projectService = new ProjectApplicationService(
@@ -114,6 +116,7 @@ public sealed class ReviewWorkflowCoordinatorTests
     [Fact]
     public async Task RunFakeReviewAsync_TrimsCompactReviewPrepSummaryForLongPrompt()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var repository = new InMemoryProjectRepository();
         var capturingProvider = new CapturingVisionReviewProvider();
         var projectService = new ProjectApplicationService(

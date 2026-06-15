@@ -10,6 +10,7 @@ public sealed class GenerationWorkflowCoordinatorTests
     [Fact]
     public async Task RunFakeGenerationAsync_BuildsQueueAndGalleryRows()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var repository = new InMemoryProjectRepository();
         var fakeImageProvider = new FakeImageGenerationProvider();
         var projectService = new ProjectApplicationService(
@@ -90,6 +91,7 @@ public sealed class GenerationWorkflowCoordinatorTests
     [Fact]
     public async Task RunFakeImageEditAsync_BuildsEditedGalleryRow()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var repository = new InMemoryProjectRepository();
         var fakeImageProvider = new FakeImageGenerationProvider();
         var projectService = new ProjectApplicationService(
@@ -103,11 +105,7 @@ public sealed class GenerationWorkflowCoordinatorTests
         var timestamp = DateTimeOffset.Parse("2026-06-08T09:00:00Z");
         var project = await projectService.CreateProjectAsync("Edit coordinator demo", timestamp, CancellationToken.None);
 
-        var sourceDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            "generated",
-            project.Id.ToString("N"));
+        var sourceDirectory = localStudioRoot.GetProjectDirectory("generated", project.Id);
         Directory.CreateDirectory(sourceDirectory);
         var sourcePath = Path.Combine(sourceDirectory, "source.png");
         var metadataPath = Path.Combine(sourceDirectory, "source.json");
@@ -146,11 +144,7 @@ public sealed class GenerationWorkflowCoordinatorTests
 
     private static void DeleteProjectOutputDirectories(Guid projectId, string folder)
     {
-        var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            folder,
-            projectId.ToString("N"));
+        var directory = LocalStudioDataPaths.ResolveProjectDirectory(folder, projectId);
         if (Directory.Exists(directory))
         {
             Directory.Delete(directory, recursive: true);

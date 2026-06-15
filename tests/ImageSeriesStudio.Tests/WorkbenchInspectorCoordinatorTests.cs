@@ -54,6 +54,7 @@ public sealed class WorkbenchInspectorCoordinatorTests
     [Fact]
     public async Task RunFakeImageEditAsync_AppendsEditedRowAndPrependsActivitySummary()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var repository = new InMemoryProjectRepository();
         var fakeImageProvider = new FakeImageGenerationProvider();
         var projectService = new ProjectApplicationService(
@@ -67,11 +68,7 @@ public sealed class WorkbenchInspectorCoordinatorTests
         var timestamp = DateTimeOffset.Parse("2026-06-13T13:00:00Z");
         var project = await projectService.CreateProjectAsync("Inspector edit demo", timestamp, CancellationToken.None);
 
-        var sourceDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            "generated",
-            project.Id.ToString("N"));
+        var sourceDirectory = localStudioRoot.GetProjectDirectory("generated", project.Id);
         Directory.CreateDirectory(sourceDirectory);
         var sourcePath = Path.Combine(sourceDirectory, "source.png");
         var metadataPath = Path.Combine(sourceDirectory, "source.json");
@@ -160,11 +157,7 @@ public sealed class WorkbenchInspectorCoordinatorTests
 
     private static void DeleteProjectOutputDirectories(Guid projectId, string folder)
     {
-        var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            folder,
-            projectId.ToString("N"));
+        var directory = LocalStudioDataPaths.ResolveProjectDirectory(folder, projectId);
         if (Directory.Exists(directory))
         {
             Directory.Delete(directory, recursive: true);

@@ -118,6 +118,8 @@ These records should live in `Core` and be persisted through provider-neutral re
 
 The launch-capable combinations of source inputs and output artifacts are intentionally narrower than the long-term model boundary and are tracked in [SOURCE_ARTIFACT_SUPPORT_MATRIX.md](./SOURCE_ARTIFACT_SUPPORT_MATRIX.md).
 
+Within that bounded matrix, the current local source-ingestion path now supports deterministic text extraction for local `pdf` and `docx` files through the same provider-neutral `SourceAsset -> ExtractedContent -> EvidenceAnchor` model. OCR-heavy, scanned, table-rich, and other high-fidelity binary extraction paths remain explicitly outside the current slice.
+
 ## Versioned Workflow And Blueprint Packs
 
 Generalization should come from versioned packs rather than new hard-coded product modes.

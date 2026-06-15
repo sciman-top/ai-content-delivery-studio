@@ -112,6 +112,8 @@ Keep provider roles separate:
 
 Do not collapse everything into one generic AI client. The product should express provider-neutral contracts and route requests by capability and product need.
 
+The current repository baseline now includes a bounded real local source-ingestion path for support-matrix-approved `pdf` and `docx` text extraction. Treat that as the first concrete step toward the broader source-understanding target, not as evidence that OCR-heavy or high-fidelity binary extraction is solved.
+
 ### Queue And Provenance
 
 The queue should become a shared execution discipline for:

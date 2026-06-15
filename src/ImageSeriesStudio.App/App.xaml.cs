@@ -10,12 +10,14 @@ using ImageSeriesStudio.App.ViewModels;
 using ImageSeriesStudio.App.Telemetry;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Application.Sources;
 using ImageSeriesStudio.Infrastructure.Composition;
 using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
 using ImageSeriesStudio.Infrastructure.OpenAI;
 using ImageSeriesStudio.Infrastructure.Persistence;
 using ImageSeriesStudio.Infrastructure.RemoteWorkflows;
+using ImageSeriesStudio.Infrastructure.Sources;
 using ImageSeriesStudio.Infrastructure.ToolAdapters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,6 +54,12 @@ public partial class App : System.Windows.Application
             serviceProvider.GetRequiredService<IOpenAiSecretStore>()));
         builder.Services.AddSingleton<IProviderCenterHealthCheckService, DotEnvProviderCenterHealthCheckService>();
         builder.Services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
+        builder.Services.AddSingleton<IDocumentExtractionProvider, LocalBinaryDocumentExtractionProvider>();
+        builder.Services.AddSingleton<ISourceIngestionProvider>(serviceProvider =>
+            new SupportMatrixSourceIngestionProvider(
+                serviceProvider.GetRequiredService<IDocumentExtractionProvider>(),
+                new FakeSourceIngestionProvider()));
+        builder.Services.AddTransient<SourceIngestionApplicationService>();
         builder.Services.AddSingleton<FakeImageGenerationProvider>();
         builder.Services.AddSingleton<IImageGenerationProvider>(serviceProvider =>
             serviceProvider.GetRequiredService<FakeImageGenerationProvider>());

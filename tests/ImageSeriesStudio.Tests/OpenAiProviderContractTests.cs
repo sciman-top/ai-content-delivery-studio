@@ -1,8 +1,10 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Styles;
 using ImageSeriesStudio.Infrastructure.OpenAI;
 using OpenAI.Responses;
 
@@ -237,6 +239,88 @@ public sealed class OpenAiProviderContractTests
 
         Assert.Contains("Brief direction planning is not implemented for OpenAI", exception.Message);
         Assert.Equal(0, handler.CallCount);
+    }
+
+    [Fact]
+    public async Task TextPlanningProvider_ParsesDocumentIllustrationPlanFromStructuredResponse()
+    {
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_doc_123",
+              "output_text": "{\"brief\":{\"sourceKind\":\"Paste\",\"sourceDisplayName\":\"Quantum teaching note.txt\",\"title\":\"Quantum teaching note\",\"documentFamily\":\"Educational\",\"audience\":\"teachers\",\"sections\":[\"Introduction\",\"Analogy\"],\"keyClaims\":[\"Superposition needs a visual analogy.\"],\"visualOpportunities\":[\"Illustrate the contrast between single-state intuition and multi-state possibility.\"],\"knownConstraints\":[\"avoid fake lab data\"],\"strictnessLevel\":\"Educational\"},\"plan\":{\"summary\":\"Create one educational concept diagram grounded in the supplied teaching note.\",\"coverageNotes\":[\"Cover the central classroom analogy before expanding to deeper detail.\"],\"riskNotes\":[\"Do not imply real laboratory evidence or measured data.\"],\"targets\":[{\"title\":\"Concept diagram for superposition\",\"documentLocation\":\"Introduction\",\"purpose\":\"ConceptDiagram\",\"mustShow\":[\"A clear comparison between a single certain state and overlapping possible states\"],\"mustNotShow\":[\"fake lab apparatus readings\"],\"sourceEvidence\":[\"Superposition needs a visual analogy.\"],\"suggestedImageTypePresetId\":\"concept-diagram\",\"suggestedReviewRubricTemplateId\":\"educational-accuracy\",\"textPolicy\":\"DeterministicPostRender\",\"strictnessNotes\":[\"Use deterministic labels for any explanatory text.\"]}]}}"
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateTextProvider(httpClient);
+
+        var result = await provider.CreateDocumentIllustrationPlanAsync(
+            new DocumentIllustrationPlanningRequest(
+                "Quantum teaching note",
+                "Teachers need an intuitive explanation of superposition.",
+                "teachers",
+                DocumentFamily.Educational,
+                IllustrationStrictnessLevel.Educational,
+                ["Introduction", "Analogy"],
+                ["Superposition needs a visual analogy."],
+                ["avoid fake lab data"]),
+            CancellationToken.None);
+
+        Assert.Equal("resp_doc_123", result.ProviderTraceId);
+        Assert.Equal("Quantum teaching note", result.Brief.Title);
+        Assert.Equal(DocumentFamily.Educational, result.Brief.DocumentFamily);
+        Assert.Equal(IllustrationStrictnessLevel.Educational, result.Brief.StrictnessLevel);
+        var target = Assert.Single(result.Plan.Targets);
+        Assert.Equal(IllustrationPurpose.ConceptDiagram, target.Purpose);
+        Assert.Equal(ImageTextPolicy.DeterministicPostRender, target.TextPolicy);
+        Assert.Equal("concept-diagram", target.SuggestedImageTypePresetId);
+        Assert.Equal("educational-accuracy", target.SuggestedReviewRubricTemplateId);
+        Assert.Contains("visual analogy", target.SourceEvidence[0], StringComparison.OrdinalIgnoreCase);
+
+        using var payload = JsonDocument.Parse(handler.LastRequestBody!);
+        Assert.Equal("gpt-5", payload.RootElement.GetProperty("model").GetString());
+        Assert.False(payload.RootElement.GetProperty("store").GetBoolean());
+        Assert.Contains("Quantum teaching note", payload.RootElement.GetProperty("input").GetString());
+        Assert.Contains("teachers", payload.RootElement.GetProperty("input").GetString());
+        Assert.Equal(
+            "document_illustration_plan",
+            payload.RootElement.GetProperty("text").GetProperty("format").GetProperty("name").GetString());
+    }
+
+    [Fact]
+    public async Task SdkTextPlanningProvider_ParsesDocumentIllustrationPlanFromStructuredResponse()
+    {
+        var client = new FakeResponsesClient(
+            SdkJsonResponse(
+                """
+                {
+                  "id": "resp_sdk_doc_123",
+                  "output_text": "{\"brief\":{\"sourceKind\":\"Paste\",\"sourceDisplayName\":\"Quantum teaching note.txt\",\"title\":\"Quantum teaching note\",\"documentFamily\":\"Educational\",\"audience\":\"teachers\",\"sections\":[\"Introduction\"],\"keyClaims\":[\"Superposition needs a visual analogy.\"],\"visualOpportunities\":[\"Focus on the central comparison.\"],\"knownConstraints\":[\"avoid fake lab data\"],\"strictnessLevel\":\"Educational\"},\"plan\":{\"summary\":\"Create one educational concept diagram grounded in the supplied teaching note.\",\"coverageNotes\":[\"Cover the central classroom analogy first.\"],\"riskNotes\":[\"Do not imply real laboratory evidence or measured data.\"],\"targets\":[{\"title\":\"Concept diagram for superposition\",\"documentLocation\":\"Introduction\",\"purpose\":\"ConceptDiagram\",\"mustShow\":[\"A clear comparison between a single certain state and overlapping possible states\"],\"mustNotShow\":[\"fake lab apparatus readings\"],\"sourceEvidence\":[\"Superposition needs a visual analogy.\"],\"suggestedImageTypePresetId\":\"concept-diagram\",\"suggestedReviewRubricTemplateId\":\"educational-accuracy\",\"textPolicy\":\"DeterministicPostRender\",\"strictnessNotes\":[\"Use deterministic labels for any explanatory text.\"]}]}}"
+                }
+                """,
+                requestId: "req_sdk_doc_123"));
+        var provider = CreateSdkTextProvider(client);
+
+        var result = await provider.CreateDocumentIllustrationPlanAsync(
+            new DocumentIllustrationPlanningRequest(
+                "Quantum teaching note",
+                "Teachers need an intuitive explanation of superposition.",
+                "teachers",
+                DocumentFamily.Educational,
+                IllustrationStrictnessLevel.Educational,
+                ["Introduction"],
+                ["Superposition needs a visual analogy."],
+                ["avoid fake lab data"]),
+            CancellationToken.None);
+
+        Assert.Equal("resp_sdk_doc_123", result.ProviderTraceId);
+        Assert.Equal("Quantum teaching note", result.Brief.Title);
+        Assert.Single(result.Plan.Targets);
+        Assert.Equal(1, client.CallCount);
+        Assert.NotNull(client.LastOptions);
+        Assert.Equal("gpt-5", client.LastOptions!.Model);
+        Assert.False(client.LastOptions.StoredOutputEnabled);
+        Assert.NotNull(client.LastOptions.TextOptions);
     }
 
     [Fact]

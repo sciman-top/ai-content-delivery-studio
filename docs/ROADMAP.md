@@ -85,10 +85,9 @@ The current recorded answer is "yes" for the `2026-06-11` snapshot in [V1_LAUNCH
 
 ## Next
 
-- Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
 - Reuse the text-planning low-502 execution policy if future real-provider brief or blueprint planning moves beyond the current fake-first boundary.
 - Extend Responses image workflows only when a route gains meaningful provenance, revision, or preview value beyond the current opt-in stateful path.
-- Add targeted binary extraction hardening only for formats promoted by the support matrix.
+- Add targeted binary extraction hardening for the support-matrix-approved `pdf` / `docx` text extraction slice only; keep OCR, scanned documents, and other office/PDF formats post-V1.
 - Add pack and policy modeling hardening only when a scenario-specific slice has a repo-owned spec and a bounded implementation plan.
 - Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
 - Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.

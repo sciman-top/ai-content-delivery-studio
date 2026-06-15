@@ -1,3 +1,4 @@
+using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Providers;
 using OpenAI.Responses;
 
@@ -21,6 +22,26 @@ public static class OpenAiSdkResponseOptionsFactory
                 TextFormat = ResponseTextFormat.CreateJsonSchemaFormat(
                     "image_series_plan",
                     OpenAiTextPlanningRequestMapper.CreatePlanSchemaBinaryData(),
+                    jsonSchemaIsStrict: true),
+            },
+        };
+    }
+
+    public static CreateResponseOptions CreateDocumentIllustrationPlanningOptions(
+        OpenAiProviderOptions options,
+        DocumentIllustrationPlanningRequest request)
+    {
+        return new CreateResponseOptions(
+            options.TextPlanningModel,
+            [ResponseItem.CreateUserMessageItem(OpenAiTextPlanningRequestMapper.BuildDocumentIllustrationInput(request))])
+        {
+            Instructions = "You plan document-grounded illustration targets. Return only valid JSON that matches the requested schema. Do not fabricate evidence, experimental results, or unsupported factual claims.",
+            StoredOutputEnabled = OpenAiRoutingDefaults.StoreRemoteStateByDefault,
+            TextOptions = new ResponseTextOptions
+            {
+                TextFormat = ResponseTextFormat.CreateJsonSchemaFormat(
+                    "document_illustration_plan",
+                    OpenAiTextPlanningRequestMapper.CreateDocumentIllustrationPlanSchemaBinaryData(),
                     jsonSchemaIsStrict: true),
             },
         };

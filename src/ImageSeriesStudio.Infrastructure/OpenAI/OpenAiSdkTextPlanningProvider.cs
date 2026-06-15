@@ -127,10 +127,7 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
     public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
         DocumentIllustrationPlanningRequest request,
         CancellationToken cancellationToken)
-    {
-        throw new InvalidOperationException(
-            "OpenAI SDK document illustration planning is not enabled in the first fake-provider implementation.");
-    }
+        => CreateDocumentIllustrationPlanInternalAsync(request, cancellationToken);
 
     private static async Task<IOpenAiResponsesClient> CreateSdkResponsesClientAsync(
         OpenAiProviderOptions options,
@@ -189,6 +186,43 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
             latency,
             _rateCard.TextPlanningRequestUsd,
             _rateCard.Name));
+    }
+
+    private async Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanInternalAsync(
+        DocumentIllustrationPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
+            _options,
+            _secretStore,
+            OpenAiProviderOperation.TextPlanning,
+            cancellationToken);
+
+        var client = await _clientFactory(cancellationToken);
+        var sdkOptions = OpenAiSdkResponseOptionsFactory.CreateDocumentIllustrationPlanningOptions(_options, request);
+        var endpoint = new Uri(_options.BaseUri, OpenAiRoutingDefaults.PlanningEndpointPath);
+        var stopwatch = Stopwatch.StartNew();
+
+        try
+        {
+            var response = await CreateResponseWithTransientRetryAsync(client, sdkOptions, cancellationToken);
+            stopwatch.Stop();
+            var body = response.Body
+                ?? throw new InvalidOperationException("OpenAI SDK document illustration response did not include a JSON body.");
+            var providerTraceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(body);
+
+            RecordTelemetry(endpoint, response, providerTraceId, stopwatch.Elapsed);
+
+            return OpenAiTextPlanningResponseMapper.ParseDocumentIllustrationPlan(body);
+        }
+        catch (OpenAiResponsesClientException exception)
+        {
+            stopwatch.Stop();
+            RecordTelemetry(endpoint, exception.Result, providerTraceId: null, stopwatch.Elapsed);
+            throw new HttpRequestException(
+                $"OpenAI SDK text planning request failed with status {exception.Result.StatusCode} {exception.Result.ReasonPhrase}.",
+                exception);
+        }
     }
 }
 #pragma warning restore OPENAI001

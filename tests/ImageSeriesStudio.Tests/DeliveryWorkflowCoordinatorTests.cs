@@ -11,6 +11,7 @@ public sealed class DeliveryWorkflowCoordinatorTests
     [Fact]
     public async Task ExportDeliveryAsync_ExportsOnlyApprovedPassRowsWithPromotedBlueprintMetadata()
     {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
         var repository = new InMemoryProjectRepository();
         var projectService = new ProjectApplicationService(
             repository,
@@ -22,7 +23,7 @@ public sealed class DeliveryWorkflowCoordinatorTests
         var timestamp = DateTimeOffset.Parse("2026-06-08T13:00:00Z");
         var project = await projectService.CreateProjectAsync("Delivery coordinator demo", timestamp, CancellationToken.None);
 
-        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        var rootDirectory = Path.Combine(localStudioRoot.RootPath, "delivery-coordinator");
         var sourceDirectory = Path.Combine(rootDirectory, "source");
         Directory.CreateDirectory(sourceDirectory);
         var approvedImagePath = Path.Combine(sourceDirectory, "approved.png");
@@ -119,21 +120,6 @@ public sealed class DeliveryWorkflowCoordinatorTests
             {
                 Directory.Delete(rootDirectory, recursive: true);
             }
-
-            DeleteProjectOutputDirectories(project.Id);
-        }
-    }
-
-    private static void DeleteProjectOutputDirectories(Guid projectId)
-    {
-        var directory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            "deliveries",
-            projectId.ToString("N"));
-        if (Directory.Exists(directory))
-        {
-            Directory.Delete(directory, recursive: true);
         }
     }
 

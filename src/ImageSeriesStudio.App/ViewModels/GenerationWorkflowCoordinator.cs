@@ -20,11 +20,7 @@ public sealed class GenerationWorkflowCoordinator
         IReadOnlyList<SeriesSummaryViewModel> series,
         CancellationToken cancellationToken)
     {
-        var outputDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            "generated",
-            projectId.ToString("N"));
+        var outputDirectory = LocalStudioDataPaths.ResolveProjectDirectory("generated", projectId);
         var run = await _projectService.RunGenerationQueueAsync(
             projectId,
             outputDirectory,
@@ -45,11 +41,7 @@ public sealed class GenerationWorkflowCoordinator
     {
         ArgumentNullException.ThrowIfNull(selectedRow);
 
-        var outputDirectory = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "ImageSeriesStudio",
-            "edited",
-            projectId.ToString("N"));
+        var outputDirectory = LocalStudioDataPaths.ResolveProjectDirectory("edited", projectId);
 
         var result = await _projectService.RunImageEditAsync(
             new ImageEditWorkflowRequest(
