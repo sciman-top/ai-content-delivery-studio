@@ -21,6 +21,7 @@ Use these documents in this order:
 | What are the provider and operator execution boundaries? | [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md) and [OPERATOR_RISK_POLICY.md](./OPERATOR_RISK_POLICY.md) |
 | What is currently proven enough to claim? | [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) |
 | What should be implemented or hardened next? | [ROADMAP.md](./ROADMAP.md) and [TASKS.md](./TASKS.md) |
+| How should non-trivial engineering work be executed in this repository? | [AI_CODING_WORKFLOW.md](./AI_CODING_WORKFLOW.md) and [AGENTS.md](../AGENTS.md) |
 | What is the best realistic longer-term engineering end state? | [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) |
 | What high-drift engineering changes require explicit reference evidence? | [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) |
 | Which code areas and task families should consult which local references? | [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) |
@@ -40,10 +41,12 @@ Use these documents in this order:
 - `V1_LAUNCH_EVIDENCE.md` is the only core document that should summarize current V1 release-verification status.
 - `ROADMAP.md` may describe phase status and next sequencing, but phase status does not equal launch readiness.
 - `TASKS.md` is an action backlog, not a release-claim document.
+- `AI_CODING_WORKFLOW.md` defines the repository's default implementation discipline for non-trivial engineering work. It does not define product scope or current release status.
 - `TARGET_ENGINEERING_STATE.md` is the best-end-state target, not a near-term commitment list.
 - `REFERENCE_EVIDENCE_POLICY.md` defines when high-drift engineering changes must leave a visible evidence trail and points to the local verification gate.
 - `REFERENCE_BASIS.md` defines the durable `task/code area -> local reference shelf -> reuse level` mapping and should be refreshed when hard-drift engineering areas or the reference shelf change.
 - `scripts/sync-reference-governance.ps1` is the machine-sync companion for those two docs. It regenerates the managed summary inside `REFERENCE_BASIS.md` and refreshes the repo-side snapshot of the external shelf manifest.
+- Non-trivial changes should leave a repo-owned spec under `docs/superpowers/specs/` and a repo-owned plan under `docs/superpowers/plans/` unless the slice is small enough to stay within the repository's `XS-S` sizing rules.
 
 ## Review Shortcut
 
@@ -53,5 +56,6 @@ When reviewing the repository quickly:
 2. Read [PRD_V1.md](./PRD_V1.md) for the launch promise.
 3. Read [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) for current proof.
 4. Read [ROADMAP.md](./ROADMAP.md) and [TASKS.md](./TASKS.md) for what still needs to happen next.
-5. Read [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) and [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) before changing provider, host, persistence, or tooling boundaries.
-6. Read [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) only when deciding how to extend the architecture beyond the current V1 boundary.
+5. Read [AI_CODING_WORKFLOW.md](./AI_CODING_WORKFLOW.md) before executing a non-trivial slice.
+6. Read [REFERENCE_EVIDENCE_POLICY.md](./REFERENCE_EVIDENCE_POLICY.md) and [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) before changing provider, host, persistence, or tooling boundaries.
+7. Read [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md) only when deciding how to extend the architecture beyond the current V1 boundary.

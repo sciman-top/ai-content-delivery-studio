@@ -46,6 +46,13 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Reflect the locked V1 defaults in implementation-facing code comments, options, and operator descriptors where relevant.
 - [x] Reflect stateless local-direct visual review defaults in implementation-facing options and review operator descriptors.
 
+## Engineering Workflow Governance
+
+- [x] Record the repository-owned AI coding workflow v1.
+- [x] Keep `docs/superpowers/specs/` and `docs/superpowers/plans/` as the long-lived engineering spec and plan surfaces for non-trivial slices.
+- [x] Default to one agent completing one bounded slice; use subagents and worktrees only when independence or risk clearly justifies them.
+- [x] Keep auto-execution layered: low-risk documentation and evidence sync may run automatically, while stronger contract, schema, or cross-surface changes still require explicit spec/plan plus fresh verification.
+
 ## Reference Governance
 
 - [x] Record external reference strategy in project docs.

@@ -73,6 +73,7 @@ The current recorded answer is "yes" for the `2026-06-11` snapshot in [V1_LAUNCH
 
 ## Now
 
+- Keep [AI_CODING_WORKFLOW.md](./AI_CODING_WORKFLOW.md) as the default engineering discipline for non-trivial slices: repo-owned spec/plan/evidence first, conditional subagent/worktree use, and layered auto-execution instead of a second external workflow truth surface.
 - Keep the verified short requirement -> brief -> blueprint -> series -> review -> delivery route stable as the primary launch spine.
 - Keep the article or plain-text route focused on evidence-backed planning that promotes into the same downstream workflow, and only widen it when real-provider or extraction slices are explicitly activated.
 - Keep Phase 4A deterministic composition, readability checks, reviewer notes, and approval evidence export stable, adding stronger user-visible collateral only when release review or onboarding actually needs it.

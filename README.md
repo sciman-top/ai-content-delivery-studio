@@ -121,12 +121,14 @@ The authoritative V1 launch frame lives in:
 - Deterministic text composition is part of the proven V1 path for text-heavy educational or poster-style outputs.
 - Operator automation stays bounded: low-risk local validation and preparation paths first, broader side-effectful automation later.
 - The current transport split is deliberate: stable single-shot image generation uses the official OpenAI .NET SDK Images path, while some Responses-backed planning and review flows still keep raw `HttpClient` where the SDK surface remains incomplete for the current contract needs.
+- Non-trivial engineering changes should use the repo-owned workflow in [docs/AI_CODING_WORKFLOW.md](docs/AI_CODING_WORKFLOW.md): repo-owned spec/plan/evidence, contract-first public seams, conditional subagent/worktree use, and layered auto-execution.
 
 ## Documentation Map
 
 ### Start Here
 
 - [docs/DOCUMENTATION_GOVERNANCE.md](docs/DOCUMENTATION_GOVERNANCE.md)
+- [docs/AI_CODING_WORKFLOW.md](docs/AI_CODING_WORKFLOW.md)
 - [docs/PRD_V1.md](docs/PRD_V1.md)
 - [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md)
 - [docs/ROADMAP.md](docs/ROADMAP.md)
@@ -151,6 +153,8 @@ The authoritative V1 launch frame lives in:
 
 ### ADRs And Plans
 
+- [docs/superpowers/specs/2026-06-15-ai-coding-workflow-v1-design.md](docs/superpowers/specs/2026-06-15-ai-coding-workflow-v1-design.md)
+- [docs/superpowers/plans/2026-06-15-ai-coding-workflow-v1.md](docs/superpowers/plans/2026-06-15-ai-coding-workflow-v1.md)
 - [docs/adr/0001-independent-repo-and-stack.md](docs/adr/0001-independent-repo-and-stack.md)
 - [docs/adr/0002-api-boundaries-and-review-loop.md](docs/adr/0002-api-boundaries-and-review-loop.md)
 - [docs/adr/0008-product-identity-and-repository-rename.md](docs/adr/0008-product-identity-and-repository-rename.md)

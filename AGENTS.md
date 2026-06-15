@@ -54,6 +54,10 @@ The repository also carries `.github/workflows/verify-repo.yml` so the same veri
 - Design evidence lives in `docs/research/REFERENCE_RESEARCH.md`.
 - Reference-discipline rules live in `docs/REFERENCE_EVIDENCE_POLICY.md`.
 - Durable `code area/task -> reference shelf` mapping lives in `docs/REFERENCE_BASIS.md` and `scripts/reference-basis.json`.
+- Default repository AI coding workflow lives in `docs/AI_CODING_WORKFLOW.md`.
 - Architecture decisions live in `docs/adr/`.
 - Implementation tasks live in `docs/TASKS.md` and `docs/superpowers/plans/`.
 - Revert documentation changes with git. Generated outputs and local workspaces are ignored and must be backed up outside git when needed.
+- Non-trivial changes should leave a repo-owned spec under `docs/superpowers/specs/` and a repo-owned plan under `docs/superpowers/plans/` before implementation.
+- Default execution mode is one agent completing one bounded slice. Use subagents or worktrees only when slice independence or risk profile clearly justifies them.
+- Keep auto-execution layered: documentation sync and low-risk closeout can be automatic; stronger schema, contract, or cross-surface changes still require explicit spec/plan and fresh gate evidence.
