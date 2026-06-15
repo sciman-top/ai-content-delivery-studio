@@ -2,13 +2,16 @@ using System.Globalization;
 using System.Text.Json;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.Application.Sources;
 using ImageSeriesStudio.App.Services;
 using ImageSeriesStudio.App.ViewModels;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Sources;
 using ImageSeriesStudio.Infrastructure.Delivery;
 using ImageSeriesStudio.Infrastructure.Fakes;
+using ImageSeriesStudio.Infrastructure.Sources;
 
 namespace ImageSeriesStudio.Tests;
 
@@ -499,6 +502,79 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task DocumentIllustrationWorkflow_ImportsPdfSourceTextIntoInspectorInput()
+    {
+        var repository = new InMemoryProjectRepository();
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var pdfPath = Path.Combine(rootDirectory, "lesson.pdf");
+
+        try
+        {
+            await BinaryDocumentTestFixtureBuilder.CreateSimplePdfAsync(
+                pdfPath,
+                "Imported PDF text should populate the document illustration source box.",
+                CancellationToken.None);
+            var viewModel = CreateViewModel(
+                repository: repository,
+                projectService: CreateProjectService(repository));
+
+            viewModel.NewProjectName = "Import document source demo";
+            await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+            await viewModel.ImportDocumentSourceFileCommand.ExecuteAsync(pdfPath);
+
+            Assert.Contains("Imported PDF text", viewModel.NewDocumentSourceText, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(pdfPath, viewModel.ImportedDocumentSourcePath);
+            Assert.True(viewModel.RunFakeDocumentPlanningCommand.CanExecute(null));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task DocumentIllustrationWorkflow_BrowseDocumentSourceFileImportsPdfTextIntoInspectorInput()
+    {
+        var repository = new InMemoryProjectRepository();
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ImageSeriesStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var pdfPath = Path.Combine(rootDirectory, "browse.pdf");
+
+        try
+        {
+            await BinaryDocumentTestFixtureBuilder.CreateSimplePdfAsync(
+                pdfPath,
+                "Browse import should populate the source box from a local PDF.",
+                CancellationToken.None);
+            var viewModel = CreateViewModel(
+                repository: repository,
+                projectService: CreateProjectService(repository),
+                documentSourceFilePickerService: new StaticDocumentSourceFilePickerService(pdfPath));
+
+            viewModel.NewProjectName = "Browse document source demo";
+            await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+            await viewModel.BrowseDocumentSourceFileCommand.ExecuteAsync(null);
+
+            Assert.Contains("Browse import", viewModel.NewDocumentSourceText, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(pdfPath, viewModel.ImportedDocumentSourcePath);
+            Assert.Equal(pdfPath, viewModel.NewDocumentSourceFilePath);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ProviderCenter_CanRefreshConfigurationFromMainWindow()
     {
         var providerCenter = new ProviderCenterViewModel(
@@ -560,13 +636,15 @@ public sealed class MainWindowViewModelTests
     private static MainWindowViewModel CreateViewModel(
         bool reviewPasses = true,
         ProviderCenterViewModel? providerCenter = null,
-        IProjectRepository? repository = null)
+        IProjectRepository? repository = null,
+        ProjectApplicationService? projectService = null,
+        IDocumentSourceFilePickerService? documentSourceFilePickerService = null)
     {
         var fakeImageProvider = new FakeImageGenerationProvider();
 
         return new MainWindowViewModel(
             new LocalizationService(() => new CultureInfo("en-US")),
-            new ProjectApplicationService(
+            projectService ?? new ProjectApplicationService(
                 repository ?? new InMemoryProjectRepository(),
                 new FakeTextPlanningProvider(),
                 fakeImageProvider,
@@ -575,7 +653,37 @@ public sealed class MainWindowViewModelTests
                 imageEditProvider: fakeImageProvider),
             providerCenter ?? new ProviderCenterViewModel(
                 new StaticProviderCenterConfigurationService(
-                    ProviderCenterSnapshot.MissingEnvironmentFile(".env"))));
+                    ProviderCenterSnapshot.MissingEnvironmentFile(".env"))),
+            documentSourceFilePickerService);
+    }
+
+    private static ProjectApplicationService CreateProjectService(IProjectRepository repository)
+    {
+        var fakeImageProvider = new FakeImageGenerationProvider();
+
+        return new ProjectApplicationService(
+            repository,
+            new FakeTextPlanningProvider(),
+            fakeImageProvider,
+            new FakeVisionReviewProvider(defaultPasses: true),
+            deliveryPackageWriter: new DeliveryPackageWriter(),
+            imageEditProvider: fakeImageProvider,
+                sourceIngestionApplicationService: new SourceIngestionApplicationService(
+                repository,
+                new SupportMatrixSourceIngestionProvider(
+                    new LocalBinaryDocumentExtractionProvider(),
+                    new FakeSourceIngestionProvider())));
+    }
+
+    private sealed class StaticDocumentSourceFilePickerService(string filePath)
+        : IDocumentSourceFilePickerService
+    {
+        public Task<string?> PickAsync(CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            return Task.FromResult<string?>(filePath);
+        }
     }
 
     private static async Task WaitForConditionAsync(Func<bool> condition, int timeoutMs = 2000)

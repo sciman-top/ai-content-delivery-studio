@@ -114,6 +114,8 @@ Do not collapse everything into one generic AI client. The product should expres
 
 The current repository baseline now includes a bounded real local source-ingestion path for support-matrix-approved `pdf` and `docx` text extraction. Treat that as the first concrete step toward the broader source-understanding target, not as evidence that OCR-heavy or high-fidelity binary extraction is solved.
 
+At the shell level, that bounded extraction path now feeds the existing document-illustration inspector instead of a separate new source workspace: local `pdf` and `docx` files can populate the source-text planning input directly, keeping the current UX thin while the broader source-management surface remains future work.
+
 ### Queue And Provenance
 
 The queue should become a shared execution discipline for:

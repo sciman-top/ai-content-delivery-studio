@@ -31,9 +31,9 @@ Domain identifiers, provider IDs, model IDs, and error strings remain in English
 
 The first document illustration release is fake-provider first. The default path uses fake providers so you can validate the workflow without paid API calls or live provider credentials. The current OpenAI text-planning providers now also support the same document-illustration contract when a real-provider path is explicitly enabled.
 
-Use the document illustration entry when you want to turn pasted text into illustration directions before promoting approved targets into the existing Plan and Prompts workflow.
+Use the document illustration entry when you want to turn pasted text or a bounded local `pdf` / `docx` source file into illustration directions before promoting approved targets into the existing Plan and Prompts workflow.
 
-- Input supports pasted draft text or plain text content.
+- Input supports pasted draft text, plain text content, or a bounded local `pdf` / `docx` file import.
 - The current slice is designed for concept illustrations and graphical abstract drafts.
 - Approved targets are promoted into the existing plan structure instead of creating a separate downstream pipeline.
 - Source text should be treated as planning evidence, not as permission to skip review or provenance tracking.
@@ -41,7 +41,7 @@ Use the document illustration entry when you want to turn pasted text into illus
 
 Recommended flow:
 
-1. Paste the source paragraph, abstract, outline, or other plain text content.
+1. Paste the source paragraph, abstract, outline, or other plain text content, or import a local `pdf` / `docx` file into the source text box.
 2. Choose a draft mode that matches the illustration intent.
 3. Review generated illustration targets and prompt directions from the fake path.
 4. Approve only the targets worth carrying forward.

@@ -29,11 +29,13 @@ public sealed class LocalizationTests
             [LanguagePreference.English] = new Dictionary<string, string>
             {
                 ["DocumentIllustrationTitle"] = "Document illustration",
+                ["DocumentSourceFilePath"] = "Source file path",
                 ["DocumentSourceText"] = "Source text",
                 ["DocumentAudience"] = "Audience",
                 ["DocumentStrictness"] = "Strictness",
                 ["RunFakeDocumentPlanning"] = "Run fake document planning",
                 ["DocumentPlanningResult"] = "Document planning result",
+                ["ImportDocumentSourceFile"] = "Import source file",
                 ["DefaultDocumentSourceText"] = "Teachers need a clear concept diagram for the central idea.",
                 ["DefaultDocumentAudience"] = "teachers",
                 ["DocumentStrictnessEditorial"] = "Editorial review",
@@ -46,11 +48,13 @@ public sealed class LocalizationTests
             [LanguagePreference.Chinese] = new Dictionary<string, string>
             {
                 ["DocumentIllustrationTitle"] = "文稿配图",
+                ["DocumentSourceFilePath"] = "源文件路径",
                 ["DocumentSourceText"] = "来源文本",
                 ["DocumentAudience"] = "受众",
                 ["DocumentStrictness"] = "严格度",
                 ["RunFakeDocumentPlanning"] = "运行假文稿规划",
                 ["DocumentPlanningResult"] = "文稿规划结果",
+                ["ImportDocumentSourceFile"] = "导入源文件",
                 ["DefaultDocumentSourceText"] = "教师需要一张清晰的核心概念图。",
                 ["DefaultDocumentAudience"] = "教师",
                 ["DocumentStrictnessEditorial"] = "编辑审阅",

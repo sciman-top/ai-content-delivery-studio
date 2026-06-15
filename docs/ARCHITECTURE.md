@@ -120,6 +120,8 @@ The launch-capable combinations of source inputs and output artifacts are intent
 
 Within that bounded matrix, the current local source-ingestion path now supports deterministic text extraction for local `pdf` and `docx` files through the same provider-neutral `SourceAsset -> ExtractedContent -> EvidenceAnchor` model. OCR-heavy, scanned, table-rich, and other high-fidelity binary extraction paths remain explicitly outside the current slice.
 
+The current WPF shell exposes that bounded path through the existing document-illustration inspector surface: the user can now point the source-text entry to a local `pdf` or `docx` file, import the extracted text into the same planning textbox, and then continue through the existing fake-first document-illustration route without opening a second source-management surface.
+
 ## Versioned Workflow And Blueprint Packs
 
 Generalization should come from versioned packs rather than new hard-coded product modes.

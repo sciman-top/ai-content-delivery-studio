@@ -343,10 +343,15 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:DocumentIllustrationPanelView />", inspectorViewXaml);
 
         var documentIllustrationPanelViewXaml = File.ReadAllText(documentIllustrationPanelViewPath);
+        Assert.Contains("Text=\"{Binding NewDocumentSourceFilePath, UpdateSourceTrigger=PropertyChanged}\"", documentIllustrationPanelViewXaml);
+        Assert.Contains("Command=\"{Binding BrowseDocumentSourceFileCommand}\"", documentIllustrationPanelViewXaml);
+        Assert.Contains("Command=\"{Binding ImportDocumentSourceFileCommand}\"", documentIllustrationPanelViewXaml);
+        Assert.Contains("CommandParameter=\"{Binding NewDocumentSourceFilePath}\"", documentIllustrationPanelViewXaml);
         Assert.Contains("Text=\"{Binding NewDocumentSourceText, UpdateSourceTrigger=PropertyChanged}\"", documentIllustrationPanelViewXaml);
         Assert.Contains("Text=\"{Binding NewDocumentAudience, UpdateSourceTrigger=PropertyChanged}\"", documentIllustrationPanelViewXaml);
         Assert.Contains("ItemsSource=\"{Binding DocumentStrictnessOptions}\"", documentIllustrationPanelViewXaml);
         Assert.Contains("SelectedItem=\"{Binding SelectedDocumentStrictnessOption, Mode=TwoWay}\"", documentIllustrationPanelViewXaml);
+        Assert.Contains("Command=\"{Binding ImportDocumentSourceFileCommand}\"", documentIllustrationPanelViewXaml);
         Assert.Contains("Command=\"{Binding RunFakeDocumentPlanningCommand}\"", documentIllustrationPanelViewXaml);
         Assert.Contains("Text=\"{Binding DocumentPlanningResultSummary}\"", documentIllustrationPanelViewXaml);
     }

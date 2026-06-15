@@ -35,9 +35,12 @@ public sealed class MainWindowLocalizationCoordinator
             PlanningItemCountLabel = Text(LocalizationKey.PlanningItemCount),
             PlanningStyleBriefLabel = Text(LocalizationKey.PlanningStyleBrief),
             DocumentIllustrationTitle = Text(LocalizationKey.DocumentIllustrationTitle),
+            DocumentSourceFilePathLabel = Text(LocalizationKey.DocumentSourceFilePath),
             DocumentSourceTextLabel = Text(LocalizationKey.DocumentSourceText),
             DocumentAudienceLabel = Text(LocalizationKey.DocumentAudience),
             DocumentStrictnessLabel = Text(LocalizationKey.DocumentStrictness),
+            BrowseDocumentSourceFileText = Text(LocalizationKey.BrowseDocumentSourceFile),
+            ImportDocumentSourceFileText = Text(LocalizationKey.ImportDocumentSourceFile),
             RunFakeDocumentPlanningText = Text(LocalizationKey.RunFakeDocumentPlanning),
             DocumentPlanningResultText = Text(LocalizationKey.DocumentPlanningResult),
             DefaultDocumentSourceText = Text(LocalizationKey.DefaultDocumentSourceText),
@@ -337,9 +340,12 @@ public sealed class MainWindowLocalizationPayload
     public string PlanningItemCountLabel { get; init; } = string.Empty;
     public string PlanningStyleBriefLabel { get; init; } = string.Empty;
     public string DocumentIllustrationTitle { get; init; } = string.Empty;
+    public string DocumentSourceFilePathLabel { get; init; } = string.Empty;
     public string DocumentSourceTextLabel { get; init; } = string.Empty;
     public string DocumentAudienceLabel { get; init; } = string.Empty;
     public string DocumentStrictnessLabel { get; init; } = string.Empty;
+    public string BrowseDocumentSourceFileText { get; init; } = string.Empty;
+    public string ImportDocumentSourceFileText { get; init; } = string.Empty;
     public string RunFakeDocumentPlanningText { get; init; } = string.Empty;
     public string DocumentPlanningResultText { get; init; } = string.Empty;
     public string DefaultDocumentSourceText { get; init; } = string.Empty;

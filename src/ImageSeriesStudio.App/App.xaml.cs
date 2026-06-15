@@ -53,6 +53,7 @@ public partial class App : System.Windows.Application
             serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(OpenAiHttpClientNames.Provider),
             serviceProvider.GetRequiredService<IOpenAiSecretStore>()));
         builder.Services.AddSingleton<IProviderCenterHealthCheckService, DotEnvProviderCenterHealthCheckService>();
+        builder.Services.AddSingleton<IDocumentSourceFilePickerService, DocumentSourceFilePickerService>();
         builder.Services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
         builder.Services.AddSingleton<IDocumentExtractionProvider, LocalBinaryDocumentExtractionProvider>();
         builder.Services.AddSingleton<ISourceIngestionProvider>(serviceProvider =>

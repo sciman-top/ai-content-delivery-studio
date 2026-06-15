@@ -3,10 +3,13 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ImageSeriesStudio.Application.Localization;
 using ImageSeriesStudio.Application.Projects;
+using ImageSeriesStudio.Application.Sources;
 using ImageSeriesStudio.Core.Documents;
 using ImageSeriesStudio.Core.Projects;
 using ImageSeriesStudio.Core.Providers;
+using ImageSeriesStudio.Core.Sources;
 using ImageSeriesStudio.Core.Styles;
+using ImageSeriesStudio.App.Services;
 
 namespace ImageSeriesStudio.App.ViewModels;
 
@@ -27,6 +30,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly WorkbenchInspectorCoordinator _workbenchInspectorCoordinator;
     private readonly MainWindowLocalizationCoordinator _mainWindowLocalizationCoordinator;
     private readonly MainWindowSelectionSummaryCoordinator _mainWindowSelectionSummaryCoordinator;
+    private readonly IDocumentSourceFilePickerService? _documentSourceFilePickerService;
 
     private string _appTitle = string.Empty;
     private string _providerMode = string.Empty;
@@ -59,14 +63,19 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _planningItemCountLabel = string.Empty;
     private string _planningStyleBriefLabel = string.Empty;
     private string _documentIllustrationTitle = string.Empty;
+    private string _documentSourceFilePathLabel = string.Empty;
     private string _documentSourceTextLabel = string.Empty;
     private string _documentAudienceLabel = string.Empty;
     private string _documentStrictnessLabel = string.Empty;
+    private string _browseDocumentSourceFileText = string.Empty;
+    private string _importDocumentSourceFileText = string.Empty;
     private string _runFakeDocumentPlanningText = string.Empty;
     private string _documentPlanningResultText = string.Empty;
     private string _documentPlanningResultSummary = string.Empty;
+    private string _newDocumentSourceFilePath = string.Empty;
     private string _newDocumentSourceText = string.Empty;
     private string _newDocumentAudience = string.Empty;
+    private string _importedDocumentSourcePath = string.Empty;
     private string _defaultDocumentSourceText = string.Empty;
     private string _defaultDocumentAudience = string.Empty;
     private IReadOnlyList<DocumentStrictnessOptionViewModel> _documentStrictnessOptions = [];
@@ -199,10 +208,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public MainWindowViewModel(
         LocalizationService localizationService,
         ProjectApplicationService projectService,
-        ProviderCenterViewModel providerCenter)
+        ProviderCenterViewModel providerCenter,
+        IDocumentSourceFilePickerService? documentSourceFilePickerService = null)
     {
         _localizationService = localizationService;
         _projectService = projectService;
+        _documentSourceFilePickerService = documentSourceFilePickerService;
         _projectWorkspaceCoordinator = new ProjectWorkspaceCoordinator(projectService);
         _planningWorkflowCoordinator = new PlanningWorkflowCoordinator(projectService, localizationService);
         _briefWorkflowCoordinator = new BriefWorkflowCoordinator(projectService);
@@ -492,6 +503,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _documentIllustrationTitle, value);
     }
 
+    public string DocumentSourceFilePathLabel
+    {
+        get => _documentSourceFilePathLabel;
+        private set => SetProperty(ref _documentSourceFilePathLabel, value);
+    }
+
     public string DocumentSourceTextLabel
     {
         get => _documentSourceTextLabel;
@@ -510,6 +527,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _documentStrictnessLabel, value);
     }
 
+    public string ImportDocumentSourceFileText
+    {
+        get => _importDocumentSourceFileText;
+        private set => SetProperty(ref _importDocumentSourceFileText, value);
+    }
+
+    public string BrowseDocumentSourceFileText
+    {
+        get => _browseDocumentSourceFileText;
+        private set => SetProperty(ref _browseDocumentSourceFileText, value);
+    }
+
     public string RunFakeDocumentPlanningText
     {
         get => _runFakeDocumentPlanningText;
@@ -526,6 +555,24 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 RunFakeDocumentPlanningCommand.NotifyCanExecuteChanged();
             }
         }
+    }
+
+    public string NewDocumentSourceFilePath
+    {
+        get => _newDocumentSourceFilePath;
+        set
+        {
+            if (SetProperty(ref _newDocumentSourceFilePath, value))
+            {
+                ImportDocumentSourceFileCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string ImportedDocumentSourcePath
+    {
+        get => _importedDocumentSourcePath;
+        private set => SetProperty(ref _importedDocumentSourcePath, value);
     }
 
     public string NewDocumentAudience
@@ -1550,9 +1597,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PlanningItemCountLabel = payload.PlanningItemCountLabel;
         PlanningStyleBriefLabel = payload.PlanningStyleBriefLabel;
         DocumentIllustrationTitle = payload.DocumentIllustrationTitle;
+        DocumentSourceFilePathLabel = payload.DocumentSourceFilePathLabel;
         DocumentSourceTextLabel = payload.DocumentSourceTextLabel;
         DocumentAudienceLabel = payload.DocumentAudienceLabel;
         DocumentStrictnessLabel = payload.DocumentStrictnessLabel;
+        BrowseDocumentSourceFileText = payload.BrowseDocumentSourceFileText;
+        ImportDocumentSourceFileText = payload.ImportDocumentSourceFileText;
         RunFakeDocumentPlanningText = payload.RunFakeDocumentPlanningText;
         DocumentPlanningResultText = payload.DocumentPlanningResultText;
         _defaultDocumentSourceText = payload.DefaultDocumentSourceText;
@@ -1791,9 +1841,122 @@ public sealed partial class MainWindowViewModel : ObservableObject
         return SelectedProject is not null && !string.IsNullOrWhiteSpace(NewDocumentSourceText);
     }
 
+    [RelayCommand(CanExecute = nameof(CanImportDocumentSourceFile))]
+    private async Task ImportDocumentSourceFileAsync(string? filePath)
+    {
+        if (SelectedProject is null)
+        {
+            return;
+        }
+
+        var normalizedPath = NormalizeDocumentSourceFilePath(filePath);
+        if (normalizedPath is null)
+        {
+            return;
+        }
+
+        var sourceKind = ResolveDocumentSourceKind(normalizedPath);
+        if (sourceKind is null)
+        {
+            return;
+        }
+
+        var result = await _projectService.IngestSourceAsync(
+            SelectedProject.Id,
+            new SourceIngestionRequest(
+                sourceKind.Value,
+                Path.GetFileName(normalizedPath),
+                string.Empty,
+                OriginalPath: normalizedPath,
+                MimeType: ResolveDocumentMimeType(sourceKind.Value),
+                SizeBytes: new FileInfo(normalizedPath).Length,
+                Sha256: null),
+            DateTimeOffset.UtcNow,
+            CancellationToken.None);
+
+        var loadedProject = await _projectService.LoadProjectAsync(SelectedProject.Id, CancellationToken.None);
+        var importedAsset = loadedProject?.SourceAssets.LastOrDefault(asset =>
+            string.Equals(asset.OriginalPath, normalizedPath, StringComparison.OrdinalIgnoreCase));
+        if (importedAsset is not null && importedAsset.ExtractedContents.Count > 0)
+        {
+            NewDocumentSourceText = string.Join(
+                Environment.NewLine,
+                importedAsset.ExtractedContents.Select(content => content.Text));
+        }
+
+        ImportedDocumentSourcePath = normalizedPath;
+        NewDocumentSourceFilePath = normalizedPath;
+        ActivityItems = new[] { $"Imported {Path.GetFileName(normalizedPath)}." }
+            .Concat(ActivityItems)
+            .ToArray();
+        RunFakeDocumentPlanningCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanImportDocumentSourceFile(string? filePath)
+    {
+        return SelectedProject is not null && SupportsDocumentSourceFile(filePath);
+    }
+
+    [RelayCommand]
+    private async Task BrowseDocumentSourceFileAsync()
+    {
+        if (_documentSourceFilePickerService is null)
+        {
+            return;
+        }
+
+        var filePath = await _documentSourceFilePickerService.PickAsync(CancellationToken.None);
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return;
+        }
+
+        if (ImportDocumentSourceFileCommand.CanExecute(filePath))
+        {
+            await ImportDocumentSourceFileCommand.ExecuteAsync(filePath);
+        }
+    }
+
     private bool TryGetPlanningItemCount(out int itemCount)
     {
         return int.TryParse(NewPlanningItemCount, out itemCount) && itemCount > 0;
+    }
+
+    private static bool SupportsDocumentSourceFile(string? filePath)
+    {
+        return NormalizeDocumentSourceFilePath(filePath) is not null
+            && ResolveDocumentSourceKind(filePath!) is not null;
+    }
+
+    private static SourceAssetKind? ResolveDocumentSourceKind(string filePath)
+    {
+        return Path.GetExtension(filePath).ToLowerInvariant() switch
+        {
+            ".pdf" => SourceAssetKind.Pdf,
+            ".docx" => SourceAssetKind.Docx,
+            _ => null,
+        };
+    }
+
+    private static string? NormalizeDocumentSourceFilePath(string? filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath))
+        {
+            return null;
+        }
+
+        var normalized = Path.GetFullPath(filePath.Trim());
+        return File.Exists(normalized) ? normalized : null;
+    }
+
+    private static string? ResolveDocumentMimeType(SourceAssetKind sourceKind)
+    {
+        return sourceKind switch
+        {
+            SourceAssetKind.Pdf => "application/pdf",
+            SourceAssetKind.Docx => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            _ => null,
+        };
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateBrief))]

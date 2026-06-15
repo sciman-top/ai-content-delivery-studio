@@ -6,6 +6,26 @@
              mc:Ignorable="d">
     <StackPanel>
         <TextBlock Text="{Binding DocumentIllustrationTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
+        <TextBlock Text="{Binding DocumentSourceFilePathLabel}" Margin="0,0,0,4" />
+        <Grid Margin="0,0,0,6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0"
+                     Text="{Binding NewDocumentSourceFilePath, UpdateSourceTrigger=PropertyChanged}"
+                     MinHeight="28"
+                     Margin="0,0,8,0" />
+            <Button Grid.Column="1"
+                    Content="{Binding BrowseDocumentSourceFileText}"
+                    Command="{Binding BrowseDocumentSourceFileCommand}"
+                    Margin="0,0,8,0" />
+            <Button Grid.Column="2"
+                    Content="{Binding ImportDocumentSourceFileText}"
+                    Command="{Binding ImportDocumentSourceFileCommand}"
+                    CommandParameter="{Binding NewDocumentSourceFilePath}" />
+        </Grid>
         <TextBlock Text="{Binding DocumentSourceTextLabel}" Margin="0,0,0,4" />
         <TextBox Text="{Binding NewDocumentSourceText, UpdateSourceTrigger=PropertyChanged}"
                  AcceptsReturn="True"
