@@ -31,7 +31,7 @@ This avoids large README rewrites while still reducing duplicate clones.
 
 ### Keep
 
-These are high-value references for AI Content Delivery Studio and should remain part of the project shelf:
+These are high-value references for AI Content Delivery Studio and should remain part of the active project shelf:
 
 - `openai-dotnet`
 - `openai-cookbook-selected`
@@ -48,14 +48,14 @@ These are high-value references for AI Content Delivery Studio and should remain
 - `SkiaSharp`
 - `playwright-dotnet`
 - `FlaUI`
-- `ComfyUI`
-- `InvokeAI`
-- `diffusers`
 
 ### Keep But Treat As Optional
 
 - `Prism`
 - `semantic-kernel`
+- `ComfyUI`
+- `InvokeAI`
+- `diffusers`
 - broader orchestration or workflow-graph references
 - heavyweight image workflow repositories outside immediate product needs
 
@@ -80,10 +80,12 @@ Future candidates if duplication actually appears:
 
 ### Add
 
-These references are worth adding when the corresponding engineering slices become active:
+These references are worth adding only when the corresponding engineering slices become active:
 
 - `Tesseract` or `OCRmyPDF`
   - when OCR or scanned-document hardening becomes a real near-term slice
+- `GROBID`
+  - when scholarly PDF extraction, citation parsing, or paper-figure evidence extraction becomes a real near-term slice
 - `WindowsAppSDK-Samples`
   - when package identity, app lifecycle, or future WinUI migration details need stronger code references
 
@@ -113,6 +115,19 @@ Each project shelf should keep:
 - its own explanation of why a repository matters for that product
 
 Shared base solves physical duplication. It does not replace project-specific meaning.
+
+## Active-Slice Rules
+
+The shelf should reflect the currently active engineering slices rather than the broadest possible future product boundary.
+
+- `core` references should support the repository's current verified paths, hard gates, or immediately active near-term slices.
+- `optional` references may stay in the shelf, but they should not appear as default implementation inputs in roadmap, task, or reference-basis guidance unless an active slice explicitly pulls them in.
+- new references should be added only when:
+  - the corresponding slice is in `ROADMAP.md -> Now` or `Next`
+  - the slice has a repo-owned spec or plan
+  - the repository would make a materially worse decision without the new reference
+
+This keeps the shelf aligned with execution reality instead of turning it into a general archive.
 
 ## Machine-Readable Governance
 

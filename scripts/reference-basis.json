@@ -281,6 +281,95 @@
         "queue-gallery-stage-composition",
         "module-boundary-change"
       ]
+    },
+    {
+      "name": "pack-and-policy-modeling",
+      "required": true,
+      "sourceRules": [
+        "src/ImageSeriesStudio.Core/Packs/",
+        "src/ImageSeriesStudio.Application/Packs/",
+        "src/ImageSeriesStudio.Core/Projects/ReviewRubricTemplates.cs",
+        "src/ImageSeriesStudio.Application/Artifacts/",
+        "src/ImageSeriesStudio.Application/Workflows/"
+      ],
+      "evidenceRules": [
+        "docs/ARCHITECTURE.md",
+        "docs/TARGET_ENGINEERING_STATE.md",
+        "docs/ROADMAP.md",
+        "docs/TASKS.md",
+        "docs/REFERENCE_BASIS.md",
+        "docs/superpowers/specs/",
+        "docs/superpowers/plans/"
+      ],
+      "localReferences": [
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet",
+          "kind": "official-toolkit-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/SkiaSharp",
+          "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/ai-content-delivery-studio/docs/research/REFERENCE_RESEARCH.md",
+          "kind": "repo-evidence",
+          "reuseLevel": "direct-pattern"
+        }
+      ],
+      "requiredTriggers": [
+        "pack-schema-contract",
+        "workflow-pack-boundary",
+        "industry-policy-shape",
+        "renderer-policy-shape",
+        "review-rubric-policy-shape",
+        "scenario-selection-contract"
+      ]
+    },
+    {
+      "name": "document-extraction-and-ocr",
+      "required": true,
+      "sourceRules": [
+        "src/ImageSeriesStudio.Core/Documents/",
+        "src/ImageSeriesStudio.Infrastructure/Sources/",
+        "src/ImageSeriesStudio.Infrastructure/Import/",
+        "src/ImageSeriesStudio.Application/Artifacts/",
+        "src/ImageSeriesStudio.Application/ToolAdapters/"
+      ],
+      "evidenceRules": [
+        "docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md",
+        "docs/REFERENCE_BASIS.md",
+        "docs/REFERENCE_EVIDENCE_POLICY.md",
+        "docs/ROADMAP.md",
+        "docs/TASKS.md",
+        "docs/superpowers/specs/",
+        "docs/superpowers/plans/"
+      ],
+      "localReferences": [
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown",
+          "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling",
+          "kind": "community-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig",
+          "kind": "community-source",
+          "reuseLevel": "direct-pattern"
+        }
+      ],
+      "requiredTriggers": [
+        "pdf-structure-extraction",
+        "docx-structure-extraction",
+        "ocr-introduction",
+        "citation-span-evidence",
+        "scholarly-figure-source-extraction"
+      ]
     }
   ]
 }

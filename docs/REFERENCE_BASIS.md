@@ -121,6 +121,28 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
   - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/ComfyUI` (kind: `community-source`; reuse: `inspiration-only`)
   - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/InvokeAI` (kind: `community-source`; reuse: `inspiration-only`)
 
+### `pack-and-policy-modeling`
+
+- `required`: `true`
+- Source rules: `src/ImageSeriesStudio.Core/Packs/`, `src/ImageSeriesStudio.Application/Packs/`, `src/ImageSeriesStudio.Core/Projects/ReviewRubricTemplates.cs`, `src/ImageSeriesStudio.Application/Artifacts/`, `src/ImageSeriesStudio.Application/Workflows/`
+- Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Required triggers: `pack-schema-contract`, `workflow-pack-boundary`, `industry-policy-shape`, `renderer-policy-shape`, `review-rubric-policy-shape`, `scenario-selection-contract`
+- Local references:
+  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet` (kind: `official-toolkit-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/SkiaSharp` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/ai-content-delivery-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
+
+### `document-extraction-and-ocr`
+
+- `required`: `true`
+- Source rules: `src/ImageSeriesStudio.Core/Documents/`, `src/ImageSeriesStudio.Infrastructure/Sources/`, `src/ImageSeriesStudio.Infrastructure/Import/`, `src/ImageSeriesStudio.Application/Artifacts/`, `src/ImageSeriesStudio.Application/ToolAdapters/`
+- Evidence rules: `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Required triggers: `pdf-structure-extraction`, `docx-structure-extraction`, `ocr-introduction`, `citation-span-evidence`, `scholarly-figure-source-extraction`
+- Local references:
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling` (kind: `community-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig` (kind: `community-source`; reuse: `direct-pattern`)
+
 <!-- END GENERATED REFERENCE BASIS SUMMARY -->
 
 ## Reference Areas
@@ -309,6 +331,73 @@ Must check references when:
 - changing `MainWindow.xaml` or `MainWindow.xaml.cs` shell data-context or navigation composition
 - promoting image-workflow UX ideas into reusable product architecture
 
+### `pack-and-policy-modeling`
+
+Source paths:
+
+- `src/ImageSeriesStudio.Core/Packs/`
+- `src/ImageSeriesStudio.Application/Packs/`
+- `src/ImageSeriesStudio.Core/Projects/ReviewRubricTemplates.cs`
+- `src/ImageSeriesStudio.Application/Artifacts/`
+- `src/ImageSeriesStudio.Application/Workflows/`
+
+Required local references:
+
+- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\CommunityToolkit-dotnet`
+- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\SkiaSharp`
+- `docs/research/REFERENCE_RESEARCH.md`
+
+Preferred official docs:
+
+- CommunityToolkit.Mvvm docs
+- WPF and .NET host documentation already used by this repository
+- OpenAI images and vision guide when pack policy affects review or deterministic-output expectations
+
+Reuse guidance:
+
+- `CommunityToolkit-dotnet`, `SkiaSharp`: `direct-pattern`
+- repository research and architecture docs: `direct-pattern`
+
+Must check references when:
+
+- changing pack schema contracts
+- changing workflow-pack or industry-pack metadata shape
+- introducing renderer-policy or review-rubric policy records
+- introducing scenario-selection or high-requirement policy propagation behavior
+
+### `document-extraction-and-ocr`
+
+Source paths:
+
+- `src/ImageSeriesStudio.Core/Documents/`
+- `src/ImageSeriesStudio.Infrastructure/Sources/`
+- `src/ImageSeriesStudio.Infrastructure/Import/`
+- `src/ImageSeriesStudio.Application/Artifacts/`
+- `src/ImageSeriesStudio.Application/ToolAdapters/`
+
+Required local references:
+
+- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\markitdown`
+- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\docling`
+- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\PdfPig`
+- `docs/research/REFERENCE_RESEARCH.md`
+
+Preferred official docs:
+
+- source and artifact support matrix
+- PDF/document extraction references already tracked by the repository
+
+Reuse guidance:
+
+- `markitdown`, `docling`, `PdfPig`: `direct-pattern`
+
+Must check references when:
+
+- introducing PDF or DOCX structure extraction
+- introducing OCR into the main product path
+- introducing citation-span or paper-figure source extraction
+- changing support-matrix promises for binary document inputs
+
 ## Current Code Review Findings That Should Drive Reference Use
 
 These repository areas especially benefit from stronger reference discipline:
@@ -339,6 +428,8 @@ Add or keep freshly added:
 
 - OCR references such as `Tesseract` or `OCRmyPDF`
   - only when scanned-document hardening becomes an active near-term slice
+- `GROBID`
+  - only when scholarly PDF extraction or paper-figure evidence extraction becomes an active near-term slice
 - `WindowsAppSDK-Samples`
   - only when package identity, lifecycle, or WinUI migration becomes active
 

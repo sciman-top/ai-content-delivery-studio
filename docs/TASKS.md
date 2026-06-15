@@ -72,7 +72,15 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add `aspire` as a code-level reference before the next OTLP or local dashboard observability slice.
 - [x] Add `SkiaSharp` reference-source coverage before the next deterministic composition expansion beyond the current poster proof path.
 - [ ] Add OCR reference coverage such as `Tesseract` or `OCRmyPDF` only when scanned-document hardening enters the active near-term roadmap.
+- [ ] Add scholarly PDF extraction references such as `GROBID` only when paper-figure evidence extraction enters the active near-term roadmap.
 - [x] Decide whether `Cockpit-Tools-Local-references` should gain a machine-readable manifest next.
+
+## Active Follow-Through Queue
+
+- [ ] Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
+- [ ] Add targeted binary extraction hardening only for formats promoted by the support matrix.
+- [ ] Add partial-image streaming UX only if a future workbench flow gains clear product value from progressive previews.
+- [ ] Add pack and policy modeling hardening only when a scenario-specific slice has a repo-owned spec and a bounded implementation plan.
 
 ## Frozen Until Post-V1
 
