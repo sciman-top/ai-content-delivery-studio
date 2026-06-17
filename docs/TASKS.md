@@ -103,8 +103,8 @@ These items are still valuable, but they are not the same thing as the current V
 
 - [x] Create .NET solution and projects.
 - [x] Add WPF app targeting `net10.0-windows`.
-- [x] Add `ImageSeriesStudio.Core` domain library.
-- [x] Add `ImageSeriesStudio.Infrastructure` library.
+- [x] Add `ContentDeliveryStudio.Core` domain library.
+- [x] Add `ContentDeliveryStudio.Infrastructure` library.
 - [x] Add test project.
 - [x] Define domain entities and state machines.
 - [x] Define provider contracts.
@@ -436,6 +436,6 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 - [x] Update WPF app title localization to `AI Content Delivery Studio` / `AI 内容交付工作台`.
 - [x] Post-V1: rename local root directory from `D:\CODE\ai-image-series-studio` to `D:\CODE\ai-content-delivery-studio` after confirming a clean worktree and no active tools depend on the old path.
 - [x] Post-V1: reopen the workspace from `D:\CODE\ai-content-delivery-studio` and verify `git status --short`.
-- [ ] Post-V1: rename solution, project folders, project names, assemblies, namespaces, tests, scripts, and publish output from `ImageSeriesStudio.*` to `ContentDeliveryStudio.*`.
-- [ ] Post-V1: preserve compatibility notes for existing workspaces, diagnostics packages, and historical documents that still mention `ImageSeriesStudio`.
-- [ ] Post-V1: run full rename gate: `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes`, and a targeted search for unintended old-name references.
+- [x] Post-V1: rename solution, project folders, project names, assemblies, namespaces, tests, scripts, and publish output from `ImageSeriesStudio.*` to `ContentDeliveryStudio.*`.
+- [x] Post-V1: preserve compatibility notes for existing workspaces, diagnostics packages, and historical documents that still mention `ImageSeriesStudio`.
+- [x] Post-V1: run full rename gate: `dotnet build`, `dotnet test`, `dotnet format --verify-no-changes`, and a targeted search for unintended old-name references.

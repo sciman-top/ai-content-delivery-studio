@@ -1,0 +1,44 @@
+<UserControl x:Class="ContentDeliveryStudio.App.Views.WorkbenchInspectorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:ContentDeliveryStudio.App.Views"
+             mc:Ignorable="d">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="16">
+            <TextBlock Text="{Binding InspectorTitle}" FontWeight="SemiBold" Margin="0,0,0,12" />
+            <TextBlock Text="{Binding InspectorSummary}" TextWrapping="Wrap" Foreground="#4B5563" />
+
+            <Separator Margin="0,18,0,14" />
+
+            <views:ProviderCenterPanelView />
+
+            <Separator Margin="0,12,0,14" />
+
+            <views:ProjectSetupPanelView />
+
+            <views:StyleRecipeInspectorPanelView />
+
+            <views:FakePlanningPanelView />
+
+            <Separator Margin="0,18,0,14" />
+
+            <views:DocumentIllustrationPanelView />
+
+            <Separator Margin="0,18,0,14" />
+
+            <views:PlanEditorPanelView Margin="0,0,0,14" />
+
+            <Separator Margin="0,18,0,14" />
+
+            <views:PromptEditorPanelView Margin="0,0,0,12" />
+
+            <Separator Margin="0,10,0,14" />
+
+            <views:ImageEditPanelView Margin="0,0,0,12" />
+
+            <views:ReviewApprovalPanelView />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

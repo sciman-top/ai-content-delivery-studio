@@ -154,8 +154,8 @@ You may borrow its writing discipline:
 
 Use this style mainly for public contracts in:
 
-- `src/ImageSeriesStudio.Core`
-- `src/ImageSeriesStudio.Application`
+- `src/ContentDeliveryStudio.Core`
+- `src/ContentDeliveryStudio.Application`
 - pack metadata
 - planning, review, and repair contracts
 

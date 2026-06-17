@@ -1,0 +1,40 @@
+<UserControl x:Class="ContentDeliveryStudio.App.Views.PlanEditorPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <StackPanel>
+        <TextBlock Text="{Binding PlanEditorTitle}" FontWeight="SemiBold" Margin="0,0,0,10" />
+        <TextBlock Text="{Binding SeriesTitleLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding NewSeriesTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+        <TextBlock Text="{Binding SeriesDescriptionLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding NewSeriesDescription, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+        <Button Content="{Binding CreateSeriesText}"
+                Command="{Binding CreateSeriesCommand}"
+                HorizontalAlignment="Stretch"
+                Margin="0,0,0,12" />
+
+        <TextBlock Text="{Binding AvailableSeriesTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <ListBox ItemsSource="{Binding Series}"
+                 SelectedItem="{Binding SelectedSeries, Mode=TwoWay}"
+                 DisplayMemberPath="Title"
+                 MinHeight="82"
+                 Margin="0,0,0,12" />
+
+        <TextBlock Text="{Binding ItemTitleLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding NewItemTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+        <TextBlock Text="{Binding ItemBriefLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding NewItemBrief, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+        <Button Content="{Binding AddItemText}"
+                Command="{Binding AddItemCommand}"
+                HorizontalAlignment="Stretch"
+                Margin="0,0,0,12" />
+
+        <TextBlock Text="{Binding SeriesItemsTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <ListBox ItemsSource="{Binding SeriesItems}"
+                 SelectedItem="{Binding SelectedSeriesItem, Mode=TwoWay}"
+                 DisplayMemberPath="Title"
+                 MinHeight="82" />
+    </StackPanel>
+</UserControl>

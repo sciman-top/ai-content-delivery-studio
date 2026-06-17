@@ -11,17 +11,17 @@ The target product is now AI Content Delivery Studio: a multimodal content deliv
 ## Target Solution Layout
 
 ```text
-ai-image-series-studio/              active checkout, pending medium-term rename to ai-content-delivery-studio
+ai-content-delivery-studio/              active checkout
   src/
-    ImageSeriesStudio.App/              WPF shell, views, view models
-    ImageSeriesStudio.Application/      use cases, localization, workflow orchestration
-    ImageSeriesStudio.Core/             domain model and provider-neutral contracts
-    ImageSeriesStudio.Infrastructure/   EF Core, filesystem, provider adapters
+    ContentDeliveryStudio.App/              WPF shell, views, view models
+    ContentDeliveryStudio.Application/      use cases, localization, workflow orchestration
+    ContentDeliveryStudio.Core/             domain model and provider-neutral contracts
+    ContentDeliveryStudio.Infrastructure/   EF Core, filesystem, provider adapters
       Extraction/                       file ingestion, OCR, document conversion adapters
       Rendering/                        deterministic image, PDF, DOCX, slide, and report rendering
       Tools/                            CLI/SDK/browser/desktop automation adapters
   tests/
-    ImageSeriesStudio.Tests/            unit and integration tests with fake providers
+    ContentDeliveryStudio.Tests/            unit and integration tests with fake providers
   docs/
     adr/
     research/
@@ -30,7 +30,7 @@ ai-image-series-studio/              active checkout, pending medium-term rename
   outputs/                              ignored generated outputs
 ```
 
-`ImageSeriesStudio` remains the internal solution and namespace root until the dedicated migration in ADR 0008 renames the local root, solution, project folders, assemblies, namespaces, scripts, and tests in a gated slice.
+`ContentDeliveryStudio` is now the active internal solution and namespace root. Historical `ImageSeriesStudio` text remains only in preserved evidence and compatibility notes described by ADR 0008.
 
 ## Logical Layers
 

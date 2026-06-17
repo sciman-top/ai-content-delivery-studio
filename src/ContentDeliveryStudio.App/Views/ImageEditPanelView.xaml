@@ -1,0 +1,28 @@
+<UserControl x:Class="ContentDeliveryStudio.App.Views.ImageEditPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <StackPanel>
+        <TextBlock Text="{Binding ImageEditTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
+        <TextBlock Text="{Binding SelectedCandidateLabel}" Margin="0,0,0,4" />
+        <TextBlock Text="{Binding SelectedCandidateSummary}"
+                   TextWrapping="Wrap"
+                   Foreground="#4B5563"
+                   Margin="0,0,0,8" />
+        <TextBlock Text="{Binding ImageEditPromptLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding NewImageEditPrompt, UpdateSourceTrigger=PropertyChanged}"
+                 AcceptsReturn="True"
+                 TextWrapping="Wrap"
+                 MinHeight="76"
+                 Margin="0,0,0,6" />
+        <TextBlock Text="{Binding ImageEditMaskPathLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding NewImageEditMaskPath, UpdateSourceTrigger=PropertyChanged}"
+                 TextWrapping="NoWrap"
+                 Margin="0,0,0,8" />
+        <Button Content="{Binding RunFakeImageEditText}"
+                Command="{Binding RunFakeImageEditCommand}"
+                HorizontalAlignment="Stretch" />
+    </StackPanel>
+</UserControl>

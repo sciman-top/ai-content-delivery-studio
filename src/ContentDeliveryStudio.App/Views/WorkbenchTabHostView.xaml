@@ -1,0 +1,71 @@
+<UserControl x:Class="ContentDeliveryStudio.App.Views.WorkbenchTabHostView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:views="clr-namespace:ContentDeliveryStudio.App.Views"
+             mc:Ignorable="d">
+    <TabControl Margin="12" ItemsSource="{Binding WorkbenchTabs}">
+        <TabControl.ItemTemplate>
+            <DataTemplate>
+                <TextBlock Text="{Binding Title}" />
+            </DataTemplate>
+        </TabControl.ItemTemplate>
+        <TabControl.ContentTemplate>
+            <DataTemplate>
+                <Grid Margin="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock Text="{Binding Title}" FontSize="20" FontWeight="SemiBold" />
+                    <TextBlock Grid.Row="1"
+                               Text="{Binding EmptyState}"
+                               Foreground="#5E6978"
+                               Margin="0,14,0,0"
+                               TextWrapping="Wrap">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsBrief}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsPlan}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsPrompts}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsQueue}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsGallery}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsReview}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsDelivery}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsGraph}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                    <views:BriefWorkflowView Grid.Row="1" Margin="0,16,0,0" />
+                    <views:PlanView Grid.Row="1" Margin="0,16,0,0" />
+                    <views:PromptsView Grid.Row="1" Margin="0,16,0,0" />
+                    <views:QueueView Grid.Row="1" Margin="0,16,0,0" />
+                    <views:GalleryView Grid.Row="1" Margin="0,16,0,0" />
+                    <views:ReviewView Grid.Row="1" Margin="0,16,0,0" />
+                    <views:DeliveryView Grid.Row="1" Margin="0,16,0,0" />
+                    <views:WorkflowGraphView Grid.Row="1" Margin="0,16,0,0" />
+                </Grid>
+            </DataTemplate>
+        </TabControl.ContentTemplate>
+    </TabControl>
+</UserControl>

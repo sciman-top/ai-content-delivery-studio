@@ -1,0 +1,65 @@
+<Window x:Class="ContentDeliveryStudio.App.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:views="clr-namespace:ContentDeliveryStudio.App.Views"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="{Binding AppTitle}"
+        Height="760"
+        Width="1180"
+        MinHeight="640"
+        MinWidth="980"
+        Background="#F6F7F9">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="52" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="112" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="180" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="280" />
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.Row="0" Grid.ColumnSpan="3" Background="#20242B" Padding="16,0">
+            <DockPanel LastChildFill="True">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LanguageLabel}"
+                               Foreground="#B8C7D9"
+                               VerticalAlignment="Center"
+                               Margin="0,0,8,0" />
+                    <ComboBox ItemsSource="{Binding LanguageOptions}"
+                              SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
+                              DisplayMemberPath="DisplayName"
+                              MinWidth="112"
+                              Height="28"
+                              Margin="0,0,16,0" />
+                    <TextBlock Text="{Binding ProviderMode}"
+                               Foreground="#B8C7D9"
+                               VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Text="{Binding AppTitle}"
+                           Foreground="#FFFFFF"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
+        <Border Grid.Row="1" Grid.Column="0" Background="#FFFFFF" BorderBrush="#D9DEE8" BorderThickness="0,0,1,0">
+            <views:WorkspaceNavigationView />
+        </Border>
+
+        <views:WorkbenchTabHostView Grid.Row="1" Grid.Column="1" />
+
+        <Border Grid.Row="1" Grid.Column="2" Background="#FFFFFF" BorderBrush="#D9DEE8" BorderThickness="1,0,0,0">
+            <views:WorkbenchInspectorView />
+        </Border>
+
+        <Border Grid.Row="2" Grid.ColumnSpan="3" Background="#FFFFFF" BorderBrush="#D9DEE8" BorderThickness="0,1,0,0">
+            <views:ActivityPanelView />
+        </Border>
+    </Grid>
+</Window>

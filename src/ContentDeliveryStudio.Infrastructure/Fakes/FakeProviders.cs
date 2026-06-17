@@ -1,0 +1,627 @@
+using System.Text.Json;
+using ContentDeliveryStudio.Core.Documents;
+using ContentDeliveryStudio.Core.Projects;
+using ContentDeliveryStudio.Core.Providers;
+using ContentDeliveryStudio.Core.Styles;
+
+namespace ContentDeliveryStudio.Infrastructure.Fakes;
+
+public sealed class FakeTextPlanningProvider : ITextPlanningProvider
+{
+    public IProviderCapabilities Capabilities { get; } = new ProviderCapabilities(
+        "fake-text",
+        "Fake Text Planning Provider",
+        ["fake-plan-v1"],
+        SupportsTextPlanning: true,
+        SupportsImageGeneration: false,
+        SupportsVisionReview: false,
+        SupportsImageEditing: false,
+        SupportsStreaming: false);
+
+    public Task<SeriesPlanResult> CreatePlanAsync(PlanningRequest request, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var count = Math.Max(1, request.ItemCount);
+        var items = Enumerable.Range(1, count)
+            .Select(index => new SeriesPlanItem(
+                $"Image {index:00}",
+                $"For {request.Audience}: {request.Goal}",
+                $"Create image {index:00} for {request.Goal}. Style: {request.StyleBrief}".Trim()))
+            .ToArray();
+
+        var result = new SeriesPlanResult(
+            $"Fake plan for {request.Goal} with {count} item(s).",
+            items,
+            "fake-text-plan");
+
+        return Task.FromResult(result);
+    }
+
+    public Task<BriefPlanningResult> CreatePromptDirectionsAsync(
+        BriefPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var count = Math.Clamp(request.DirectionCount, 1, 4);
+        var templates = new[]
+        {
+            new
+            {
+                Key = "conservative",
+                Name = "Conservative faithful",
+                Use = "Safest match to the brief.",
+                Strength = "High requirement match.",
+                Risk = "Less visually dramatic.",
+            },
+            new
+            {
+                Key = "visual-impact",
+                Name = "Visual impact",
+                Use = "Stronger composition and contrast.",
+                Strength = "More engaging first impression.",
+                Risk = "May need closer factual review.",
+            },
+            new
+            {
+                Key = "minimal-clean",
+                Name = "Minimal clean",
+                Use = "Low visual noise and easy review.",
+                Strength = "Good for text composition.",
+                Risk = "May feel plain.",
+            },
+            new
+            {
+                Key = "experimental",
+                Name = "Experimental alternate",
+                Use = "Explores a less obvious direction.",
+                Strength = "Can reveal a stronger style.",
+                Risk = "Higher mismatch risk.",
+            },
+        };
+
+        var directions = templates
+            .Take(count)
+            .Select(template => new PromptDirectionDraft(
+                template.Key,
+                template.Name,
+                template.Use,
+                $"Create {request.Goal} for {request.Audience}. Style: {request.StyleIntent}. Include: {string.Join(", ", request.MustInclude)}.",
+                $"Avoid: {string.Join(", ", request.MustAvoid)}.",
+                template.Strength,
+                template.Risk,
+                CreateRecommendation(request, template.Key)))
+            .ToArray();
+
+        return Task.FromResult(new BriefPlanningResult(
+            directions,
+            ["Use draft generation before final quality."],
+            ["Confirm whether final text should be composed in app."],
+            "fake-text-brief"));
+    }
+
+    public Task<BlueprintPlanningResult> CreateDesignBlueprintsAsync(
+        BlueprintPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var count = Math.Clamp(request.CandidateCount, 1, 4);
+        var blueprints = GetBlueprintTemplates()
+            .OrderByDescending(template => ScoreBlueprintTemplate(template, request.Goal))
+            .ThenBy(template => template.Key, StringComparer.OrdinalIgnoreCase)
+            .Take(count)
+            .Select(template => new DesignBlueprintDraft(
+                template.Key,
+                template.DisplayName,
+                template.Category,
+                $"Fake blueprint for {request.Goal}: {template.Summary}",
+                $"{template.IntendedUse} Audience: {request.Audience}.",
+                template.MinimumRecommendedItemCount,
+                template.MaximumRecommendedItemCount,
+                template.SupportsPanelSequence,
+                request.TextPolicy,
+                template.DefaultReviewRubricTemplateId,
+                BuildConsistencyRules(request, template),
+                BuildVariationRules(request, template),
+                BuildRiskNotes(request, template)))
+            .ToArray();
+
+        return Task.FromResult(new BlueprintPlanningResult(
+            blueprints,
+            ["Compare at least two blueprint routes before spending on generation."],
+            ["Does this series need standalone items or a panel-style progression?"],
+            "fake-text-blueprint"));
+    }
+
+    private static PromptDirectionRecommendation CreateRecommendation(
+        BriefPlanningRequest request,
+        string directionKey)
+    {
+        var presetId = SelectPresetId(request.Goal);
+        var preset = ImageTypePresetCatalog.GetById(presetId);
+        var textPolicy = request.TextPolicy is ImageTextPolicy.ImageModelOnly
+            ? preset.TextPolicy
+            : request.TextPolicy;
+        var (width, height) = GetDefaultSize(preset.DefaultAspectRatio);
+
+        return PromptDirectionRecommendation.Create(
+            preset.Id,
+            textPolicy,
+            request.StyleIntent,
+            preset.DefaultAspectRatio,
+            width,
+            height,
+            preset.DefaultQualityBand,
+            preset.DefaultOutputFormat,
+            preset.DefaultBackgroundMode,
+            preset.ReviewRubricTemplateId,
+            draftCount: 2,
+            finalCount: 1,
+            $"Fake recommendation selected {preset.DisplayName} for {request.Goal}. Direction: {directionKey}.",
+            confidence: directionKey.Equals("experimental", StringComparison.OrdinalIgnoreCase) ? 0.68 : 0.84,
+            ["fake provider warning: verify real provider capabilities before generation"],
+            [$"Refine style intent before final generation: {request.StyleIntent}".Trim()]);
+    }
+
+    private static string SelectPresetId(string goal)
+    {
+        if (goal.Contains("poster", StringComparison.OrdinalIgnoreCase))
+        {
+            return ImageTypePresetCatalog.EducationalPoster;
+        }
+
+        if (goal.Contains("cover", StringComparison.OrdinalIgnoreCase))
+        {
+            return ImageTypePresetCatalog.ArticleCover;
+        }
+
+        if (goal.Contains("diagram", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("concept", StringComparison.OrdinalIgnoreCase))
+        {
+            return ImageTypePresetCatalog.ConceptDiagram;
+        }
+
+        if (goal.Contains("social", StringComparison.OrdinalIgnoreCase)
+            || goal.Contains("square", StringComparison.OrdinalIgnoreCase))
+        {
+            return ImageTypePresetCatalog.SocialSquare;
+        }
+
+        return ImageTypePresetCatalog.ArticleInlineIllustration;
+    }
+
+    private static (int Width, int Height) GetDefaultSize(AspectRatio aspectRatio)
+    {
+        if (aspectRatio.WidthUnits == aspectRatio.HeightUnits)
+        {
+            return (1024, 1024);
+        }
+
+        return aspectRatio.WidthUnits > aspectRatio.HeightUnits
+            ? (1536, 1024)
+            : (1024, 1280);
+    }
+
+    private static IReadOnlyList<BlueprintTemplate> GetBlueprintTemplates()
+    {
+        return
+        [
+            new BlueprintTemplate(
+                "poster-series",
+                "Poster series",
+                "poster_series",
+                "Use a stable poster route with one teaching objective per item.",
+                "Best for classroom or educational poster sets.",
+                3,
+                6,
+                false,
+                ReviewRubricTemplateCatalog.TextHeavyPoster),
+            new BlueprintTemplate(
+                "article-illustration-pack",
+                "Article illustration pack",
+                "article_illustration_pack",
+                "Use a document-backed editorial route with consistent visual hierarchy.",
+                "Best for articles, reports, and editorial explainers.",
+                3,
+                8,
+                false,
+                ReviewRubricTemplateCatalog.EditorialIllustration),
+            new BlueprintTemplate(
+                "concept-explainer-sequence",
+                "Concept explainer sequence",
+                "concept_explainer_sequence",
+                "Use a progressive concept route that introduces one relation per image.",
+                "Best for diagrams, concept teaching, and explanation-first series.",
+                2,
+                5,
+                false,
+                ReviewRubricTemplateCatalog.EducationalAccuracy),
+            new BlueprintTemplate(
+                "panel-narrative-sequence",
+                "Panel narrative sequence",
+                "panel_narrative_sequence",
+                "Use a scene-to-scene route where each panel advances the narrative.",
+                "Best for story-like, sequential, or storyboard-adjacent image packs.",
+                4,
+                8,
+                true,
+                ReviewRubricTemplateCatalog.SeriesConsistency),
+        ];
+    }
+
+    private static int ScoreBlueprintTemplate(BlueprintTemplate template, string goal)
+    {
+        var score = 0;
+
+        if (goal.Contains("poster", StringComparison.OrdinalIgnoreCase)
+            && template.Key.Equals("poster-series", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 10;
+        }
+
+        if ((goal.Contains("article", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("editorial", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("illustration", StringComparison.OrdinalIgnoreCase))
+            && template.Key.Equals("article-illustration-pack", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 10;
+        }
+
+        if ((goal.Contains("concept", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("diagram", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("teach", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("explain", StringComparison.OrdinalIgnoreCase))
+            && template.Key.Equals("concept-explainer-sequence", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 10;
+        }
+
+        if ((goal.Contains("panel", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("story", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("sequence", StringComparison.OrdinalIgnoreCase)
+                || goal.Contains("comic", StringComparison.OrdinalIgnoreCase))
+            && template.Key.Equals("panel-narrative-sequence", StringComparison.OrdinalIgnoreCase))
+        {
+            score += 10;
+        }
+
+        return score;
+    }
+
+    private static IReadOnlyList<string> BuildConsistencyRules(
+        BlueprintPlanningRequest request,
+        BlueprintTemplate template)
+    {
+        var mustInclude = request.MustInclude.Count > 0
+            ? $"Carry these required anchors across the route: {string.Join(", ", request.MustInclude)}."
+            : "Carry the same high-level visual grammar across the route.";
+
+        return
+        [
+            $"Style anchor: {EnsureText(request.StyleIntent, "keep the route visually coherent")}.",
+            mustInclude,
+            template.SupportsPanelSequence
+                ? "Keep recurring subjects readable from panel to panel."
+                : "Keep the same visual system readable from item to item.",
+        ];
+    }
+
+    private static IReadOnlyList<string> BuildVariationRules(
+        BlueprintPlanningRequest request,
+        BlueprintTemplate template)
+    {
+        var primaryRule = template.SupportsPanelSequence
+            ? "Advance the scene or action in each panel without resetting continuity."
+            : "Change the focal message in each item without losing route coherence.";
+
+        return
+        [
+            primaryRule,
+            $"Audience emphasis: {EnsureText(request.Audience, "general audience")}.",
+        ];
+    }
+
+    private static IReadOnlyList<string> BuildRiskNotes(
+        BlueprintPlanningRequest request,
+        BlueprintTemplate template)
+    {
+        var risks = new List<string>
+        {
+            "Fake provider output still needs human route review before prompt generation.",
+            template.SupportsPanelSequence
+                ? "Panel rhythm may need manual adjustment after promotion."
+                : "Item count and grouping may need manual adjustment after promotion.",
+        };
+
+        risks.AddRange(request.MustAvoid.Select(value => $"Avoid: {value}."));
+        return risks;
+    }
+
+    public Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanAsync(
+        DocumentIllustrationPlanningRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var createdAt = DateTimeOffset.UtcNow;
+        var title = EnsureText(request.Title, "Untitled document");
+        var sourceText = EnsureText(request.SourceText, "No source text supplied.");
+        var keyClaims = Normalize(request.KeyClaims);
+        var evidence = keyClaims.Count > 0 ? keyClaims : [sourceText];
+        var projectId = Guid.NewGuid();
+        var brief = DocumentBrief.Create(
+            projectId,
+            DocumentSourceKind.Paste,
+            $"{title}.txt",
+            title,
+            request.DocumentFamily,
+            EnsureText(request.Audience, "general audience"),
+            Normalize(request.Sections),
+            keyClaims,
+            evidence.Select(claim => $"Visualize: {claim}").ToArray(),
+            Normalize(request.KnownConstraints),
+            request.StrictnessLevel,
+            createdAt);
+
+        var target = request.StrictnessLevel == IllustrationStrictnessLevel.ScholarlyDraft
+            ? IllustrationTarget.Create(
+                brief.Id,
+                $"Graphical abstract for {title}",
+                FirstOrDefault(brief.Sections, "Document overview"),
+                IllustrationPurpose.GraphicalAbstract,
+                evidence,
+                [
+                    "real experimental evidence imagery",
+                    "fake experimental evidence imagery",
+                    "fabricated lab data",
+                ],
+                evidence,
+                ImageTypePresetCatalog.GraphicalAbstract,
+                ReviewRubricTemplateCatalog.ScholarlySchematic,
+                ImageTextPolicy.DeterministicPostRender,
+                ["Keep every visual claim traceable to supplied source evidence."],
+                createdAt)
+            : IllustrationTarget.Create(
+                brief.Id,
+                $"Concept diagram for {title}",
+                FirstOrDefault(brief.Sections, "Document overview"),
+                IllustrationPurpose.ConceptDiagram,
+                evidence,
+                brief.KnownConstraints,
+                evidence,
+                ImageTypePresetCatalog.ConceptDiagram,
+                ReviewRubricTemplateCatalog.EducationalAccuracy,
+                ImageTextPolicy.DeterministicPostRender,
+                ["Use deterministic post-render text for labels and explanatory callouts."],
+                createdAt);
+
+        var plan = IllustrationPlan.Create(
+            brief.ProjectId,
+            brief.Id,
+            $"Fake document illustration plan for {title}.",
+            [target],
+            ["Fake provider created one source-grounded illustration target."],
+            brief.KnownConstraints,
+            createdAt);
+
+        return Task.FromResult(new DocumentIllustrationPlanningResult(brief, plan, "fake-document-plan"));
+    }
+
+    private static IReadOnlyList<string> Normalize(IReadOnlyList<string> values)
+    {
+        return values
+            .Select(value => value?.Trim() ?? string.Empty)
+            .Where(value => value.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+    }
+
+    private static string EnsureText(string value, string fallback)
+    {
+        return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static string FirstOrDefault(IReadOnlyList<string> values, string fallback)
+    {
+        return values.Count > 0 ? values[0] : fallback;
+    }
+
+    private sealed record BlueprintTemplate(
+        string Key,
+        string DisplayName,
+        string Category,
+        string Summary,
+        string IntendedUse,
+        int MinimumRecommendedItemCount,
+        int MaximumRecommendedItemCount,
+        bool SupportsPanelSequence,
+        string DefaultReviewRubricTemplateId);
+}
+
+public sealed class FakeImageGenerationProvider : IImageGenerationProvider, IImageEditProvider
+{
+    private static readonly JsonSerializerOptions MetadataJsonOptions = new() { WriteIndented = true };
+
+    private static readonly byte[] PlaceholderPng = Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
+
+    public IProviderCapabilities Capabilities { get; } = new ProviderCapabilities(
+        "fake-image",
+        "Fake Image Generation Provider",
+        ["fake-image-v1"],
+        SupportsTextPlanning: false,
+        SupportsImageGeneration: true,
+        SupportsVisionReview: false,
+        SupportsImageEditing: true,
+        SupportsStreaming: false,
+        supportedSizes: [new ImageOutputSize(512, 512), new ImageOutputSize(1024, 1024)],
+        supportedQualities: ["draft", "standard"],
+        supportedOutputFormats: ["png"],
+        supportedBackgroundModes: ["auto", "opaque"],
+        supportsReferenceImages: true,
+        costHints: [new ProviderCostHint("fake-image-v1", "free")]);
+
+    public async Task<ImageGenerationResult> GenerateImageAsync(
+        ImageGenerationRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        Directory.CreateDirectory(request.OutputDirectory);
+
+        var fileName = EnsurePngFileName(
+            string.IsNullOrWhiteSpace(request.OutputFileName)
+                ? $"{request.SeriesItemId:N}-{request.PromptVersionId:N}.png"
+                : Path.GetFileName(request.OutputFileName));
+
+        var assetPath = Path.Combine(request.OutputDirectory, fileName);
+        var metadataPath = Path.ChangeExtension(assetPath, ".json");
+        var generatedAt = DateTimeOffset.UtcNow;
+
+        await File.WriteAllBytesAsync(assetPath, PlaceholderPng, cancellationToken);
+
+        var metadata = new
+        {
+            providerId = Capabilities.ProviderId,
+            seriesItemId = request.SeriesItemId,
+            promptVersionId = request.PromptVersionId,
+            promptText = request.PromptText,
+            settings = new
+            {
+                width = request.Settings.Width,
+                height = request.Settings.Height,
+                quality = request.Settings.Quality,
+                outputFormat = request.Settings.OutputFormat,
+                seed = request.Settings.Seed,
+            },
+            generatedAt,
+        };
+
+        await File.WriteAllTextAsync(
+            metadataPath,
+            JsonSerializer.Serialize(metadata, MetadataJsonOptions),
+            cancellationToken);
+
+        return new ImageGenerationResult(
+            Guid.NewGuid(),
+            assetPath,
+            metadataPath,
+            "fake-image-generate",
+            generatedAt);
+    }
+
+    public async Task<ImageGenerationResult> EditImageAsync(
+        ImageEditRequest request,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        if (!File.Exists(request.SourceImagePath))
+        {
+            throw new FileNotFoundException("Source image file does not exist.", request.SourceImagePath);
+        }
+
+        if (request.IsMaskEdit && !File.Exists(request.MaskImagePath))
+        {
+            throw new FileNotFoundException("Mask image file does not exist.", request.MaskImagePath);
+        }
+
+        Directory.CreateDirectory(request.OutputDirectory);
+        var fileName = EnsurePngFileName(
+            string.IsNullOrWhiteSpace(request.OutputFileName)
+                ? $"{request.SeriesItemId:N}-{request.SourceCandidateImageId:N}-edit.png"
+                : Path.GetFileName(request.OutputFileName));
+        var assetPath = Path.Combine(request.OutputDirectory, fileName);
+        var metadataPath = Path.ChangeExtension(assetPath, ".json");
+        var generatedAt = DateTimeOffset.UtcNow;
+
+        await File.WriteAllBytesAsync(assetPath, PlaceholderPng, cancellationToken);
+
+        var metadata = new
+        {
+            providerId = Capabilities.ProviderId,
+            editMode = request.IsMaskEdit ? "mask-edit" : "image-edit",
+            seriesItemId = request.SeriesItemId,
+            sourceCandidateId = request.SourceCandidateImageId,
+            sourceImagePath = request.SourceImagePath,
+            maskImagePath = request.MaskImagePath,
+            promptText = request.PromptText,
+            settings = new
+            {
+                width = request.Settings.Width,
+                height = request.Settings.Height,
+                quality = request.Settings.Quality,
+                outputFormat = request.Settings.OutputFormat,
+                seed = request.Settings.Seed,
+            },
+            generatedAt,
+        };
+
+        await File.WriteAllTextAsync(
+            metadataPath,
+            JsonSerializer.Serialize(metadata, MetadataJsonOptions),
+            cancellationToken);
+
+        return new ImageGenerationResult(
+            Guid.NewGuid(),
+            assetPath,
+            metadataPath,
+            "fake-image-edit",
+            generatedAt);
+    }
+
+    private static string EnsurePngFileName(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+        {
+            fileName = "fake-image.png";
+        }
+
+        return Path.GetExtension(fileName).Equals(".png", StringComparison.OrdinalIgnoreCase)
+            ? fileName
+            : $"{fileName}.png";
+    }
+}
+
+public sealed class FakeVisionReviewProvider : IVisionReviewProvider
+{
+    private readonly bool _defaultPasses;
+
+    public FakeVisionReviewProvider(bool defaultPasses = true)
+    {
+        _defaultPasses = defaultPasses;
+    }
+
+    public IProviderCapabilities Capabilities { get; } = new ProviderCapabilities(
+        "fake-vision",
+        "Fake Vision Review Provider",
+        ["fake-vision-v1"],
+        SupportsTextPlanning: false,
+        SupportsImageGeneration: false,
+        SupportsVisionReview: true,
+        SupportsImageEditing: false,
+        SupportsStreaming: false);
+
+    public Task<VisionReviewResult> ReviewAsync(VisionReviewRequest request, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var decision = _defaultPasses ? ReviewDecision.Pass : ReviewDecision.Fail;
+        var hardFailures = _defaultPasses ? Array.Empty<string>() : ["fake-review-failed"];
+        var scores = request.Rubric.Dimensions.ToDictionary(
+            dimension => dimension.Name,
+            _ => _defaultPasses ? 5 : 1);
+
+        var result = new VisionReviewResult(
+            request.CandidateImageId,
+            decision,
+            scores,
+            hardFailures,
+            _defaultPasses ? "Fake review passed." : "Fake review failed by configuration.",
+            _defaultPasses ? null : "Revise the prompt or regenerate the candidate.");
+
+        return Task.FromResult(result);
+    }
+}

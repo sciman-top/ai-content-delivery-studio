@@ -87,7 +87,6 @@ The current recorded answer is "yes" for the `2026-06-11` snapshot in [V1_LAUNCH
 
 - Reuse the text-planning low-502 execution policy if future real-provider brief or blueprint planning moves beyond the current fake-first boundary.
 - Extend Responses image workflows only when a route gains meaningful provenance, revision, or preview value beyond the current opt-in stateful path.
-- Add targeted binary extraction hardening for the support-matrix-approved `pdf` / `docx` text extraction slice only; keep OCR, scanned documents, and other office/PDF formats post-V1.
 - Add pack and policy modeling hardening only when a scenario-specific slice has a repo-owned spec and a bounded implementation plan.
 - Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
 - Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.
@@ -379,7 +378,7 @@ Exit gate:
 
 Goal: align product-facing naming, local repository identity, and code namespace with the multimodal content delivery end state without breaking existing workspaces or active tools.
 
-Status: started with ADR 0008 and product-facing title updates. The active checkout now lives at `D:\CODE\ai-content-delivery-studio`; the remaining rename work is the later solution/namespace/mechanical migration.
+Status: repository-side mechanical rename is landing in the current slice. The local root already lives at `D:\CODE\ai-content-delivery-studio`; the remaining truth boundary after implementation is fresh gate verification plus confirming that only historical or compatibility old-name references remain.
 
 Deliverables:
 
@@ -423,7 +422,7 @@ Deliverables:
 - Versioned workflow, blueprint, industry, renderer, and review packs.
 - First-class source assets, extracted content, evidence anchors, output artifacts, and artifact packages.
 - Review, repair, and operator automation with risk-aware approval and audit records.
-- Product/repository identity aligned to `AI Content Delivery Studio` / `ai-content-delivery-studio`, with `ImageSeriesStudio` kept only as documented historical or compatibility text.
+- Product/repository identity aligned to `AI Content Delivery Studio` / `ai-content-delivery-studio`, with `ContentDeliveryStudio` kept only as documented historical or compatibility text.
 - Provider plugin boundary with capability discovery and contract tests.
 - Localized prompt templates, review reports, delivery manifests, and user guide.
 - Deterministic text composition for text-heavy educational and document-oriented visuals.

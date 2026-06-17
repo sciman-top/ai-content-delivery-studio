@@ -1,0 +1,60 @@
+<UserControl x:Class="ContentDeliveryStudio.App.Views.PromptRowsListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             mc:Ignorable="d">
+    <Border BorderBrush="#D4DAE5" BorderThickness="1,0,1,1">
+        <Border.Style>
+            <Style TargetType="Border">
+                <Setter Property="Visibility" Value="Collapsed" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding DataContext.HasPromptRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                        <Setter Property="Visibility" Value="Visible" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </Border.Style>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding DataContext.PromptRows, RelativeSource={RelativeSource AncestorType=TabControl}}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="90" />
+                                    <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="2.4*" />
+                                    <ColumnDefinition Width="150" />
+                                    <ColumnDefinition Width="130" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding Version}"
+                                           FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding ItemTitle}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="10,0,0,0" />
+                                <TextBlock Grid.Column="2"
+                                           Text="{Binding PromptText}"
+                                           TextWrapping="Wrap"
+                                           Foreground="#4B5563"
+                                           Margin="10,0,0,0" />
+                                <TextBlock Grid.Column="3"
+                                           Text="{Binding SettingsSummary}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="#4B5563"
+                                           Margin="10,0,0,0" />
+                                <TextBlock Grid.Column="4"
+                                           Text="{Binding CreatedAt}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Foreground="#4B5563"
+                                           Margin="10,0,0,0" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Border>
+</UserControl>

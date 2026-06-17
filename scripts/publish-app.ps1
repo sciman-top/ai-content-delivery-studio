@@ -16,10 +16,10 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')
-$projectPath = Join-Path $repoRoot 'src/ImageSeriesStudio.App/ImageSeriesStudio.App.csproj'
+$projectPath = Join-Path $repoRoot 'src/ContentDeliveryStudio.App/ContentDeliveryStudio.App.csproj'
 
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
-    $OutputDirectory = Join-Path $repoRoot "publish/ImageSeriesStudio.App-$Runtime-$Configuration"
+    $OutputDirectory = Join-Path $repoRoot "publish/ContentDeliveryStudio.App-$Runtime-$Configuration"
 }
 
 $resolvedOutputParent = Split-Path -Parent $OutputDirectory

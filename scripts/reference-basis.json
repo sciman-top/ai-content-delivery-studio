@@ -6,8 +6,8 @@
       "name": "openai-provider",
       "required": true,
       "sourceRules": [
-        "src/ImageSeriesStudio.Infrastructure/OpenAI/",
-        "src/ImageSeriesStudio.Core/Providers/"
+        "src/ContentDeliveryStudio.Infrastructure/OpenAI/",
+        "src/ContentDeliveryStudio.Core/Providers/"
       ],
       "evidenceRules": [
         "docs/research/REFERENCE_RESEARCH.md",
@@ -48,11 +48,11 @@
       "name": "host-and-observability",
       "required": true,
       "sourceRules": [
-        "src/ImageSeriesStudio.App/App.xaml.cs",
-        "src/ImageSeriesStudio.App/Telemetry/",
-        "src/ImageSeriesStudio.App/Services/ProviderCenterServices.cs",
-        "src/ImageSeriesStudio.App/Properties/launchSettings.json",
-        "src/ImageSeriesStudio.Infrastructure/Diagnostics/"
+        "src/ContentDeliveryStudio.App/App.xaml.cs",
+        "src/ContentDeliveryStudio.App/Telemetry/",
+        "src/ContentDeliveryStudio.App/Services/ProviderCenterServices.cs",
+        "src/ContentDeliveryStudio.App/Properties/launchSettings.json",
+        "src/ContentDeliveryStudio.Infrastructure/Diagnostics/"
       ],
       "evidenceRules": [
         "docs/research/REFERENCE_RESEARCH.md",
@@ -109,12 +109,12 @@
       "name": "persistence-and-schema",
       "required": true,
       "sourceRules": [
-        "src/ImageSeriesStudio.Infrastructure/Persistence/",
-        "src/ImageSeriesStudio.Core/Projects/",
-        "src/ImageSeriesStudio.Core/Artifacts/",
-        "src/ImageSeriesStudio.Core/Sources/",
-        "src/ImageSeriesStudio.Core/Documents/",
-        "src/ImageSeriesStudio.Core/Packs/"
+        "src/ContentDeliveryStudio.Infrastructure/Persistence/",
+        "src/ContentDeliveryStudio.Core/Projects/",
+        "src/ContentDeliveryStudio.Core/Artifacts/",
+        "src/ContentDeliveryStudio.Core/Sources/",
+        "src/ContentDeliveryStudio.Core/Documents/",
+        "src/ContentDeliveryStudio.Core/Packs/"
       ],
       "evidenceRules": [
         "docs/research/REFERENCE_RESEARCH.md",
@@ -149,13 +149,13 @@
       "name": "tooling-and-operator",
       "required": true,
       "sourceRules": [
-        "src/ImageSeriesStudio.Application/ToolAdapters/",
-        "src/ImageSeriesStudio.Infrastructure/ToolAdapters/",
-        "src/ImageSeriesStudio.Core/Operators/",
-        "src/ImageSeriesStudio.Infrastructure/Composition/",
-        "src/ImageSeriesStudio.Infrastructure/Delivery/",
-        "src/ImageSeriesStudio.Infrastructure/Import/",
-        "src/ImageSeriesStudio.Infrastructure/Sources/"
+        "src/ContentDeliveryStudio.Application/ToolAdapters/",
+        "src/ContentDeliveryStudio.Infrastructure/ToolAdapters/",
+        "src/ContentDeliveryStudio.Core/Operators/",
+        "src/ContentDeliveryStudio.Infrastructure/Composition/",
+        "src/ContentDeliveryStudio.Infrastructure/Delivery/",
+        "src/ContentDeliveryStudio.Infrastructure/Import/",
+        "src/ContentDeliveryStudio.Infrastructure/Sources/"
       ],
       "evidenceRules": [
         "docs/research/REFERENCE_RESEARCH.md",
@@ -232,12 +232,12 @@
       "name": "workflow-and-ux-architecture",
       "required": true,
       "sourceRules": [
-        "src/ImageSeriesStudio.App/MainWindow.xaml",
-        "src/ImageSeriesStudio.App/MainWindow.xaml.cs",
-        "src/ImageSeriesStudio.App/ViewModels/",
-        "src/ImageSeriesStudio.App/Views/",
-        "src/ImageSeriesStudio.Application/Modules/",
-        "src/ImageSeriesStudio.Application/Workflows/"
+        "src/ContentDeliveryStudio.App/MainWindow.xaml",
+        "src/ContentDeliveryStudio.App/MainWindow.xaml.cs",
+        "src/ContentDeliveryStudio.App/ViewModels/",
+        "src/ContentDeliveryStudio.App/Views/",
+        "src/ContentDeliveryStudio.Application/Modules/",
+        "src/ContentDeliveryStudio.Application/Workflows/"
       ],
       "evidenceRules": [
         "docs/ARCHITECTURE.md",
@@ -286,11 +286,11 @@
       "name": "pack-and-policy-modeling",
       "required": true,
       "sourceRules": [
-        "src/ImageSeriesStudio.Core/Packs/",
-        "src/ImageSeriesStudio.Application/Packs/",
-        "src/ImageSeriesStudio.Core/Projects/ReviewRubricTemplates.cs",
-        "src/ImageSeriesStudio.Application/Artifacts/",
-        "src/ImageSeriesStudio.Application/Workflows/"
+        "src/ContentDeliveryStudio.Core/Packs/",
+        "src/ContentDeliveryStudio.Application/Packs/",
+        "src/ContentDeliveryStudio.Core/Projects/ReviewRubricTemplates.cs",
+        "src/ContentDeliveryStudio.Application/Artifacts/",
+        "src/ContentDeliveryStudio.Application/Workflows/"
       ],
       "evidenceRules": [
         "docs/ARCHITECTURE.md",
@@ -331,11 +331,11 @@
       "name": "document-extraction-and-ocr",
       "required": true,
       "sourceRules": [
-        "src/ImageSeriesStudio.Core/Documents/",
-        "src/ImageSeriesStudio.Infrastructure/Sources/",
-        "src/ImageSeriesStudio.Infrastructure/Import/",
-        "src/ImageSeriesStudio.Application/Artifacts/",
-        "src/ImageSeriesStudio.Application/ToolAdapters/"
+        "src/ContentDeliveryStudio.Core/Documents/",
+        "src/ContentDeliveryStudio.Infrastructure/Sources/",
+        "src/ContentDeliveryStudio.Infrastructure/Import/",
+        "src/ContentDeliveryStudio.Application/Artifacts/",
+        "src/ContentDeliveryStudio.Application/ToolAdapters/"
       ],
       "evidenceRules": [
         "docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md",

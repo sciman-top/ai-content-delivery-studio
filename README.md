@@ -2,13 +2,14 @@
 
 Windows-first AI content delivery workbench with image-series production as the current core launch path.
 
-This repository is the active implementation home for the product. It is intentionally separate from `D:\CODE\physicist_chinese_poster_batch_tool`, which remains a production case study and migration sample rather than the implementation root. The product-facing name is `AI Content Delivery Studio`, while the active repository, solution, and namespaces still use `ai-image-series-studio` / `ImageSeriesStudio` until the staged rename gate in [docs/adr/0008-product-identity-and-repository-rename.md](docs/adr/0008-product-identity-and-repository-rename.md) is executed.
+This repository is the active implementation home for the product. It is intentionally separate from `D:\CODE\physicist_chinese_poster_batch_tool`, which remains a production case study and migration sample rather than the implementation root. The product-facing name and the active repository, solution, and namespaces now use `AI Content Delivery Studio` / `ai-content-delivery-studio` / `ContentDeliveryStudio`, with legacy `ImageSeriesStudio` references kept only for historical evidence and bounded compatibility notes.
 
 ## Current Readout
 
 - Active implementation root: `D:\CODE\ai-content-delivery-studio`
-- Intended medium-term root after the rename gate: `D:\CODE\ai-content-delivery-studio`
-- Latest local repository verification: `2026-06-13` via `.\scripts\verify-repo.ps1` with `382 / 382` tests passing
+- Current root after the completed root rename: `D:\CODE\ai-content-delivery-studio`
+- Latest local repository verification: `2026-06-17` via `.\scripts\verify-repo.ps1` with `417 / 417` tests passing
+- Latest rename closeout gate: `2026-06-17` via `.\scripts\preflight-release.ps1` passed
 - Latest recorded V1 release-verification snapshot: `2026-06-11`
 - Latest recorded live OpenAI sample: `artifacts/live-openai-v1-sample/20260611-132947`
 - Current launch-verification readout: the latest recorded snapshot in [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md) closes all `5 / 5` V1 launch metrics
@@ -85,14 +86,14 @@ git status --short
 
 ### Source Projects
 
-- `src/ImageSeriesStudio.App`: WPF shell, localization, workbench UI, diagnostics, and operator-facing flows.
-- `src/ImageSeriesStudio.Application`: application services, workflow coordinators, repair routing, and delivery orchestration.
-- `src/ImageSeriesStudio.Core`: domain model, provider contracts, workflow records, review and delivery invariants.
-- `src/ImageSeriesStudio.Infrastructure`: EF Core persistence, provider adapters, local tool adapters, diagnostics, and composition services.
+- `src/ContentDeliveryStudio.App`: WPF shell, localization, workbench UI, diagnostics, and operator-facing flows.
+- `src/ContentDeliveryStudio.Application`: application services, workflow coordinators, repair routing, and delivery orchestration.
+- `src/ContentDeliveryStudio.Core`: domain model, provider contracts, workflow records, review and delivery invariants.
+- `src/ContentDeliveryStudio.Infrastructure`: EF Core persistence, provider adapters, local tool adapters, diagnostics, and composition services.
 
 ### Supporting Areas
 
-- `tests/ImageSeriesStudio.Tests`: unit, SQLite reload, workflow, provider, launch-route, and delivery verification coverage.
+- `tests/ContentDeliveryStudio.Tests`: unit, SQLite reload, workflow, provider, launch-route, and delivery verification coverage.
 - `docs/`: product, architecture, roadmap, tasks, launch evidence, provider policy, operator policy, ADRs, and reference governance.
 - `scripts/`: repository verification, release preflight, publish, reference-evidence, and related local automation.
 - `artifacts/`: checked-in evidence bundles such as live OpenAI sample outputs and diagnostics reruns.

@@ -58,7 +58,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 ### `openai-provider`
 
 - `required`: `true`
-- Source rules: `src/ImageSeriesStudio.Infrastructure/OpenAI/`, `src/ImageSeriesStudio.Core/Providers/`
+- Source rules: `src/ContentDeliveryStudio.Infrastructure/OpenAI/`, `src/ContentDeliveryStudio.Core/Providers/`
 - Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/PROVIDER_CONFIGURATION.md`, `docs/PROVIDER_ROUTING_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `request-response-shape`, `images-vs-responses-routing`, `store-or-previous-response-id`, `structured-output`, `vision-review`, `real-provider-enablement`
 - Local references:
@@ -69,7 +69,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 ### `host-and-observability`
 
 - `required`: `true`
-- Source rules: `src/ImageSeriesStudio.App/App.xaml.cs`, `src/ImageSeriesStudio.App/Telemetry/`, `src/ImageSeriesStudio.App/Services/ProviderCenterServices.cs`, `src/ImageSeriesStudio.App/Properties/launchSettings.json`, `src/ImageSeriesStudio.Infrastructure/Diagnostics/`
+- Source rules: `src/ContentDeliveryStudio.App/App.xaml.cs`, `src/ContentDeliveryStudio.App/Telemetry/`, `src/ContentDeliveryStudio.App/Services/ProviderCenterServices.cs`, `src/ContentDeliveryStudio.App/Properties/launchSettings.json`, `src/ContentDeliveryStudio.Infrastructure/Diagnostics/`
 - Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `host-startup`, `dependency-injection`, `telemetry-registration`, `otlp-export`, `aspire-dashboard`, `http-resilience`, `health-diagnostics`
 - Local references:
@@ -83,7 +83,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 ### `persistence-and-schema`
 
 - `required`: `true`
-- Source rules: `src/ImageSeriesStudio.Infrastructure/Persistence/`, `src/ImageSeriesStudio.Core/Projects/`, `src/ImageSeriesStudio.Core/Artifacts/`, `src/ImageSeriesStudio.Core/Sources/`, `src/ImageSeriesStudio.Core/Documents/`, `src/ImageSeriesStudio.Core/Packs/`
+- Source rules: `src/ContentDeliveryStudio.Infrastructure/Persistence/`, `src/ContentDeliveryStudio.Core/Projects/`, `src/ContentDeliveryStudio.Core/Artifacts/`, `src/ContentDeliveryStudio.Core/Sources/`, `src/ContentDeliveryStudio.Core/Documents/`, `src/ContentDeliveryStudio.Core/Packs/`
 - Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `entity-configuration`, `aggregate-shape`, `migration-behavior`, `sqlite-limitation`, `project-load-save-contract`
 - Local references:
@@ -93,7 +93,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 ### `tooling-and-operator`
 
 - `required`: `true`
-- Source rules: `src/ImageSeriesStudio.Application/ToolAdapters/`, `src/ImageSeriesStudio.Infrastructure/ToolAdapters/`, `src/ImageSeriesStudio.Core/Operators/`, `src/ImageSeriesStudio.Infrastructure/Composition/`, `src/ImageSeriesStudio.Infrastructure/Delivery/`, `src/ImageSeriesStudio.Infrastructure/Import/`, `src/ImageSeriesStudio.Infrastructure/Sources/`
+- Source rules: `src/ContentDeliveryStudio.Application/ToolAdapters/`, `src/ContentDeliveryStudio.Infrastructure/ToolAdapters/`, `src/ContentDeliveryStudio.Core/Operators/`, `src/ContentDeliveryStudio.Infrastructure/Composition/`, `src/ContentDeliveryStudio.Infrastructure/Delivery/`, `src/ContentDeliveryStudio.Infrastructure/Import/`, `src/ContentDeliveryStudio.Infrastructure/Sources/`
 - Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/OPERATOR_RISK_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `deterministic-composition`, `document-conversion`, `artifact-validation`, `delivery-packaging`, `diagnostics-export`, `browser-automation`, `desktop-automation`
 - Local references:
@@ -111,7 +111,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 ### `workflow-and-ux-architecture`
 
 - `required`: `true`
-- Source rules: `src/ImageSeriesStudio.App/MainWindow.xaml`, `src/ImageSeriesStudio.App/MainWindow.xaml.cs`, `src/ImageSeriesStudio.App/ViewModels/`, `src/ImageSeriesStudio.App/Views/`, `src/ImageSeriesStudio.Application/Modules/`, `src/ImageSeriesStudio.Application/Workflows/`
+- Source rules: `src/ContentDeliveryStudio.App/MainWindow.xaml`, `src/ContentDeliveryStudio.App/MainWindow.xaml.cs`, `src/ContentDeliveryStudio.App/ViewModels/`, `src/ContentDeliveryStudio.App/Views/`, `src/ContentDeliveryStudio.Application/Modules/`, `src/ContentDeliveryStudio.Application/Workflows/`
 - Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `large-viewmodel-split`, `large-view-split`, `shell-view-structure`, `workflow-graph`, `queue-gallery-stage-composition`, `module-boundary-change`
 - Local references:
@@ -124,7 +124,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 ### `pack-and-policy-modeling`
 
 - `required`: `true`
-- Source rules: `src/ImageSeriesStudio.Core/Packs/`, `src/ImageSeriesStudio.Application/Packs/`, `src/ImageSeriesStudio.Core/Projects/ReviewRubricTemplates.cs`, `src/ImageSeriesStudio.Application/Artifacts/`, `src/ImageSeriesStudio.Application/Workflows/`
+- Source rules: `src/ContentDeliveryStudio.Core/Packs/`, `src/ContentDeliveryStudio.Application/Packs/`, `src/ContentDeliveryStudio.Core/Projects/ReviewRubricTemplates.cs`, `src/ContentDeliveryStudio.Application/Artifacts/`, `src/ContentDeliveryStudio.Application/Workflows/`
 - Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `pack-schema-contract`, `workflow-pack-boundary`, `industry-policy-shape`, `renderer-policy-shape`, `review-rubric-policy-shape`, `scenario-selection-contract`
 - Local references:
@@ -135,7 +135,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 ### `document-extraction-and-ocr`
 
 - `required`: `true`
-- Source rules: `src/ImageSeriesStudio.Core/Documents/`, `src/ImageSeriesStudio.Infrastructure/Sources/`, `src/ImageSeriesStudio.Infrastructure/Import/`, `src/ImageSeriesStudio.Application/Artifacts/`, `src/ImageSeriesStudio.Application/ToolAdapters/`
+- Source rules: `src/ContentDeliveryStudio.Core/Documents/`, `src/ContentDeliveryStudio.Infrastructure/Sources/`, `src/ContentDeliveryStudio.Infrastructure/Import/`, `src/ContentDeliveryStudio.Application/Artifacts/`, `src/ContentDeliveryStudio.Application/ToolAdapters/`
 - Evidence rules: `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `pdf-structure-extraction`, `docx-structure-extraction`, `ocr-introduction`, `citation-span-evidence`, `scholarly-figure-source-extraction`
 - Local references:
@@ -151,8 +151,8 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 
 Source paths:
 
-- `src/ImageSeriesStudio.Infrastructure/OpenAI/`
-- `src/ImageSeriesStudio.Core/Providers/`
+- `src/ContentDeliveryStudio.Infrastructure/OpenAI/`
+- `src/ContentDeliveryStudio.Core/Providers/`
 
 Required local references:
 
@@ -184,11 +184,11 @@ Must check references when:
 
 Source paths:
 
-- `src/ImageSeriesStudio.App/App.xaml.cs`
-- `src/ImageSeriesStudio.App/Telemetry/`
-- `src/ImageSeriesStudio.App/Services/ProviderCenterServices.cs`
-- `src/ImageSeriesStudio.App/Properties/launchSettings.json`
-- `src/ImageSeriesStudio.Infrastructure/Diagnostics/`
+- `src/ContentDeliveryStudio.App/App.xaml.cs`
+- `src/ContentDeliveryStudio.App/Telemetry/`
+- `src/ContentDeliveryStudio.App/Services/ProviderCenterServices.cs`
+- `src/ContentDeliveryStudio.App/Properties/launchSettings.json`
+- `src/ContentDeliveryStudio.Infrastructure/Diagnostics/`
 
 Required local references:
 
@@ -225,12 +225,12 @@ Must check references when:
 
 Source paths:
 
-- `src/ImageSeriesStudio.Infrastructure/Persistence/`
-- `src/ImageSeriesStudio.Core/Projects/`
-- `src/ImageSeriesStudio.Core/Artifacts/`
-- `src/ImageSeriesStudio.Core/Sources/`
-- `src/ImageSeriesStudio.Core/Documents/`
-- `src/ImageSeriesStudio.Core/Packs/`
+- `src/ContentDeliveryStudio.Infrastructure/Persistence/`
+- `src/ContentDeliveryStudio.Core/Projects/`
+- `src/ContentDeliveryStudio.Core/Artifacts/`
+- `src/ContentDeliveryStudio.Core/Sources/`
+- `src/ContentDeliveryStudio.Core/Documents/`
+- `src/ContentDeliveryStudio.Core/Packs/`
 
 Required local references:
 
@@ -257,13 +257,13 @@ Must check references when:
 
 Source paths:
 
-- `src/ImageSeriesStudio.Application/ToolAdapters/`
-- `src/ImageSeriesStudio.Infrastructure/ToolAdapters/`
-- `src/ImageSeriesStudio.Core/Operators/`
-- `src/ImageSeriesStudio.Infrastructure/Composition/`
-- `src/ImageSeriesStudio.Infrastructure/Delivery/`
-- `src/ImageSeriesStudio.Infrastructure/Import/`
-- `src/ImageSeriesStudio.Infrastructure/Sources/`
+- `src/ContentDeliveryStudio.Application/ToolAdapters/`
+- `src/ContentDeliveryStudio.Infrastructure/ToolAdapters/`
+- `src/ContentDeliveryStudio.Core/Operators/`
+- `src/ContentDeliveryStudio.Infrastructure/Composition/`
+- `src/ContentDeliveryStudio.Infrastructure/Delivery/`
+- `src/ContentDeliveryStudio.Infrastructure/Import/`
+- `src/ContentDeliveryStudio.Infrastructure/Sources/`
 
 Required local references:
 
@@ -295,12 +295,12 @@ Must check references when:
 
 Source paths:
 
-- `src/ImageSeriesStudio.App/MainWindow.xaml`
-- `src/ImageSeriesStudio.App/MainWindow.xaml.cs`
-- `src/ImageSeriesStudio.App/ViewModels/`
-- `src/ImageSeriesStudio.App/Views/`
-- `src/ImageSeriesStudio.Application/Modules/`
-- `src/ImageSeriesStudio.Application/Workflows/`
+- `src/ContentDeliveryStudio.App/MainWindow.xaml`
+- `src/ContentDeliveryStudio.App/MainWindow.xaml.cs`
+- `src/ContentDeliveryStudio.App/ViewModels/`
+- `src/ContentDeliveryStudio.App/Views/`
+- `src/ContentDeliveryStudio.Application/Modules/`
+- `src/ContentDeliveryStudio.Application/Workflows/`
 
 Required local references:
 
@@ -335,11 +335,11 @@ Must check references when:
 
 Source paths:
 
-- `src/ImageSeriesStudio.Core/Packs/`
-- `src/ImageSeriesStudio.Application/Packs/`
-- `src/ImageSeriesStudio.Core/Projects/ReviewRubricTemplates.cs`
-- `src/ImageSeriesStudio.Application/Artifacts/`
-- `src/ImageSeriesStudio.Application/Workflows/`
+- `src/ContentDeliveryStudio.Core/Packs/`
+- `src/ContentDeliveryStudio.Application/Packs/`
+- `src/ContentDeliveryStudio.Core/Projects/ReviewRubricTemplates.cs`
+- `src/ContentDeliveryStudio.Application/Artifacts/`
+- `src/ContentDeliveryStudio.Application/Workflows/`
 
 Required local references:
 
@@ -369,11 +369,11 @@ Must check references when:
 
 Source paths:
 
-- `src/ImageSeriesStudio.Core/Documents/`
-- `src/ImageSeriesStudio.Infrastructure/Sources/`
-- `src/ImageSeriesStudio.Infrastructure/Import/`
-- `src/ImageSeriesStudio.Application/Artifacts/`
-- `src/ImageSeriesStudio.Application/ToolAdapters/`
+- `src/ContentDeliveryStudio.Core/Documents/`
+- `src/ContentDeliveryStudio.Infrastructure/Sources/`
+- `src/ContentDeliveryStudio.Infrastructure/Import/`
+- `src/ContentDeliveryStudio.Application/Artifacts/`
+- `src/ContentDeliveryStudio.Application/ToolAdapters/`
 
 Required local references:
 
@@ -402,13 +402,13 @@ Must check references when:
 
 These repository areas especially benefit from stronger reference discipline:
 
-- `src/ImageSeriesStudio.App/ViewModels/MainWindowViewModel.cs`
+- `src/ContentDeliveryStudio.App/ViewModels/MainWindowViewModel.cs`
   - large orchestration surface; prefer WPF/MVVM and modular-composition references before further expansion, and extract pure projection or display-summary builders before moving command ownership
-- `src/ImageSeriesStudio.App/MainWindow.xaml`
+- `src/ContentDeliveryStudio.App/MainWindow.xaml`
   - large shell view; prefer WPF sample and modular-view references before adding more UI surface
-- `src/ImageSeriesStudio.Infrastructure/OpenAI/`
+- `src/ContentDeliveryStudio.Infrastructure/OpenAI/`
   - high semantic drift; prefer official OpenAI docs and SDK source first
-- `src/ImageSeriesStudio.Infrastructure/Persistence/` plus core aggregate records
+- `src/ContentDeliveryStudio.Infrastructure/Persistence/` plus core aggregate records
   - schema and SQLite behavior should stay anchored to official EF docs
 
 ## Current Reference Shelf Gap Review

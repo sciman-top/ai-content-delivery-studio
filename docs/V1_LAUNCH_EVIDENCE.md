@@ -53,24 +53,24 @@ The goal is to keep launch readiness honest. Completed implementation slices are
 
 ## Evidence Sources Used For This Snapshot
 
-- `tests/ImageSeriesStudio.Tests/FakeWorkflowTests.cs`
-- `tests/ImageSeriesStudio.Tests/PrimaryLaunchRouteVerificationTests.cs`
-- `tests/ImageSeriesStudio.Tests/BriefWorkflowApplicationServiceTests.cs`
-- `tests/ImageSeriesStudio.Tests/SupportingValidationRouteVerificationTests.cs`
-- `tests/ImageSeriesStudio.Tests/DocumentIllustrationWorkflowTests.cs`
-- `tests/ImageSeriesStudio.Tests/OpenAiProviderContractTests.cs`
-- `tests/ImageSeriesStudio.Tests/OpenAiProviderConfigurationTests.cs`
-- `tests/ImageSeriesStudio.Tests/OpenAiLiveV1SampleRouteTests.cs`
-- `tests/ImageSeriesStudio.Tests/OpenAiProviderSmokeTests.cs`
-- `tests/ImageSeriesStudio.Tests/OpenAiLaunchPreflightTests.cs`
-- `tests/ImageSeriesStudio.Tests/OpenAiLaunchPreflightReportWriterTests.cs`
-- `tests/ImageSeriesStudio.Tests/OpenAiLaunchPreflightToolAdapterTests.cs`
-- `tests/ImageSeriesStudio.Tests/ToolAdapterServiceCollectionExtensionsTests.cs`
-- `tests/ImageSeriesStudio.Tests/DiagnosticsPackageTests.cs`
-- `tests/ImageSeriesStudio.Tests/SkiaDeterministicTextComposerTests.cs`
-- `tests/ImageSeriesStudio.Tests/DeterministicTextCompositionToolAdapterTests.cs`
-- `tests/ImageSeriesStudio.Tests/EducationalPosterLaunchProofTests.cs`
-- `tests/ImageSeriesStudio.Tests/DeliveryPackageTests.cs`
-- `tests/ImageSeriesStudio.Tests/ProjectApplicationServiceTests.cs`
-- `tests/ImageSeriesStudio.Tests/ArtifactValidationToolAdapterTests.cs`
-- `tests/ImageSeriesStudio.Tests/LowRiskAutoRepairServiceTests.cs`
+- `tests/ContentDeliveryStudio.Tests/FakeWorkflowTests.cs`
+- `tests/ContentDeliveryStudio.Tests/PrimaryLaunchRouteVerificationTests.cs`
+- `tests/ContentDeliveryStudio.Tests/BriefWorkflowApplicationServiceTests.cs`
+- `tests/ContentDeliveryStudio.Tests/SupportingValidationRouteVerificationTests.cs`
+- `tests/ContentDeliveryStudio.Tests/DocumentIllustrationWorkflowTests.cs`
+- `tests/ContentDeliveryStudio.Tests/OpenAiProviderContractTests.cs`
+- `tests/ContentDeliveryStudio.Tests/OpenAiProviderConfigurationTests.cs`
+- `tests/ContentDeliveryStudio.Tests/OpenAiLiveV1SampleRouteTests.cs`
+- `tests/ContentDeliveryStudio.Tests/OpenAiProviderSmokeTests.cs`
+- `tests/ContentDeliveryStudio.Tests/OpenAiLaunchPreflightTests.cs`
+- `tests/ContentDeliveryStudio.Tests/OpenAiLaunchPreflightReportWriterTests.cs`
+- `tests/ContentDeliveryStudio.Tests/OpenAiLaunchPreflightToolAdapterTests.cs`
+- `tests/ContentDeliveryStudio.Tests/ToolAdapterServiceCollectionExtensionsTests.cs`
+- `tests/ContentDeliveryStudio.Tests/DiagnosticsPackageTests.cs`
+- `tests/ContentDeliveryStudio.Tests/SkiaDeterministicTextComposerTests.cs`
+- `tests/ContentDeliveryStudio.Tests/DeterministicTextCompositionToolAdapterTests.cs`
+- `tests/ContentDeliveryStudio.Tests/EducationalPosterLaunchProofTests.cs`
+- `tests/ContentDeliveryStudio.Tests/DeliveryPackageTests.cs`
+- `tests/ContentDeliveryStudio.Tests/ProjectApplicationServiceTests.cs`
+- `tests/ContentDeliveryStudio.Tests/ArtifactValidationToolAdapterTests.cs`
+- `tests/ContentDeliveryStudio.Tests/LowRiskAutoRepairServiceTests.cs`
