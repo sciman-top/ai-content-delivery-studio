@@ -83,7 +83,8 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add the first generic-scenario pack and policy modeling hardening slice with explicit scenario and policy-pack references.
 - [x] Extend the stronger pack/policy contract to the built-in `article-illustration` scenario.
 - [x] Extend the stronger pack/policy contract to the built-in `document-review-translation` scenario.
-- [ ] Continue pack and policy modeling hardening for additional scenarios beyond generic image-series, article illustration, and document-review translation only when each slice has a repo-owned spec and a bounded implementation plan.
+- [x] Extend the stronger pack/policy contract to the built-in `courseware-visual` scenario.
+- [ ] Continue pack and policy modeling hardening for additional scenarios beyond generic image-series, article illustration, document-review translation, and courseware visual only when each slice has a repo-owned spec and a bounded implementation plan.
 
 ## Frozen Until Post-V1
 

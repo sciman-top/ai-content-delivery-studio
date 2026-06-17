@@ -55,6 +55,9 @@ public sealed class BuiltInPackCatalogTests
         Assert.NotNull(registry.GetRequired<IndustryPack>(BuiltInPackCatalog.DocumentReviewTranslationIndustryPackId));
         Assert.NotNull(registry.GetRequired<RendererPack>(BuiltInPackCatalog.DocumentReviewTranslationRendererPackId));
         Assert.NotNull(registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.DocumentReviewTranslationReviewRubricPackId));
+        Assert.NotNull(registry.GetRequired<IndustryPack>(BuiltInPackCatalog.CoursewareVisualIndustryPackId));
+        Assert.NotNull(registry.GetRequired<RendererPack>(BuiltInPackCatalog.CoursewareVisualRendererPackId));
+        Assert.NotNull(registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.CoursewareVisualReviewRubricPackId));
 
         var article = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.ArticleIllustrationBlueprintPackId);
         var articleWorkflow = registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.ArticleIllustrationWorkflowPackId);
@@ -63,6 +66,9 @@ public sealed class BuiltInPackCatalogTests
         var documentRenderer = registry.GetRequired<RendererPack>(BuiltInPackCatalog.DocumentReviewTranslationRendererPackId);
         var documentRubric = registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.DocumentReviewTranslationReviewRubricPackId);
         var courseware = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.CoursewareVisualBlueprintPackId);
+        var coursewareWorkflow = registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.CoursewareVisualWorkflowPackId);
+        var coursewareRenderer = registry.GetRequired<RendererPack>(BuiltInPackCatalog.CoursewareVisualRendererPackId);
+        var coursewareRubric = registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.CoursewareVisualReviewRubricPackId);
         var poster = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.PosterReportDeliveryBlueprintPackId);
 
         Assert.Contains("article-inline-illustration", article.BlueprintIds);
@@ -78,8 +84,14 @@ public sealed class BuiltInPackCatalogTests
         Assert.Contains("markdown", documentRenderer.OutputFormats);
         Assert.Contains(ReviewRubricTemplateCatalog.ScholarlySchematic, documentRubric.RubricTemplateIds);
         Assert.Contains("lesson-slide-visual", courseware.BlueprintIds);
+        Assert.Equal(["courseware-visual"], coursewareWorkflow.ScenarioIds);
+        Assert.Equal([BuiltInPackCatalog.CoursewareVisualIndustryPackId], coursewareWorkflow.IndustryPackIds);
+        Assert.Equal([BuiltInPackCatalog.CoursewareVisualRendererPackId], coursewareWorkflow.RendererPackIds);
+        Assert.Equal([BuiltInPackCatalog.CoursewareVisualReviewRubricPackId], coursewareWorkflow.ReviewRubricPackIds);
+        Assert.Contains("pptx", coursewareRenderer.OutputFormats);
+        Assert.Contains(ReviewRubricTemplateCatalog.EducationalAccuracy, coursewareRubric.RubricTemplateIds);
         Assert.Contains("poster-and-report-package", poster.BlueprintIds);
-        Assert.Equal(19, registry.Packs.Count);
+        Assert.Equal(22, registry.Packs.Count);
     }
 
     [Fact]

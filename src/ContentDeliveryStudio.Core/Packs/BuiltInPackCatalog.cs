@@ -38,6 +38,12 @@ public static class BuiltInPackCatalog
 
     public const string CoursewareVisualBlueprintPackId = "courseware-visual-blueprints";
 
+    public const string CoursewareVisualIndustryPackId = "courseware-visual-industry";
+
+    public const string CoursewareVisualRendererPackId = "courseware-visual-renderer";
+
+    public const string CoursewareVisualReviewRubricPackId = "courseware-visual-review-rubric";
+
     public const string PosterReportDeliveryWorkflowPackId = "poster-report-delivery";
 
     public const string PosterReportDeliveryBlueprintPackId = "poster-report-delivery-blueprints";
@@ -233,6 +239,34 @@ public static class BuiltInPackCatalog
             ["lesson-slide-visual", "classroom-diagram", "worksheet-visual"],
             compatibility,
             createdAt);
+        var coursewareIndustry = IndustryPack.Create(
+            CoursewareVisualIndustryPackId,
+            "Courseware Visual Audience",
+            "1.0.0",
+            compatibility,
+            ["teacher", "courseware"],
+            [CoursewareVisualWorkflowPackId],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var coursewareRenderer = RendererPack.Create(
+            CoursewareVisualRendererPackId,
+            "Courseware Visual Renderer",
+            "1.0.0",
+            compatibility,
+            ["png", "pptx", "pdf"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var coursewareReviewRubric = ReviewRubricPack.Create(
+            CoursewareVisualReviewRubricPackId,
+            "Courseware Visual Review Rubric",
+            "1.0.0",
+            compatibility,
+            [ReviewRubricTemplateCatalog.EducationalAccuracy, ReviewRubricTemplateCatalog.TextHeavyPoster],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
         var coursewareWorkflow = CreateWorkflowPack(
             CoursewareVisualWorkflowPackId,
             "Courseware Visual",
@@ -272,6 +306,9 @@ public static class BuiltInPackCatalog
                 documentReviewRubric,
                 coursewareWorkflow,
                 coursewareBlueprint,
+                coursewareIndustry,
+                coursewareRenderer,
+                coursewareReviewRubric,
                 posterWorkflow,
                 posterBlueprint,
             ]);
@@ -300,6 +337,7 @@ public static class BuiltInPackCatalog
                 GenericImageSeriesWorkflowPackId => [GenericImageSeriesIndustryPackId],
                 ArticleIllustrationWorkflowPackId => [ArticleIllustrationIndustryPackId],
                 DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationIndustryPackId],
+                CoursewareVisualWorkflowPackId => [CoursewareVisualIndustryPackId],
                 _ => [],
             },
             rendererPackIds: id switch
@@ -307,6 +345,7 @@ public static class BuiltInPackCatalog
                 GenericImageSeriesWorkflowPackId => [GenericImageSeriesRendererPackId],
                 ArticleIllustrationWorkflowPackId => [ArticleIllustrationRendererPackId],
                 DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationRendererPackId],
+                CoursewareVisualWorkflowPackId => [CoursewareVisualRendererPackId],
                 _ => [],
             },
             reviewRubricPackIds: id switch
@@ -314,6 +353,7 @@ public static class BuiltInPackCatalog
                 GenericImageSeriesWorkflowPackId => [GenericImageSeriesReviewRubricPackId],
                 ArticleIllustrationWorkflowPackId => [ArticleIllustrationReviewRubricPackId],
                 DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationReviewRubricPackId],
+                CoursewareVisualWorkflowPackId => [CoursewareVisualReviewRubricPackId],
                 _ => [],
             });
     }

@@ -177,4 +177,37 @@ public sealed class PackPackageStoreTests
             }
         }
     }
+
+    [Fact]
+    public async Task PackPackageStore_ExportsStarterRegistryWithCoursewarePolicyLinks()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var packagePath = Path.Combine(rootDirectory, "courseware-starter-packs.json");
+        Directory.CreateDirectory(rootDirectory);
+
+        try
+        {
+            var timestamp = DateTimeOffset.Parse("2026-06-03T15:50:00Z");
+            var registry = BuiltInPackCatalog.CreateStarterPackRegistry("1.5.0", timestamp);
+            var package = PackPackage.FromRegistry("Starter packs", timestamp, registry);
+            var store = new JsonPackPackageStore();
+
+            await store.ExportAsync(package, packagePath, CancellationToken.None);
+            var imported = await store.ImportAsync(packagePath, "1.5.0", CancellationToken.None);
+            var coursewareWorkflow = imported.CreateRegistry("1.5.0")
+                .GetRequired<WorkflowPack>(BuiltInPackCatalog.CoursewareVisualWorkflowPackId);
+
+            Assert.Equal(["courseware-visual"], coursewareWorkflow.ScenarioIds);
+            Assert.Equal([BuiltInPackCatalog.CoursewareVisualIndustryPackId], coursewareWorkflow.IndustryPackIds);
+            Assert.Equal([BuiltInPackCatalog.CoursewareVisualRendererPackId], coursewareWorkflow.RendererPackIds);
+            Assert.Equal([BuiltInPackCatalog.CoursewareVisualReviewRubricPackId], coursewareWorkflow.ReviewRubricPackIds);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
 }
