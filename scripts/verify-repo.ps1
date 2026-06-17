@@ -46,8 +46,13 @@ function Test-IsTransientDotNetBuildLock {
         return $false
     }
 
-    return $combined.Contains("being used by another process", [System.StringComparison]::OrdinalIgnoreCase) `
+    $hasFileLock = $combined.Contains("being used by another process", [System.StringComparison]::OrdinalIgnoreCase) `
         -or $combined.Contains("cannot access the file", [System.StringComparison]::OrdinalIgnoreCase)
+    $hasTransientWpfGeneratedSourceMiss = $combined.Contains("error CS2001", [System.StringComparison]::OrdinalIgnoreCase) `
+        -and $combined.Contains("_wpftmp.csproj", [System.StringComparison]::OrdinalIgnoreCase) `
+        -and $combined.Contains(".g.cs", [System.StringComparison]::OrdinalIgnoreCase)
+
+    return $hasFileLock -or $hasTransientWpfGeneratedSourceMiss
 }
 
 function Invoke-DotNetBuildWithRetry {
@@ -74,7 +79,7 @@ function Invoke-DotNetBuildWithRetry {
         }
 
         if ($attempt -lt $MaxAttempts -and (Test-IsTransientDotNetBuildLock -OutputLines @($outputLines))) {
-            Write-Host "Transient dotnet build file lock detected. Retrying in $RetryDelaySeconds second(s) ($attempt/$MaxAttempts)..." -ForegroundColor Yellow
+            Write-Host "Transient dotnet build failure detected. Retrying in $RetryDelaySeconds second(s) ($attempt/$MaxAttempts)..." -ForegroundColor Yellow
             Start-Sleep -Seconds $RetryDelaySeconds
             continue
         }

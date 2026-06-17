@@ -112,6 +112,113 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
     }
 
     [Fact]
+    public async Task VerifyRepoScript_RetriesTransientWpfGeneratedSourceBuildFailure()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var shimDirectory = Path.Combine(tempRoot, "shim");
+        var logPath = Path.Combine(tempRoot, "dotnet-invocations.log");
+        var statePath = Path.Combine(tempRoot, "dotnet-build-attempt.txt");
+        Directory.CreateDirectory(shimDirectory);
+
+        try
+        {
+            await File.WriteAllTextAsync(
+                Path.Combine(shimDirectory, "dotnet.ps1"),
+                """
+param(
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$Arguments
+)
+
+$logPath = $env:DOTNET_SHIM_LOG_PATH
+$statePath = $env:DOTNET_SHIM_STATE_PATH
+
+if (-not [string]::IsNullOrWhiteSpace($logPath)) {
+    $parentDirectory = Split-Path -Parent $logPath
+    if (-not [string]::IsNullOrWhiteSpace($parentDirectory)) {
+        New-Item -ItemType Directory -Force -Path $parentDirectory | Out-Null
+    }
+}
+
+if (-not [string]::IsNullOrWhiteSpace($statePath)) {
+    $parentDirectory = Split-Path -Parent $statePath
+    if (-not [string]::IsNullOrWhiteSpace($parentDirectory)) {
+        New-Item -ItemType Directory -Force -Path $parentDirectory | Out-Null
+    }
+}
+
+$command = if ($Arguments.Count -gt 0) { $Arguments[0] } else { '' }
+if (-not [string]::IsNullOrWhiteSpace($logPath)) {
+    Add-Content -LiteralPath $logPath -Value (($Arguments -join ' ').Trim())
+}
+
+switch ($command) {
+    'build' {
+        $attempt = 0
+        if (Test-Path -LiteralPath $statePath) {
+            $attempt = [int](Get-Content -LiteralPath $statePath -Raw)
+        }
+
+        $attempt++
+        Set-Content -LiteralPath $statePath -Value $attempt
+
+        if ($attempt -eq 1) {
+            Write-Output "CSC : error CS2001: Source file 'D:\\CODE\\ai-content-delivery-studio\\src\\ContentDeliveryStudio.App\\obj\\Debug\\net10.0-windows\\Views\\BriefWorkflowView.g.cs' could not be found. [D:\\CODE\\ai-content-delivery-studio\\src\\ContentDeliveryStudio.App\\ContentDeliveryStudio.App_abcd1234_wpftmp.csproj]"
+            exit 1
+        }
+
+        Write-Output "Build succeeded."
+        exit 0
+    }
+
+    'test' {
+        Write-Output "Tests passed."
+        exit 0
+    }
+
+    'format' {
+        Write-Output "Format clean."
+        exit 0
+    }
+
+    default {
+        Write-Output "dotnet shim: $command"
+        exit 0
+    }
+}
+""");
+            await File.WriteAllTextAsync(
+                Path.Combine(shimDirectory, "dotnet.cmd"),
+                """
+@echo off
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
+""");
+
+            var result = await RunPowerShellAsync(
+                repositoryRoot,
+                shimDirectory,
+                logPath,
+                statePath,
+                Path.Combine(repositoryRoot, "scripts", "verify-repo.ps1"),
+                "-NoRestore");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains("Repository verification passed.", result.StandardOutput);
+
+            var buildInvocations = await File.ReadAllLinesAsync(logPath);
+            Assert.Equal(2, buildInvocations.Count(line => line.StartsWith("build", StringComparison.OrdinalIgnoreCase)));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task VerifyRepoScript_FailsClosedOnNonTransientBuildErrorWithoutHelperBindingFailure()
     {
         var repositoryRoot = FindRepositoryRoot();
