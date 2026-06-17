@@ -155,6 +155,39 @@ public sealed class BuiltInPackCatalogTests
         });
     }
 
+    [Fact]
+    public void BuiltInPackCatalog_StarterWorkflowsCarryScenarioAndPolicyLinks()
+    {
+        var createdAt = DateTimeOffset.Parse("2026-06-03T13:00:00Z");
+        var registry = BuiltInPackCatalog.CreateStarterPackRegistry("1.5.0", createdAt);
+        var starterWorkflowIds = new HashSet<string>(
+            [
+                BuiltInPackCatalog.GenericImageSeriesWorkflowPackId,
+                BuiltInPackCatalog.ArticleIllustrationWorkflowPackId,
+                BuiltInPackCatalog.DocumentReviewTranslationWorkflowPackId,
+                BuiltInPackCatalog.CoursewareVisualWorkflowPackId,
+                BuiltInPackCatalog.PosterReportDeliveryWorkflowPackId,
+            ],
+            StringComparer.OrdinalIgnoreCase);
+
+        Assert.All(
+            registry.Packs
+                .OfType<WorkflowPack>()
+                .Where(workflow => starterWorkflowIds.Contains(workflow.Metadata.Id)),
+            workflow =>
+            {
+                Assert.Single(workflow.ScenarioIds);
+                Assert.Equal(workflow.Metadata.Id, workflow.ScenarioIds[0], ignoreCase: true);
+                Assert.Single(workflow.IndustryPackIds);
+                Assert.Single(workflow.RendererPackIds);
+                Assert.Single(workflow.ReviewRubricPackIds);
+
+                Assert.NotNull(registry.GetRequired<IndustryPack>(workflow.IndustryPackIds[0]));
+                Assert.NotNull(registry.GetRequired<RendererPack>(workflow.RendererPackIds[0]));
+                Assert.NotNull(registry.GetRequired<ReviewRubricPack>(workflow.ReviewRubricPackIds[0]));
+            });
+    }
+
     private static bool IsCanonicalPackId(string packId)
     {
         return packId.Length > 0
