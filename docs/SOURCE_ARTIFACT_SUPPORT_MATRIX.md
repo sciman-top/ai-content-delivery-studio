@@ -50,6 +50,16 @@ Launch-capable paths must meet these quality bars:
 - Educational text-heavy output can separate scene generation from deterministic text composition.
 - Secrets, raw private paths, and non-exported source details do not leak into delivery manifests by default.
 
+## Current Supported Boundary Language
+
+When the repository reports failures for local `pdf` or `docx` extraction, current truth language should describe the limit as the current supported boundary rather than as a transient implementation slice.
+
+That wording means:
+
+- text-bearing local `pdf` and `docx` extraction is supported within the bounded support matrix
+- OCR-heavy, image-only, table-rich, or other high-fidelity binary extraction is still outside the currently supported boundary
+- future slices may widen that boundary, but current operator-facing errors should not imply the repository is still in a one-off temporary landing state
+
 ## Explicit N/A For V1
 
 The following are intentionally not launch-capable:

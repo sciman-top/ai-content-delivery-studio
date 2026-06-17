@@ -108,7 +108,7 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
 
         using var archive = ZipFile.OpenRead(request.OriginalPath!);
         var entry = archive.GetEntry("word/document.xml")
-            ?? throw new InvalidOperationException("DOCX body XML was not found. High-fidelity or unsupported DOCX extraction is outside the current slice.");
+            ?? throw new InvalidOperationException("DOCX body XML was not found. High-fidelity or unsupported DOCX extraction is outside the current supported boundary.");
         await using var stream = entry.Open();
         var document = await XDocument.LoadAsync(stream, LoadOptions.None, cancellationToken);
         XNamespace wordNamespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
@@ -191,7 +191,7 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
         }
 
         throw new InvalidOperationException(
-            $"{sourceFamily} extraction produced no usable text for {fileName}. OCR-heavy, image-only, or high-fidelity binary extraction is outside the current slice.");
+            $"{sourceFamily} extraction produced no usable text for {fileName}. OCR-heavy, image-only, or high-fidelity binary extraction is outside the current supported boundary.");
     }
 
     private static string SelectAnchorQuote(string text)

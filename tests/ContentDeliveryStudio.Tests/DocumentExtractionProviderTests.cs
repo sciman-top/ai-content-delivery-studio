@@ -179,7 +179,7 @@ public sealed class DocumentExtractionProviderTests
                     CancellationToken.None));
 
             Assert.Contains("produced no usable text", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains("outside the current slice", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("outside the current supported boundary", exception.Message, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
