@@ -8,7 +8,7 @@ This repository is the active implementation home for the product. It is intenti
 
 - Active implementation root: `D:\CODE\ai-content-delivery-studio`
 - Current root after the completed root rename: `D:\CODE\ai-content-delivery-studio`
-- Latest local repository verification: `2026-06-17` via `.\scripts\verify-repo.ps1` with `426 / 426` tests passing
+- Latest local repository verification: `2026-06-17` via `.\scripts\verify-repo.ps1`; current exact build/test counts should be taken from the latest fresh gate output instead of this overview file
 - Latest rename closeout gate: `2026-06-17` via `.\scripts\preflight-release.ps1` passed
 - Latest recorded V1 release-verification snapshot: `2026-06-11`
 - Latest recorded live OpenAI sample: `artifacts/live-openai-v1-sample/20260611-132947`
