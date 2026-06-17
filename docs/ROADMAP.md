@@ -65,7 +65,7 @@ The current recorded answer is "yes" for the `2026-06-11` snapshot in [V1_LAUNCH
 
 ## Frozen Until Post-V1
 
-- Physical repository and namespace rename.
+- Additional physical repository or namespace rename work beyond the completed mechanical rename and bounded compatibility posture.
 - Broad pack-catalog growth beyond launch routes.
 - Remote workflow-engine integration beyond a contract boundary.
 - Browser or desktop operator flows that change third-party system state.

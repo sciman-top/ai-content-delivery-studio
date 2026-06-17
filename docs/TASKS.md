@@ -7,7 +7,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - Latest recorded release-verification snapshot: `2026-06-11`
 - Current readout: no open V1 release-claim gaps remain in that snapshot; all `5 / 5` launch metrics are verified, including the fresh opt-in OpenAI `2-item` sample under `artifacts/live-openai-v1-sample/20260611-132947`
 - Reopen this as a release-gap section only when provider behavior materially changes, a newer launch snapshot is needed, or a regression invalidates the existing evidence
-- Remaining non-release work is intentionally grouped into three lanes: conditional OCR reference coverage when scanned-document hardening enters the active roadmap, later real-provider plus support-matrix binary document extraction slices, and post-V1 repository/namespace rename compatibility work.
+- Remaining non-release work is intentionally grouped into two active lanes plus one bounded compatibility posture: conditional OCR reference coverage when scanned-document hardening enters the active roadmap, later real-provider plus support-matrix binary document extraction slices, and already-landed post-V1 rename compatibility behavior that now stays maintenance-only unless a regression appears.
 
 ## Near-Term Hardening (Not Current Release Blockers)
 
@@ -88,7 +88,7 @@ These items are still valuable, but they are not the same thing as the current V
 
 ## Frozen Until Post-V1
 
-- Physical repository and namespace rename work beyond documentation and planning.
+- Additional physical repository or namespace rename work beyond the completed mechanical rename and bounded compatibility posture.
 - Broad pack-catalog widening beyond launch routes.
 - Remote workflow-engine integrations beyond contract-boundary planning.
 - Broad binary document automation beyond the support matrix.
