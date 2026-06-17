@@ -87,7 +87,7 @@ The current recorded answer is "yes" for the `2026-06-11` snapshot in [V1_LAUNCH
 
 - Reuse the text-planning low-502 execution policy if future real-provider brief or blueprint planning moves beyond the current fake-first boundary.
 - Extend Responses image workflows only when a route gains meaningful provenance, revision, or preview value beyond the current opt-in stateful path.
-- Continue pack and policy modeling hardening beyond the current built-in starter scenarios only when each scenario-specific slice has a repo-owned spec and a bounded implementation plan.
+- Keep the current built-in starter scenarios on the stronger pack/policy contract, and open a new scenario-specific slice only when a real additional scenario has a repo-owned spec and a bounded implementation plan.
 - Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
 - Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.
 
@@ -378,7 +378,7 @@ Exit gate:
 
 Goal: align product-facing naming, local repository identity, and code namespace with the multimodal content delivery end state without breaking existing workspaces or active tools.
 
-Status: repository-side mechanical rename is landing in the current slice. The local root already lives at `D:\CODE\ai-content-delivery-studio`; the remaining truth boundary after implementation is fresh gate verification plus confirming that only historical or compatibility old-name references remain.
+Status: repository-side mechanical rename is complete for the active solution tree. The local root already lives at `D:\CODE\ai-content-delivery-studio`, active solution and namespaces already use `ContentDeliveryStudio.*`, and the remaining `ImageSeriesStudio` text is intentionally limited to historical evidence or bounded compatibility aliases.
 
 Deliverables:
 

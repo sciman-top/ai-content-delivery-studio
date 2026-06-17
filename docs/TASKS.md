@@ -85,7 +85,7 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Extend the stronger pack/policy contract to the built-in `document-review-translation` scenario.
 - [x] Extend the stronger pack/policy contract to the built-in `courseware-visual` scenario.
 - [x] Extend the stronger pack/policy contract to the built-in `poster-report-delivery` scenario.
-- [ ] Continue pack and policy modeling hardening for additional scenarios beyond the current built-in starter scenarios only when each slice has a repo-owned spec and a bounded implementation plan.
+- [ ] Continue pack and policy modeling hardening only when a real additional scenario beyond the current built-in starter set has a repo-owned spec and a bounded implementation plan.
 
 ## Frozen Until Post-V1
 

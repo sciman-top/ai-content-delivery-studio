@@ -18,9 +18,9 @@ Use `AI Content Delivery Studio` as the product-facing name.
 
 Use `AI 内容交付工作台` as the Chinese product-facing name.
 
-Keep `ImageSeriesStudio` as the short-term internal solution, namespace, and project-folder identity until a dedicated migration slice can rename it safely.
+The active internal solution, namespace, and project-folder identity now use `ContentDeliveryStudio.*`.
 
-Treat `ai-content-delivery-studio` as the intended medium-term repository and local root directory name. The current `ai-image-series-studio` path remains the active checkout until the rename gate is explicitly run from a clean worktree and no active tools depend on the old path.
+Treat `ai-content-delivery-studio` as the active repository and local root directory name. Preserve only bounded compatibility behavior for legacy local app-data discovery and historical evidence that still mentions `ImageSeriesStudio`.
 
 ## Migration Plan
 
@@ -35,11 +35,13 @@ Treat `ai-content-delivery-studio` as the intended medium-term repository and lo
    - Reopen tools from the new path.
    - Verify `git status --short`, `dotnet build`, `dotnet test`, and `dotnet format --verify-no-changes`.
    - Rollback: move the directory back to `D:\CODE\ai-image-series-studio` before making further changes.
+   - Status: completed in the verified post-V1 rename slice.
 
 3. Solution and namespace rename:
    - Rename `ImageSeriesStudio.sln`, project folders, project names, namespaces, assembly names, publish output, tests, and scripts in one mechanical slice.
    - Preserve compatibility notes for existing workspaces and diagnostics that still contain `ImageSeriesStudio` strings.
    - Verify no unintended references remain except historical ADRs, migration notes, and compatibility text.
+   - Status: completed in the verified post-V1 rename slice.
 
 ## Alternatives Considered
 
@@ -65,6 +67,6 @@ Treat `ai-content-delivery-studio` as the intended medium-term repository and lo
 
 - Product-facing docs and UI should say `AI Content Delivery Studio`.
 - Roadmap and tasks must track the later root-directory and namespace migration explicitly.
-- `ImageSeriesStudio` remains valid in code, tests, and historical docs until the dedicated migration slice lands.
+- `ImageSeriesStudio` now remains only in historical docs, compatibility notes/tests, and explicitly preserved legacy aliases such as the old local app-data root segment.
 - New generic capabilities should avoid adding more user-facing `Image Series Studio` branding.
 - Historical ADRs, old implementation plans, and compatibility notes may keep old names when they describe past decisions or migration evidence.
