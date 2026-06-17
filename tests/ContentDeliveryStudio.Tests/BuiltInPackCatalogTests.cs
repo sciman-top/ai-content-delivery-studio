@@ -1,4 +1,5 @@
 using ContentDeliveryStudio.Core.Packs;
+using ContentDeliveryStudio.Core.Projects;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -51,10 +52,16 @@ public sealed class BuiltInPackCatalogTests
         Assert.NotNull(registry.GetRequired<IndustryPack>(BuiltInPackCatalog.ArticleIllustrationIndustryPackId));
         Assert.NotNull(registry.GetRequired<RendererPack>(BuiltInPackCatalog.ArticleIllustrationRendererPackId));
         Assert.NotNull(registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.ArticleIllustrationReviewRubricPackId));
+        Assert.NotNull(registry.GetRequired<IndustryPack>(BuiltInPackCatalog.DocumentReviewTranslationIndustryPackId));
+        Assert.NotNull(registry.GetRequired<RendererPack>(BuiltInPackCatalog.DocumentReviewTranslationRendererPackId));
+        Assert.NotNull(registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.DocumentReviewTranslationReviewRubricPackId));
 
         var article = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.ArticleIllustrationBlueprintPackId);
         var articleWorkflow = registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.ArticleIllustrationWorkflowPackId);
         var document = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.DocumentReviewTranslationBlueprintPackId);
+        var documentWorkflow = registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.DocumentReviewTranslationWorkflowPackId);
+        var documentRenderer = registry.GetRequired<RendererPack>(BuiltInPackCatalog.DocumentReviewTranslationRendererPackId);
+        var documentRubric = registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.DocumentReviewTranslationReviewRubricPackId);
         var courseware = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.CoursewareVisualBlueprintPackId);
         var poster = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.PosterReportDeliveryBlueprintPackId);
 
@@ -64,9 +71,15 @@ public sealed class BuiltInPackCatalogTests
         Assert.Equal([BuiltInPackCatalog.ArticleIllustrationRendererPackId], articleWorkflow.RendererPackIds);
         Assert.Equal([BuiltInPackCatalog.ArticleIllustrationReviewRubricPackId], articleWorkflow.ReviewRubricPackIds);
         Assert.Contains("translation-review-report", document.BlueprintIds);
+        Assert.Equal(["document-review-translation"], documentWorkflow.ScenarioIds);
+        Assert.Equal([BuiltInPackCatalog.DocumentReviewTranslationIndustryPackId], documentWorkflow.IndustryPackIds);
+        Assert.Equal([BuiltInPackCatalog.DocumentReviewTranslationRendererPackId], documentWorkflow.RendererPackIds);
+        Assert.Equal([BuiltInPackCatalog.DocumentReviewTranslationReviewRubricPackId], documentWorkflow.ReviewRubricPackIds);
+        Assert.Contains("markdown", documentRenderer.OutputFormats);
+        Assert.Contains(ReviewRubricTemplateCatalog.ScholarlySchematic, documentRubric.RubricTemplateIds);
         Assert.Contains("lesson-slide-visual", courseware.BlueprintIds);
         Assert.Contains("poster-and-report-package", poster.BlueprintIds);
-        Assert.Equal(16, registry.Packs.Count);
+        Assert.Equal(19, registry.Packs.Count);
     }
 
     [Fact]

@@ -144,4 +144,37 @@ public sealed class PackPackageStoreTests
             }
         }
     }
+
+    [Fact]
+    public async Task PackPackageStore_ExportsStarterRegistryWithDocumentReviewPolicyLinks()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var packagePath = Path.Combine(rootDirectory, "document-review-starter-packs.json");
+        Directory.CreateDirectory(rootDirectory);
+
+        try
+        {
+            var timestamp = DateTimeOffset.Parse("2026-06-03T15:45:00Z");
+            var registry = BuiltInPackCatalog.CreateStarterPackRegistry("1.5.0", timestamp);
+            var package = PackPackage.FromRegistry("Starter packs", timestamp, registry);
+            var store = new JsonPackPackageStore();
+
+            await store.ExportAsync(package, packagePath, CancellationToken.None);
+            var imported = await store.ImportAsync(packagePath, "1.5.0", CancellationToken.None);
+            var documentWorkflow = imported.CreateRegistry("1.5.0")
+                .GetRequired<WorkflowPack>(BuiltInPackCatalog.DocumentReviewTranslationWorkflowPackId);
+
+            Assert.Equal(["document-review-translation"], documentWorkflow.ScenarioIds);
+            Assert.Equal([BuiltInPackCatalog.DocumentReviewTranslationIndustryPackId], documentWorkflow.IndustryPackIds);
+            Assert.Equal([BuiltInPackCatalog.DocumentReviewTranslationRendererPackId], documentWorkflow.RendererPackIds);
+            Assert.Equal([BuiltInPackCatalog.DocumentReviewTranslationReviewRubricPackId], documentWorkflow.ReviewRubricPackIds);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
 }

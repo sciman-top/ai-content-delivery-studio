@@ -1,3 +1,5 @@
+using ContentDeliveryStudio.Core.Projects;
+
 namespace ContentDeliveryStudio.Core.Packs;
 
 public static class BuiltInPackCatalog
@@ -25,6 +27,12 @@ public static class BuiltInPackCatalog
     public const string DocumentReviewTranslationWorkflowPackId = "document-review-translation";
 
     public const string DocumentReviewTranslationBlueprintPackId = "document-review-translation-blueprints";
+
+    public const string DocumentReviewTranslationIndustryPackId = "document-review-translation-industry";
+
+    public const string DocumentReviewTranslationRendererPackId = "document-review-translation-renderer";
+
+    public const string DocumentReviewTranslationReviewRubricPackId = "document-review-translation-review-rubric";
 
     public const string CoursewareVisualWorkflowPackId = "courseware-visual";
 
@@ -185,6 +193,34 @@ public static class BuiltInPackCatalog
             ["translation-review-report", "paper-review-summary", "latex-formula-cleanup"],
             compatibility,
             createdAt);
+        var documentIndustry = IndustryPack.Create(
+            DocumentReviewTranslationIndustryPackId,
+            "Document Review Translation Audience",
+            "1.0.0",
+            compatibility,
+            ["research", "translation"],
+            [DocumentReviewTranslationWorkflowPackId],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var documentRenderer = RendererPack.Create(
+            DocumentReviewTranslationRendererPackId,
+            "Document Review Translation Renderer",
+            "1.0.0",
+            compatibility,
+            ["markdown", "docx", "pdf"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var documentReviewRubric = ReviewRubricPack.Create(
+            DocumentReviewTranslationReviewRubricPackId,
+            "Document Review Translation Review Rubric",
+            "1.0.0",
+            compatibility,
+            [ReviewRubricTemplateCatalog.ScholarlySchematic, ReviewRubricTemplateCatalog.EditorialIllustration],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
         var documentWorkflow = CreateWorkflowPack(
             DocumentReviewTranslationWorkflowPackId,
             "Document Review Translation",
@@ -231,6 +267,9 @@ public static class BuiltInPackCatalog
                 articleReviewRubric,
                 documentWorkflow,
                 documentBlueprint,
+                documentIndustry,
+                documentRenderer,
+                documentReviewRubric,
                 coursewareWorkflow,
                 coursewareBlueprint,
                 posterWorkflow,
@@ -260,18 +299,21 @@ public static class BuiltInPackCatalog
             {
                 GenericImageSeriesWorkflowPackId => [GenericImageSeriesIndustryPackId],
                 ArticleIllustrationWorkflowPackId => [ArticleIllustrationIndustryPackId],
+                DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationIndustryPackId],
                 _ => [],
             },
             rendererPackIds: id switch
             {
                 GenericImageSeriesWorkflowPackId => [GenericImageSeriesRendererPackId],
                 ArticleIllustrationWorkflowPackId => [ArticleIllustrationRendererPackId],
+                DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationRendererPackId],
                 _ => [],
             },
             reviewRubricPackIds: id switch
             {
                 GenericImageSeriesWorkflowPackId => [GenericImageSeriesReviewRubricPackId],
                 ArticleIllustrationWorkflowPackId => [ArticleIllustrationReviewRubricPackId],
+                DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationReviewRubricPackId],
                 _ => [],
             });
     }
