@@ -58,6 +58,9 @@ public sealed class BuiltInPackCatalogTests
         Assert.NotNull(registry.GetRequired<IndustryPack>(BuiltInPackCatalog.CoursewareVisualIndustryPackId));
         Assert.NotNull(registry.GetRequired<RendererPack>(BuiltInPackCatalog.CoursewareVisualRendererPackId));
         Assert.NotNull(registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.CoursewareVisualReviewRubricPackId));
+        Assert.NotNull(registry.GetRequired<IndustryPack>(BuiltInPackCatalog.PosterReportDeliveryIndustryPackId));
+        Assert.NotNull(registry.GetRequired<RendererPack>(BuiltInPackCatalog.PosterReportDeliveryRendererPackId));
+        Assert.NotNull(registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.PosterReportDeliveryReviewRubricPackId));
 
         var article = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.ArticleIllustrationBlueprintPackId);
         var articleWorkflow = registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.ArticleIllustrationWorkflowPackId);
@@ -70,6 +73,9 @@ public sealed class BuiltInPackCatalogTests
         var coursewareRenderer = registry.GetRequired<RendererPack>(BuiltInPackCatalog.CoursewareVisualRendererPackId);
         var coursewareRubric = registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.CoursewareVisualReviewRubricPackId);
         var poster = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.PosterReportDeliveryBlueprintPackId);
+        var posterWorkflow = registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.PosterReportDeliveryWorkflowPackId);
+        var posterRenderer = registry.GetRequired<RendererPack>(BuiltInPackCatalog.PosterReportDeliveryRendererPackId);
+        var posterRubric = registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.PosterReportDeliveryReviewRubricPackId);
 
         Assert.Contains("article-inline-illustration", article.BlueprintIds);
         Assert.Equal(["article-illustration"], articleWorkflow.ScenarioIds);
@@ -91,7 +97,13 @@ public sealed class BuiltInPackCatalogTests
         Assert.Contains("pptx", coursewareRenderer.OutputFormats);
         Assert.Contains(ReviewRubricTemplateCatalog.EducationalAccuracy, coursewareRubric.RubricTemplateIds);
         Assert.Contains("poster-and-report-package", poster.BlueprintIds);
-        Assert.Equal(22, registry.Packs.Count);
+        Assert.Equal(["poster-report-delivery"], posterWorkflow.ScenarioIds);
+        Assert.Equal([BuiltInPackCatalog.PosterReportDeliveryIndustryPackId], posterWorkflow.IndustryPackIds);
+        Assert.Equal([BuiltInPackCatalog.PosterReportDeliveryRendererPackId], posterWorkflow.RendererPackIds);
+        Assert.Equal([BuiltInPackCatalog.PosterReportDeliveryReviewRubricPackId], posterWorkflow.ReviewRubricPackIds);
+        Assert.Contains("pdf", posterRenderer.OutputFormats);
+        Assert.Contains(ReviewRubricTemplateCatalog.TextHeavyPoster, posterRubric.RubricTemplateIds);
+        Assert.Equal(25, registry.Packs.Count);
     }
 
     [Fact]

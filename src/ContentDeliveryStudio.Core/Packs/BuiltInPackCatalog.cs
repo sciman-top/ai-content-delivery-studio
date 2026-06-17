@@ -48,6 +48,12 @@ public static class BuiltInPackCatalog
 
     public const string PosterReportDeliveryBlueprintPackId = "poster-report-delivery-blueprints";
 
+    public const string PosterReportDeliveryIndustryPackId = "poster-report-delivery-industry";
+
+    public const string PosterReportDeliveryRendererPackId = "poster-report-delivery-renderer";
+
+    public const string PosterReportDeliveryReviewRubricPackId = "poster-report-delivery-review-rubric";
+
     public static PackRegistry CreateGenericImageSeriesRegistry(
         string appVersion,
         DateTimeOffset createdAt)
@@ -279,6 +285,34 @@ public static class BuiltInPackCatalog
             ["poster-and-report-package", "infographic-report", "review-backed-delivery"],
             compatibility,
             createdAt);
+        var posterIndustry = IndustryPack.Create(
+            PosterReportDeliveryIndustryPackId,
+            "Poster Report Delivery Audience",
+            "1.0.0",
+            compatibility,
+            ["creator", "delivery"],
+            [PosterReportDeliveryWorkflowPackId],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var posterRenderer = RendererPack.Create(
+            PosterReportDeliveryRendererPackId,
+            "Poster Report Delivery Renderer",
+            "1.0.0",
+            compatibility,
+            ["png", "pdf", "zip"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var posterReviewRubric = ReviewRubricPack.Create(
+            PosterReportDeliveryReviewRubricPackId,
+            "Poster Report Delivery Review Rubric",
+            "1.0.0",
+            compatibility,
+            [ReviewRubricTemplateCatalog.TextHeavyPoster, ReviewRubricTemplateCatalog.GeneralImage],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
         var posterWorkflow = CreateWorkflowPack(
             PosterReportDeliveryWorkflowPackId,
             "Poster Report Delivery",
@@ -311,6 +345,9 @@ public static class BuiltInPackCatalog
                 coursewareReviewRubric,
                 posterWorkflow,
                 posterBlueprint,
+                posterIndustry,
+                posterRenderer,
+                posterReviewRubric,
             ]);
     }
 
@@ -338,6 +375,7 @@ public static class BuiltInPackCatalog
                 ArticleIllustrationWorkflowPackId => [ArticleIllustrationIndustryPackId],
                 DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationIndustryPackId],
                 CoursewareVisualWorkflowPackId => [CoursewareVisualIndustryPackId],
+                PosterReportDeliveryWorkflowPackId => [PosterReportDeliveryIndustryPackId],
                 _ => [],
             },
             rendererPackIds: id switch
@@ -346,6 +384,7 @@ public static class BuiltInPackCatalog
                 ArticleIllustrationWorkflowPackId => [ArticleIllustrationRendererPackId],
                 DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationRendererPackId],
                 CoursewareVisualWorkflowPackId => [CoursewareVisualRendererPackId],
+                PosterReportDeliveryWorkflowPackId => [PosterReportDeliveryRendererPackId],
                 _ => [],
             },
             reviewRubricPackIds: id switch
@@ -354,6 +393,7 @@ public static class BuiltInPackCatalog
                 ArticleIllustrationWorkflowPackId => [ArticleIllustrationReviewRubricPackId],
                 DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationReviewRubricPackId],
                 CoursewareVisualWorkflowPackId => [CoursewareVisualReviewRubricPackId],
+                PosterReportDeliveryWorkflowPackId => [PosterReportDeliveryReviewRubricPackId],
                 _ => [],
             });
     }
