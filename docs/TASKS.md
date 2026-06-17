@@ -79,7 +79,6 @@ These items are still valuable, but they are not the same thing as the current V
 
 - [x] Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
 - [x] Add targeted binary extraction hardening only for formats promoted by the support matrix.
-- [ ] Add partial-image streaming UX only if a future workbench flow gains clear product value from progressive previews.
 - [x] Add the first generic-scenario pack and policy modeling hardening slice with explicit scenario and policy-pack references.
 - [x] Extend the stronger pack/policy contract to the built-in `article-illustration` scenario.
 - [x] Extend the stronger pack/policy contract to the built-in `document-review-translation` scenario.
