@@ -28,7 +28,7 @@ public sealed class PackPackageStoreTests
             Assert.True(File.Exists(packagePath));
             Assert.Equal(PackPackage.CurrentSchemaVersion, imported.SchemaVersion);
             Assert.Equal("Generic image-series starter packs", imported.Name);
-            Assert.Equal(2, importedRegistry.Packs.Count);
+            Assert.Equal(5, importedRegistry.Packs.Count);
             Assert.Contains(WorkflowViewSlotIds.StageWorkspace, workflow.UiDefaults.ViewSlots.Select(slot => slot.SlotId));
         }
         finally

@@ -332,6 +332,10 @@ public sealed record WorkflowPack(
     PackMetadata Metadata,
     IReadOnlyList<WorkflowStageDefinition> StageDefinitions,
     IReadOnlyList<string> BlueprintPackIds,
+    IReadOnlyList<string> ScenarioIds,
+    IReadOnlyList<string> IndustryPackIds,
+    IReadOnlyList<string> RendererPackIds,
+    IReadOnlyList<string> ReviewRubricPackIds,
     WorkflowPackUiDefaults UiDefaults) : IPackDefinition
 {
     public IReadOnlyList<string> StageIds => StageDefinitions.Select(stage => stage.Id).ToArray();
@@ -345,7 +349,11 @@ public sealed record WorkflowPack(
         IReadOnlyList<string> blueprintPackIds,
         PackLifecycleState lifecycleState,
         IReadOnlyList<string> migrationNotes,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        IReadOnlyList<string>? scenarioIds = null,
+        IReadOnlyList<string>? industryPackIds = null,
+        IReadOnlyList<string>? rendererPackIds = null,
+        IReadOnlyList<string>? reviewRubricPackIds = null)
     {
         var stageDefinitions = CreateDefaultStageDefinitions(stageIds);
 
@@ -353,6 +361,10 @@ public sealed record WorkflowPack(
             PackMetadata.Create(id, displayName, version, compatibility, lifecycleState, migrationNotes, createdAt),
             stageDefinitions,
             NormalizePackIds(blueprintPackIds),
+            NormalizeScenarioIds(id, scenarioIds),
+            NormalizePackIds(industryPackIds ?? []),
+            NormalizePackIds(rendererPackIds ?? []),
+            NormalizePackIds(reviewRubricPackIds ?? []),
             WorkflowPackUiDefaults.CreateDefault(stageDefinitions));
     }
 
@@ -365,7 +377,11 @@ public sealed record WorkflowPack(
         IReadOnlyList<string> blueprintPackIds,
         PackLifecycleState lifecycleState,
         IReadOnlyList<string> migrationNotes,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        IReadOnlyList<string>? scenarioIds = null,
+        IReadOnlyList<string>? industryPackIds = null,
+        IReadOnlyList<string>? rendererPackIds = null,
+        IReadOnlyList<string>? reviewRubricPackIds = null)
     {
         var normalizedStageDefinitions = NormalizeStageDefinitions(stageDefinitions);
 
@@ -373,6 +389,10 @@ public sealed record WorkflowPack(
             PackMetadata.Create(id, displayName, version, compatibility, lifecycleState, migrationNotes, createdAt),
             normalizedStageDefinitions,
             NormalizePackIds(blueprintPackIds),
+            NormalizeScenarioIds(id, scenarioIds),
+            NormalizePackIds(industryPackIds ?? []),
+            NormalizePackIds(rendererPackIds ?? []),
+            NormalizePackIds(reviewRubricPackIds ?? []),
             WorkflowPackUiDefaults.CreateDefault(normalizedStageDefinitions));
     }
 
@@ -386,7 +406,11 @@ public sealed record WorkflowPack(
         WorkflowPackUiDefaults uiDefaults,
         PackLifecycleState lifecycleState,
         IReadOnlyList<string> migrationNotes,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        IReadOnlyList<string>? scenarioIds = null,
+        IReadOnlyList<string>? industryPackIds = null,
+        IReadOnlyList<string>? rendererPackIds = null,
+        IReadOnlyList<string>? reviewRubricPackIds = null)
     {
         ArgumentNullException.ThrowIfNull(uiDefaults);
 
@@ -394,6 +418,10 @@ public sealed record WorkflowPack(
             PackMetadata.Create(id, displayName, version, compatibility, lifecycleState, migrationNotes, createdAt),
             NormalizeStageDefinitions(stageDefinitions),
             NormalizePackIds(blueprintPackIds),
+            NormalizeScenarioIds(id, scenarioIds),
+            NormalizePackIds(industryPackIds ?? []),
+            NormalizePackIds(rendererPackIds ?? []),
+            NormalizePackIds(reviewRubricPackIds ?? []),
             uiDefaults);
     }
 
@@ -438,6 +466,16 @@ public sealed record WorkflowPack(
             .Where(id => id.Length > 0)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
+    }
+
+    private static IReadOnlyList<string> NormalizeScenarioIds(string workflowId, IReadOnlyList<string>? scenarioIds)
+    {
+        if (scenarioIds is null || scenarioIds.Count == 0)
+        {
+            return [PackMetadata.NormalizeId(workflowId, nameof(workflowId))];
+        }
+
+        return NormalizePackIds(scenarioIds);
     }
 }
 

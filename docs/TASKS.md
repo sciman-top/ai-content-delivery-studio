@@ -80,7 +80,8 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
 - [x] Add targeted binary extraction hardening only for formats promoted by the support matrix.
 - [ ] Add partial-image streaming UX only if a future workbench flow gains clear product value from progressive previews.
-- [ ] Add pack and policy modeling hardening only when a scenario-specific slice has a repo-owned spec and a bounded implementation plan.
+- [x] Add the first generic-scenario pack and policy modeling hardening slice with explicit scenario and policy-pack references.
+- [ ] Continue pack and policy modeling hardening for additional scenarios only when each slice has a repo-owned spec and a bounded implementation plan.
 
 ## Frozen Until Post-V1
 

@@ -12,14 +12,25 @@ public sealed class BuiltInPackCatalogTests
         var registry = BuiltInPackCatalog.CreateGenericImageSeriesRegistry("1.5.0", createdAt);
         var workflow = registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.GenericImageSeriesWorkflowPackId);
         var blueprint = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.GenericImageSeriesBlueprintPackId);
+        var industry = registry.GetRequired<IndustryPack>(BuiltInPackCatalog.GenericImageSeriesIndustryPackId);
+        var renderer = registry.GetRequired<RendererPack>(BuiltInPackCatalog.GenericImageSeriesRendererPackId);
+        var rubric = registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.GenericImageSeriesReviewRubricPackId);
 
         Assert.Equal("generic-image-series", workflow.Metadata.Id);
         Assert.Equal(PackLifecycleState.Active, workflow.Metadata.LifecycleState);
+        Assert.Equal(["generic-image-series"], workflow.ScenarioIds);
+        Assert.Equal([BuiltInPackCatalog.GenericImageSeriesIndustryPackId], workflow.IndustryPackIds);
+        Assert.Equal([BuiltInPackCatalog.GenericImageSeriesRendererPackId], workflow.RendererPackIds);
+        Assert.Equal([BuiltInPackCatalog.GenericImageSeriesReviewRubricPackId], workflow.ReviewRubricPackIds);
         Assert.Equal(["Source", "Brief", "Plan", "Produce", "Review", "Repair", "Deliver"], workflow.StageIds);
         Assert.Equal([BuiltInPackCatalog.GenericImageSeriesBlueprintPackId], workflow.BlueprintPackIds);
         Assert.Contains("single-image", blueprint.BlueprintIds);
         Assert.Contains("image-series", blueprint.BlueprintIds);
         Assert.Contains("panel-sequence", blueprint.BlueprintIds);
+        Assert.Contains("teacher", industry.AudienceTags);
+        Assert.Contains("png", renderer.OutputFormats);
+        Assert.Contains("general-image", rubric.RubricTemplateIds);
+        Assert.Equal(5, registry.Packs.Count);
     }
 
     [Fact]
@@ -34,6 +45,9 @@ public sealed class BuiltInPackCatalogTests
         Assert.NotNull(registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.DocumentReviewTranslationWorkflowPackId));
         Assert.NotNull(registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.CoursewareVisualWorkflowPackId));
         Assert.NotNull(registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.PosterReportDeliveryWorkflowPackId));
+        Assert.NotNull(registry.GetRequired<IndustryPack>(BuiltInPackCatalog.GenericImageSeriesIndustryPackId));
+        Assert.NotNull(registry.GetRequired<RendererPack>(BuiltInPackCatalog.GenericImageSeriesRendererPackId));
+        Assert.NotNull(registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.GenericImageSeriesReviewRubricPackId));
 
         var article = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.ArticleIllustrationBlueprintPackId);
         var document = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.DocumentReviewTranslationBlueprintPackId);
@@ -44,7 +58,7 @@ public sealed class BuiltInPackCatalogTests
         Assert.Contains("translation-review-report", document.BlueprintIds);
         Assert.Contains("lesson-slide-visual", courseware.BlueprintIds);
         Assert.Contains("poster-and-report-package", poster.BlueprintIds);
-        Assert.Equal(10, registry.Packs.Count);
+        Assert.Equal(13, registry.Packs.Count);
     }
 
     [Fact]

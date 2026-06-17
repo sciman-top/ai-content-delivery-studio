@@ -24,6 +24,7 @@ public sealed class PackRegistry
         ValidateUniqueIds(normalizedPacks);
         ValidateCompatibility(parsedAppVersion, normalizedPacks);
         ValidateReferences(normalizedPacks);
+        ValidateScenarioSelection(normalizedPacks);
         ValidateWorkflowUiDefaults(normalizedPacks);
 
         return new PackRegistry(parsedAppVersion, normalizedPacks);
@@ -78,6 +79,18 @@ public sealed class PackRegistry
             .OfType<BlueprintPack>()
             .Select(pack => pack.Metadata.Id)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var industryPackIds = packs
+            .OfType<IndustryPack>()
+            .Select(pack => pack.Metadata.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var rendererPackIds = packs
+            .OfType<RendererPack>()
+            .Select(pack => pack.Metadata.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var reviewRubricPackIds = packs
+            .OfType<ReviewRubricPack>()
+            .Select(pack => pack.Metadata.Id)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         foreach (var workflow in packs.OfType<WorkflowPack>())
         {
@@ -89,6 +102,47 @@ public sealed class PackRegistry
                         $"Workflow pack references missing blueprint pack: {workflow.Metadata.Id} -> {blueprintPackId}");
                 }
             }
+
+            foreach (var industryPackId in workflow.IndustryPackIds)
+            {
+                if (!industryPackIds.Contains(industryPackId))
+                {
+                    throw new InvalidOperationException(
+                        $"Workflow pack references missing industry pack: {workflow.Metadata.Id} -> {industryPackId}");
+                }
+            }
+
+            foreach (var rendererPackId in workflow.RendererPackIds)
+            {
+                if (!rendererPackIds.Contains(rendererPackId))
+                {
+                    throw new InvalidOperationException(
+                        $"Workflow pack references missing renderer pack: {workflow.Metadata.Id} -> {rendererPackId}");
+                }
+            }
+
+            foreach (var reviewRubricPackId in workflow.ReviewRubricPackIds)
+            {
+                if (!reviewRubricPackIds.Contains(reviewRubricPackId))
+                {
+                    throw new InvalidOperationException(
+                        $"Workflow pack references missing review rubric pack: {workflow.Metadata.Id} -> {reviewRubricPackId}");
+                }
+            }
+        }
+    }
+
+    private static void ValidateScenarioSelection(IReadOnlyList<IPackDefinition> packs)
+    {
+        var duplicateScenario = packs
+            .OfType<WorkflowPack>()
+            .SelectMany(workflow => workflow.ScenarioIds.Select(scenarioId => (workflow.Metadata.Id, scenarioId)))
+            .GroupBy(pair => pair.scenarioId, StringComparer.OrdinalIgnoreCase)
+            .FirstOrDefault(group => group.Count() > 1)
+            ?.Key;
+        if (duplicateScenario is not null)
+        {
+            throw new ArgumentException($"Duplicate workflow scenario id: {duplicateScenario}", nameof(packs));
         }
     }
 

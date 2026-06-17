@@ -6,6 +6,12 @@ public static class BuiltInPackCatalog
 
     public const string GenericImageSeriesBlueprintPackId = "generic-image-series-blueprints";
 
+    public const string GenericImageSeriesIndustryPackId = "generic-image-series-industry";
+
+    public const string GenericImageSeriesRendererPackId = "generic-image-series-renderer";
+
+    public const string GenericImageSeriesReviewRubricPackId = "generic-image-series-review-rubric";
+
     public const string ArticleIllustrationWorkflowPackId = "article-illustration";
 
     public const string ArticleIllustrationBlueprintPackId = "article-illustration-blueprints";
@@ -36,6 +42,34 @@ public static class BuiltInPackCatalog
             PackLifecycleState.Active,
             [],
             createdAt);
+        var industryPack = IndustryPack.Create(
+            GenericImageSeriesIndustryPackId,
+            "Generic Image Series Audience",
+            "1.0.0",
+            compatibility,
+            ["teacher", "creator"],
+            [GenericImageSeriesWorkflowPackId],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var rendererPack = RendererPack.Create(
+            GenericImageSeriesRendererPackId,
+            "Generic Image Series Renderer",
+            "1.0.0",
+            compatibility,
+            ["png", "webp"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var reviewRubricPack = ReviewRubricPack.Create(
+            GenericImageSeriesReviewRubricPackId,
+            "Generic Image Series Review Rubric",
+            "1.0.0",
+            compatibility,
+            ["general-image", "series-consistency"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
         var workflowPack = WorkflowPack.Create(
             GenericImageSeriesWorkflowPackId,
             "Generic Image Series",
@@ -45,9 +79,13 @@ public static class BuiltInPackCatalog
             [GenericImageSeriesBlueprintPackId],
             PackLifecycleState.Active,
             [],
-            createdAt);
+            createdAt,
+            scenarioIds: [GenericImageSeriesWorkflowPackId],
+            industryPackIds: [GenericImageSeriesIndustryPackId],
+            rendererPackIds: [GenericImageSeriesRendererPackId],
+            reviewRubricPackIds: [GenericImageSeriesReviewRubricPackId]);
 
-        return PackRegistry.Create(appVersion, [workflowPack, blueprintPack]);
+        return PackRegistry.Create(appVersion, [workflowPack, blueprintPack, industryPack, rendererPack, reviewRubricPack]);
     }
 
     public static PackRegistry CreateStarterPackRegistry(
@@ -66,6 +104,34 @@ public static class BuiltInPackCatalog
             "Generic Image Series",
             [GenericImageSeriesBlueprintPackId],
             compatibility,
+            createdAt);
+        var genericIndustry = IndustryPack.Create(
+            GenericImageSeriesIndustryPackId,
+            "Generic Image Series Audience",
+            "1.0.0",
+            compatibility,
+            ["teacher", "creator"],
+            [GenericImageSeriesWorkflowPackId],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var genericRenderer = RendererPack.Create(
+            GenericImageSeriesRendererPackId,
+            "Generic Image Series Renderer",
+            "1.0.0",
+            compatibility,
+            ["png", "webp"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var genericReviewRubric = ReviewRubricPack.Create(
+            GenericImageSeriesReviewRubricPackId,
+            "Generic Image Series Review Rubric",
+            "1.0.0",
+            compatibility,
+            ["general-image", "series-consistency"],
+            PackLifecycleState.Active,
+            [],
             createdAt);
         var articleBlueprint = CreateBlueprintPack(
             ArticleIllustrationBlueprintPackId,
@@ -121,6 +187,9 @@ public static class BuiltInPackCatalog
             [
                 genericWorkflow,
                 genericBlueprint,
+                genericIndustry,
+                genericRenderer,
+                genericReviewRubric,
                 articleWorkflow,
                 articleBlueprint,
                 documentWorkflow,
@@ -148,7 +217,11 @@ public static class BuiltInPackCatalog
             blueprintPackIds,
             PackLifecycleState.Active,
             [],
-            createdAt);
+            createdAt,
+            scenarioIds: [id],
+            industryPackIds: id == GenericImageSeriesWorkflowPackId ? [GenericImageSeriesIndustryPackId] : [],
+            rendererPackIds: id == GenericImageSeriesWorkflowPackId ? [GenericImageSeriesRendererPackId] : [],
+            reviewRubricPackIds: id == GenericImageSeriesWorkflowPackId ? [GenericImageSeriesReviewRubricPackId] : []);
     }
 
     private static BlueprintPack CreateBlueprintPack(

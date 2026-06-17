@@ -63,6 +63,10 @@ public sealed class PackMetadataTests
         Assert.Equal("1.2.3", workflow.Metadata.Version.ToString());
         Assert.Equal("1.0.0", workflow.Metadata.Compatibility.MinimumAppVersion.ToString());
         Assert.Equal("2.0.0", workflow.Metadata.Compatibility.MaximumAppVersion!.ToString());
+        Assert.Equal(["generic-image-series"], workflow.ScenarioIds);
+        Assert.Empty(workflow.IndustryPackIds);
+        Assert.Empty(workflow.RendererPackIds);
+        Assert.Empty(workflow.ReviewRubricPackIds);
         Assert.Equal(["Source", "Brief", "Plan", "Produce", "Review", "Deliver"], workflow.StageIds);
         Assert.Equal(["article-illustration-pack"], workflow.BlueprintPackIds);
 
