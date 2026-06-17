@@ -118,7 +118,7 @@ These records should live in `Core` and be persisted through provider-neutral re
 
 The launch-capable combinations of source inputs and output artifacts are intentionally narrower than the long-term model boundary and are tracked in [SOURCE_ARTIFACT_SUPPORT_MATRIX.md](./SOURCE_ARTIFACT_SUPPORT_MATRIX.md).
 
-Within that bounded matrix, the current local source-ingestion path now supports deterministic text extraction for local `pdf` and `docx` files through the same provider-neutral `SourceAsset -> ExtractedContent -> EvidenceAnchor` model. OCR-heavy, scanned, table-rich, and other high-fidelity binary extraction paths remain explicitly outside the current slice.
+Within that bounded matrix, the current supported local source-ingestion path supports deterministic text extraction for local `pdf` and `docx` files through the same provider-neutral `SourceAsset -> ExtractedContent -> EvidenceAnchor` model. OCR-heavy, scanned, table-rich, and other high-fidelity binary extraction paths remain explicitly outside the current support boundary.
 
 The current WPF shell exposes that bounded path through the existing document-illustration inspector surface: the user can now point the source-text entry to a local `pdf` or `docx` file, import the extracted text into the same planning textbox, and then continue through the existing fake-first document-illustration route without opening a second source-management surface.
 

@@ -34,7 +34,7 @@ The first document illustration release is fake-provider first. The default path
 Use the document illustration entry when you want to turn pasted text or a bounded local `pdf` / `docx` source file into illustration directions before promoting approved targets into the existing Plan and Prompts workflow.
 
 - Input supports pasted draft text, plain text content, or a bounded local `pdf` / `docx` file import.
-- The current slice is designed for concept illustrations and graphical abstract drafts.
+- The current supported document-illustration path is designed for concept illustrations and graphical abstract drafts.
 - Approved targets are promoted into the existing plan structure instead of creating a separate downstream pipeline.
 - Source text should be treated as planning evidence, not as permission to skip review or provenance tracking.
 - Real provider execution is now contract-ready for the planning path; local `pdf` / `docx` text extraction is available for the bounded support-matrix slice, while OCR-heavy and high-fidelity binary extraction remain later work.
