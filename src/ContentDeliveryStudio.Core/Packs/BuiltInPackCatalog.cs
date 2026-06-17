@@ -16,6 +16,12 @@ public static class BuiltInPackCatalog
 
     public const string ArticleIllustrationBlueprintPackId = "article-illustration-blueprints";
 
+    public const string ArticleIllustrationIndustryPackId = "article-illustration-industry";
+
+    public const string ArticleIllustrationRendererPackId = "article-illustration-renderer";
+
+    public const string ArticleIllustrationReviewRubricPackId = "article-illustration-review-rubric";
+
     public const string DocumentReviewTranslationWorkflowPackId = "document-review-translation";
 
     public const string DocumentReviewTranslationBlueprintPackId = "document-review-translation-blueprints";
@@ -139,6 +145,34 @@ public static class BuiltInPackCatalog
             ["article-inline-illustration", "article-cover", "concept-explainer"],
             compatibility,
             createdAt);
+        var articleIndustry = IndustryPack.Create(
+            ArticleIllustrationIndustryPackId,
+            "Article Illustration Audience",
+            "1.0.0",
+            compatibility,
+            ["editorial", "creator"],
+            [ArticleIllustrationWorkflowPackId],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var articleRenderer = RendererPack.Create(
+            ArticleIllustrationRendererPackId,
+            "Article Illustration Renderer",
+            "1.0.0",
+            compatibility,
+            ["png", "jpg", "webp"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var articleReviewRubric = ReviewRubricPack.Create(
+            ArticleIllustrationReviewRubricPackId,
+            "Article Illustration Review Rubric",
+            "1.0.0",
+            compatibility,
+            ["editorial-illustration"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
         var articleWorkflow = CreateWorkflowPack(
             ArticleIllustrationWorkflowPackId,
             "Article Illustration",
@@ -192,6 +226,9 @@ public static class BuiltInPackCatalog
                 genericReviewRubric,
                 articleWorkflow,
                 articleBlueprint,
+                articleIndustry,
+                articleRenderer,
+                articleReviewRubric,
                 documentWorkflow,
                 documentBlueprint,
                 coursewareWorkflow,
@@ -219,9 +256,24 @@ public static class BuiltInPackCatalog
             [],
             createdAt,
             scenarioIds: [id],
-            industryPackIds: id == GenericImageSeriesWorkflowPackId ? [GenericImageSeriesIndustryPackId] : [],
-            rendererPackIds: id == GenericImageSeriesWorkflowPackId ? [GenericImageSeriesRendererPackId] : [],
-            reviewRubricPackIds: id == GenericImageSeriesWorkflowPackId ? [GenericImageSeriesReviewRubricPackId] : []);
+            industryPackIds: id switch
+            {
+                GenericImageSeriesWorkflowPackId => [GenericImageSeriesIndustryPackId],
+                ArticleIllustrationWorkflowPackId => [ArticleIllustrationIndustryPackId],
+                _ => [],
+            },
+            rendererPackIds: id switch
+            {
+                GenericImageSeriesWorkflowPackId => [GenericImageSeriesRendererPackId],
+                ArticleIllustrationWorkflowPackId => [ArticleIllustrationRendererPackId],
+                _ => [],
+            },
+            reviewRubricPackIds: id switch
+            {
+                GenericImageSeriesWorkflowPackId => [GenericImageSeriesReviewRubricPackId],
+                ArticleIllustrationWorkflowPackId => [ArticleIllustrationReviewRubricPackId],
+                _ => [],
+            });
     }
 
     private static BlueprintPack CreateBlueprintPack(

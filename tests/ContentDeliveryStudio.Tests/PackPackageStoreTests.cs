@@ -112,4 +112,36 @@ public sealed class PackPackageStoreTests
             }
         }
     }
+
+    [Fact]
+    public async Task PackPackageStore_ExportsStarterRegistryWithArticlePolicyLinks()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var packagePath = Path.Combine(rootDirectory, "starter-packs.json");
+        Directory.CreateDirectory(rootDirectory);
+
+        try
+        {
+            var timestamp = DateTimeOffset.Parse("2026-06-03T15:30:00Z");
+            var registry = BuiltInPackCatalog.CreateStarterPackRegistry("1.5.0", timestamp);
+            var package = PackPackage.FromRegistry("Starter packs", timestamp, registry);
+            var store = new JsonPackPackageStore();
+
+            await store.ExportAsync(package, packagePath, CancellationToken.None);
+            var imported = await store.ImportAsync(packagePath, "1.5.0", CancellationToken.None);
+            var articleWorkflow = imported.CreateRegistry("1.5.0")
+                .GetRequired<WorkflowPack>(BuiltInPackCatalog.ArticleIllustrationWorkflowPackId);
+
+            Assert.Equal([BuiltInPackCatalog.ArticleIllustrationIndustryPackId], articleWorkflow.IndustryPackIds);
+            Assert.Equal([BuiltInPackCatalog.ArticleIllustrationRendererPackId], articleWorkflow.RendererPackIds);
+            Assert.Equal([BuiltInPackCatalog.ArticleIllustrationReviewRubricPackId], articleWorkflow.ReviewRubricPackIds);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
 }

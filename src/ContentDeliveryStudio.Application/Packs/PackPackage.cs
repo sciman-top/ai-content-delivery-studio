@@ -115,7 +115,11 @@ public sealed record PackPackage(
             NormalizeUiDefaults(pack.UiDefaults),
             pack.Metadata.LifecycleState,
             pack.Metadata.MigrationNotes,
-            pack.Metadata.CreatedAt);
+            pack.Metadata.CreatedAt,
+            pack.ScenarioIds,
+            pack.IndustryPackIds,
+            pack.RendererPackIds,
+            pack.ReviewRubricPackIds);
     }
 
     private static WorkflowStageDefinition NormalizeStageDefinition(WorkflowStageDefinition stage)

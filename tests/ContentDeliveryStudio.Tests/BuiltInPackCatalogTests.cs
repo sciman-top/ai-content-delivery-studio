@@ -48,17 +48,25 @@ public sealed class BuiltInPackCatalogTests
         Assert.NotNull(registry.GetRequired<IndustryPack>(BuiltInPackCatalog.GenericImageSeriesIndustryPackId));
         Assert.NotNull(registry.GetRequired<RendererPack>(BuiltInPackCatalog.GenericImageSeriesRendererPackId));
         Assert.NotNull(registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.GenericImageSeriesReviewRubricPackId));
+        Assert.NotNull(registry.GetRequired<IndustryPack>(BuiltInPackCatalog.ArticleIllustrationIndustryPackId));
+        Assert.NotNull(registry.GetRequired<RendererPack>(BuiltInPackCatalog.ArticleIllustrationRendererPackId));
+        Assert.NotNull(registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.ArticleIllustrationReviewRubricPackId));
 
         var article = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.ArticleIllustrationBlueprintPackId);
+        var articleWorkflow = registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.ArticleIllustrationWorkflowPackId);
         var document = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.DocumentReviewTranslationBlueprintPackId);
         var courseware = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.CoursewareVisualBlueprintPackId);
         var poster = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.PosterReportDeliveryBlueprintPackId);
 
         Assert.Contains("article-inline-illustration", article.BlueprintIds);
+        Assert.Equal(["article-illustration"], articleWorkflow.ScenarioIds);
+        Assert.Equal([BuiltInPackCatalog.ArticleIllustrationIndustryPackId], articleWorkflow.IndustryPackIds);
+        Assert.Equal([BuiltInPackCatalog.ArticleIllustrationRendererPackId], articleWorkflow.RendererPackIds);
+        Assert.Equal([BuiltInPackCatalog.ArticleIllustrationReviewRubricPackId], articleWorkflow.ReviewRubricPackIds);
         Assert.Contains("translation-review-report", document.BlueprintIds);
         Assert.Contains("lesson-slide-visual", courseware.BlueprintIds);
         Assert.Contains("poster-and-report-package", poster.BlueprintIds);
-        Assert.Equal(13, registry.Packs.Count);
+        Assert.Equal(16, registry.Packs.Count);
     }
 
     [Fact]
