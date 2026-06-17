@@ -58,6 +58,7 @@ That wording means:
 
 - text-bearing local `pdf` and `docx` extraction is supported within the bounded support matrix
 - OCR-heavy, image-only, table-rich, or other high-fidelity binary extraction is still outside the currently supported boundary
+- explicit `UseOcr = true` requests against the local binary extractor should fail closed with the same supported-boundary wording instead of implying an older temporary hardening slice
 - future slices may widen that boundary, but current operator-facing errors should not imply the repository is still in a one-off temporary landing state
 
 ## Explicit N/A For V1

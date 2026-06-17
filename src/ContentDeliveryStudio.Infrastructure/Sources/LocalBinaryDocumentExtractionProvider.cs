@@ -34,7 +34,7 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
 
         if (request.UseOcr)
         {
-            throw new InvalidOperationException("OCR is outside the current binary extraction hardening slice.");
+            throw new InvalidOperationException("OCR is outside the current supported boundary for local binary document extraction.");
         }
 
         if (string.IsNullOrWhiteSpace(request.OriginalPath) || !File.Exists(request.OriginalPath))

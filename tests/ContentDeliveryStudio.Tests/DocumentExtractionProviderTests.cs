@@ -190,6 +190,42 @@ public sealed class DocumentExtractionProviderTests
         }
     }
 
+    [Fact]
+    public async Task LocalBinaryDocumentExtractionProvider_RejectsOcrOutsideCurrentSupportedBoundary()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var pdfPath = Path.Combine(rootDirectory, "ocr-request.pdf");
+
+        try
+        {
+            await CreateSimplePdfAsync(
+                pdfPath,
+                "OCR is not part of the supported local binary extraction path.",
+                CancellationToken.None);
+            var provider = new LocalBinaryDocumentExtractionProvider();
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                provider.ExtractAsync(
+                    new DocumentExtractionRequest(
+                        SourceAssetKind.Pdf,
+                        "ocr-request.pdf",
+                        string.Empty,
+                        OriginalPath: pdfPath,
+                        UseOcr: true),
+                    CancellationToken.None));
+
+            Assert.Contains("OCR is outside the current supported boundary", exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
     private static async Task CreateSimplePdfAsync(string outputPath, string text, CancellationToken cancellationToken)
     {
         await Task.Run(() =>
