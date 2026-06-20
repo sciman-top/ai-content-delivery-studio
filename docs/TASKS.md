@@ -164,6 +164,7 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add non-generating `/v1/models` health checks for text providers and image key pools.
 - [x] Add Provider Center configuration summary model/view-model without exposing secret values.
 - [x] Add Provider Center manual health summary state for mixed text/image key-pool results.
+- [x] Extract Provider Center presentation and health-summary composition into `ProviderCenterPresentationCoordinator` while preserving secret redaction and mixed key-pool status display.
 - [x] Evaluate and adopt the official OpenAI .NET SDK where the API surface is stable enough.
 - [x] Keep raw `HttpClient` fallback only for unsupported or lagging SDK surfaces.
 - [x] Add `Microsoft.Extensions.Http.Resilience` to named provider clients.
