@@ -76,6 +76,49 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task GalleryRows_TriggerThumbnailWarmupForVisibleCandidates()
+    {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
+        var warmupService = new CapturingGalleryThumbnailWarmupService();
+        var viewModel = CreateViewModel(galleryThumbnailWarmupService: warmupService);
+
+        viewModel.NewProjectName = "Warmup UI demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "Opening frame";
+        viewModel.NewItemBrief = "Opening visual for a short series.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+
+        viewModel.NewPromptText = "Create a clean opening frame.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+
+        for (var index = 0; index < 30; index++)
+        {
+            viewModel.NewItemTitle = $"Item {index:000}";
+            viewModel.NewItemBrief = $"Brief {index:000}";
+            await viewModel.AddItemCommand.ExecuteAsync(null);
+            viewModel.NewPromptText = $"Prompt {index:000}";
+            await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        }
+
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+
+        try
+        {
+            Assert.NotEmpty(warmupService.LastWarmedPaths);
+            Assert.True(warmupService.LastWarmedPaths.Count <= 24);
+            Assert.All(warmupService.LastWarmedPaths, path => Assert.EndsWith(".png", path, StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+        }
+    }
+
+    [Fact]
     public async Task ImageEditWorkflow_RunsFakeEditForSelectedGalleryRow()
     {
         using var localStudioRoot = LocalStudioDataPathScope.Create();
@@ -638,6 +681,7 @@ public sealed class MainWindowViewModelTests
         ProviderCenterViewModel? providerCenter = null,
         IProjectRepository? repository = null,
         ProjectApplicationService? projectService = null,
+        GalleryThumbnailWarmupService? galleryThumbnailWarmupService = null,
         IDocumentSourceFilePickerService? documentSourceFilePickerService = null)
     {
         var fakeImageProvider = new FakeImageGenerationProvider();
@@ -654,6 +698,7 @@ public sealed class MainWindowViewModelTests
             providerCenter ?? new ProviderCenterViewModel(
                 new StaticProviderCenterConfigurationService(
                     ProviderCenterSnapshot.MissingEnvironmentFile(".env"))),
+            galleryThumbnailWarmupService ?? new NoopGalleryThumbnailWarmupService(),
             documentSourceFilePickerService);
     }
 
@@ -683,6 +728,25 @@ public sealed class MainWindowViewModelTests
             cancellationToken.ThrowIfCancellationRequested();
 
             return Task.FromResult<string?>(filePath);
+        }
+    }
+
+    private sealed class CapturingGalleryThumbnailWarmupService : GalleryThumbnailWarmupService
+    {
+        public IReadOnlyList<string> LastWarmedPaths { get; private set; } = Array.Empty<string>();
+
+        public override Task WarmupAsync(IEnumerable<string> assetPaths, CancellationToken cancellationToken)
+        {
+            LastWarmedPaths = assetPaths.Take(24).ToArray();
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class NoopGalleryThumbnailWarmupService : GalleryThumbnailWarmupService
+    {
+        public override Task WarmupAsync(IEnumerable<string> assetPaths, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
         }
     }
 
@@ -780,3 +844,4 @@ public sealed class MainWindowViewModelTests
         }
     }
 }
+

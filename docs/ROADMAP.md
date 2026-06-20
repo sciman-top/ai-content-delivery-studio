@@ -174,7 +174,7 @@ Exit gate:
 
 Goal: make the real-provider path robust on low-hardware Windows machines without requiring local model installs.
 
-Status: started with DPAPI and `.env` secret resolution, split text/image provider profiles, image key-pool validation, role-scoped provider operation guards, non-generating provider health checks, Provider Center summaries, operation-scoped provider options, resilient HTTP clients, safe provider call telemetry capture for request IDs, token usage, latency, and configured cost estimates, .NET `ActivitySource`/`Meter` instrumentation hooks for provider tracing and metrics, a local Aspire Dashboard launch profile for OTLP export, and an opt-in raw-HTTP Responses image path that records stateful revision metadata. User-visible real-provider hardening is not complete yet.
+Status: complete for the current cloud-first provider hardening baseline: DPAPI and `.env` secret resolution, split text/image provider profiles, image key-pool validation, role-scoped provider operation guards, non-generating provider health checks, Provider Center summaries, operation-scoped provider options, resilient HTTP clients, safe provider call telemetry capture for request IDs, token usage, latency, and configured cost estimates, .NET `ActivitySource`/`Meter` instrumentation hooks for provider tracing and metrics, a local Aspire Dashboard launch profile for OTLP export, and an opt-in raw-HTTP Responses image path that records stateful revision metadata. Partial-image streaming remains deferred.
 
 Deliverables:
 
@@ -256,7 +256,7 @@ Exit gate:
 
 Goal: support broader common image-generation scenarios.
 
-Status: started with provider-neutral parameter grid experiments, reference image sets, image type presets, style guides, generation recipes, provider capability validation, delivery metadata, and a WPF style/recipe inspector.
+Status: complete for the current advanced workflow slice with provider-neutral parameter grid experiments, reference image sets, image type presets, style guides, generation recipes, provider capability validation, delivery metadata, and a WPF style/recipe inspector.
 
 Deliverables:
 
@@ -276,7 +276,7 @@ Deliverables:
 
 Goal: support common image-series use cases through reusable design blueprints instead of topic-specific modes.
 
-Status: started with persisted design blueprint candidates, blueprint promotion, review routing across brief/blueprint/prompt/settings layers, review-panel route visibility, routed Prompt/Settings repair application that creates a new prompt version instead of overwriting history, persisted non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation, applied Brief/Blueprint repair records, and diagnostics evidence for those repair patch proposals.
+Status: complete for the current blueprint-first generalized-series slice with persisted design blueprint candidates, blueprint promotion, review routing across brief/blueprint/prompt/settings layers, review-panel route visibility, routed Prompt/Settings repair application that creates a new prompt version instead of overwriting history, persisted non-destructive Brief/Blueprint repair patch proposals that require human approval before record mutation, applied Brief/Blueprint repair records, and diagnostics evidence for those repair patch proposals.
 
 Deliverables:
 
@@ -296,7 +296,7 @@ Exit gate:
 
 Goal: make user files and non-image deliverables first-class without weakening the image-series core workflow.
 
-Status: started with source assets, extracted content, evidence anchors, output artifacts, artifact packages, fake ingestion, fake extraction, fake artifact planning, delivery provenance metadata, and SQLite persistence.
+Status: complete for the current multimodal source and artifact foundation slice with source assets, extracted content, evidence anchors, output artifacts, artifact packages, fake ingestion, fake extraction, fake artifact planning, delivery provenance metadata, and SQLite persistence.
 
 Deliverables:
 
@@ -337,7 +337,7 @@ Exit gate:
 
 Goal: prevent the app from growing a central all-knowing orchestrator as capabilities expand.
 
-Status: started with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters with repository-folder existence guards, stable workflow view slot names for reusable shell placement, a `FeatureViewModule` contract for future WPF view/view model splits, focused `ProjectApplicationService` extractions for project workspace, series workflow, brief workflow, generation workflow, review workflow, review/repair routing, delivery export, and document illustration planning while preserving facade compatibility, incremental `MainWindowViewModel` orchestration splits into `ProjectWorkspaceCoordinator`, `PlanningWorkflowCoordinator`, `BriefWorkflowCoordinator`, `GenerationWorkflowCoordinator`, `ReviewWorkflowCoordinator`, `DeliveryWorkflowCoordinator`, `PlanEditorWorkflowCoordinator`, `WorkflowGraphCoordinator`, and `ProjectWorkbenchProjectionCoordinator`, plus the extracted `ProviderCenterPresentationCoordinator` for provider configuration row building and health-summary composition, and completed `IEntityTypeConfiguration<T>` persistence mapping splits so `AppDbContext` no longer carries inline entity mapping blocks.
+Status: complete for the current modular maintenance baseline with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters with repository-folder existence guards, stable workflow view slot names for reusable shell placement, a `FeatureViewModule` contract for future WPF view/view model splits, focused `ProjectApplicationService` extractions for project workspace, series workflow, brief workflow, generation workflow, review workflow, review/repair routing, delivery export, and document illustration planning while preserving facade compatibility, incremental `MainWindowViewModel` orchestration splits into `ProjectWorkspaceCoordinator`, `PlanningWorkflowCoordinator`, `BriefWorkflowCoordinator`, `GenerationWorkflowCoordinator`, `ReviewWorkflowCoordinator`, `DeliveryWorkflowCoordinator`, `PlanEditorWorkflowCoordinator`, `WorkflowGraphCoordinator`, and `ProjectWorkbenchProjectionCoordinator`, plus the extracted `ProviderCenterPresentationCoordinator` for provider configuration row building and health-summary composition, and completed `IEntityTypeConfiguration<T>` persistence mapping splits so `AppDbContext` no longer carries inline entity mapping blocks.
 
 Deliverables:
 
@@ -357,7 +357,7 @@ Exit gate:
 
 Goal: let AI replace repetitive human judgment and tool operation while preserving approval and audit boundaries.
 
-Status: started with a structured `RepairPlan` model generated from review routing evidence, `OperatorAction` and `OperatorRun` audit records, a provider-neutral tool adapter contract covering SDK, CLI, local library, browser automation, Windows desktop automation, and computer-use boundaries, built-in local tool descriptors for extraction, conversion, OCR, ImageMagick/FFmpeg processing, deterministic text composition, and artifact validation, an approval gate for medium/high-risk operator actions, a low-risk auto-repair path through the adapter contract, and operator audit export in diagnostics/delivery evidence. The first bounded low-risk execution slice now has automated repo evidence; broader real tool execution remains a future slice.
+Status: complete for the first bounded low-risk execution slice with a structured `RepairPlan` model generated from review routing evidence, `OperatorAction` and `OperatorRun` audit records, a provider-neutral tool adapter contract covering SDK, CLI, local library, browser automation, Windows desktop automation, and computer-use boundaries, built-in local tool descriptors for extraction, conversion, OCR, ImageMagick/FFmpeg processing, deterministic text composition, and artifact validation, an approval gate for medium/high-risk operator actions, a low-risk auto-repair path through the adapter contract, and operator audit export in diagnostics/delivery evidence. Broader real tool execution remains a future slice.
 
 Deliverables:
 

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ContentDeliveryStudio.Application.Localization;
@@ -30,7 +31,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly WorkbenchInspectorCoordinator _workbenchInspectorCoordinator;
     private readonly MainWindowLocalizationCoordinator _mainWindowLocalizationCoordinator;
     private readonly MainWindowSelectionSummaryCoordinator _mainWindowSelectionSummaryCoordinator;
+    private readonly GalleryThumbnailWarmupService _galleryThumbnailWarmupService;
     private readonly IDocumentSourceFilePickerService? _documentSourceFilePickerService;
+    private int _projectRefreshRevision;
+    private int _planLoadRevision;
 
     private string _appTitle = string.Empty;
     private string _providerMode = string.Empty;
@@ -209,10 +213,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         LocalizationService localizationService,
         ProjectApplicationService projectService,
         ProviderCenterViewModel providerCenter,
+        GalleryThumbnailWarmupService galleryThumbnailWarmupService,
         IDocumentSourceFilePickerService? documentSourceFilePickerService = null)
     {
         _localizationService = localizationService;
         _projectService = projectService;
+        _galleryThumbnailWarmupService = galleryThumbnailWarmupService;
         _documentSourceFilePickerService = documentSourceFilePickerService;
         _projectWorkspaceCoordinator = new ProjectWorkspaceCoordinator(projectService);
         _planningWorkflowCoordinator = new PlanningWorkflowCoordinator(projectService, localizationService);
@@ -1463,6 +1469,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 RunFakeReviewCommand.NotifyCanExecuteChanged();
                 RunFakeImageEditCommand.NotifyCanExecuteChanged();
                 RebuildWorkflowGraphRows();
+                _ = _galleryThumbnailWarmupService.WarmupAsync(value.Select(row => row.AssetPath), CancellationToken.None);
             }
         }
     }
@@ -1745,6 +1752,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanCreateProject))]
     private async Task CreateProjectAsync()
     {
+        Interlocked.Increment(ref _projectRefreshRevision);
         var result = await _workbenchInspectorCoordinator.CreateProjectAsync(
             NewProjectName,
             CancellationToken.None);
@@ -1760,9 +1768,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private async Task RefreshProjectsAsync(Guid? selectedProjectId = null)
     {
+        var revision = Interlocked.Increment(ref _projectRefreshRevision);
         var result = await _projectWorkspaceCoordinator.RefreshProjectsAsync(
             selectedProjectId,
             CancellationToken.None);
+
+        if (revision != Volatile.Read(ref _projectRefreshRevision))
+        {
+            return;
+        }
+
         Projects = result.Projects;
         SelectedProject = result.SelectedProject;
     }
@@ -2373,6 +2388,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private async Task LoadPlanAsync(Guid projectId, Guid? selectedSeriesId = null, Guid? selectedItemId = null)
     {
+        var revision = Interlocked.Increment(ref _planLoadRevision);
         var state = await _projectWorkbenchStateCoordinator.LoadAsync(
             projectId,
             selectedSeriesId,
@@ -2380,9 +2396,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _activeCreativeBriefId,
             NoItemsInSeriesText,
             CancellationToken.None);
+
+        if (revision != Volatile.Read(ref _planLoadRevision))
+        {
+            return;
+        }
+
         if (state.Series.Count == 0)
         {
-            await ClearPlanAsync();
+            ApplyEmptyPlanState();
             return;
         }
 
@@ -2392,6 +2414,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     private Task ClearPlanAsync()
+    {
+        Interlocked.Increment(ref _planLoadRevision);
+        ApplyEmptyPlanState();
+        return Task.CompletedTask;
+    }
+
+    private void ApplyEmptyPlanState()
     {
         ApplyWorkbenchState(_projectWorkbenchStateCoordinator.CreateEmptyState());
         QueueRows = [];
@@ -2405,7 +2434,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
         GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
         PromotePromptDirectionCommand.NotifyCanExecuteChanged();
-        return Task.CompletedTask;
     }
 
     private void ApplyWorkbenchState(ProjectWorkbenchStateResult state)

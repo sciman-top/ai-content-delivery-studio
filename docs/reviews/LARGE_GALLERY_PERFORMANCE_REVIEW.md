@@ -22,14 +22,16 @@ Scope: Candidate gallery, delivery rows, imported finalized manifest rows, and f
 
 ## Known Gaps
 
-- WPF gallery virtualization and thumbnail caching are not implemented yet.
-- No benchmark currently exercises thousands of candidates.
-- No memory budget test exists for large manifest import.
+- WPF gallery virtualization is now enabled in the gallery list view, and gallery thumbnails are cached on disk when rendered.
+- The current benchmark exercises 1,000 candidates and records list population time, thumbnail warmup, cached revisit time, delivery export time, import row-limit behavior, and peak managed memory.
+- Gallery thumbnail binding now resolves thumbnails asynchronously so first render and scrolling do not synchronously decode source images on the UI binding path.
+- The benchmark still does not measure real WPF scroll responsiveness or low-memory Windows behavior.
+- No separate memory budget test exists for large manifest import outside this benchmark.
 - Large image previews have not been tested on low-memory Windows machines.
 
 ## Gate
 
-Before release, add a repeatable local benchmark that creates or imports at least 1,000 candidate rows with placeholder image paths, then records:
+Before release, extend the repeatable local benchmark to create or import at least 1,000 candidate rows with placeholder image paths, then record:
 
 - list population time
 - scroll responsiveness

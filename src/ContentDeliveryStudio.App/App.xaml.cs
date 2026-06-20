@@ -72,6 +72,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddBuiltInLocalToolAdapters();
         builder.Services.AddBuiltInRemoteWorkflowEngineAdapters();
         builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
+        builder.Services.AddSingleton<GalleryThumbnailWarmupService>();
         builder.Services.AddTransient<ProviderCenterViewModel>();
         builder.Services.AddTransient<MainWindowViewModel>();
         builder.Services.AddTransient<MainWindow>();

@@ -622,11 +622,18 @@ public sealed class MainWindowLayoutTests
         Assert.Contains(
             "SelectedItem=\"{Binding DataContext.SelectedGalleryRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}\"",
             galleryRowsListViewXaml);
+        Assert.Contains("VirtualizingPanel.IsVirtualizing=\"True\"", galleryRowsListViewXaml);
+        Assert.Contains("VirtualizingPanel.VirtualizationMode=\"Recycling\"", galleryRowsListViewXaml);
+        Assert.Contains("ScrollViewer.CanContentScroll=\"True\"", galleryRowsListViewXaml);
         Assert.Contains(
             "Binding DataContext.HasGalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}",
             galleryRowsListViewXaml);
         Assert.Contains("Text=\"{Binding ItemTitle}\"", galleryRowsListViewXaml);
-        Assert.Contains("Source=\"{Binding AssetPath}\"", galleryRowsListViewXaml);
+        Assert.Contains("GalleryThumbnailPathConverter", galleryRowsListViewXaml);
+        Assert.Contains("<Image.Source>", galleryRowsListViewXaml);
+        Assert.Contains("Path=\"AssetPath\"", galleryRowsListViewXaml);
+        Assert.Contains("Converter=\"{StaticResource GalleryThumbnailPathConverter}\"", galleryRowsListViewXaml);
+        Assert.Contains("IsAsync=\"True\"", galleryRowsListViewXaml);
     }
 
     [Fact]

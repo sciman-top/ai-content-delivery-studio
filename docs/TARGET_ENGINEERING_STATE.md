@@ -183,6 +183,7 @@ Packs should extend workflow behavior without forcing core-domain rewrites. In V
 - The current modular baseline already includes focused project/workflow coordinators for workspace, planning, brief, generation, review, delivery, plan editing, workflow graph, workbench projection building, workbench load or clear state composition, shell localization payload construction, selection-summary display construction, current-project header summary construction, Provider Center presentation composition, and document-localization default/strictness restoration; keep command ownership and selected-state restoration on the shell view model until a feature module can own the behavior end-to-end.
 - Split features into module-owned views, services, and tests as the product grows.
 - Prefer a second split step inside large stage views once one user control starts carrying multiple dense regions; keep action-heavy, panel-heavy, header-heavy, or list-heavy brief, plan, prompt, queue, gallery, workflow graph, review, delivery, or inspector configuration sections eligible for their own child controls before changing shell structure.
+- The gallery list already enables WPF virtualization and recycling in `GalleryRowsListView`; gallery thumbnails are cached on disk, and the remaining large-gallery work is scroll responsiveness and low-memory verification.
 - Keep UI, infrastructure, and domain concerns separate.
 
 ### Reliability And Safety
