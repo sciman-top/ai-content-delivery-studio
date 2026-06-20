@@ -11,7 +11,7 @@ AI, providers, workflow packs, and output formats can evolve quickly. Core domai
 - A workflow is user-visible complete only when it can run end-to-end in the workbench with review and delivery.
 - A workflow is production-ready only when approval evidence, deterministic rendering or composition where required, and real-provider behavior are verified.
 - Current V1 release-claim truth lives in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md); roadmap phase status and completed backlog items do not count as launch proof by themselves.
-- As of the latest recorded launch snapshot on `2026-06-11`, that evidence file closes all `5 / 5` V1 launch metrics. This does not mean every roadmap phase is complete or that future release snapshots never need refresh.
+- As of the latest recorded launch snapshot on `2026-06-21`, that evidence file keeps all `5 / 5` V1 launch metrics verified. The fresh automated repo gate is current, while the latest recorded live-provider sample in that snapshot still remains the `2026-06-11` artifact set. This does not mean every roadmap phase is complete or that future release snapshots never need refresh.
 
 ## V1 Release Frame
 
@@ -61,7 +61,7 @@ V1 is ready only when all of these are true:
 - The educational poster proof path exports deterministic text-composition provenance and human approval evidence.
 - The first real low-risk operator action runs end-to-end and writes audit output plus rollback or cleanup notes.
 
-The current recorded answer is "yes" for the `2026-06-11` snapshot in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md). Keep this gate as the standard for future refreshes instead of treating the existing proof as a permanent exemption.
+The current recorded answer is "yes" for the `2026-06-21` snapshot in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md). Keep this gate as the standard for future refreshes instead of treating the existing proof as a permanent exemption.
 
 ## Frozen Until Post-V1
 

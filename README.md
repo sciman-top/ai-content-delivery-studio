@@ -8,11 +8,11 @@ This repository is the active implementation home for the product. It is intenti
 
 - Active implementation root: `D:\CODE\ai-content-delivery-studio`
 - Current root after the completed root rename: `D:\CODE\ai-content-delivery-studio`
-- Latest local repository verification: `2026-06-17` via `.\scripts\verify-repo.ps1`; current exact build/test counts should be taken from the latest fresh gate output instead of this overview file
-- Latest rename closeout gate: `2026-06-17` via `.\scripts\preflight-release.ps1` passed
-- Latest recorded V1 release-verification snapshot: `2026-06-11`
-- Latest recorded live OpenAI sample: `artifacts/live-openai-v1-sample/20260611-132947`
-- Current launch-verification readout: the latest recorded snapshot in [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md) closes all `5 / 5` V1 launch metrics
+- Latest local repository verification: `2026-06-21` via `.\scripts\verify-repo.ps1 -NoRestore`; reference governance parity, reference evidence, build, `433 / 433` tests, and format verification passed
+- Latest stronger closeout gate: `2026-06-21` via `.\scripts\preflight-release.ps1 -NoRestore`
+- Latest recorded V1 release-verification snapshot: `2026-06-21`
+- Latest recorded live OpenAI sample remains: `artifacts/live-openai-v1-sample/20260611-132947`
+- Current launch-verification readout: the `2026-06-21` snapshot in [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md) keeps all `5 / 5` V1 launch metrics verified, with the latest live-provider evidence still anchored to the recorded `2026-06-11` sample
 - Current strongest user-visible routes:
   - short requirement -> brief -> blueprint -> series -> review -> delivery
   - plain-text or article -> evidence anchors -> illustration targets -> promoted downstream workflow
