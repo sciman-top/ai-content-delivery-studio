@@ -1,12 +1,14 @@
 # AI Image Series Studio Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps are tracked with checklist items.
 
 **Goal:** Build a Windows-first desktop app that supports planning, prompt versioning, batch generation, review, regeneration, and final delivery for image series.
 
 **Architecture:** Use a layered .NET solution. Keep WPF UI separate from domain and provider logic. Use fake providers first so the full loop is testable without network or API cost.
 
 **Tech Stack:** .NET 10, WPF, C#, MVVM Toolkit, Microsoft.Extensions.Hosting, EF Core SQLite, OpenAI provider adapters, xUnit.
+
+**Historical note:** This plan predates the internal `ImageSeriesStudio.*` to `ContentDeliveryStudio.*` rename. Old solution, project, namespace, and test paths below are preserved as historical implementation context, not current repository truth.
 
 ---
 

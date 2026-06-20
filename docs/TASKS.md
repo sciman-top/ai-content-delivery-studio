@@ -7,7 +7,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - Latest recorded release-verification snapshot: `2026-06-11`
 - Current readout: no open V1 release-claim gaps remain in that snapshot; all `5 / 5` launch metrics are verified, including the fresh opt-in OpenAI `2-item` sample under `artifacts/live-openai-v1-sample/20260611-132947`
 - Reopen this as a release-gap section only when provider behavior materially changes, a newer launch snapshot is needed, or a regression invalidates the existing evidence
-- Remaining non-release work is intentionally grouped into two active lanes plus one bounded compatibility posture: conditional OCR reference coverage when scanned-document hardening enters the active roadmap, later real-provider plus support-matrix binary document extraction slices, and already-landed post-V1 rename compatibility behavior that now stays maintenance-only unless a regression appears.
+- Remaining non-release work is intentionally grouped into deferred trigger notes: OCR reference coverage when scanned-document hardening enters the active roadmap, scholarly PDF extraction references when paper-figure evidence extraction becomes active, real additional scenario pack-policy hardening only when a new scenario has a repo-owned spec and bounded plan, and partial-image streaming UX only if a future workbench flow proves it useful.
 
 ## Near-Term Hardening (Not Current Release Blockers)
 
@@ -71,11 +71,11 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Add `opentelemetry-dotnet` as a code-level reference before the next telemetry or diagnostics slice.
 - [x] Add `aspire` as a code-level reference before the next OTLP or local dashboard observability slice.
 - [x] Add `SkiaSharp` reference-source coverage before the next deterministic composition expansion beyond the current poster proof path.
-- [ ] Add OCR reference coverage such as `Tesseract` or `OCRmyPDF` only when scanned-document hardening enters the active near-term roadmap.
-- [ ] Add scholarly PDF extraction references such as `GROBID` only when paper-figure evidence extraction enters the active near-term roadmap.
+- Deferred: Add OCR reference coverage such as `Tesseract` or `OCRmyPDF` only when scanned-document hardening enters the active near-term roadmap.
+- Deferred: Add scholarly PDF extraction references such as `GROBID` only when paper-figure evidence extraction enters the active near-term roadmap.
 - [x] Decide whether `Cockpit-Tools-Local-references` should gain a machine-readable manifest next.
 
-## Active Follow-Through Queue
+## Deferred Triggers
 
 - [x] Add real-provider execution follow-through for document illustration after the fake-first planning path is hardened.
 - [x] Add targeted binary extraction hardening only for formats promoted by the support matrix.
@@ -84,7 +84,7 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Extend the stronger pack/policy contract to the built-in `document-review-translation` scenario.
 - [x] Extend the stronger pack/policy contract to the built-in `courseware-visual` scenario.
 - [x] Extend the stronger pack/policy contract to the built-in `poster-report-delivery` scenario.
-- [ ] Continue pack and policy modeling hardening only when a real additional scenario beyond the current built-in starter set has a repo-owned spec and a bounded implementation plan.
+- Deferred: Continue pack and policy modeling hardening only when a real additional scenario beyond the current built-in starter set has a repo-owned spec and a bounded implementation plan.
 
 ## Frozen Until Post-V1
 
@@ -172,7 +172,7 @@ These items are still valuable, but they are not the same thing as the current V
   - [x] Add .NET `ActivitySource` and `Meter` instrumentation for provider calls.
   - [x] Add local OTLP/Aspire dashboard profile.
 - [x] Support opt-in Responses API multi-turn image state where the product benefits and where the provider routing policy calls for it.
-- [ ] Add partial-image streaming UX only if a future workbench flow gains clear product value from progressive previews.
+- Deferred: Add partial-image streaming UX only if a future workbench flow gains clear product value from progressive previews.
 - [x] Add a remote workflow-engine adapter boundary without requiring local model installs.
 - [x] Run full build, test, and format gates for the implementation slice.
 

@@ -1,12 +1,14 @@
 # Preset Governance Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Add a provider-neutral preset recommendation layer so prompt directions can carry executable image type, style, recipe, and review recommendations without letting AI invent queue settings.
 
 **Architecture:** Extend the current `Brief Studio` model with additive metadata. `ImageTypePreset` remains the stable delivery preset catalog, `PromptDirectionRecommendation` becomes the structured recommendation payload, fake planning emits recommendations first, and application services persist them through the existing creative brief JSON direction storage. Real OpenAI calls remain guarded.
 
 **Tech Stack:** .NET 10, WPF, CommunityToolkit.Mvvm, EF Core SQLite JSON conversions, xUnit, existing fake providers.
+
+**Historical note:** This plan predates the internal `ImageSeriesStudio.*` to `ContentDeliveryStudio.*` rename. Old code and test paths below are preserved as historical implementation context, not current repository truth.
 
 ---
 
@@ -55,7 +57,7 @@ Not included in this slice:
 - Modify: `src/ImageSeriesStudio.Core/Styles/ImageTypePreset.cs`
 - Test: `tests/ImageSeriesStudio.Tests/ImageTypePresetTests.cs`
 
-- [ ] **Step 1: Write failing catalog governance tests**
+- [x] **Step 1: Write failing catalog governance tests**
 
 Add these tests to `tests/ImageSeriesStudio.Tests/ImageTypePresetTests.cs`:
 
@@ -106,7 +108,7 @@ public void Catalog_TextHeavyPresetsUseDeterministicTextPolicy()
 }
 ```
 
-- [ ] **Step 2: Run the failing catalog tests**
+- [x] **Step 2: Run the failing catalog tests**
 
 Run:
 
@@ -116,7 +118,7 @@ dotnet test --filter "Catalog_ContainsGovernanceMetadataForEveryPreset|Catalog_T
 
 Expected: fails because the new governance metadata properties do not exist.
 
-- [ ] **Step 3: Extend the preset record**
+- [x] **Step 3: Extend the preset record**
 
 In `src/ImageSeriesStudio.Core/Styles/ImageTypePreset.cs`, extend the private constructor, public properties, and `Create` method.
 
@@ -241,7 +243,7 @@ private static IReadOnlyList<string> NormalizeTextList(
 }
 ```
 
-- [ ] **Step 4: Add catalog version and update preset entries**
+- [x] **Step 4: Add catalog version and update preset entries**
 
 In `ImageTypePresetCatalog`, add:
 
@@ -371,7 +373,7 @@ ImageBackgroundMode.Opaque,
 isDeprecated: false
 ```
 
-- [ ] **Step 5: Verify catalog governance tests pass**
+- [x] **Step 5: Verify catalog governance tests pass**
 
 Run:
 
@@ -381,7 +383,7 @@ dotnet test --filter "Catalog_ContainsGovernanceMetadataForEveryPreset|Catalog_T
 
 Expected: both tests pass.
 
-- [ ] **Step 6: Commit catalog slice**
+- Commit catalog slice.
 
 Run:
 
@@ -401,7 +403,7 @@ git commit -m "feat: 添加图片预设治理元数据"
 - Test: `tests/ImageSeriesStudio.Tests/CreativeBriefTests.cs`
 - Test: `tests/ImageSeriesStudio.Tests/PersistenceTests.cs`
 
-- [ ] **Step 1: Write failing domain test**
+- [x] **Step 1: Write failing domain test**
 
 Add this test to `tests/ImageSeriesStudio.Tests/CreativeBriefTests.cs`:
 
@@ -451,7 +453,7 @@ public void PromptDirection_StoresStructuredRecommendation()
 }
 ```
 
-- [ ] **Step 2: Write failing validation test**
+- [x] **Step 2: Write failing validation test**
 
 Add this test to `tests/ImageSeriesStudio.Tests/CreativeBriefTests.cs`:
 
@@ -518,7 +520,7 @@ public void PromptDirectionRecommendation_RejectsInvalidExecutableValues()
 }
 ```
 
-- [ ] **Step 3: Run the failing domain tests**
+- [x] **Step 3: Run the failing domain tests**
 
 Run:
 
@@ -528,7 +530,7 @@ dotnet test --filter "PromptDirection_StoresStructuredRecommendation|PromptDirec
 
 Expected: fails because `PromptDirectionRecommendation` and the new `PromptDirection.Create` overload do not exist.
 
-- [ ] **Step 4: Add recommendation value object**
+- [x] **Step 4: Add recommendation value object**
 
 Create `src/ImageSeriesStudio.Core/Projects/PromptDirectionRecommendation.cs`:
 
@@ -642,7 +644,7 @@ public sealed record PromptDirectionRecommendation(
 }
 ```
 
-- [ ] **Step 5: Attach recommendations to prompt directions**
+- [x] **Step 5: Attach recommendations to prompt directions**
 
 Modify `PromptDirection` in `src/ImageSeriesStudio.Core/Projects/CreativeBrief.cs`.
 
@@ -711,7 +713,7 @@ return new PromptDirection(
     recommendation);
 ```
 
-- [ ] **Step 6: Add persistence round-trip assertion**
+- [x] **Step 6: Add persistence round-trip assertion**
 
 In `tests/ImageSeriesStudio.Tests/PersistenceTests.cs`, create a recommendation before the existing persisted prompt direction:
 
@@ -760,7 +762,7 @@ Remove the older single-line assertion:
 Assert.Equal("conservative", Assert.Single(loadedBrief.PromptDirections).Key);
 ```
 
-- [ ] **Step 7: Verify domain and persistence tests pass**
+- [x] **Step 7: Verify domain and persistence tests pass**
 
 Run:
 
@@ -770,7 +772,7 @@ dotnet test --filter "PromptDirection_StoresStructuredRecommendation|PromptDirec
 
 Expected: all selected tests pass.
 
-- [ ] **Step 8: Commit recommendation domain slice**
+- Commit recommendation domain slice.
 
 Run:
 
@@ -789,7 +791,7 @@ git commit -m "feat: 添加提示词方向推荐模型"
 - Modify: `src/ImageSeriesStudio.Infrastructure/Fakes/FakeProviders.cs`
 - Test: `tests/ImageSeriesStudio.Tests/FakeProviderTests.cs`
 
-- [ ] **Step 1: Write failing fake recommendation test**
+- [x] **Step 1: Write failing fake recommendation test**
 
 Extend `FakeTextPlanningProvider_CreatesPromptDirectionsForBrief` in `tests/ImageSeriesStudio.Tests/FakeProviderTests.cs` with these assertions:
 
@@ -811,7 +813,7 @@ Assert.Contains(recommendation.CapabilityWarnings, value => value.Contains("fake
 Assert.Contains(recommendation.NonExecutableSuggestions, value => value.Contains("style", StringComparison.OrdinalIgnoreCase));
 ```
 
-- [ ] **Step 2: Run the failing fake recommendation test**
+- [x] **Step 2: Run the failing fake recommendation test**
 
 Run:
 
@@ -821,7 +823,7 @@ dotnet test --filter FakeTextPlanningProvider_CreatesPromptDirectionsForBrief
 
 Expected: fails because `PromptDirectionDraft.Recommendation` does not exist.
 
-- [ ] **Step 3: Extend provider contracts**
+- [x] **Step 3: Extend provider contracts**
 
 Modify `src/ImageSeriesStudio.Core/Providers/AiProviderContracts.cs`.
 
@@ -852,7 +854,7 @@ public sealed record PromptDirectionDraft(
     PromptDirectionRecommendation? Recommendation = null);
 ```
 
-- [ ] **Step 4: Add fake provider recommendation helper**
+- [x] **Step 4: Add fake provider recommendation helper**
 
 In `src/ImageSeriesStudio.Infrastructure/Fakes/FakeProviders.cs`, update the direction projection so the `PromptDirectionDraft` constructor receives a recommendation:
 
@@ -944,7 +946,7 @@ private static (int Width, int Height) GetDefaultSize(AspectRatio aspectRatio)
 }
 ```
 
-- [ ] **Step 5: Verify fake provider recommendation test passes**
+- [x] **Step 5: Verify fake provider recommendation test passes**
 
 Run:
 
@@ -954,7 +956,7 @@ dotnet test --filter FakeTextPlanningProvider_CreatesPromptDirectionsForBrief
 
 Expected: test passes.
 
-- [ ] **Step 6: Commit fake provider slice**
+- Commit fake provider slice.
 
 Run:
 
@@ -972,7 +974,7 @@ git commit -m "feat: 为假规划器添加推荐参数"
 - Modify: `src/ImageSeriesStudio.Application/Projects/ProjectApplicationService.cs`
 - Test: `tests/ImageSeriesStudio.Tests/ProjectApplicationServiceTests.cs`
 
-- [ ] **Step 1: Write failing service workflow assertion**
+- [x] **Step 1: Write failing service workflow assertion**
 
 In `ProjectApplicationService_CreatesBriefDirectionsAndPromotesPromptVersion`, add these assertions after `loadedBrief` is assigned:
 
@@ -986,7 +988,7 @@ Assert.Equal(1024, loadedDirection.Recommendation.Height);
 Assert.Equal(ReviewRubricTemplateCatalog.EditorialIllustration, loadedDirection.Recommendation.ReviewRubricTemplateId);
 ```
 
-- [ ] **Step 2: Run the failing service test**
+- [x] **Step 2: Run the failing service test**
 
 Run:
 
@@ -996,7 +998,7 @@ dotnet test --filter ProjectApplicationService_CreatesBriefDirectionsAndPromotes
 
 Expected: fails because the application service does not pass draft recommendations into `PromptDirection.Create`.
 
-- [ ] **Step 3: Map recommendations into prompt directions**
+- [x] **Step 3: Map recommendations into prompt directions**
 
 In `src/ImageSeriesStudio.Application/Projects/ProjectApplicationService.cs`, update the `PromptDirection.Create` call in `CreatePromptDirectionsAsync`:
 
@@ -1017,7 +1019,7 @@ brief.ReplaceDirections(
     timestamp);
 ```
 
-- [ ] **Step 4: Verify service workflow test passes**
+- [x] **Step 4: Verify service workflow test passes**
 
 Run:
 
@@ -1027,7 +1029,7 @@ dotnet test --filter ProjectApplicationService_CreatesBriefDirectionsAndPromotes
 
 Expected: test passes and persisted directions contain recommendation metadata.
 
-- [ ] **Step 5: Commit service mapping slice**
+- Commit service mapping slice.
 
 Run:
 
@@ -1044,7 +1046,7 @@ git commit -m "feat: 持久化提示词方向推荐"
 
 - Modify: `docs/TASKS.md`
 
-- [ ] **Step 1: Add preset governance phase**
+- [x] **Step 1: Add preset governance phase**
 
 Append this section after Phase 7 and before Phase 8 in `docs/TASKS.md`:
 
@@ -1053,15 +1055,15 @@ Append this section after Phase 7 and before Phase 8 in `docs/TASKS.md`:
 
 - [x] Record preset governance design spec.
 - [x] Record preset governance implementation plan.
-- [ ] Add governance metadata to image type presets.
-- [ ] Add structured prompt direction recommendation model.
-- [ ] Add fake-first recommendation output.
-- [ ] Persist recommendations through the application service.
-- [ ] Add catalog invariant tests.
-- [ ] Run full build, test, and format gates for the preset governance slice.
+- [x] Add governance metadata to image type presets.
+- [x] Add structured prompt direction recommendation model.
+- [x] Add fake-first recommendation output.
+- [x] Persist recommendations through the application service.
+- [x] Add catalog invariant tests.
+- [x] Run full build, test, and format gates for the preset governance slice.
 ```
 
-- [ ] **Step 2: Verify task checklist contains the new phase**
+- [x] **Step 2: Verify task checklist contains the new phase**
 
 Run:
 
@@ -1071,7 +1073,7 @@ rg -n "Phase 7A: Preset Governance|structured prompt direction recommendation" d
 
 Expected: output includes the new phase heading and structured recommendation task.
 
-- [ ] **Step 3: Commit checklist slice**
+- Commit checklist slice.
 
 Run:
 
@@ -1088,7 +1090,7 @@ git commit -m "docs: 更新预设治理任务清单"
 
 - Review all modified source, tests, and docs from this plan.
 
-- [ ] **Step 1: Run full build**
+- [x] **Step 1: Run full build**
 
 Run:
 
@@ -1098,7 +1100,7 @@ dotnet build
 
 Expected: build succeeds with 0 errors.
 
-- [ ] **Step 2: Run full tests**
+- [x] **Step 2: Run full tests**
 
 Run:
 
@@ -1108,7 +1110,7 @@ dotnet test
 
 Expected: all tests pass.
 
-- [ ] **Step 3: Run format verification**
+- [x] **Step 3: Run format verification**
 
 Run:
 
@@ -1118,7 +1120,7 @@ dotnet format --verify-no-changes
 
 Expected: command succeeds without formatting changes.
 
-- [ ] **Step 4: Run focused placeholder scan**
+- [x] **Step 4: Run focused placeholder scan**
 
 Run:
 
@@ -1128,7 +1130,7 @@ rg -n "(TB[D]|TO[D]O|PLACE''HOL[D]ER)" docs/superpowers/plans/2026-06-02-preset-
 
 Expected: no unresolved placeholders in files touched by this plan.
 
-- [ ] **Step 5: Inspect git status**
+- [x] **Step 5: Inspect git status**
 
 Run:
 
@@ -1138,7 +1140,7 @@ git status --short
 
 Expected: no uncommitted changes from the preset governance slice. If unrelated user changes exist, leave them unstaged and report them.
 
-- [ ] **Step 6: Commit final corrections if needed**
+- Commit final corrections if needed.
 
 If formatting or documentation cleanup changes are produced by the verification steps, commit only the preset governance files:
 

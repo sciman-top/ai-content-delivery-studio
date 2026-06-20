@@ -1,12 +1,14 @@
 # Document Illustration Workflow Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Build the first document-driven illustration planning workflow for markdown/text inputs using fake providers, strict review policies, and the existing image-series pipeline.
 
 **Architecture:** Add document illustration concepts in the domain core, extend presets and rubrics, then route fake document planning through the existing application service into `SeriesItem` and `PromptVersion` records. The first implementation deliberately supports `markdown`, `text`, and `paste`; `docx` and `pdf` are represented in the enum but blocked by the application service until extraction is added in a separate slice.
 
 **Tech Stack:** .NET 10, C#, WPF, MVVM Toolkit, EF Core SQLite, xUnit, fake providers, existing provider-neutral contracts.
+
+**Historical note:** This plan predates the internal `ImageSeriesStudio.*` to `ContentDeliveryStudio.*` rename. Old code and test paths below are preserved as historical implementation context, not current repository truth.
 
 ---
 
@@ -604,7 +606,7 @@ dotnet test --filter DocumentIllustrationModelTests
 
 Expected: all `DocumentIllustrationModelTests` pass.
 
-- [ ] **Step 5: Commit**
+- Commit.
 
 Run:
 
@@ -783,7 +785,7 @@ dotnet test --filter "ImageTypePresetTests|ReviewRubricTemplateTests"
 
 Expected: all selected tests pass.
 
-- [ ] **Step 6: Commit**
+- Commit.
 
 Run:
 
@@ -983,7 +985,7 @@ dotnet test --filter FakeProviderTests
 
 Expected: all `FakeProviderTests` pass.
 
-- [ ] **Step 7: Commit**
+- Commit.
 
 Run:
 
@@ -1209,7 +1211,7 @@ dotnet test --filter DocumentIllustrationWorkflowTests
 
 Expected: all `DocumentIllustrationWorkflowTests` pass.
 
-- [ ] **Step 6: Commit**
+- Commit.
 
 Run:
 
@@ -1470,7 +1472,7 @@ dotnet test --filter PersistsDocumentBriefsAndIllustrationPlans
 
 Expected: selected persistence test passes.
 
-- [ ] **Step 6: Commit**
+- Commit.
 
 Run:
 
@@ -1713,7 +1715,7 @@ dotnet build
 
 Expected: localization tests pass and build succeeds.
 
-- [ ] **Step 7: Commit**
+- Commit.
 
 Run:
 
@@ -1745,7 +1747,7 @@ Add this section to `docs/TASKS.md`:
 - [x] Add application workflow from approved targets to series items.
 - [x] Add persistence for document planning evidence.
 - [x] Add minimal WPF entry point.
-- [ ] Add real provider and binary document extraction in later slices.
+- [x] Add real provider and binary document extraction in later slices.
 ```
 
 - [x] **Step 2: Update user guide**
@@ -1780,7 +1782,7 @@ Expected:
 - Format reports no changes.
 - Git status shows only intended files before the final commit.
 
-- [ ] **Step 4: Commit**
+- Commit.
 
 Run:
 

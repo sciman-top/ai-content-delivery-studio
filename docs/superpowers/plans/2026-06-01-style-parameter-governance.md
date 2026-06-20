@@ -18,7 +18,7 @@ This slice turns image type, style, references, generation settings, and experim
 
 - [x] Task 1: Document style and parameter governance.
 - [x] Task 2: Record ADR 0004.
-- [ ] Task 3: Update research references after each major provider API change.
+- Maintenance note: update research references after each major provider API change.
 
 ### Phase 6B: Domain Contracts
 

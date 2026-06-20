@@ -1,12 +1,14 @@
 # Brief-First Image Generation Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Build a `Brief Studio` workflow that turns loose user intent into a structured creative brief, multiple prompt directions, and promoted prompt versions before image generation.
 
 **Architecture:** Add provider-neutral domain records in `ImageSeriesStudio.Core`, persist them with the existing SQLite model, extend text planning through fake-first contracts, and expose the workflow through `ProjectApplicationService` before adding WPF controls. Real image API calls remain outside this plan.
 
 **Tech Stack:** .NET 10, WPF, CommunityToolkit.Mvvm, EF Core SQLite, xUnit, existing fake providers.
+
+**Historical note:** This plan predates the internal `ImageSeriesStudio.*` to `ContentDeliveryStudio.*` rename. Old code and test paths below are preserved as historical implementation context, not current repository truth.
 
 ---
 
@@ -529,7 +531,7 @@ dotnet test --filter PersistenceTests
 
 Expected: all persistence tests pass.
 
-- [ ] **Step 6: Commit persistence slice**
+- Commit persistence slice.
 
 Run:
 
@@ -1160,7 +1162,7 @@ git status --short
 
 Expected: only intentionally untracked or unrelated user files remain.
 
-- [ ] **Step 4: Commit final corrections if needed**
+- Commit final corrections if needed.
 
 If formatting changes occur, run:
 

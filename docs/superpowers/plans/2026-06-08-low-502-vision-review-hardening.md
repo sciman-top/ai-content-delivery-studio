@@ -1,12 +1,14 @@
 # Low-502 Vision Review Hardening Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
 
 **Goal:** Encode low-502 review defaults into AI Content Delivery Studio so cloud vision review runs as bounded local-direct requests instead of long fragile review chains.
 
 **Architecture:** Strengthen the existing provider-routing and review architecture rather than adding a parallel subsystem. The hardening slice should standardize local review-prep artifacts, batch thresholds, stateless default review requests, and task-level reminders before any broader multi-turn review state is enabled.
 
 **Tech Stack:** Markdown policy docs, existing provider-routing and architecture docs, future .NET application options and operator descriptors.
+
+**Historical note:** This plan predates the internal `ImageSeriesStudio.*` to `ContentDeliveryStudio.*` rename. Old paths below are preserved as historical implementation context, not current repository truth.
 
 ---
 

@@ -4,6 +4,8 @@
 
 Land a repository-owned AI coding workflow reference that keeps Superpowers as the main execution skeleton, preserves repo-owned spec/plan/evidence surfaces, and clarifies when to use subagents, worktrees, and layered auto-execution.
 
+**Historical note:** This plan predates the internal `ImageSeriesStudio.*` to `ContentDeliveryStudio.*` rename. Old paths below are preserved as historical implementation context, not current repository truth.
+
 ## Architecture Decisions
 
 - Do not add `speckit` as a second persistent repository workflow system.
@@ -100,5 +102,5 @@ The closeout run on `2026-06-15` hit a real transient Windows build-file lock on
 
 **Not in scope**
 
-- [ ] Commit/merge strategy
-- [ ] Broader workflow-policy redesign beyond this repository
+- Commit/merge strategy
+- Broader workflow-policy redesign beyond this repository
