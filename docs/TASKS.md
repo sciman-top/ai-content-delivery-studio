@@ -4,10 +4,16 @@
 
 Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for current release claims. The latest recorded release-verification readout is:
 
-- Latest recorded release-verification snapshot: `2026-06-21`
+- Latest recorded release-verification snapshot: `2026-06-23`
 - Current readout: no open V1 release-claim gaps remain in that snapshot; all `5 / 5` launch metrics remain verified, with fresh automated repo verification at `433 / 433` tests and the latest recorded opt-in OpenAI `2-item` sample still under `artifacts/live-openai-v1-sample/20260611-132947`
 - Reopen this as a release-gap section only when provider behavior materially changes, a newer live-provider snapshot is needed, or a regression invalidates the existing evidence
 - Remaining non-release work is intentionally grouped into deferred trigger notes: OCR reference coverage when scanned-document hardening enters the active roadmap, scholarly PDF extraction references when paper-figure evidence extraction becomes active, real additional scenario pack-policy hardening only when a new scenario has a repo-owned spec and bounded plan, and partial-image streaming UX only if a future workbench flow proves it useful.
+
+## Current Queue Status
+
+- The current repository-owned implementation-plan surface is closed: the existing repo-owned plans are recorded as completed, and this checklist currently contains no unchecked active execution items.
+- Treat this file as a closeout ledger for the completed V1 and repository-side implementation baseline, not as proof that every long-term roadmap idea has been permanently finished.
+- New execution work should reopen only as a new bounded slice with its own repo-owned spec, plan, and fresh verification evidence.
 
 ## Near-Term Hardening (Not Current Release Blockers)
 
