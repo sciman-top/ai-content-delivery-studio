@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Runtime.Versioning;
+using ContentDeliveryStudio.Infrastructure.IO;
 
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
@@ -55,22 +56,10 @@ public sealed class DpapiOpenAiSecretStore : IWritableOpenAiSecretStore
 
         Directory.CreateDirectory(_secretsDirectory);
         var path = GetSecretPath(secretName);
-        var temporaryPath = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         var plainBytes = Encoding.UTF8.GetBytes(secretValue);
         var protectedBytes = ProtectedData.Protect(plainBytes, Entropy, _scope);
 
-        try
-        {
-            await File.WriteAllBytesAsync(temporaryPath, protectedBytes, cancellationToken);
-            File.Move(temporaryPath, path, overwrite: true);
-        }
-        finally
-        {
-            if (File.Exists(temporaryPath))
-            {
-                File.Delete(temporaryPath);
-            }
-        }
+        await AtomicFileWriter.WriteAllBytesAsync(path, protectedBytes, cancellationToken);
     }
 
     public Task DeleteSecretAsync(string secretName, CancellationToken cancellationToken)

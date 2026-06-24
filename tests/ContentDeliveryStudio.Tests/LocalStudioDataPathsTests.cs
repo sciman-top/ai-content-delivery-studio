@@ -65,6 +65,15 @@ public sealed class LocalStudioDataPathsTests
         }
     }
 
+    [Fact]
+    public void ResolveProjectDirectory_RejectsUnsafeAreaName()
+    {
+        var exception = Assert.Throws<ArgumentException>(() =>
+            LocalStudioDataPaths.ResolveProjectDirectory("..\\deliveries", Guid.NewGuid()));
+
+        Assert.Contains("safe", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static string CreateTempRoot()
     {
         var root = Path.Combine(

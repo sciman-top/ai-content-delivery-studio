@@ -52,6 +52,27 @@ public sealed class GalleryThumbnailCacheTests
         Assert.True(File.Exists(secondThumbnailPath));
     }
 
+    [Fact]
+    public void GetOrCreate_DoesNotLeaveTemporaryFilesInCacheDirectory()
+    {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
+        var sourceDirectory = Path.Combine(localStudioRoot.RootPath, "source-images");
+        Directory.CreateDirectory(sourceDirectory);
+        var sourcePath = Path.Combine(sourceDirectory, "candidate.png");
+        WritePng(sourcePath, width: 640, height: 360);
+
+        var thumbnailPath = GalleryThumbnailCache.GetOrCreate(sourcePath);
+        var cacheDirectory = Path.GetDirectoryName(thumbnailPath)
+            ?? throw new InvalidOperationException("Thumbnail cache path should resolve to a directory.");
+        var cacheEntries = Directory.GetFiles(cacheDirectory)
+            .Select(Path.GetFileName)
+            .Where(name => name is not null)
+            .ToArray();
+
+        Assert.Contains(Path.GetFileName(thumbnailPath), cacheEntries);
+        Assert.DoesNotContain(cacheEntries, name => name!.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static void WritePng(string path, int width, int height)
     {
         using var bitmap = new SKBitmap(width, height);

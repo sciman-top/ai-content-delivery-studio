@@ -41,14 +41,9 @@ public static class LocalStudioDataPaths
 
     public static string ResolveProjectDirectory(string areaName, Guid projectId)
     {
-        if (string.IsNullOrWhiteSpace(areaName))
-        {
-            throw new ArgumentException("Area name cannot be empty.", nameof(areaName));
-        }
-
         return Path.Combine(
             ResolveStudioRoot(),
-            areaName.Trim(),
+            NormalizeAreaName(areaName),
             projectId.ToString("N"));
     }
 
@@ -88,5 +83,37 @@ public static class LocalStudioDataPaths
             RootOverride.Value = previousRoot;
             _disposed = true;
         }
+    }
+
+    private static string NormalizeAreaName(string areaName)
+    {
+        if (string.IsNullOrWhiteSpace(areaName))
+        {
+            throw new ArgumentException("Area name cannot be empty.", nameof(areaName));
+        }
+
+        var normalizedAreaName = areaName.Trim();
+        if (Path.IsPathRooted(normalizedAreaName))
+        {
+            throw new ArgumentException("Area name must stay within a safe app-local folder.", nameof(areaName));
+        }
+
+        if (normalizedAreaName.Contains(Path.DirectorySeparatorChar)
+            || normalizedAreaName.Contains(Path.AltDirectorySeparatorChar))
+        {
+            throw new ArgumentException("Area name must stay within a safe app-local folder.", nameof(areaName));
+        }
+
+        if (normalizedAreaName is "." or "..")
+        {
+            throw new ArgumentException("Area name must stay within a safe app-local folder.", nameof(areaName));
+        }
+
+        if (normalizedAreaName.Split('.', StringSplitOptions.RemoveEmptyEntries).Any(segment => segment == ".."))
+        {
+            throw new ArgumentException("Area name must stay within a safe app-local folder.", nameof(areaName));
+        }
+
+        return normalizedAreaName;
     }
 }

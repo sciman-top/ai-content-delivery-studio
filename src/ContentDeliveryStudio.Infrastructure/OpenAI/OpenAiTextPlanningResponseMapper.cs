@@ -13,7 +13,9 @@ internal static class OpenAiTextPlanningResponseMapper
     {
         var providerTraceId = ExtractTraceId(root);
         var outputText = ExtractOutputText(root);
-        var plan = JsonSerializer.Deserialize<OpenAiPlanResponse>(outputText, JsonOptions)
+        var plan = DeserializeOrThrow<OpenAiPlanResponse>(
+            outputText,
+            "OpenAI text planning response contained invalid JSON.")
             ?? throw new InvalidOperationException("OpenAI text planning response was empty.");
 
         if (plan.Items.Count == 0)
@@ -33,7 +35,9 @@ internal static class OpenAiTextPlanningResponseMapper
     {
         var providerTraceId = ExtractTraceId(root);
         var outputText = ExtractOutputText(root);
-        var response = JsonSerializer.Deserialize<OpenAiDocumentIllustrationResponse>(outputText, JsonOptions)
+        var response = DeserializeOrThrow<OpenAiDocumentIllustrationResponse>(
+            outputText,
+            "OpenAI document illustration planning response contained invalid JSON.")
             ?? throw new InvalidOperationException("OpenAI document illustration planning response was empty.");
 
         var timestamp = DateTimeOffset.UtcNow;
@@ -117,6 +121,18 @@ internal static class OpenAiTextPlanningResponseMapper
         return root.TryGetProperty("id", out var idElement) && idElement.ValueKind is JsonValueKind.String
             ? idElement.GetString()!
             : "openai-text-plan";
+    }
+
+    private static T? DeserializeOrThrow<T>(string json, string message)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json, JsonOptions);
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException(message, exception);
+        }
     }
 
     private static DocumentSourceKind ParseDocumentSourceKind(string value)

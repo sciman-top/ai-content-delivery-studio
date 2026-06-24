@@ -105,7 +105,9 @@ public sealed class OpenAiSdkImageTransport : IOpenAiSdkImageTransport
             BinaryContent.CreateJson(CreatePayload(options, request), JsonOptions),
             cancellationToken);
 
-        using var document = JsonDocument.Parse(response.RawBody);
+        using var document = ParseJsonOrThrow(
+            response.RawBody,
+            "OpenAI SDK image transport response contained invalid JSON.");
         var imageBase64 = ExtractImageBase64(document.RootElement);
         return new OpenAiSdkImageTransportResult(
             Convert.FromBase64String(imageBase64),
@@ -169,6 +171,18 @@ public sealed class OpenAiSdkImageTransport : IOpenAiSdkImageTransport
         return root.TryGetProperty("id", out var idElement) && idElement.ValueKind is JsonValueKind.String
             ? idElement.GetString()!
             : "openai-image-generate";
+    }
+
+    private static JsonDocument ParseJsonOrThrow(BinaryData rawBody, string message)
+    {
+        try
+        {
+            return JsonDocument.Parse(rawBody);
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException(message, exception);
+        }
     }
 }
 

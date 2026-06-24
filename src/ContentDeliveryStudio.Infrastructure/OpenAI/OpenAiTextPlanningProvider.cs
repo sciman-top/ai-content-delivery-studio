@@ -75,24 +75,13 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-        var providerTraceId = ExtractTraceId(document.RootElement);
+        using var document = await ParseJsonOrThrowAsync(
+            stream,
+            cancellationToken,
+            "OpenAI text planning response contained invalid JSON.");
+        var providerTraceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
         RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
-        var outputText = ExtractOutputText(document.RootElement);
-        var plan = JsonSerializer.Deserialize<OpenAiPlanResponse>(outputText, JsonOptions)
-            ?? throw new InvalidOperationException("OpenAI text planning response was empty.");
-
-        if (plan.Items.Count == 0)
-        {
-            throw new InvalidOperationException("OpenAI text planning response did not include any items.");
-        }
-
-        return new SeriesPlanResult(
-            plan.Summary,
-            plan.Items
-                .Select(item => new SeriesPlanItem(item.Title, item.Brief, item.PromptDraft))
-                .ToArray(),
-            providerTraceId);
+        return OpenAiTextPlanningResponseMapper.ParseSeriesPlan(document.RootElement);
     }
 
     private static void ValidateRequest(PlanningRequest request)
@@ -177,8 +166,11 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-        var providerTraceId = ExtractTraceId(document.RootElement);
+        using var document = await ParseJsonOrThrowAsync(
+            stream,
+            cancellationToken,
+            "OpenAI document illustration planning response contained invalid JSON.");
+        var providerTraceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
         RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
         return OpenAiTextPlanningResponseMapper.ParseDocumentIllustrationPlan(document.RootElement);
     }
@@ -242,46 +234,6 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         };
     }
 
-    private static string ExtractOutputText(JsonElement root)
-    {
-        if (root.TryGetProperty("output_text", out var outputTextElement)
-            && outputTextElement.ValueKind is JsonValueKind.String)
-        {
-            return outputTextElement.GetString()!;
-        }
-
-        if (root.TryGetProperty("output", out var outputElement)
-            && outputElement.ValueKind is JsonValueKind.Array)
-        {
-            foreach (var outputItem in outputElement.EnumerateArray())
-            {
-                if (!outputItem.TryGetProperty("content", out var contentElement)
-                    || contentElement.ValueKind is not JsonValueKind.Array)
-                {
-                    continue;
-                }
-
-                foreach (var contentItem in contentElement.EnumerateArray())
-                {
-                    if (contentItem.TryGetProperty("text", out var textElement)
-                        && textElement.ValueKind is JsonValueKind.String)
-                    {
-                        return textElement.GetString()!;
-                    }
-                }
-            }
-        }
-
-        throw new InvalidOperationException("OpenAI text planning response did not include output text.");
-    }
-
-    private static string ExtractTraceId(JsonElement root)
-    {
-        return root.TryGetProperty("id", out var idElement) && idElement.ValueKind is JsonValueKind.String
-            ? idElement.GetString()!
-            : "openai-text-plan";
-    }
-
     private void RecordTelemetry(
         Uri endpoint,
         HttpResponseMessage response,
@@ -302,7 +254,19 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             _rateCard.Name));
     }
 
-    private sealed record OpenAiPlanResponse(string Summary, IReadOnlyList<OpenAiPlanItem> Items);
+    private static async Task<JsonDocument> ParseJsonOrThrowAsync(
+        Stream stream,
+        CancellationToken cancellationToken,
+        string message)
+    {
+        try
+        {
+            return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException(message, exception);
+        }
+    }
 
-    private sealed record OpenAiPlanItem(string Title, string Brief, string PromptDraft);
 }

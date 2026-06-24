@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using ContentDeliveryStudio.Infrastructure.IO;
 
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
@@ -27,12 +28,12 @@ public sealed class OpenAiLaunchPreflightReportWriter
         var jsonPath = Path.Combine(outputDirectory, "openai-launch-preflight.json");
         var markdownPath = Path.Combine(outputDirectory, "openai-launch-preflight.md");
 
-        await File.WriteAllTextAsync(
+        await AtomicFileWriter.WriteAllTextAsync(
             jsonPath,
             JsonSerializer.Serialize(report, JsonOptions),
             cancellationToken);
 
-        await File.WriteAllTextAsync(
+        await AtomicFileWriter.WriteAllTextAsync(
             markdownPath,
             WriteMarkdown(report),
             cancellationToken);

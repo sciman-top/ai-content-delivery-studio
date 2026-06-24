@@ -60,6 +60,46 @@ public sealed class OpenAiSdkImageTransportTests
         Assert.False(payload.RootElement.GetProperty("store").GetBoolean());
     }
 
+    [Fact]
+    public async Task GenerateAsync_RejectsResponseWithoutBase64ImageData()
+    {
+        var fakeBackend = new FakeSdkImageBackend(
+            """
+            {
+              "id": "img_sdk_missing_data",
+              "data": [
+                {
+                  "url": "https://example.test/generated.png"
+                }
+              ]
+            }
+            """,
+            requestId: "req_sdk_missing_data");
+        var sdkTransport = new OpenAiSdkImageTransport(fakeBackend);
+        var options = new OpenAiProviderOptions
+        {
+            BaseUri = new Uri("https://api.openai.com/v1/"),
+            ImageGenerationModel = "gpt-image-2",
+            RealApiEnabled = true,
+        };
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sdkTransport.GenerateAsync(
+                options,
+                "test-openai-key",
+                appId: null,
+                appSecret: null,
+                new ImageGenerationRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "Create a clean science poster.",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    Path.GetTempPath()),
+                CancellationToken.None));
+
+        Assert.Contains("base64", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
     private sealed class FakeSdkImageBackend : IOpenAiSdkImageBackend
     {
         private readonly string _responseJson;
