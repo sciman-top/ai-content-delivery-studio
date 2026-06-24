@@ -1,11 +1,33 @@
 using ContentDeliveryStudio.Application.Projects;
+using ContentDeliveryStudio.Core.Artifacts;
+using ContentDeliveryStudio.Core.Documents;
 using ContentDeliveryStudio.Core.Projects;
+using ContentDeliveryStudio.Core.Sources;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContentDeliveryStudio.Infrastructure.Persistence;
 
 public sealed class EfProjectRepository : IProjectRepository
 {
+    private static readonly Type[] AggregateEntityTypes =
+    [
+        typeof(ImageProject),
+        typeof(ImageSeries),
+        typeof(CreativeBrief),
+        typeof(SeriesItem),
+        typeof(PromptVersion),
+        typeof(GenerationTask),
+        typeof(CandidateImage),
+        typeof(ReviewResult),
+        typeof(DocumentBrief),
+        typeof(IllustrationPlan),
+        typeof(ProviderProfile),
+        typeof(SourceAsset),
+        typeof(OutputArtifact),
+        typeof(ArtifactPackage),
+        typeof(RoutedRepairPatch),
+    ];
+
     private readonly AppDbContext _dbContext;
 
     public EfProjectRepository(AppDbContext dbContext)
@@ -15,12 +37,13 @@ public sealed class EfProjectRepository : IProjectRepository
 
     public async Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
     {
+        var snapshot = BuildAggregateIdentitySnapshot(project);
+        var existingIds = await LoadExistingIdsAsync(snapshot, cancellationToken);
+
         if (_dbContext.Entry(project).State is EntityState.Detached)
         {
-            var exists = await _dbContext.Projects
-                .AnyAsync(existing => existing.Id == project.Id, cancellationToken);
-
-            if (exists)
+            if (existingIds.TryGetValue(typeof(ImageProject), out var projects)
+                && projects.Contains(project.Id))
             {
                 _dbContext.Projects.Update(project);
             }
@@ -30,7 +53,11 @@ public sealed class EfProjectRepository : IProjectRepository
             }
         }
 
-        await TrackNewChildrenAsync(project, cancellationToken);
+        // EF can discover new children under an existing tracked aggregate as Modified
+        // when they already carry assigned Guid keys. Normalize those entries back to Added
+        // before SaveChanges so inserts do not become concurrency-failing updates.
+        _dbContext.ChangeTracker.DetectChanges();
+        ApplyAddedStateToNewEntries(snapshot, existingIds);
         TrackModifiedCreativeBriefs(project);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
@@ -60,119 +87,149 @@ public sealed class EfProjectRepository : IProjectRepository
             .SingleOrDefaultAsync(project => project.Id == projectId, cancellationToken);
     }
 
-    private async Task TrackNewChildrenAsync(ImageProject project, CancellationToken cancellationToken)
+    private static Dictionary<Type, HashSet<Guid>> BuildAggregateIdentitySnapshot(ImageProject project)
     {
-        foreach (var profile in project.ProviderProfiles)
+        var snapshot = AggregateEntityTypes.ToDictionary(
+            entityType => entityType,
+            _ => new HashSet<Guid>());
+
+        void Add<TEntity>(IEnumerable<TEntity> entities) where TEntity : class
         {
-            if (!await _dbContext.ProviderProfiles.AnyAsync(existing => existing.Id == profile.Id, cancellationToken))
+            foreach (var entity in entities)
             {
-                _dbContext.Entry(profile).State = EntityState.Added;
+                snapshot[typeof(TEntity)].Add(GetEntityId(entity));
             }
         }
 
-        foreach (var asset in project.SourceAssets)
+        Add([project]);
+        Add(project.ProviderProfiles);
+        Add(project.SourceAssets);
+        Add(project.OutputArtifacts);
+        Add(project.ArtifactPackages);
+        Add(project.DocumentBriefs);
+        Add(project.IllustrationPlans);
+        Add(project.RoutedRepairPatches);
+        Add(project.Series);
+        Add(project.Series.SelectMany(series => series.CreativeBriefs));
+        Add(project.Series.SelectMany(series => series.Items));
+        Add(project.Series.SelectMany(series => series.Items).SelectMany(item => item.PromptVersions));
+        Add(project.Series.SelectMany(series => series.Items).SelectMany(item => item.GenerationTasks));
+        Add(project.Series.SelectMany(series => series.Items).SelectMany(item => item.CandidateImages));
+        Add(project.Series.SelectMany(series => series.Items).SelectMany(item => item.CandidateImages).SelectMany(candidate => candidate.ReviewResults));
+
+        return snapshot;
+    }
+
+    private async Task<Dictionary<Type, HashSet<Guid>>> LoadExistingIdsAsync(
+        IReadOnlyDictionary<Type, HashSet<Guid>> snapshot,
+        CancellationToken cancellationToken)
+    {
+        var existingIds = AggregateEntityTypes.ToDictionary(
+            entityType => entityType,
+            _ => new HashSet<Guid>());
+
+        await LoadExistingIdsAsync(
+            snapshot,
+            existingIds,
+            typeof(ImageProject),
+            ids => _dbContext.Projects.Where(project => ids.Contains(project.Id)).Select(project => project.Id),
+            cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(ImageSeries), ids => _dbContext.Series.Where(series => ids.Contains(series.Id)).Select(series => series.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(CreativeBrief), ids => _dbContext.CreativeBriefs.Where(brief => ids.Contains(brief.Id)).Select(brief => brief.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(SeriesItem), ids => _dbContext.SeriesItems.Where(item => ids.Contains(item.Id)).Select(item => item.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(PromptVersion), ids => _dbContext.PromptVersions.Where(prompt => ids.Contains(prompt.Id)).Select(prompt => prompt.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(GenerationTask), ids => _dbContext.GenerationTasks.Where(task => ids.Contains(task.Id)).Select(task => task.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(CandidateImage), ids => _dbContext.CandidateImages.Where(candidate => ids.Contains(candidate.Id)).Select(candidate => candidate.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(ReviewResult), ids => _dbContext.ReviewResults.Where(review => ids.Contains(review.Id)).Select(review => review.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(DocumentBrief), ids => _dbContext.DocumentBriefs.Where(brief => ids.Contains(brief.Id)).Select(brief => brief.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(IllustrationPlan), ids => _dbContext.IllustrationPlans.Where(plan => ids.Contains(plan.Id)).Select(plan => plan.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(ProviderProfile), ids => _dbContext.ProviderProfiles.Where(profile => ids.Contains(profile.Id)).Select(profile => profile.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(SourceAsset), ids => _dbContext.SourceAssets.Where(asset => ids.Contains(asset.Id)).Select(asset => asset.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(OutputArtifact), ids => _dbContext.OutputArtifacts.Where(artifact => ids.Contains(artifact.Id)).Select(artifact => artifact.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(ArtifactPackage), ids => _dbContext.ArtifactPackages.Where(package => ids.Contains(package.Id)).Select(package => package.Id), cancellationToken);
+        await LoadExistingIdsAsync(snapshot, existingIds, typeof(RoutedRepairPatch), ids => _dbContext.RoutedRepairPatches.Where(patch => ids.Contains(patch.Id)).Select(patch => patch.Id), cancellationToken);
+
+        return existingIds;
+    }
+
+    private async Task LoadExistingIdsAsync(
+        IReadOnlyDictionary<Type, HashSet<Guid>> snapshot,
+        IDictionary<Type, HashSet<Guid>> existingIds,
+        Type entityType,
+        Func<HashSet<Guid>, IQueryable<Guid>> queryFactory,
+        CancellationToken cancellationToken)
+    {
+        if (!snapshot.TryGetValue(entityType, out var ids) || ids.Count == 0)
         {
-            if (!await _dbContext.SourceAssets.AnyAsync(existing => existing.Id == asset.Id, cancellationToken))
+            return;
+        }
+
+        existingIds[entityType] = (await queryFactory(ids).ToArrayAsync(cancellationToken)).ToHashSet();
+    }
+
+    private void ApplyAddedStateToNewEntries(
+        IReadOnlyDictionary<Type, HashSet<Guid>> snapshot,
+        IReadOnlyDictionary<Type, HashSet<Guid>> existingIds)
+    {
+        foreach (var entry in _dbContext.ChangeTracker.Entries().Where(entry => entry.Entity is not null))
+        {
+            var entityType = entry.Entity.GetType();
+            if (!snapshot.TryGetValue(entityType, out var aggregateIds)
+                || !existingIds.TryGetValue(entityType, out var persistedIds))
             {
-                _dbContext.Entry(asset).State = EntityState.Added;
+                continue;
+            }
+
+            var entityId = GetEntityId(entry.Entity);
+            if (!aggregateIds.Contains(entityId))
+            {
+                continue;
+            }
+
+            if (!persistedIds.Contains(entityId))
+            {
+                MarkEntryGraphAsAdded(entry);
+            }
+        }
+    }
+
+    private static void MarkEntryGraphAsAdded(Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry)
+    {
+        if (entry.State is not EntityState.Added)
+        {
+            entry.State = EntityState.Added;
+        }
+
+        foreach (var reference in entry.References)
+        {
+            if (reference.TargetEntry?.Metadata.IsOwned() is true)
+            {
+                MarkEntryGraphAsAdded(reference.TargetEntry);
             }
         }
 
-        foreach (var artifact in project.OutputArtifacts)
+        foreach (var collection in entry.Collections)
         {
-            if (!await _dbContext.OutputArtifacts.AnyAsync(existing => existing.Id == artifact.Id, cancellationToken))
+            if (collection.Metadata.TargetEntityType.IsOwned()
+                && collection.CurrentValue is IEnumerable<object> ownedEntities)
             {
-                _dbContext.Entry(artifact).State = EntityState.Added;
-            }
-        }
-
-        foreach (var package in project.ArtifactPackages)
-        {
-            if (!await _dbContext.ArtifactPackages.AnyAsync(existing => existing.Id == package.Id, cancellationToken))
-            {
-                _dbContext.Entry(package).State = EntityState.Added;
-            }
-        }
-
-        foreach (var series in project.Series)
-        {
-            if (!await _dbContext.Series.AnyAsync(existing => existing.Id == series.Id, cancellationToken))
-            {
-                _dbContext.Entry(series).State = EntityState.Added;
-            }
-
-            foreach (var brief in series.CreativeBriefs)
-            {
-                if (!await _dbContext.CreativeBriefs.AnyAsync(existing => existing.Id == brief.Id, cancellationToken))
+                foreach (var ownedEntity in ownedEntities)
                 {
-                    _dbContext.CreativeBriefs.Add(brief);
+                    var ownedEntry = entry.Context.Entry(ownedEntity);
+                    MarkEntryGraphAsAdded(ownedEntry);
                 }
             }
-
-            foreach (var item in series.Items)
-            {
-                if (!await _dbContext.SeriesItems.AnyAsync(existing => existing.Id == item.Id, cancellationToken))
-                {
-                    _dbContext.Entry(item).State = EntityState.Added;
-                }
-
-                foreach (var prompt in item.PromptVersions)
-                {
-                    if (!await _dbContext.PromptVersions.AnyAsync(existing => existing.Id == prompt.Id, cancellationToken))
-                    {
-                        _dbContext.PromptVersions.Add(prompt);
-                    }
-                }
-
-                foreach (var task in item.GenerationTasks)
-                {
-                    if (!await _dbContext.GenerationTasks.AnyAsync(existing => existing.Id == task.Id, cancellationToken))
-                    {
-                        _dbContext.GenerationTasks.Add(task);
-                    }
-                }
-
-                foreach (var candidate in item.CandidateImages)
-                {
-                    if (!await _dbContext.CandidateImages.AnyAsync(existing => existing.Id == candidate.Id, cancellationToken))
-                    {
-                        _dbContext.CandidateImages.Add(candidate);
-                    }
-
-                    foreach (var review in candidate.ReviewResults)
-                    {
-                        if (!await _dbContext.ReviewResults.AnyAsync(existing => existing.Id == review.Id, cancellationToken))
-                        {
-                            _dbContext.ReviewResults.Add(review);
-                        }
-                    }
-                }
-            }
         }
+    }
 
-        foreach (var brief in project.DocumentBriefs)
-        {
-            if (!await _dbContext.DocumentBriefs.AnyAsync(existing => existing.Id == brief.Id, cancellationToken))
-            {
-                _dbContext.Entry(brief).State = EntityState.Added;
-            }
-        }
-
-        foreach (var plan in project.IllustrationPlans)
-        {
-            if (!await _dbContext.IllustrationPlans.AnyAsync(existing => existing.Id == plan.Id, cancellationToken))
-            {
-                _dbContext.Entry(plan).State = EntityState.Added;
-            }
-        }
-
-        foreach (var patch in project.RoutedRepairPatches)
-        {
-            if (!await _dbContext.RoutedRepairPatches.AnyAsync(existing => existing.Id == patch.Id, cancellationToken))
-            {
-                _dbContext.Entry(patch).State = EntityState.Added;
-            }
-        }
+    private static Guid GetEntityId(object entity)
+    {
+        var idProperty = entity.GetType().GetProperty(nameof(ImageProject.Id))
+            ?? throw new InvalidOperationException($"Entity type '{entity.GetType().FullName}' does not expose an Id property.");
+        var idValue = idProperty.GetValue(entity);
+        return idValue is Guid id
+            ? id
+            : throw new InvalidOperationException($"Entity type '{entity.GetType().FullName}' returned a non-Guid Id value.");
     }
 
     private void TrackModifiedCreativeBriefs(ImageProject project)

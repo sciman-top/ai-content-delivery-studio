@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
 using ContentDeliveryStudio.Core.Providers;
+using ContentDeliveryStudio.Infrastructure.IO;
 
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
@@ -111,7 +112,9 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
         }
 
         stopwatch.Stop();
-        using var document = JsonDocument.Parse(transportResult.RawBody);
+        using var document = ParseJsonOrThrow(
+            transportResult.RawBody,
+            "OpenAI official SDK image generation response contained invalid JSON.");
         var generatedAt = DateTimeOffset.UtcNow;
         var outputFormat = NormalizeOutputFormat(request.Settings.OutputFormat);
         var telemetry = OpenAiProviderTelemetry.Create(
@@ -136,8 +139,8 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
             EnsureOutputFileName(request.OutputFileName, outputFormat, request.SeriesItemId, request.PromptVersionId));
         var metadataPath = Path.ChangeExtension(assetPath, ".json");
 
-        await File.WriteAllBytesAsync(assetPath, transportResult.ImageBytes, cancellationToken);
-        await File.WriteAllTextAsync(
+        await AtomicFileWriter.WriteAllBytesAsync(assetPath, transportResult.ImageBytes, cancellationToken);
+        await AtomicFileWriter.WriteAllTextAsync(
             metadataPath,
             JsonSerializer.Serialize(
                 new
@@ -255,5 +258,17 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
         return Path.GetExtension(fileName).Equals(extension, StringComparison.OrdinalIgnoreCase)
             ? fileName
             : Path.ChangeExtension(fileName, extension);
+    }
+
+    private static JsonDocument ParseJsonOrThrow(BinaryData rawBody, string message)
+    {
+        try
+        {
+            return JsonDocument.Parse(rawBody);
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException(message, exception);
+        }
     }
 }

@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using ContentDeliveryStudio.Application.Delivery;
 using ContentDeliveryStudio.Core.Projects;
+using ContentDeliveryStudio.Infrastructure.IO;
 
 namespace ContentDeliveryStudio.Infrastructure.Delivery;
 
@@ -16,12 +17,45 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
         DeliveryPackageRequest request,
         CancellationToken cancellationToken)
     {
-        Directory.CreateDirectory(request.OutputDirectory);
+        var outputDirectory = NormalizeOutputDirectory(request.OutputDirectory);
+        var stagingDirectory = CreateTemporarySiblingDirectory(outputDirectory, "staging");
+        var backupDirectory = CreateTemporarySiblingDirectory(outputDirectory, "backup");
 
-        var imagesDirectory = Path.Combine(request.OutputDirectory, "images");
-        var promptsDirectory = Path.Combine(request.OutputDirectory, "prompts");
-        var metadataDirectory = Path.Combine(request.OutputDirectory, "metadata");
-        var compositionDirectory = Path.Combine(request.OutputDirectory, "composition");
+        try
+        {
+            var stagedPackage = await WritePackageContentsAsync(
+                request,
+                stagingDirectory,
+                cancellationToken);
+            PromoteStagedDirectory(stagingDirectory, outputDirectory, backupDirectory);
+
+            return new DeliveryPackageResult(
+                outputDirectory,
+                Path.Combine(outputDirectory, "manifest.json"),
+                Path.Combine(outputDirectory, "manifest.csv"),
+                Path.Combine(outputDirectory, "review-report.md"),
+                stagedPackage.FinalImageRelativePaths
+                    .Select(relativePath => CombineRelativePath(outputDirectory, relativePath))
+                    .ToArray());
+        }
+        finally
+        {
+            TryDeleteDirectory(stagingDirectory);
+            TryDeleteDirectory(backupDirectory);
+        }
+    }
+
+    private static async Task<StagedDeliveryPackage> WritePackageContentsAsync(
+        DeliveryPackageRequest request,
+        string packageDirectory,
+        CancellationToken cancellationToken)
+    {
+        Directory.CreateDirectory(packageDirectory);
+
+        var imagesDirectory = Path.Combine(packageDirectory, "images");
+        var promptsDirectory = Path.Combine(packageDirectory, "prompts");
+        var metadataDirectory = Path.Combine(packageDirectory, "metadata");
+        var compositionDirectory = Path.Combine(packageDirectory, "composition");
 
         Directory.CreateDirectory(imagesDirectory);
         Directory.CreateDirectory(promptsDirectory);
@@ -33,13 +67,20 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
             .ToArray();
 
         var manifestItems = new List<DeliveryManifestItem>();
-        var finalImagePaths = new List<string>();
+        var finalImageRelativePaths = new List<string>();
+        var seenItemKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var item in approvedItems)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var itemKey = NormalizeKey(item.ItemKey);
+            if (!seenItemKeys.Add(itemKey))
+            {
+                throw new InvalidOperationException(
+                    $"Delivery package contains duplicate normalized item key '{itemKey}'.");
+            }
+
             var imageExtension = Path.GetExtension(item.FinalImagePath);
             if (string.IsNullOrWhiteSpace(imageExtension))
             {
@@ -49,27 +90,30 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
             var imagePath = Path.Combine(imagesDirectory, $"{itemKey}{imageExtension}");
             var promptPath = Path.Combine(promptsDirectory, $"{itemKey}.txt");
             var metadataPath = Path.Combine(metadataDirectory, $"{itemKey}.json");
-            var deterministicCompositionReportPath = CopyDeterministicCompositionReport(
+            var imageRelativePath = ToRelativePath(packageDirectory, imagePath);
+            var promptRelativePath = ToRelativePath(packageDirectory, promptPath);
+            var deterministicCompositionReportPath = await CopyDeterministicCompositionReportAsync(
                 item,
                 compositionDirectory,
-                request.OutputDirectory,
-                itemKey);
+                packageDirectory,
+                itemKey,
+                cancellationToken);
 
-            File.Copy(item.FinalImagePath, imagePath, overwrite: true);
-            await File.WriteAllTextAsync(promptPath, item.PromptText, cancellationToken);
+            await AtomicFileWriter.CopyFileAsync(item.FinalImagePath, imagePath, cancellationToken);
+            await AtomicFileWriter.WriteAllTextAsync(promptPath, item.PromptText, cancellationToken);
 
             if (File.Exists(item.MetadataPath))
             {
-                File.Copy(item.MetadataPath, metadataPath, overwrite: true);
+                await AtomicFileWriter.CopyFileAsync(item.MetadataPath, metadataPath, cancellationToken);
             }
 
-            finalImagePaths.Add(imagePath);
+            finalImageRelativePaths.Add(imageRelativePath);
             manifestItems.Add(new DeliveryManifestItem(
                 itemKey,
                 item.Title,
-                ToRelativePath(request.OutputDirectory, imagePath),
-                ToRelativePath(request.OutputDirectory, promptPath),
-                File.Exists(metadataPath) ? ToRelativePath(request.OutputDirectory, metadataPath) : null,
+                imageRelativePath,
+                promptRelativePath,
+                File.Exists(metadataPath) ? ToRelativePath(packageDirectory, metadataPath) : null,
                 item.ReviewDecision,
                 item.HumanApproved,
                 item.FinalReviewer,
@@ -91,28 +135,26 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 item.OperatorRunIds ?? []));
         }
 
-        var manifestPath = Path.Combine(request.OutputDirectory, "manifest.json");
-        var csvPath = Path.Combine(request.OutputDirectory, "manifest.csv");
-        var reviewReportPath = Path.Combine(request.OutputDirectory, "review-report.md");
+        var manifestPath = Path.Combine(packageDirectory, "manifest.json");
+        var csvPath = Path.Combine(packageDirectory, "manifest.csv");
+        var reviewReportPath = Path.Combine(packageDirectory, "review-report.md");
 
         var manifest = new DeliveryManifest(
             request.ProjectName,
             DateTimeOffset.UtcNow,
             manifestItems);
 
-        await File.WriteAllTextAsync(
+        await AtomicFileWriter.WriteAllTextAsync(
             manifestPath,
             JsonSerializer.Serialize(manifest, ManifestJsonOptions),
             cancellationToken);
-        await File.WriteAllTextAsync(csvPath, WriteManifestCsv(manifestItems), cancellationToken);
-        await File.WriteAllTextAsync(reviewReportPath, WriteReviewReport(request.ProjectName, manifestItems), cancellationToken);
-
-        return new DeliveryPackageResult(
-            request.OutputDirectory,
-            manifestPath,
-            csvPath,
+        await AtomicFileWriter.WriteAllTextAsync(csvPath, WriteManifestCsv(manifestItems), cancellationToken);
+        await AtomicFileWriter.WriteAllTextAsync(
             reviewReportPath,
-            finalImagePaths);
+            WriteReviewReport(request.ProjectName, manifestItems),
+            cancellationToken);
+
+        return new StagedDeliveryPackage(finalImageRelativePaths);
     }
 
     public async Task<DeliveryExportResult> WriteAsync(
@@ -178,6 +220,91 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
         return Path.GetRelativePath(rootDirectory, path).Replace('\\', '/');
     }
 
+    private static string CombineRelativePath(string rootDirectory, string relativePath)
+    {
+        return Path.Combine(
+            rootDirectory,
+            relativePath.Replace('/', Path.DirectorySeparatorChar));
+    }
+
+    private static string NormalizeOutputDirectory(string outputDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(outputDirectory))
+        {
+            throw new ArgumentException("Output directory cannot be empty.", nameof(outputDirectory));
+        }
+
+        var normalizedOutputDirectory = Path.GetFullPath(outputDirectory.Trim());
+        var parentDirectory = Path.GetDirectoryName(normalizedOutputDirectory)
+            ?? throw new InvalidOperationException(
+                $"Could not resolve the parent directory for '{outputDirectory}'.");
+        Directory.CreateDirectory(parentDirectory);
+        return normalizedOutputDirectory;
+    }
+
+    private static string CreateTemporarySiblingDirectory(string finalDirectory, string suffix)
+    {
+        var parentDirectory = Path.GetDirectoryName(finalDirectory)
+            ?? throw new InvalidOperationException(
+                $"Could not resolve the parent directory for '{finalDirectory}'.");
+        var directoryName = Path.GetFileName(finalDirectory);
+        return Path.Combine(parentDirectory, $".{directoryName}.{Guid.NewGuid():N}.{suffix}");
+    }
+
+    private static void PromoteStagedDirectory(
+        string stagingDirectory,
+        string finalDirectory,
+        string backupDirectory)
+    {
+        if (!Directory.Exists(finalDirectory))
+        {
+            Directory.Move(stagingDirectory, finalDirectory);
+            return;
+        }
+
+        Directory.Move(finalDirectory, backupDirectory);
+        try
+        {
+            Directory.Move(stagingDirectory, finalDirectory);
+            TryDeleteDirectory(backupDirectory);
+        }
+        catch
+        {
+            TryRestoreDirectory(finalDirectory, backupDirectory);
+            throw;
+        }
+    }
+
+    private static void TryRestoreDirectory(string finalDirectory, string backupDirectory)
+    {
+        try
+        {
+            if (!Directory.Exists(finalDirectory) && Directory.Exists(backupDirectory))
+            {
+                Directory.Move(backupDirectory, finalDirectory);
+            }
+        }
+        catch
+        {
+            // Best-effort rollback only. The original failure should remain visible.
+        }
+    }
+
+    private static void TryDeleteDirectory(string directoryPath)
+    {
+        try
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                Directory.Delete(directoryPath, recursive: true);
+            }
+        }
+        catch
+        {
+            // Best-effort cleanup only. The original failure should remain visible.
+        }
+    }
+
     private static string WriteManifestCsv(IReadOnlyList<DeliveryManifestItem> items)
     {
         var builder = new StringBuilder();
@@ -237,11 +364,12 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
         return builder.ToString();
     }
 
-    private static string? CopyDeterministicCompositionReport(
+    private static async Task<string?> CopyDeterministicCompositionReportAsync(
         DeliveryPackageItem item,
         string compositionDirectory,
         string outputDirectory,
-        string itemKey)
+        string itemKey,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(item.DeterministicCompositionReportPath))
         {
@@ -261,7 +389,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
         }
 
         var reportPath = Path.Combine(compositionDirectory, $"{itemKey}{extension}");
-        File.Copy(item.DeterministicCompositionReportPath, reportPath, overwrite: true);
+        await AtomicFileWriter.CopyFileAsync(item.DeterministicCompositionReportPath, reportPath, cancellationToken);
         return ToRelativePath(outputDirectory, reportPath);
     }
 
@@ -349,3 +477,6 @@ internal sealed record DeliveryManifestItem(
     string? ArtifactRole,
     DeliveryBlueprintMetadata? Blueprint,
     IReadOnlyList<Guid> OperatorRunIds);
+
+internal sealed record StagedDeliveryPackage(
+    IReadOnlyList<string> FinalImageRelativePaths);

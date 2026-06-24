@@ -13,6 +13,162 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class PersistenceTests
 {
     [Fact]
+    public async Task EfProjectRepository_SaveAsync_PersistsDetachedAggregateNestedAdditionsAcrossRepeatedSaves()
+    {
+        var databaseDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var databasePath = Path.Combine(databaseDirectory, "project.sqlite");
+        Directory.CreateDirectory(databaseDirectory);
+
+        try
+        {
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .Options;
+
+            var timestamp = new DateTimeOffset(2026, 6, 24, 10, 0, 0, TimeSpan.Zero);
+            var project = ImageProject.Create("Detached aggregate persistence", timestamp);
+            var profile = project.AddProviderProfile("Fake provider", ProviderKind.Fake, timestamp.AddMinutes(1));
+            var series = project.AddSeries("Series", "Detached aggregate save coverage.", timestamp.AddMinutes(2));
+            var item = series.AddItem("Opening", "Opening item.", timestamp.AddMinutes(3));
+            var firstPrompt = item.AddPromptVersion(
+                "Create the first prompt.",
+                new GenerationSettings(1024, 1024, "standard", "png", 42),
+                profile.Id,
+                timestamp.AddMinutes(4));
+
+            await using (var db = new AppDbContext(options))
+            {
+                await db.Database.EnsureCreatedAsync();
+                var repository = new EfProjectRepository(db);
+                await repository.SaveAsync(project, CancellationToken.None);
+            }
+
+            ImageProject detachedProject;
+            await using (var db = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(db);
+                detachedProject = (await repository.LoadAsync(project.Id, CancellationToken.None))!;
+            }
+
+            var detachedItem = detachedProject.Series.Single().Items.Single();
+            var generationTask = detachedItem.AddGenerationTask(
+                new GenerationTask(
+                    Guid.NewGuid(),
+                    detachedItem.Id,
+                    firstPrompt.Id,
+                    profile.Id,
+                    GenerationTaskStatus.Succeeded,
+                    attemptCount: 1,
+                    maxRetries: 2,
+                    timestamp.AddMinutes(5),
+                    timestamp.AddMinutes(6)),
+                timestamp.AddMinutes(6));
+            var candidate = detachedItem.AddCandidateImage(
+                new CandidateImage(
+                    Guid.NewGuid(),
+                    detachedItem.Id,
+                    firstPrompt.Id,
+                    generationTask.Id,
+                    profile.Id,
+                    CandidateImageStatus.ReviewPending,
+                    "outputs/review/candidate-01.png",
+                    "outputs/review/candidate-01.json",
+                    timestamp.AddMinutes(7)),
+                timestamp.AddMinutes(7));
+            detachedProject.UpsertReviewResult(
+                new ReviewResult(
+                    Guid.NewGuid(),
+                    candidate.Id,
+                    ReviewDecision.Fail,
+                    new Dictionary<string, int>
+                    {
+                        ["match"] = 3,
+                        ["text"] = 1,
+                    },
+                    ["text-rendering-risk"],
+                    "Needs deterministic text.",
+                    "Use post-render labels.",
+                    humanApproved: false,
+                    timestamp.AddMinutes(8)),
+                timestamp.AddMinutes(8));
+
+            await using (var db = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(db);
+                await repository.SaveAsync(detachedProject, CancellationToken.None);
+            }
+
+            ImageProject repeatedSaveProject;
+            await using (var db = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(db);
+                repeatedSaveProject = (await repository.LoadAsync(project.Id, CancellationToken.None))!;
+            }
+
+            var repeatedItem = repeatedSaveProject.Series.Single().Items.Single();
+            var secondPrompt = repeatedItem.AddPromptVersion(
+                "Create the second prompt.",
+                new GenerationSettings(1536, 1024, "draft", "png", 7),
+                profile.Id,
+                timestamp.AddMinutes(9));
+            repeatedSaveProject.UpsertReviewResult(
+                new ReviewResult(
+                    Guid.NewGuid(),
+                    candidate.Id,
+                    ReviewDecision.Pass,
+                    new Dictionary<string, int>
+                    {
+                        ["match"] = 5,
+                        ["text"] = 4,
+                    },
+                    [],
+                    "Looks ready after the fix.",
+                    null,
+                    humanApproved: true,
+                    timestamp.AddMinutes(10),
+                    finalReviewer: "Teacher",
+                    finalApprovalNotes: "Approved after deterministic text repair.",
+                    finalApprovalDecidedAt: timestamp.AddMinutes(10)),
+                timestamp.AddMinutes(10));
+
+            await using (var db = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(db);
+                await repository.SaveAsync(repeatedSaveProject, CancellationToken.None);
+            }
+
+            await using (var db = new AppDbContext(options))
+            {
+                var repository = new EfProjectRepository(db);
+                var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+                var loadedItem = Assert.Single(loaded!.Series.Single().Items);
+                var loadedCandidate = Assert.Single(loadedItem.CandidateImages);
+                var loadedReview = Assert.Single(loadedCandidate.ReviewResults);
+
+                Assert.Equal(2, loadedItem.PromptVersions.Count);
+                Assert.Contains(loadedItem.PromptVersions, prompt => prompt.Id == secondPrompt.Id);
+                Assert.Single(loadedItem.GenerationTasks);
+                Assert.Equal(generationTask.Id, loadedItem.GenerationTasks.Single().Id);
+                Assert.Equal(candidate.Id, loadedCandidate.Id);
+                Assert.Equal(ReviewDecision.Pass, loadedReview.Decision);
+                Assert.True(loadedReview.HumanApproved);
+                Assert.Equal("Teacher", loadedReview.FinalReviewer);
+                Assert.Equal("Approved after deterministic text repair.", loadedReview.FinalApprovalNotes);
+                Assert.Equal(timestamp.AddMinutes(10), loadedReview.FinalApprovalDecidedAt);
+                Assert.Empty(loadedReview.HardFailures);
+                Assert.Equal("Looks ready after the fix.", loadedReview.Comments);
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(databaseDirectory))
+            {
+                Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task EfProjectRepository_PersistsRoutedRepairPatches()
     {
         var databaseDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));

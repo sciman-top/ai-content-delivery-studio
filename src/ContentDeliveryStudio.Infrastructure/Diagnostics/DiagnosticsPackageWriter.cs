@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using ContentDeliveryStudio.Application.Diagnostics;
+using ContentDeliveryStudio.Infrastructure.IO;
 
 namespace ContentDeliveryStudio.Infrastructure.Diagnostics;
 
@@ -37,12 +38,12 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
         var jsonPath = Path.Combine(request.OutputDirectory, "diagnostics.json");
         var markdownPath = Path.Combine(request.OutputDirectory, "diagnostics.md");
 
-        await File.WriteAllTextAsync(
+        await AtomicFileWriter.WriteAllTextAsync(
             jsonPath,
             JsonSerializer.Serialize(package, JsonOptions),
             cancellationToken);
 
-        await File.WriteAllTextAsync(
+        await AtomicFileWriter.WriteAllTextAsync(
             markdownPath,
             WriteMarkdown(package),
             cancellationToken);

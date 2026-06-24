@@ -154,4 +154,117 @@ public sealed class DeliveryPackageTests
             }
         }
     }
+
+    [Fact]
+    public async Task DeliveryPackageWriter_RejectsDuplicateNormalizedKeys()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+        var packageDirectory = Path.Combine(rootDirectory, "delivery");
+        Directory.CreateDirectory(sourceDirectory);
+
+        try
+        {
+            var firstImage = Path.Combine(sourceDirectory, "first.png");
+            var secondImage = Path.Combine(sourceDirectory, "second.png");
+            await File.WriteAllBytesAsync(firstImage, [1, 2, 3], CancellationToken.None);
+            await File.WriteAllBytesAsync(secondImage, [4, 5, 6], CancellationToken.None);
+
+            var writer = new DeliveryPackageWriter();
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                writer.WriteAsync(
+                    new DeliveryPackageRequest(
+                        "Duplicate key project",
+                        packageDirectory,
+                        [
+                            new DeliveryPackageItem(
+                                "Cover Shot",
+                                "Cover A",
+                                firstImage,
+                                Path.Combine(sourceDirectory, "first.json"),
+                                "Prompt A",
+                                ReviewDecision.Pass,
+                                HumanApproved: true),
+                            new DeliveryPackageItem(
+                                "cover-shot",
+                                "Cover B",
+                                secondImage,
+                                Path.Combine(sourceDirectory, "second.json"),
+                                "Prompt B",
+                                ReviewDecision.Pass,
+                                HumanApproved: true),
+                        ]),
+                    CancellationToken.None));
+
+            Assert.Contains("duplicate", exception.Message, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task DeliveryPackageWriter_FailureKeepsExistingPackageUntouched()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+        var packageDirectory = Path.Combine(rootDirectory, "delivery");
+        Directory.CreateDirectory(sourceDirectory);
+
+        try
+        {
+            var existingImagesDirectory = Path.Combine(packageDirectory, "images");
+            Directory.CreateDirectory(existingImagesDirectory);
+            var existingImagePath = Path.Combine(existingImagesDirectory, "cover.png");
+            await File.WriteAllBytesAsync(existingImagePath, [9, 9, 9], CancellationToken.None);
+            await File.WriteAllTextAsync(
+                Path.Combine(packageDirectory, "manifest.json"),
+                """{"projectName":"Existing package"}""",
+                CancellationToken.None);
+
+            var validImage = Path.Combine(sourceDirectory, "fresh.png");
+            await File.WriteAllBytesAsync(validImage, [1, 2, 3], CancellationToken.None);
+            var missingReportPath = Path.Combine(sourceDirectory, "missing-report.json");
+            var writer = new DeliveryPackageWriter();
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                writer.WriteAsync(
+                    new DeliveryPackageRequest(
+                        "Broken package",
+                        packageDirectory,
+                        [
+                            new DeliveryPackageItem(
+                                "cover",
+                                "Cover",
+                                validImage,
+                                Path.Combine(sourceDirectory, "missing-metadata.json"),
+                                "Prompt",
+                                ReviewDecision.Pass,
+                                HumanApproved: true,
+                                DeterministicCompositionReportPath: missingReportPath),
+                        ]),
+                    CancellationToken.None));
+
+            Assert.True(File.Exists(existingImagePath));
+            Assert.Equal([9, 9, 9], await File.ReadAllBytesAsync(existingImagePath, CancellationToken.None));
+
+            var siblingEntries = Directory.GetDirectories(rootDirectory)
+                .Select(Path.GetFileName)
+                .Where(name => name is not null)
+                .ToArray();
+            Assert.DoesNotContain(siblingEntries, name => name!.Contains(".delivery.", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
 }

@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using ContentDeliveryStudio.Core.Providers;
+using ContentDeliveryStudio.Infrastructure.IO;
 
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
@@ -102,7 +103,10 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        using var document = await ParseJsonOrThrowAsync(
+            stream,
+            cancellationToken,
+            "OpenAI image generation response contained invalid JSON.");
         var providerTraceId = ExtractTraceId(document.RootElement);
         var telemetry = CreateTelemetry(endpoint, response, document.RootElement, providerTraceId, _options.ImageGenerationModel, stopwatch.Elapsed);
         _telemetrySink.Record(telemetry);
@@ -148,7 +152,10 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        using var document = await ParseJsonOrThrowAsync(
+            stream,
+            cancellationToken,
+            "OpenAI stateful image generation response contained invalid JSON.");
         var providerTraceId = ExtractTraceId(document.RootElement);
         var telemetry = CreateTelemetry(endpoint, response, document.RootElement, providerTraceId, responsesModel, stopwatch.Elapsed);
         _telemetrySink.Record(telemetry);
@@ -227,8 +234,8 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             EnsureOutputFileName(request.OutputFileName, outputFormat, request.SeriesItemId, request.PromptVersionId));
         var metadataPath = Path.ChangeExtension(assetPath, ".json");
 
-        await File.WriteAllBytesAsync(assetPath, imageBytes, cancellationToken);
-        await File.WriteAllTextAsync(
+        await AtomicFileWriter.WriteAllBytesAsync(assetPath, imageBytes, cancellationToken);
+        await AtomicFileWriter.WriteAllTextAsync(
             metadataPath,
             JsonSerializer.Serialize(
                 new
@@ -476,5 +483,20 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             .Where(model => !string.IsNullOrWhiteSpace(model))
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
+    }
+
+    private static async Task<JsonDocument> ParseJsonOrThrowAsync(
+        Stream stream,
+        CancellationToken cancellationToken,
+        string message)
+    {
+        try
+        {
+            return await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        }
+        catch (JsonException exception)
+        {
+            throw new InvalidOperationException(message, exception);
+        }
     }
 }

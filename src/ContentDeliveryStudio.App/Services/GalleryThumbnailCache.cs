@@ -2,6 +2,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using ContentDeliveryStudio.Application.Projects;
+using ContentDeliveryStudio.Infrastructure.IO;
 using SkiaSharp;
 
 namespace ContentDeliveryStudio.App.Services;
@@ -52,7 +53,7 @@ public static class GalleryThumbnailCache
             using var thumbnailBitmap = CreateThumbnailBitmap(sourceBitmap);
             using var thumbnailImage = SKImage.FromBitmap(thumbnailBitmap);
             using var encoded = thumbnailImage.Encode(SKEncodedImageFormat.Png, quality: 100);
-            File.WriteAllBytes(thumbnailPath, encoded.ToArray());
+            AtomicFileWriter.WriteAllBytes(thumbnailPath, encoded.ToArray());
 
             return thumbnailPath;
         }

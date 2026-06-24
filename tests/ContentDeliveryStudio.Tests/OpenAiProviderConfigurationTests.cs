@@ -500,6 +500,9 @@ public sealed class OpenAiProviderConfigurationTests
             Assert.DoesNotContain("OPENAI_API_KEY", Path.GetFileName(file), StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("dpapi-test-secret", protectedText, StringComparison.Ordinal);
             Assert.Equal("dpapi-test-secret", await store.GetSecretAsync("OPENAI_API_KEY", CancellationToken.None));
+            Assert.DoesNotContain(
+                Directory.GetFiles(directory),
+                path => path.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase));
 
             await store.DeleteSecretAsync("OPENAI_API_KEY", CancellationToken.None);
 

@@ -21,6 +21,7 @@ public sealed class MainWindowViewModelTests
     public async Task PlanRows_ShowLocalizedSeriesItemKind()
     {
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Kind UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -42,6 +43,7 @@ public sealed class MainWindowViewModelTests
     {
         using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Graph UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -81,6 +83,7 @@ public sealed class MainWindowViewModelTests
         using var localStudioRoot = LocalStudioDataPathScope.Create();
         var warmupService = new CapturingGalleryThumbnailWarmupService();
         var viewModel = CreateViewModel(galleryThumbnailWarmupService: warmupService);
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Warmup UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -119,10 +122,54 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task GalleryRows_ReplacesPreviousWarmupWithLatestVisibleCandidates()
+    {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
+        var warmupService = new BlockingGalleryThumbnailWarmupService();
+        var viewModel = CreateViewModel(galleryThumbnailWarmupService: warmupService);
+        await viewModel.BackgroundTask;
+
+        viewModel.NewProjectName = "Warmup cancellation demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Storyboard";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        viewModel.NewItemTitle = "First frame";
+        viewModel.NewItemBrief = "First visual.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+        viewModel.NewPromptText = "Prompt first.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+
+        await warmupService.WaitForInvocationCountAsync(1);
+        var firstPaths = warmupService.StartedPaths.Single();
+
+        viewModel.NewItemTitle = "Second frame";
+        viewModel.NewItemBrief = "Second visual.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+        viewModel.NewPromptText = "Prompt second.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+
+        await warmupService.WaitForInvocationCountAsync(2);
+        var secondPaths = warmupService.StartedPaths.Last();
+
+        Assert.NotEqual(firstPaths, secondPaths);
+        Assert.Contains(warmupService.CompletedTokens, token => token.IsCancellationRequested);
+        Assert.Contains(secondPaths, path => path.Contains("second", StringComparison.OrdinalIgnoreCase));
+
+        warmupService.ReleaseAll();
+        await viewModel.BackgroundTask;
+        DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+    }
+
+    [Fact]
     public async Task ImageEditWorkflow_RunsFakeEditForSelectedGalleryRow()
     {
         using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Edit UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -168,6 +215,7 @@ public sealed class MainWindowViewModelTests
     {
         using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Selection summary demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -197,6 +245,7 @@ public sealed class MainWindowViewModelTests
     {
         using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Approval UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -254,6 +303,7 @@ public sealed class MainWindowViewModelTests
     {
         using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel(reviewPasses: false);
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Review route UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -289,6 +339,7 @@ public sealed class MainWindowViewModelTests
     {
         using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Blueprint delivery demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -347,6 +398,7 @@ public sealed class MainWindowViewModelTests
     {
         using var localStudioRoot = LocalStudioDataPathScope.Create();
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Reject UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -391,6 +443,7 @@ public sealed class MainWindowViewModelTests
         using var localStudioRoot = LocalStudioDataPathScope.Create();
         var repository = new InMemoryProjectRepository();
         var viewModel = CreateViewModel(repository: repository);
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Reload approval demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -435,6 +488,7 @@ public sealed class MainWindowViewModelTests
     public async Task BriefWorkflow_ShowsRecommendationRowsAndPromotesRecommendedSettings()
     {
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Brief UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -472,6 +526,7 @@ public sealed class MainWindowViewModelTests
     public async Task BriefWorkflow_ShowsBlueprintRowsAndPromotesSelectedBlueprint()
     {
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Blueprint UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -516,6 +571,7 @@ public sealed class MainWindowViewModelTests
     public async Task DocumentIllustrationWorkflow_RunsFakePlanningFromInspectorInputs()
     {
         var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
 
         viewModel.NewProjectName = "Document UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -561,6 +617,7 @@ public sealed class MainWindowViewModelTests
             var viewModel = CreateViewModel(
                 repository: repository,
                 projectService: CreateProjectService(repository));
+            await viewModel.BackgroundTask;
 
             viewModel.NewProjectName = "Import document source demo";
             await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -598,6 +655,7 @@ public sealed class MainWindowViewModelTests
                 repository: repository,
                 projectService: CreateProjectService(repository),
                 documentSourceFilePickerService: new StaticDocumentSourceFilePickerService(pdfPath));
+            await viewModel.BackgroundTask;
 
             viewModel.NewProjectName = "Browse document source demo";
             await viewModel.CreateProjectCommand.ExecuteAsync(null);
@@ -645,6 +703,7 @@ public sealed class MainWindowViewModelTests
                         TotalConcurrency: 40),
                     [])));
         var viewModel = CreateViewModel(providerCenter: providerCenter);
+        await viewModel.BackgroundTask;
 
         await viewModel.RefreshProviderCenterCommand.ExecuteAsync(null);
 
@@ -674,6 +733,16 @@ public sealed class MainWindowViewModelTests
         Assert.Equal("图视图", viewModel.WorkbenchTabs.First(tab => tab.Kind is WorkbenchTabKind.Graph).Title);
         Assert.Equal(["跟随系统", "中文", "英文"], viewModel.LanguageOptions.Select(option => option.DisplayName));
         Assert.Equal("学术草稿", viewModel.SelectedDocumentStrictnessOption?.DisplayName);
+    }
+
+    [Fact]
+    public async Task StartupRefreshFailure_IsObservedWithoutThrowingFromConstructor()
+    {
+        var viewModel = CreateViewModel(repository: new ThrowingProjectRepository());
+
+        await viewModel.BackgroundTask;
+
+        Assert.Empty(viewModel.Projects);
     }
 
     private static MainWindowViewModel CreateViewModel(
@@ -742,11 +811,96 @@ public sealed class MainWindowViewModelTests
         }
     }
 
+    private sealed class BlockingGalleryThumbnailWarmupService : GalleryThumbnailWarmupService
+    {
+        private readonly List<IReadOnlyList<string>> _startedPaths = [];
+        private readonly List<CancellationToken> _completedTokens = [];
+        private readonly List<TaskCompletionSource> _releaseSignals = [];
+
+        public IReadOnlyList<IReadOnlyList<string>> StartedPaths => _startedPaths;
+
+        public IReadOnlyList<CancellationToken> CompletedTokens => _completedTokens;
+
+        public override async Task WarmupAsync(IEnumerable<string> assetPaths, CancellationToken cancellationToken)
+        {
+            var capturedPaths = assetPaths.ToArray();
+            var releaseSignal = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            lock (_startedPaths)
+            {
+                _startedPaths.Add(capturedPaths);
+                _releaseSignals.Add(releaseSignal);
+            }
+
+            try
+            {
+                await releaseSignal.Task.WaitAsync(cancellationToken);
+            }
+            finally
+            {
+                lock (_completedTokens)
+                {
+                    _completedTokens.Add(cancellationToken);
+                }
+            }
+        }
+
+        public async Task WaitForInvocationCountAsync(int expectedCount, int timeoutMs = 2000)
+        {
+            await WaitForConditionAsync(() =>
+            {
+                lock (_startedPaths)
+                {
+                    return _startedPaths.Count >= expectedCount;
+                }
+            }, timeoutMs);
+        }
+
+        public void ReleaseAll()
+        {
+            lock (_releaseSignals)
+            {
+                foreach (var signal in _releaseSignals)
+                {
+                    signal.TrySetResult();
+                }
+            }
+        }
+    }
+
     private sealed class NoopGalleryThumbnailWarmupService : GalleryThumbnailWarmupService
     {
         public override Task WarmupAsync(IEnumerable<string> assetPaths, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class ThrowingProjectRepository : IProjectRepository
+    {
+        public Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<ImageProject?>(null);
+        }
+
+        public Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException("Simulated list failure.");
+        }
+
+        public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
+        {
+            return Task.FromResult<ReviewResult?>(null);
         }
     }
 

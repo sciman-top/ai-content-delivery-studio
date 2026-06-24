@@ -35,6 +35,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly IDocumentSourceFilePickerService? _documentSourceFilePickerService;
     private int _projectRefreshRevision;
     private int _planLoadRevision;
+    private Task _backgroundTask = Task.CompletedTask;
+    private CancellationTokenSource? _galleryThumbnailWarmupCancellation;
 
     private string _appTitle = string.Empty;
     private string _providerMode = string.Empty;
@@ -245,7 +247,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         NewProjectName = NewProjectNamePlaceholder;
         NewPlanningAudience = Text(LocalizationKey.DefaultPlanningAudience);
         NewPlanningStyleBrief = Text(LocalizationKey.DefaultPlanningStyleBrief);
-        _ = RefreshProjectsAsync();
+        TrackBackgroundTask(RefreshProjectsAsync());
     }
 
     public ProviderCenterViewModel ProviderCenter { get; }
@@ -359,7 +361,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             RunFakePlanningCommand.NotifyCanExecuteChanged();
             RunFakeDocumentPlanningCommand.NotifyCanExecuteChanged();
             RunFakeGenerationCommand.NotifyCanExecuteChanged();
-            _ = value is null ? ClearPlanAsync() : LoadPlanAsync(value.Id);
+            TrackBackgroundTask(value is null ? ClearPlanAsync() : LoadPlanAsync(value.Id));
         }
     }
 
@@ -1469,7 +1471,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 RunFakeReviewCommand.NotifyCanExecuteChanged();
                 RunFakeImageEditCommand.NotifyCanExecuteChanged();
                 RebuildWorkflowGraphRows();
-                _ = _galleryThumbnailWarmupService.WarmupAsync(value.Select(row => row.AssetPath), CancellationToken.None);
+                ScheduleGalleryWarmup(value.Select(row => row.AssetPath));
             }
         }
     }
@@ -2482,6 +2484,72 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var invalidChars = Path.GetInvalidFileNameChars();
         var sanitized = new string(value.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
         return string.IsNullOrWhiteSpace(sanitized) ? "image" : sanitized.Trim();
+    }
+
+    internal Task BackgroundTask => _backgroundTask;
+
+    private void ScheduleGalleryWarmup(IEnumerable<string> assetPaths)
+    {
+        CancelGalleryWarmup();
+
+        var warmupPaths = assetPaths.ToArray();
+        if (warmupPaths.Length == 0)
+        {
+            return;
+        }
+
+        var cancellation = new CancellationTokenSource();
+        _galleryThumbnailWarmupCancellation = cancellation;
+        TrackBackgroundTask(DisposeGalleryWarmupAsync(
+            _galleryThumbnailWarmupService.WarmupAsync(warmupPaths, cancellation.Token),
+            cancellation));
+    }
+
+    private void CancelGalleryWarmup()
+    {
+        var cancellation = _galleryThumbnailWarmupCancellation;
+        _galleryThumbnailWarmupCancellation = null;
+        if (cancellation is null)
+        {
+            return;
+        }
+
+        cancellation.Cancel();
+        cancellation.Dispose();
+    }
+
+    private async Task DisposeGalleryWarmupAsync(Task task, CancellationTokenSource cancellation)
+    {
+        try
+        {
+            await task;
+        }
+        finally
+        {
+            if (ReferenceEquals(_galleryThumbnailWarmupCancellation, cancellation))
+            {
+                _galleryThumbnailWarmupCancellation = null;
+            }
+
+            cancellation.Dispose();
+        }
+    }
+
+    private void TrackBackgroundTask(Task task)
+    {
+        _backgroundTask = ObserveBackgroundTaskAsync(task);
+    }
+
+    private static async Task ObserveBackgroundTaskAsync(Task task)
+    {
+        try
+        {
+            await task;
+        }
+        catch
+        {
+            // Background refresh and warmup are best-effort only.
+        }
     }
 
     private string Text(LocalizationKey key)

@@ -135,6 +135,47 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task TextPlanningProvider_RejectsInvalidOutputJsonWithExplicitMessage()
+    {
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_plan_invalid_json",
+              "output_text": "{not valid json"
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateTextProvider(httpClient);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.CreatePlanAsync(
+                new PlanningRequest("topic", "audience", 1),
+                CancellationToken.None));
+
+        Assert.Contains("invalid", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("json", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task TextPlanningProvider_RejectsInvalidTopLevelJsonWithExplicitMessage()
+    {
+        using var handler = new CaptureHandler(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent("{not valid json", Encoding.UTF8, "application/json"),
+        });
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateTextProvider(httpClient);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.CreatePlanAsync(
+                new PlanningRequest("topic", "audience", 1),
+                CancellationToken.None));
+
+        Assert.Contains("invalid", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("json", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task TextPlanningProvider_RejectsOversizedRequestBeforeSendingHttp()
     {
         using var handler = new CaptureHandler(_ => JsonResponse("{}"));
@@ -371,6 +412,29 @@ public sealed class OpenAiProviderContractTests
         Assert.True(telemetry.Succeeded);
         Assert.Equal(200, telemetry.HttpStatusCode);
         Assert.Equal("req_sdk_text_retry", telemetry.RequestId);
+    }
+
+    [Fact]
+    public async Task SdkTextPlanningProvider_RejectsInvalidStructuredJsonWithExplicitMessage()
+    {
+        var client = new FakeResponsesClient(
+            SdkJsonResponse(
+                """
+                {
+                  "id": "resp_sdk_invalid_json",
+                  "output_text": "{ definitely not json"
+                }
+                """,
+                requestId: "req_sdk_invalid_json"));
+        var provider = CreateSdkTextProvider(client);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.CreatePlanAsync(
+                new PlanningRequest("topic", "audience", 1),
+                CancellationToken.None));
+
+        Assert.Contains("invalid", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("json", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
