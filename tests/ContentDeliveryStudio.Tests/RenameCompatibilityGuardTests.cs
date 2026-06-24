@@ -18,23 +18,114 @@ public sealed class RenameCompatibilityGuardTests
             @"tests\ContentDeliveryStudio.Tests\LocalStudioDataPathsTests.cs",
         };
 
-        var hits = Directory
-            .EnumerateFiles(repositoryRoot, "*", SearchOption.AllDirectories)
-            .Where(path => IsSearchableTextFile(path))
+        var hits = FindTextHits(repositoryRoot, "ImageSeriesStudio")
+            .Where(relativePath => !relativePath.Equals(
+                @"tests\ContentDeliveryStudio.Tests\RenameCompatibilityGuardTests.cs",
+                StringComparison.OrdinalIgnoreCase))
+            .Where(relativePath => !relativePath.StartsWith(@"docs\superpowers\", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        Assert.NotEmpty(hits);
+        Assert.All(hits, hit => Assert.Contains(hit, allowedRelativePaths));
+    }
+
+    [Fact]
+    public void RepositoryScan_PrunesIgnoredDirectoriesBeforeReadingFileContents()
+    {
+        var repositoryRoot = Path.Combine(
+            Path.GetTempPath(),
+            "ContentDeliveryStudio.Tests",
+            nameof(RenameCompatibilityGuardTests),
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(repositoryRoot);
+
+        try
+        {
+            File.WriteAllText(Path.Combine(repositoryRoot, "README.md"), "ImageSeriesStudio");
+            WriteFile(repositoryRoot, @".worktrees\branch\ignored.md", "ImageSeriesStudio");
+            WriteFile(repositoryRoot, @".cache\ignored.md", "ImageSeriesStudio");
+            WriteFile(repositoryRoot, @"src\Feature\bin\ignored.cs", "ImageSeriesStudio");
+            WriteFile(repositoryRoot, @"src\Feature\obj\ignored.cs", "ImageSeriesStudio");
+            WriteFile(repositoryRoot, @"publish\ignored.md", "ImageSeriesStudio");
+            WriteFile(repositoryRoot, @"src\Feature\kept.cs", "ImageSeriesStudio");
+
+            var hits = FindTextHits(repositoryRoot, "ImageSeriesStudio");
+
+            Assert.Equal(
+                [@"README.md", @"src\Feature\kept.cs"],
+                hits.OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray());
+        }
+        finally
+        {
+            if (Directory.Exists(repositoryRoot))
+            {
+                Directory.Delete(repositoryRoot, recursive: true);
+            }
+        }
+    }
+
+    private static IReadOnlyList<string> FindTextHits(string repositoryRoot, string text)
+    {
+        return EnumerateRepositoryTextFiles(repositoryRoot)
             .Select(path => new
             {
                 FullPath = path,
                 RelativePath = Path.GetRelativePath(repositoryRoot, path),
             })
-            .Where(entry => !entry.RelativePath.Equals(
-                @"tests\ContentDeliveryStudio.Tests\RenameCompatibilityGuardTests.cs",
-                StringComparison.OrdinalIgnoreCase))
-            .Where(entry => !entry.RelativePath.StartsWith(@"docs\superpowers\", StringComparison.OrdinalIgnoreCase))
-            .Where(entry => File.ReadAllText(entry.FullPath).Contains("ImageSeriesStudio", StringComparison.Ordinal))
+            .Where(entry => File.ReadAllText(entry.FullPath).Contains(text, StringComparison.Ordinal))
+            .Select(entry => entry.RelativePath)
             .ToArray();
+    }
 
-        Assert.NotEmpty(hits);
-        Assert.All(hits, hit => Assert.Contains(hit.RelativePath, allowedRelativePaths));
+    private static IEnumerable<string> EnumerateRepositoryTextFiles(string repositoryRoot)
+    {
+        var pending = new Stack<string>();
+        pending.Push(repositoryRoot);
+
+        while (pending.Count > 0)
+        {
+            var currentDirectory = pending.Pop();
+
+            foreach (var childDirectory in Directory.EnumerateDirectories(currentDirectory))
+            {
+                if (ShouldPruneDirectory(repositoryRoot, childDirectory))
+                {
+                    continue;
+                }
+
+                pending.Push(childDirectory);
+            }
+
+            foreach (var file in Directory.EnumerateFiles(currentDirectory))
+            {
+                if (IsSearchableTextFile(file))
+                {
+                    yield return file;
+                }
+            }
+        }
+    }
+
+    private static bool ShouldPruneDirectory(string repositoryRoot, string directoryPath)
+    {
+        var directoryName = Path.GetFileName(directoryPath);
+        if (directoryName.Equals(".git", StringComparison.OrdinalIgnoreCase)
+            || directoryName.Equals(".worktrees", StringComparison.OrdinalIgnoreCase)
+            || directoryName.Equals("bin", StringComparison.OrdinalIgnoreCase)
+            || directoryName.Equals("obj", StringComparison.OrdinalIgnoreCase)
+            || directoryName.Equals("publish", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (!directoryName.StartsWith(".", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var relativePath = Path.GetRelativePath(repositoryRoot, directoryPath);
+        return relativePath.IndexOf(Path.DirectorySeparatorChar) < 0
+            && relativePath.IndexOf(Path.AltDirectorySeparatorChar) < 0;
     }
 
     private static bool IsSearchableTextFile(string path)
@@ -63,5 +154,12 @@ public sealed class RenameCompatibilityGuardTests
         }
 
         throw new DirectoryNotFoundException("Could not find ContentDeliveryStudio.sln from the test output path.");
+    }
+
+    private static void WriteFile(string repositoryRoot, string relativePath, string content)
+    {
+        var fullPath = Path.Combine(repositoryRoot, relativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullPath)!);
+        File.WriteAllText(fullPath, content);
     }
 }

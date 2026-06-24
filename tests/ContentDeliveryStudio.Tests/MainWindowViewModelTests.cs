@@ -745,6 +745,172 @@ public sealed class MainWindowViewModelTests
         Assert.Empty(viewModel.Projects);
     }
 
+    [Fact]
+    public async Task RefreshProjectsAsync_RapidCallsKeepNewestWorkspace()
+    {
+        var innerRepository = new InMemoryProjectRepository();
+        var seedingService = CreateProjectService(innerRepository);
+        await seedingService.CreateProjectAsync("Older project", DateTimeOffset.UtcNow, CancellationToken.None);
+
+        var repository = new BlockingListSnapshotProjectRepository(innerRepository);
+        var viewModel = CreateViewModel(projectService: CreateProjectService(repository));
+        await viewModel.BackgroundTask;
+
+        var blockedRefresh = repository.BlockNextList();
+        var firstRefresh = viewModel.RefreshProjectsAsync();
+        await blockedRefresh.WaitForStartAsync();
+
+        await seedingService.CreateProjectAsync("Newest project", DateTimeOffset.UtcNow.AddMinutes(1), CancellationToken.None);
+
+        await viewModel.RefreshProjectsAsync();
+        await viewModel.BackgroundTask;
+
+        blockedRefresh.Release();
+        await blockedRefresh.WaitForCompletionAsync();
+        await firstRefresh;
+
+        Assert.Equal(2, viewModel.Projects.Count);
+        Assert.Equal("Newest project", viewModel.SelectedProject?.Name);
+    }
+
+    [Fact]
+    public async Task SelectedProject_RapidChangesKeepNewestLoadedPlan()
+    {
+        var innerRepository = new InMemoryProjectRepository();
+        var seedingService = CreateProjectService(innerRepository);
+        await SeedProjectWithSingleItemAsync(seedingService, "Alpha project", "Alpha series", "Alpha item");
+        await SeedProjectWithSingleItemAsync(seedingService, "Beta project", "Beta series", "Beta item");
+
+        var repository = new BlockingLoadSnapshotProjectRepository(innerRepository);
+        var viewModel = CreateViewModel(projectService: CreateProjectService(repository));
+        await viewModel.BackgroundTask;
+
+        var alphaProject = viewModel.Projects.Single(project => project.Name == "Alpha project");
+        var betaProject = viewModel.Projects.Single(project => project.Name == "Beta project");
+
+        var blockedLoad = repository.BlockNextLoad(alphaProject.Id);
+        viewModel.SelectedProject = alphaProject;
+        await blockedLoad.WaitForStartAsync();
+
+        viewModel.SelectedProject = betaProject;
+        await viewModel.BackgroundTask;
+
+        blockedLoad.Release();
+        await blockedLoad.WaitForCompletionAsync();
+
+        Assert.Equal(betaProject.Id, viewModel.SelectedProject?.Id);
+        Assert.Contains(
+            viewModel.PlanRows,
+            row => row.SeriesTitle == "Beta series" && row.ItemTitle == "Beta item");
+        Assert.DoesNotContain(
+            viewModel.PlanRows,
+            row => row.SeriesTitle == "Alpha series" && row.ItemTitle == "Alpha item");
+    }
+
+    [Fact]
+    public async Task MutatingCommands_AreBlockedWhileAnotherMutationIsRunning()
+    {
+        var innerRepository = new InMemoryProjectRepository();
+        var repository = new ControlledSaveProjectRepository(innerRepository);
+        var viewModel = CreateViewModel(projectService: CreateProjectService(repository));
+        await viewModel.BackgroundTask;
+
+        viewModel.NewProjectName = "Busy project";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Busy series";
+        viewModel.NewSeriesDescription = "Busy description";
+        viewModel.NewProjectName = "Should stay blocked";
+
+        var blockedSave = repository.BlockNextSave();
+        var createSeriesTask = viewModel.CreateSeriesCommand.ExecuteAsync(null);
+        await blockedSave.WaitForStartAsync();
+
+        Assert.True(viewModel.IsMutatingOperationActive);
+        Assert.False(viewModel.CreateSeriesCommand.CanExecute(null));
+        Assert.False(viewModel.CreateProjectCommand.CanExecute(null));
+
+        blockedSave.Release();
+        await createSeriesTask;
+
+        Assert.False(viewModel.IsMutatingOperationActive);
+        Assert.Single(viewModel.Series);
+    }
+
+    [Fact]
+    public async Task CreateSeriesFailure_DoesNotApplyPartialUiState()
+    {
+        var innerRepository = new InMemoryProjectRepository();
+        var repository = new ControlledSaveProjectRepository(innerRepository);
+        var viewModel = CreateViewModel(projectService: CreateProjectService(repository));
+        await viewModel.BackgroundTask;
+
+        viewModel.NewProjectName = "Failure project";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+
+        viewModel.NewSeriesTitle = "Should survive failure";
+        viewModel.NewSeriesDescription = "Series input should remain after failure.";
+        repository.FailNextSave(new InvalidOperationException("Simulated save failure."));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => viewModel.CreateSeriesCommand.ExecuteAsync(null));
+
+        Assert.False(viewModel.IsMutatingOperationActive);
+        Assert.Empty(viewModel.Series);
+        Assert.Equal("Should survive failure", viewModel.NewSeriesTitle);
+        Assert.Equal("Series input should remain after failure.", viewModel.NewSeriesDescription);
+    }
+
+    [Fact]
+    public async Task ImportDocumentSourceFile_DoesNotOverwriteNewerProjectSelection()
+    {
+        var innerRepository = new InMemoryProjectRepository();
+        var blockingProvider = new BlockingSourceIngestionProvider("Imported text should stay on the older project only.");
+        var projectService = CreateProjectService(innerRepository, blockingProvider);
+        await SeedProjectWithSingleItemAsync(projectService, "Alpha import project", "Alpha series", "Alpha item");
+        await SeedProjectWithSingleItemAsync(projectService, "Beta import project", "Beta series", "Beta item");
+
+        var viewModel = CreateViewModel(projectService: projectService);
+        await viewModel.BackgroundTask;
+
+        var alphaProject = viewModel.Projects.Single(project => project.Name == "Alpha import project");
+        var betaProject = viewModel.Projects.Single(project => project.Name == "Beta import project");
+        viewModel.SelectedProject = alphaProject;
+        await viewModel.BackgroundTask;
+
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(rootDirectory);
+        var pdfPath = Path.Combine(rootDirectory, "selection-race.pdf");
+
+        try
+        {
+            await File.WriteAllBytesAsync(pdfPath, [0x25, 0x50, 0x44, 0x46]);
+
+            var importTask = viewModel.ImportDocumentSourceFileCommand.ExecuteAsync(pdfPath);
+            await blockingProvider.WaitForStartAsync();
+
+            viewModel.SelectedProject = betaProject;
+            await viewModel.BackgroundTask;
+
+            blockingProvider.Release();
+            await importTask;
+            await viewModel.BackgroundTask;
+
+            Assert.Equal(betaProject.Id, viewModel.SelectedProject?.Id);
+            Assert.DoesNotContain("Imported text should stay", viewModel.NewDocumentSourceText, StringComparison.OrdinalIgnoreCase);
+            Assert.NotEqual(pdfPath, viewModel.ImportedDocumentSourcePath);
+            Assert.Contains(
+                viewModel.PlanRows,
+                row => row.SeriesTitle == "Beta series" && row.ItemTitle == "Beta item");
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
     private static MainWindowViewModel CreateViewModel(
         bool reviewPasses = true,
         ProviderCenterViewModel? providerCenter = null,
@@ -771,7 +937,9 @@ public sealed class MainWindowViewModelTests
             documentSourceFilePickerService);
     }
 
-    private static ProjectApplicationService CreateProjectService(IProjectRepository repository)
+    private static ProjectApplicationService CreateProjectService(
+        IProjectRepository repository,
+        ISourceIngestionProvider? sourceIngestionProvider = null)
     {
         var fakeImageProvider = new FakeImageGenerationProvider();
 
@@ -782,11 +950,36 @@ public sealed class MainWindowViewModelTests
             new FakeVisionReviewProvider(defaultPasses: true),
             deliveryPackageWriter: new DeliveryPackageWriter(),
             imageEditProvider: fakeImageProvider,
-                sourceIngestionApplicationService: new SourceIngestionApplicationService(
+            sourceIngestionApplicationService: new SourceIngestionApplicationService(
                 repository,
-                new SupportMatrixSourceIngestionProvider(
+                sourceIngestionProvider
+                ?? new SupportMatrixSourceIngestionProvider(
                     new LocalBinaryDocumentExtractionProvider(),
                     new FakeSourceIngestionProvider())));
+    }
+
+    private static async Task SeedProjectWithSingleItemAsync(
+        ProjectApplicationService projectService,
+        string projectName,
+        string seriesTitle,
+        string itemTitle)
+    {
+        var timestamp = DateTimeOffset.UtcNow;
+        var project = await projectService.CreateProjectAsync(projectName, timestamp, CancellationToken.None);
+        var series = await projectService.AddSeriesAsync(
+            project.Id,
+            seriesTitle,
+            $"{seriesTitle} description",
+            timestamp.AddMinutes(1),
+            CancellationToken.None);
+
+        await projectService.AddItemAsync(
+            project.Id,
+            series.Id,
+            itemTitle,
+            $"{itemTitle} brief",
+            timestamp.AddMinutes(2),
+            CancellationToken.None);
     }
 
     private sealed class StaticDocumentSourceFilePickerService(string filePath)
@@ -873,6 +1066,324 @@ public sealed class MainWindowViewModelTests
         public override Task WarmupAsync(IEnumerable<string> assetPaths, CancellationToken cancellationToken)
         {
             return Task.CompletedTask;
+        }
+    }
+
+    private sealed class BlockingInvocation
+    {
+        private readonly TaskCompletionSource _started = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _release = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _completed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task WaitForStartAsync()
+        {
+            return _started.Task;
+        }
+
+        public Task WaitForCompletionAsync()
+        {
+            return _completed.Task;
+        }
+
+        public void Release()
+        {
+            _release.TrySetResult();
+        }
+
+        public void MarkStarted()
+        {
+            _started.TrySetResult();
+        }
+
+        public async Task WaitForReleaseAsync(CancellationToken cancellationToken)
+        {
+            await _release.Task.WaitAsync(cancellationToken);
+        }
+
+        public void MarkCompleted()
+        {
+            _completed.TrySetResult();
+        }
+    }
+
+    private sealed class BlockingListSnapshotProjectRepository(IProjectRepository innerRepository) : IProjectRepository
+    {
+        private readonly Queue<BlockingInvocation> _queuedListBlocks = [];
+        private readonly object _sync = new();
+
+        public BlockingInvocation BlockNextList()
+        {
+            var invocation = new BlockingInvocation();
+            lock (_sync)
+            {
+                _queuedListBlocks.Enqueue(invocation);
+            }
+
+            return invocation;
+        }
+
+        public Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
+        {
+            return innerRepository.SaveAsync(project, cancellationToken);
+        }
+
+        public Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken)
+        {
+            return innerRepository.LoadAsync(projectId, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken)
+        {
+            BlockingInvocation? invocation = null;
+            lock (_sync)
+            {
+                if (_queuedListBlocks.Count > 0)
+                {
+                    invocation = _queuedListBlocks.Dequeue();
+                }
+            }
+
+            if (invocation is null)
+            {
+                return await innerRepository.ListAsync(cancellationToken);
+            }
+
+            var snapshot = await innerRepository.ListAsync(cancellationToken);
+            invocation.MarkStarted();
+
+            try
+            {
+                await invocation.WaitForReleaseAsync(cancellationToken);
+                return snapshot;
+            }
+            finally
+            {
+                invocation.MarkCompleted();
+            }
+        }
+
+        public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
+        {
+            return innerRepository.SaveReviewResultAsync(projectId, reviewResult, cancellationToken);
+        }
+
+        public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
+        {
+            return innerRepository.LoadLatestReviewResultAsync(candidateImageId, cancellationToken);
+        }
+    }
+
+    private sealed class BlockingLoadSnapshotProjectRepository(IProjectRepository innerRepository) : IProjectRepository
+    {
+        private readonly Dictionary<Guid, Queue<BlockingInvocation>> _queuedLoadBlocks = [];
+        private readonly object _sync = new();
+
+        public BlockingInvocation BlockNextLoad(Guid projectId)
+        {
+            var invocation = new BlockingInvocation();
+            lock (_sync)
+            {
+                if (!_queuedLoadBlocks.TryGetValue(projectId, out var queue))
+                {
+                    queue = new Queue<BlockingInvocation>();
+                    _queuedLoadBlocks[projectId] = queue;
+                }
+
+                queue.Enqueue(invocation);
+            }
+
+            return invocation;
+        }
+
+        public Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
+        {
+            return innerRepository.SaveAsync(project, cancellationToken);
+        }
+
+        public async Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken)
+        {
+            BlockingInvocation? invocation = null;
+            lock (_sync)
+            {
+                if (_queuedLoadBlocks.TryGetValue(projectId, out var queue) && queue.Count > 0)
+                {
+                    invocation = queue.Dequeue();
+                    if (queue.Count == 0)
+                    {
+                        _queuedLoadBlocks.Remove(projectId);
+                    }
+                }
+            }
+
+            if (invocation is null)
+            {
+                return await innerRepository.LoadAsync(projectId, cancellationToken);
+            }
+
+            var snapshot = await innerRepository.LoadAsync(projectId, cancellationToken);
+            invocation.MarkStarted();
+
+            try
+            {
+                await invocation.WaitForReleaseAsync(cancellationToken);
+                return snapshot;
+            }
+            finally
+            {
+                invocation.MarkCompleted();
+            }
+        }
+
+        public Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken)
+        {
+            return innerRepository.ListAsync(cancellationToken);
+        }
+
+        public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
+        {
+            return innerRepository.SaveReviewResultAsync(projectId, reviewResult, cancellationToken);
+        }
+
+        public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
+        {
+            return innerRepository.LoadLatestReviewResultAsync(candidateImageId, cancellationToken);
+        }
+    }
+
+    private sealed class ControlledSaveProjectRepository(IProjectRepository innerRepository) : IProjectRepository
+    {
+        private readonly Queue<BlockingInvocation> _queuedSaveBlocks = [];
+        private readonly object _sync = new();
+        private Exception? _nextSaveFailure;
+
+        public BlockingInvocation BlockNextSave()
+        {
+            var invocation = new BlockingInvocation();
+            lock (_sync)
+            {
+                _queuedSaveBlocks.Enqueue(invocation);
+            }
+
+            return invocation;
+        }
+
+        public void FailNextSave(Exception exception)
+        {
+            lock (_sync)
+            {
+                _nextSaveFailure = exception;
+            }
+        }
+
+        public async Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
+        {
+            BlockingInvocation? invocation = null;
+            Exception? failure = null;
+
+            lock (_sync)
+            {
+                if (_queuedSaveBlocks.Count > 0)
+                {
+                    invocation = _queuedSaveBlocks.Dequeue();
+                }
+
+                failure = _nextSaveFailure;
+                _nextSaveFailure = null;
+            }
+
+            if (invocation is not null)
+            {
+                invocation.MarkStarted();
+                try
+                {
+                    await invocation.WaitForReleaseAsync(cancellationToken);
+                }
+                finally
+                {
+                    invocation.MarkCompleted();
+                }
+            }
+
+            if (failure is not null)
+            {
+                throw failure;
+            }
+
+            await innerRepository.SaveAsync(project, cancellationToken);
+        }
+
+        public Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken)
+        {
+            return innerRepository.LoadAsync(projectId, cancellationToken);
+        }
+
+        public Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken)
+        {
+            return innerRepository.ListAsync(cancellationToken);
+        }
+
+        public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
+        {
+            return innerRepository.SaveReviewResultAsync(projectId, reviewResult, cancellationToken);
+        }
+
+        public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
+        {
+            return innerRepository.LoadLatestReviewResultAsync(candidateImageId, cancellationToken);
+        }
+    }
+
+    private sealed class BlockingSourceIngestionProvider(string extractedText) : ISourceIngestionProvider
+    {
+        private readonly BlockingInvocation _invocation = new();
+
+        public SourceIngestionProviderCapabilities Capabilities { get; } =
+            new("blocking_source", "Blocking source ingestion");
+
+        public Task WaitForStartAsync()
+        {
+            return _invocation.WaitForStartAsync();
+        }
+
+        public void Release()
+        {
+            _invocation.Release();
+        }
+
+        public async Task<SourceIngestionProviderResult> IngestAsync(
+            SourceIngestionProviderRequest request,
+            CancellationToken cancellationToken)
+        {
+            var sourceAsset = SourceAsset.Create(
+                request.ProjectId,
+                request.Source.Kind,
+                request.Source.DisplayName,
+                request.Source.OriginalPath,
+                request.Source.MimeType,
+                request.Source.SizeBytes,
+                request.Source.Sha256,
+                request.Timestamp);
+            sourceAsset.AddExtractedContent(
+                ExtractedContentKind.PlainText,
+                extractedText,
+                "page 1",
+                pageNumber: 1,
+                startOffset: null,
+                endOffset: null,
+                request.Timestamp);
+
+            _invocation.MarkStarted();
+
+            try
+            {
+                await _invocation.WaitForReleaseAsync(cancellationToken);
+            }
+            finally
+            {
+                _invocation.MarkCompleted();
+            }
+
+            return new SourceIngestionProviderResult(sourceAsset, "blocking-source");
         }
     }
 
