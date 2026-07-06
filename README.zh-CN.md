@@ -6,7 +6,7 @@
 > 中文文档中心: [docs/zh-CN/README.md](./docs/zh-CN/README.md)
 > 说明: 本文件是中文入口版。若与英文原文、代码、测试、ADR、脚本或证据文件冲突，以仓库事实和英文正式文档为准。
 
-本仓库是产品的活动实现主仓。它与 `D:\CODE\physicist_chinese_poster_batch_tool` 明确分离；后者是生产案例和迁移样本，不是当前实现根目录。当前产品名、仓库名、解决方案名和命名空间已经统一为 `AI Content Delivery Studio` / `ai-content-delivery-studio` / `ContentDeliveryStudio`，旧的 `ImageSeriesStudio` 仅保留在历史证据和有限兼容说明中。
+本仓库是产品的活动实现主仓。它与 `D:\CODE\physicist_chinese_poster_batch_tool` 明确分离；后者是生产案例和迁移样本，不是当前实现根目录。当前产品名、仓库名、解决方案名和命名空间已经统一为 `AI Content Delivery Studio` / `ai-content-delivery-studio` / `ContentDeliveryStudio`，旧工作名仅保留在历史证据和有限兼容说明中。
 
 ## 当前读数
 
