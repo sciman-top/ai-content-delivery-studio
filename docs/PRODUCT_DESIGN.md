@@ -1,5 +1,7 @@
 # Product Design
 
+Chinese edition: [zh-CN/PRODUCT_DESIGN.md](./zh-CN/PRODUCT_DESIGN.md)
+
 ## Product Thesis
 
 AI Content Delivery Studio is a Windows desktop multimodal content delivery workbench with coherent image series as its core production capability. The original working name was AI Image Series Studio; that remains a legacy code or repository identity until the planned migration is complete. The product is not a single-image prompt toy and not a one-purpose comic generator. It helps users move from vague intent and source files to structured understanding, planned visual or content deliverables, generated candidates, reviewed repairs, and clean delivery packages.

@@ -1,5 +1,7 @@
 # V1 Launch Evidence
 
+Chinese edition: [zh-CN/V1_LAUNCH_EVIDENCE.md](./zh-CN/V1_LAUNCH_EVIDENCE.md)
+
 ## Purpose
 
 This file tracks current evidence against the explicit V1 launch metrics in [PRD_V1.md](./PRD_V1.md).

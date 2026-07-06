@@ -1,6 +1,6 @@
 # Reference Basis
 
-Last reviewed: 2026-06-09.
+Last reviewed: 2026-07-06.
 
 This document turns the repository's reference strategy into an actionable mapping:
 
@@ -53,7 +53,7 @@ This section is generated from `scripts/reference-basis.json` by `scripts/sync-r
 Do not edit this block by hand. Update the JSON manifest and rerun the sync script instead.
 
 - Manifest version: `1`
-- Manifest updatedAt: `2026-06-09T23:10:00+08:00`
+- Manifest updatedAt: `2026-07-06T12:48:35+08:00`
 
 ### `openai-provider`
 
@@ -78,6 +78,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
   - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet` (kind: `official-toolkit-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/dotnet-extensions` (kind: `official-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/opentelemetry-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/opentelemetry-dotnet-contrib` (kind: `official-contrib-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/aspire` (kind: `official-source`; reuse: `direct-pattern`)
 
 ### `persistence-and-schema`
@@ -100,6 +101,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown` (kind: `official-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling` (kind: `community-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig` (kind: `community-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/Open-XML-SDK` (kind: `official-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/QuestPDF` (kind: `community-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/SkiaSharp` (kind: `official-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/06-automation-testing/playwright-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
@@ -142,6 +144,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown` (kind: `official-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling` (kind: `community-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig` (kind: `community-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/Open-XML-SDK` (kind: `official-source`; reuse: `direct-pattern`)
 
 <!-- END GENERATED REFERENCE BASIS SUMMARY -->
 
@@ -197,6 +200,7 @@ Required local references:
 - `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\CommunityToolkit-dotnet`
 - `D:\CODE\external\ai-content-delivery-studio-references\08-platform-and-observability\dotnet-extensions`
 - `D:\CODE\external\ai-content-delivery-studio-references\08-platform-and-observability\opentelemetry-dotnet`
+- `D:\CODE\external\ai-content-delivery-studio-references\08-platform-and-observability\opentelemetry-dotnet-contrib`
 - `D:\CODE\external\ai-content-delivery-studio-references\08-platform-and-observability\aspire`
 - `docs/research/REFERENCE_RESEARCH.md`
 
@@ -211,7 +215,7 @@ Preferred official docs:
 Reuse guidance:
 
 - `docs-desktop`, `WPF-Samples`, `CommunityToolkit-dotnet`: `direct-pattern`
-- `dotnet-extensions`, `opentelemetry-dotnet`, `aspire`: `direct-pattern`
+- `dotnet-extensions`, `opentelemetry-dotnet`, `opentelemetry-dotnet-contrib`, `aspire`: `direct-pattern`
 - `Prism`: `adapt-with-review`
 
 Must check references when:
@@ -270,6 +274,7 @@ Required local references:
 - `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\markitdown`
 - `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\docling`
 - `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\PdfPig`
+- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\Open-XML-SDK`
 - `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\QuestPDF`
 - `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\SkiaSharp`
 - `D:\CODE\external\ai-content-delivery-studio-references\06-automation-testing\playwright-dotnet`
@@ -281,13 +286,14 @@ Required local references:
 
 Reuse guidance:
 
-- `markitdown`, `docling`, `PdfPig`, `QuestPDF`, `SkiaSharp`, `playwright-dotnet`, `FlaUI`: `direct-pattern`
+- `markitdown`, `docling`, `PdfPig`, `Open-XML-SDK`, `QuestPDF`, `SkiaSharp`, `playwright-dotnet`, `FlaUI`: `direct-pattern`
 - `ComfyUI`, `InvokeAI`, `diffusers`: `inspiration-only`
 
 Must check references when:
 
 - adding or changing deterministic composition or document conversion behavior
 - changing artifact-validation, delivery packaging, diagnostics export, or import logic
+- changing DOCX/PPTX package assembly, editable Office output flows, or import/export adapters that inspect Open XML package structure
 - changing browser or desktop automation adapter boundaries
 - changing queue, graph, workflow, canvas, gallery, or operator execution concepts by borrowing from local-image projects
 
@@ -380,16 +386,18 @@ Required local references:
 - `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\markitdown`
 - `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\docling`
 - `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\PdfPig`
+- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\Open-XML-SDK`
 - `docs/research/REFERENCE_RESEARCH.md`
 
 Preferred official docs:
 
 - source and artifact support matrix
+- Open XML SDK for Office docs
 - PDF/document extraction references already tracked by the repository
 
 Reuse guidance:
 
-- `markitdown`, `docling`, `PdfPig`: `direct-pattern`
+- `markitdown`, `docling`, `PdfPig`, `Open-XML-SDK`: `direct-pattern`
 
 Must check references when:
 
@@ -410,6 +418,8 @@ These repository areas especially benefit from stronger reference discipline:
   - high semantic drift; prefer official OpenAI docs and SDK source first
 - `src/ContentDeliveryStudio.Infrastructure/Persistence/` plus core aggregate records
   - schema and SQLite behavior should stay anchored to official EF docs
+- `src/ContentDeliveryStudio.Infrastructure/Sources/LocalBinaryDocumentExtractionProvider.cs`
+  - current DOCX extraction reads `word/document.xml` directly; prefer `Open-XML-SDK` plus existing PDF/document references before broadening extraction fidelity or Office-package support claims
 
 ## Current Reference Shelf Gap Review
 
@@ -423,6 +433,10 @@ Add or keep freshly added:
 
 - `08-platform-and-observability/aspire`
   - because the repository already ships an `AspireDashboard` OTLP profile and local telemetry guidance
+- `08-platform-and-observability/opentelemetry-dotnet-contrib`
+  - because host and diagnostics hardening already depend on real instrumentation and exporter extension patterns beyond the core SDK surface
+- `05-document-rendering/Open-XML-SDK`
+  - because the current codebase already extracts DOCX content locally and the built-in packs already expose `docx` and `pptx` delivery formats
 
 ### Add Later When Activated
 

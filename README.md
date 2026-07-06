@@ -4,6 +4,11 @@ Windows-first AI content delivery workbench with image-series production as the 
 
 This repository is the active implementation home for the product. It is intentionally separate from `D:\CODE\physicist_chinese_poster_batch_tool`, which remains a production case study and migration sample rather than the implementation root. The product-facing name and the active repository, solution, and namespaces now use `AI Content Delivery Studio` / `ai-content-delivery-studio` / `ContentDeliveryStudio`, with legacy `ImageSeriesStudio` references kept only for historical evidence and bounded compatibility notes.
 
+Chinese entrypoints:
+
+- [README.zh-CN.md](./README.zh-CN.md)
+- [docs/zh-CN/README.md](./docs/zh-CN/README.md)
+
 ## Current Readout
 
 - Active implementation root: `D:\CODE\ai-content-delivery-studio`
@@ -129,6 +134,7 @@ The authoritative V1 launch frame lives in:
 
 ### Start Here
 
+- [docs/zh-CN/README.md](docs/zh-CN/README.md)
 - [docs/DOCUMENTATION_GOVERNANCE.md](docs/DOCUMENTATION_GOVERNANCE.md)
 - [docs/AI_CODING_WORKFLOW.md](docs/AI_CODING_WORKFLOW.md)
 - [docs/PRD_V1.md](docs/PRD_V1.md)

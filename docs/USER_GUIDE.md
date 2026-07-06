@@ -1,5 +1,7 @@
 # User Guide
 
+Chinese edition: [zh-CN/USER_GUIDE.md](./zh-CN/USER_GUIDE.md)
+
 AI Content Delivery Studio is a Windows desktop workbench for planning, generating, reviewing, repairing, and delivering content packages. Image-series production is the current core workflow. The current implementation uses fake providers by default, so the end-to-end flow can be tested without paid API calls, while the latest recorded V1 launch snapshot keeps the opt-in live OpenAI route as evidence rather than as a default runtime mode.
 
 ## Language

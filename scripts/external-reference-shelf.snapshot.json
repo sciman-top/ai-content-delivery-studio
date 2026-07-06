@@ -2,8 +2,8 @@
   "version": 1,
   "snapshotKind": "external-reference-shelf",
   "sourceManifestPath": "D:\\CODE\\external\\ai-content-delivery-studio-references\\references.manifest.json",
-  "sourceManifestUpdatedAt": "2026-06-09T21:19:32+08:00",
-  "entryCount": 21,
+  "sourceManifestUpdatedAt": "2026-07-06T12:48:35+08:00",
+  "entryCount": 23,
   "entries": [
     {
       "relativePath": "01-openai/openai-cookbook-selected",
@@ -127,6 +127,18 @@
       "storageMode": "direct",
       "isSharedBacked": false,
       "lastVerifiedCommit": "e144e0a"
+    },
+    {
+      "relativePath": "05-document-rendering/Open-XML-SDK",
+      "group": "core",
+      "category": "document-rendering",
+      "sourceType": "git",
+      "upstream": "https://github.com/dotnet/Open-XML-SDK.git",
+      "branch": "main",
+      "updateStrategy": "reclone_shallow",
+      "storageMode": "direct",
+      "isSharedBacked": false,
+      "lastVerifiedCommit": "00967dc"
     },
     {
       "relativePath": "05-document-rendering/PdfPig",
@@ -259,6 +271,18 @@
       "storageMode": "direct",
       "isSharedBacked": false,
       "lastVerifiedCommit": "e4762a0"
+    },
+    {
+      "relativePath": "08-platform-and-observability/opentelemetry-dotnet-contrib",
+      "group": "core",
+      "category": "platform-observability",
+      "sourceType": "git",
+      "upstream": "https://github.com/open-telemetry/opentelemetry-dotnet-contrib.git",
+      "branch": "main",
+      "updateStrategy": "reclone_shallow",
+      "storageMode": "direct",
+      "isSharedBacked": false,
+      "lastVerifiedCommit": "b3fe3dd"
     }
   ]
 }

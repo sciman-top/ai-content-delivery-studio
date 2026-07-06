@@ -41,9 +41,11 @@ These are high-value references for AI Content Delivery Studio and should remain
 - `EntityFramework.Docs`
 - `dotnet/extensions`
 - `opentelemetry-dotnet`
+- `opentelemetry-dotnet-contrib`
 - `markitdown`
 - `docling`
 - `PdfPig`
+- `Open-XML-SDK`
 - `QuestPDF`
 - `SkiaSharp`
 - `playwright-dotnet`

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-06-09T23:10:00+08:00",
+  "updatedAt": "2026-07-06T12:48:35+08:00",
   "areas": [
     {
       "name": "openai-provider",
@@ -87,6 +87,11 @@
         {
           "path": "D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/opentelemetry-dotnet",
           "kind": "official-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/opentelemetry-dotnet-contrib",
+          "kind": "official-contrib-source",
           "reuseLevel": "direct-pattern"
         },
         {
@@ -180,6 +185,11 @@
         {
           "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig",
           "kind": "community-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/Open-XML-SDK",
+          "kind": "official-source",
           "reuseLevel": "direct-pattern"
         },
         {
@@ -360,6 +370,11 @@
         {
           "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig",
           "kind": "community-source",
+          "reuseLevel": "direct-pattern"
+        },
+        {
+          "path": "D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/Open-XML-SDK",
+          "kind": "official-source",
           "reuseLevel": "direct-pattern"
         }
       ],

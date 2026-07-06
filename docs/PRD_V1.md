@@ -1,5 +1,7 @@
 # PRD V1
 
+Chinese edition: [zh-CN/PRD_V1.md](./zh-CN/PRD_V1.md)
+
 ## Title
 
 AI Content Delivery Studio V1 is a Windows-first local workbench for turning a short requirement into a reviewed, reproducible image-series delivery package.
