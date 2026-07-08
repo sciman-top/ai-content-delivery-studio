@@ -62,6 +62,16 @@ IMAGE_PROVIDER_FALLBACK_1_API_KEY_1=sk-backup
 
 Failover should be used only for transient or reachability failures: network failure, timeout, `408`, `429`, or `5xx`. Do not fail over on `400`, `401`, or `403`; those indicate request, credential, or authorization problems that should fail closed.
 
+## Desktop Runtime Opt-In
+
+The desktop app keeps fake providers as the default runtime. To let the App host use the live profiles above, set:
+
+```env
+PROVIDER_MODE=live
+```
+
+When live mode is enabled, startup reads the local `.env`, validates the text and image profiles, and registers failover providers for text planning, image generation, and vision review. Missing or invalid `.env` configuration fails closed at registration time instead of silently falling back to fake providers. Image edit remains fake until a separate live-edit provider slice is implemented and tested.
+
 ## Hard Boundaries
 
 - `TEXT_PROVIDER_API_KEY` is reserved for text planning and vision review operations.

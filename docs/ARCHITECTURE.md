@@ -95,6 +95,8 @@ The app must not let one AI API shape the whole architecture. Use separate contr
 
 OpenAI is the first implementation. Fake providers are required for tests and UI development.
 
+The WPF host owns provider runtime selection through `AddContentDeliveryStudioProviderRuntime`. The default registration remains fake-first for text planning, image generation, image edit, and vision review. Live provider registration is explicit: `PROVIDER_MODE=live` or an equivalent registration option reads the local `.env`, validates role-scoped provider profiles, and delegates text, image, and vision construction to the infrastructure-owned failover factory. Image edit stays on the fake provider until a separate live edit slice proves that contract. This keeps Generic Host dependency injection as the composition boundary while provider transport, credential lookup, and failover behavior remain outside WPF.
+
 The generalized design workflow should treat provider adapters as execution and planning engines, not as product-shaping objects. Topic-specific or provider-specific concepts should not leak into the core project model.
 
 Provider contracts should return structured provenance: model, provider profile, capability warnings, request ID where available, input references, output references, token/cost hints, latency, and redacted errors.

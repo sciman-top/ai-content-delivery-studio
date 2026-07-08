@@ -9,11 +9,9 @@ using ContentDeliveryStudio.App.Services;
 using ContentDeliveryStudio.App.ViewModels;
 using ContentDeliveryStudio.App.Telemetry;
 using ContentDeliveryStudio.Application.Localization;
-using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Application.Sources;
 using ContentDeliveryStudio.Infrastructure.Composition;
 using ContentDeliveryStudio.Infrastructure.Delivery;
-using ContentDeliveryStudio.Infrastructure.Fakes;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
 using ContentDeliveryStudio.Infrastructure.Persistence;
 using ContentDeliveryStudio.Infrastructure.RemoteWorkflows;
@@ -52,19 +50,13 @@ public partial class App : System.Windows.Application
             serviceProvider.GetRequiredService<IOpenAiSecretStore>()));
         builder.Services.AddSingleton<IProviderCenterHealthCheckService, DotEnvProviderCenterHealthCheckService>();
         builder.Services.AddSingleton<IDocumentSourceFilePickerService, DocumentSourceFilePickerService>();
-        builder.Services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
+        builder.Services.AddContentDeliveryStudioProviderRuntime(new ProviderRuntimeRegistrationOptions());
         builder.Services.AddSingleton<IDocumentExtractionProvider, LocalBinaryDocumentExtractionProvider>();
         builder.Services.AddSingleton<ISourceIngestionProvider>(serviceProvider =>
             new SupportMatrixSourceIngestionProvider(
                 serviceProvider.GetRequiredService<IDocumentExtractionProvider>(),
                 new FakeSourceIngestionProvider()));
         builder.Services.AddTransient<SourceIngestionApplicationService>();
-        builder.Services.AddSingleton<FakeImageGenerationProvider>();
-        builder.Services.AddSingleton<IImageGenerationProvider>(serviceProvider =>
-            serviceProvider.GetRequiredService<FakeImageGenerationProvider>());
-        builder.Services.AddSingleton<IImageEditProvider>(serviceProvider =>
-            serviceProvider.GetRequiredService<FakeImageGenerationProvider>());
-        builder.Services.AddSingleton<IVisionReviewProvider, FakeVisionReviewProvider>();
         // V1 keeps exact label and formula rendering on the local deterministic path instead of asking image generation to render trusted text.
         builder.Services.AddSingleton<IDeterministicTextComposer, SkiaDeterministicTextComposer>();
         // Keep the currently executable local operator adapters wired into the desktop host, including the
