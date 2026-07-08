@@ -981,6 +981,67 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task ImageGenerationProvider_UsesResponsesPathByDefaultWhenProviderIsConfiguredForResponses()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_image_default_123",
+              "output": [
+                {
+                  "id": "ig_call_default_123",
+                  "type": "image_generation_call",
+                  "revised_prompt": "A revised default response prompt.",
+                  "result": "iVBORw=="
+                }
+              ]
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiImageGenerationProvider(
+            httpClient,
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                ImageGenerationResponsesModel = "gpt-5.5",
+                ImageGenerationAllowsResponsesState = true,
+                ImageGenerationUsesResponsesByDefault = true,
+            },
+            new StaticSecretStore("test-openai-key"));
+
+        try
+        {
+            var result = await provider.GenerateImageAsync(
+                new ImageGenerationRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "Generate through the provider default route.",
+                    new GenerationSettings(1024, 1024, "medium", "png"),
+                    rootDirectory,
+                    "default-responses.png"),
+                CancellationToken.None);
+
+            Assert.Equal("resp_image_default_123", result.ProviderTraceId);
+            Assert.Equal("https://api.openai.com/v1/responses", handler.LastRequest!.RequestUri!.ToString());
+            using var payload = JsonDocument.Parse(handler.LastRequestBody!);
+            Assert.Equal("gpt-5.5", payload.RootElement.GetProperty("model").GetString());
+            Assert.False(payload.RootElement.TryGetProperty("previous_response_id", out _));
+
+            using var metadata = JsonDocument.Parse(await File.ReadAllTextAsync(result.MetadataPath, CancellationToken.None));
+            Assert.Equal("responses", metadata.RootElement.GetProperty("endpointFamily").GetString());
+            Assert.True(metadata.RootElement.GetProperty("usedResponsesApi").GetBoolean());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task ImageGenerationProvider_RejectsResponsesStateWhenProviderOptionIsNotEnabled()
     {
         using var handler = new CaptureHandler(_ => JsonResponse("{}"));

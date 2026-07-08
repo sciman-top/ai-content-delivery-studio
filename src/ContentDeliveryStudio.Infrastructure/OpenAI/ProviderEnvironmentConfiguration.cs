@@ -1,16 +1,33 @@
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
+public enum ProviderImageGenerationSurface
+{
+    Images = 0,
+    Responses = 1,
+}
+
 public sealed record ProviderEnvironmentConfiguration(
     ProviderEndpointEnvironmentConfiguration Text,
-    ProviderEndpointEnvironmentConfiguration Image)
+    ProviderEndpointEnvironmentConfiguration Image,
+    IReadOnlyList<ProviderEndpointEnvironmentConfiguration> TextFallbacks,
+    IReadOnlyList<ProviderEndpointEnvironmentConfiguration> ImageFallbacks)
 {
+    public ProviderEnvironmentConfiguration(
+        ProviderEndpointEnvironmentConfiguration text,
+        ProviderEndpointEnvironmentConfiguration image)
+        : this(text, image, [], [])
+    {
+    }
+
     public static ProviderEnvironmentConfiguration FromValues(IReadOnlyDictionary<string, string?> values)
     {
         ArgumentNullException.ThrowIfNull(values);
 
         return new ProviderEnvironmentConfiguration(
             ProviderEndpointEnvironmentConfiguration.CreateText(values),
-            ProviderEndpointEnvironmentConfiguration.CreateImage(values));
+            ProviderEndpointEnvironmentConfiguration.CreateImage(values),
+            ProviderEndpointEnvironmentConfiguration.CreateTextFallbacks(values),
+            ProviderEndpointEnvironmentConfiguration.CreateImageFallbacks(values));
     }
 
     public static async Task<ProviderEnvironmentConfiguration> FromDotEnvFileAsync(
@@ -45,6 +62,8 @@ public sealed record ProviderEnvironmentConfiguration(
     {
         return Text.Validate("Text provider")
             .Concat(Image.Validate("Image provider"))
+            .Concat(TextFallbacks.SelectMany((fallback, index) => fallback.Validate($"Text provider fallback {index + 1}")))
+            .Concat(ImageFallbacks.SelectMany((fallback, index) => fallback.Validate($"Image provider fallback {index + 1}")))
             .ToArray();
     }
 
@@ -86,55 +105,85 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
     string? AppIdSecretName,
     string? AppSecretSecretName,
     int ConcurrencyPerKey,
-    int TotalConcurrency)
+    int TotalConcurrency,
+    ProviderImageGenerationSurface ImageGenerationSurface)
 {
     public static ProviderEndpointEnvironmentConfiguration CreateText(IReadOnlyDictionary<string, string?> values)
+        => CreateText(values, "TEXT_PROVIDER");
+
+    public static IReadOnlyList<ProviderEndpointEnvironmentConfiguration> CreateTextFallbacks(
+        IReadOnlyDictionary<string, string?> values)
     {
-        var keyNames = GetPresentSecretNames(values, "TEXT_PROVIDER_API_KEY");
+        return GetFallbackIndexes(values, "TEXT_PROVIDER_FALLBACK")
+            .Select(index => CreateText(values, $"TEXT_PROVIDER_FALLBACK_{index}"))
+            .ToArray();
+    }
+
+    private static ProviderEndpointEnvironmentConfiguration CreateText(
+        IReadOnlyDictionary<string, string?> values,
+        string prefix)
+    {
+        var keyNames = GetPresentSecretNames(values, $"{prefix}_API_KEY");
         return new ProviderEndpointEnvironmentConfiguration(
-            "TEXT_PROVIDER",
-            GetValue(values, "TEXT_PROVIDER_KIND", "openai_compatible"),
-            GetUri(values, "TEXT_PROVIDER_BASE_URL"),
-            GetValue(values, "TEXT_PROVIDER_MODEL", string.Empty),
+            prefix,
+            GetValue(values, $"{prefix}_KIND", "openai_compatible"),
+            GetUri(values, $"{prefix}_BASE_URL"),
+            GetValue(values, $"{prefix}_MODEL", string.Empty),
             ResponsesModel: null,
             keyNames.FirstOrDefault(),
             keyNames,
             UsesSharedTextApiKeyFallback: false,
-            GetPresentSecretName(values, "TEXT_PROVIDER_APP_ID"),
-            GetPresentSecretName(values, "TEXT_PROVIDER_APP_SECRET"),
-            GetPositiveInt(values, "TEXT_PROVIDER_CONCURRENCY_PER_KEY", 1),
-            GetPositiveInt(values, "TEXT_PROVIDER_TOTAL_CONCURRENCY", Math.Max(1, keyNames.Count)));
+            GetPresentSecretName(values, $"{prefix}_APP_ID"),
+            GetPresentSecretName(values, $"{prefix}_APP_SECRET"),
+            GetPositiveInt(values, $"{prefix}_CONCURRENCY_PER_KEY", 1),
+            GetPositiveInt(values, $"{prefix}_TOTAL_CONCURRENCY", Math.Max(1, keyNames.Count)),
+            ProviderImageGenerationSurface.Images);
     }
 
     public static ProviderEndpointEnvironmentConfiguration CreateImage(IReadOnlyDictionary<string, string?> values)
+        => CreateImage(values, "IMAGE_PROVIDER", allowSharedTextFallback: true);
+
+    public static IReadOnlyList<ProviderEndpointEnvironmentConfiguration> CreateImageFallbacks(
+        IReadOnlyDictionary<string, string?> values)
     {
-        var keyNames = GetNumberedSecretNames(values, "IMAGE_PROVIDER_API_KEY");
+        return GetFallbackIndexes(values, "IMAGE_PROVIDER_FALLBACK")
+            .Select(index => CreateImage(values, $"IMAGE_PROVIDER_FALLBACK_{index}", allowSharedTextFallback: false))
+            .ToArray();
+    }
+
+    private static ProviderEndpointEnvironmentConfiguration CreateImage(
+        IReadOnlyDictionary<string, string?> values,
+        string prefix,
+        bool allowSharedTextFallback)
+    {
+        var keyNames = GetNumberedSecretNames(values, $"{prefix}_API_KEY");
         if (keyNames.Count == 0)
         {
-            keyNames = GetPresentSecretNames(values, "IMAGE_PROVIDER_API_KEY");
+            keyNames = GetPresentSecretNames(values, $"{prefix}_API_KEY");
         }
 
         var usesSharedTextApiKeyFallback = false;
-        if (keyNames.Count == 0)
+        if (allowSharedTextFallback && keyNames.Count == 0)
         {
             keyNames = GetPresentSecretNames(values, "TEXT_PROVIDER_API_KEY");
             usesSharedTextApiKeyFallback = keyNames.Count > 0;
         }
 
-        var concurrencyPerKey = GetPositiveInt(values, "IMAGE_PROVIDER_CONCURRENCY_PER_KEY", 1);
+        var concurrencyPerKey = GetPositiveInt(values, $"{prefix}_CONCURRENCY_PER_KEY", 1);
         return new ProviderEndpointEnvironmentConfiguration(
-            "IMAGE_PROVIDER",
-            GetValue(values, "IMAGE_PROVIDER_KIND", "openai_compatible_image_only"),
-            GetUri(values, "IMAGE_PROVIDER_BASE_URL"),
-            GetValue(values, "IMAGE_PROVIDER_MODEL", string.Empty),
-            GetPresentValue(values, "IMAGE_PROVIDER_RESPONSES_MODEL"),
+            prefix,
+            GetValue(values, $"{prefix}_KIND", "openai_compatible_image_only"),
+            GetUri(values, $"{prefix}_BASE_URL"),
+            GetValue(values, $"{prefix}_MODEL", string.Empty),
+            GetPresentValue(values, $"{prefix}_RESPONSES_MODEL"),
             keyNames.FirstOrDefault(),
             keyNames,
             usesSharedTextApiKeyFallback,
-            GetPresentSecretName(values, "IMAGE_PROVIDER_APP_ID"),
-            GetPresentSecretName(values, "IMAGE_PROVIDER_APP_SECRET"),
+            GetPresentSecretName(values, $"{prefix}_APP_ID"),
+            GetPresentSecretName(values, $"{prefix}_APP_SECRET"),
             concurrencyPerKey,
-            GetPositiveInt(values, "IMAGE_PROVIDER_TOTAL_CONCURRENCY", keyNames.Count * concurrencyPerKey));
+            GetPositiveInt(values, $"{prefix}_TOTAL_CONCURRENCY", keyNames.Count * concurrencyPerKey),
+            GetImageGenerationSurface(values, prefix));
     }
 
     public IReadOnlyList<string> Validate(string displayName)
@@ -182,7 +231,33 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             errors.Add($"{displayName} app id and app secret must be configured together.");
         }
 
+        if (Prefix.StartsWith("IMAGE_PROVIDER", StringComparison.Ordinal)
+            && ImageGenerationSurface is ProviderImageGenerationSurface.Responses
+            && string.IsNullOrWhiteSpace(ResponsesModel))
+        {
+            errors.Add($"{displayName} responses image model is required when image surface is responses.");
+        }
+
         return errors;
+    }
+
+    private static IReadOnlyList<int> GetFallbackIndexes(IReadOnlyDictionary<string, string?> values, string prefix)
+    {
+        var indexedPrefix = prefix + "_";
+        return values.Keys
+            .Where(key => key.StartsWith(indexedPrefix, StringComparison.Ordinal))
+            .Select(key => key[indexedPrefix.Length..])
+            .Select(suffix =>
+            {
+                var separatorIndex = suffix.IndexOf('_');
+                return separatorIndex > 0 && int.TryParse(suffix[..separatorIndex], out var index)
+                    ? index
+                    : 0;
+            })
+            .Where(index => index > 0)
+            .Distinct()
+            .Order()
+            .ToArray();
     }
 
     private static IReadOnlyList<string> GetNumberedSecretNames(IReadOnlyDictionary<string, string?> values, string baseName)
@@ -235,5 +310,16 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
     {
         var value = GetValue(values, name, string.Empty);
         return string.IsNullOrWhiteSpace(value) ? null : value;
+    }
+
+    private static ProviderImageGenerationSurface GetImageGenerationSurface(
+        IReadOnlyDictionary<string, string?> values,
+        string prefix)
+    {
+        return GetValue(values, $"{prefix}_IMAGE_SURFACE", string.Empty).Trim().ToLowerInvariant() switch
+        {
+            "responses" or "response" => ProviderImageGenerationSurface.Responses,
+            _ => ProviderImageGenerationSurface.Images,
+        };
     }
 }

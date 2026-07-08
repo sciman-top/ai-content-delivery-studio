@@ -115,6 +115,41 @@ public sealed class OpenAiProviderConfigurationTests
     }
 
     [Fact]
+    public void ProviderEnvironmentConfiguration_LoadsTextAndImageFallbackProfiles()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://primary.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-primary",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["TEXT_PROVIDER_FALLBACK_1_BASE_URL"] = "https://backup.example/v1",
+                ["TEXT_PROVIDER_FALLBACK_1_API_KEY"] = "sk-backup",
+                ["TEXT_PROVIDER_FALLBACK_1_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://primary.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+                ["IMAGE_PROVIDER_IMAGE_SURFACE"] = "responses",
+                ["IMAGE_PROVIDER_RESPONSES_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_API_KEY_1"] = "sk-primary-image",
+                ["IMAGE_PROVIDER_FALLBACK_1_BASE_URL"] = "https://backup.example/v1",
+                ["IMAGE_PROVIDER_FALLBACK_1_MODEL"] = "gpt-image-2",
+                ["IMAGE_PROVIDER_FALLBACK_1_IMAGE_SURFACE"] = "images",
+                ["IMAGE_PROVIDER_FALLBACK_1_API_KEY_1"] = "sk-backup-image",
+            });
+
+        Assert.Empty(configuration.Validate());
+        Assert.Single(configuration.TextFallbacks);
+        Assert.Single(configuration.ImageFallbacks);
+        Assert.Equal("TEXT_PROVIDER_FALLBACK_1", configuration.TextFallbacks[0].Prefix);
+        Assert.Equal("https://backup.example/v1", configuration.TextFallbacks[0].BaseUri!.ToString().TrimEnd('/'));
+        Assert.Equal("TEXT_PROVIDER_FALLBACK_1_API_KEY", configuration.TextFallbacks[0].ApiKeySecretName);
+        Assert.Equal(ProviderImageGenerationSurface.Responses, configuration.Image.ImageGenerationSurface);
+        Assert.Equal("gpt-5.5", configuration.Image.ResponsesModel);
+        Assert.Equal(ProviderImageGenerationSurface.Images, configuration.ImageFallbacks[0].ImageGenerationSurface);
+        Assert.Equal("IMAGE_PROVIDER_FALLBACK_1_API_KEY_1", configuration.ImageFallbacks[0].ApiKeySecretName);
+    }
+
+    [Fact]
     public async Task ProviderEnvironmentConfiguration_LoadsProviderProfilesFromDotEnvFile()
     {
         var directory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
@@ -243,6 +278,7 @@ public sealed class OpenAiProviderConfigurationTests
 
         Assert.Null(options.ImageGenerationResponsesModel);
         Assert.False(options.ImageGenerationAllowsResponsesState);
+        Assert.False(options.ImageGenerationUsesResponsesByDefault);
     }
 
     [Fact]
@@ -263,6 +299,28 @@ public sealed class OpenAiProviderConfigurationTests
 
         Assert.Equal("gpt-5.5", imageOptions.ImageGenerationResponsesModel);
         Assert.True(imageOptions.ImageGenerationAllowsResponsesState);
+    }
+
+    [Fact]
+    public void OpenAiProviderOptions_FromImageProviderEnvironment_UsesResponsesByDefaultWhenConfigured()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-shared",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+                ["IMAGE_PROVIDER_RESPONSES_MODEL"] = "gpt-5.5",
+                ["IMAGE_PROVIDER_IMAGE_SURFACE"] = "responses",
+            });
+
+        var imageOptions = OpenAiProviderOptions.FromImageProviderEnvironment(configuration, realApiEnabled: true);
+
+        Assert.True(imageOptions.ImageGenerationUsesResponsesByDefault);
+        Assert.True(imageOptions.ImageGenerationAllowsResponsesState);
+        Assert.Equal("gpt-5.5", imageOptions.ImageGenerationResponsesModel);
     }
 
     [Fact]

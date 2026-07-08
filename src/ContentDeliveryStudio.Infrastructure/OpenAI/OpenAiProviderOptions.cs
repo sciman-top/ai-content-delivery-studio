@@ -35,6 +35,8 @@ public sealed record OpenAiProviderOptions
 
     public bool ImageGenerationAllowsResponsesState { get; init; }
 
+    public bool ImageGenerationUsesResponsesByDefault { get; init; }
+
     public string VisionReviewModel { get; init; } = "gpt-5";
 
     // Keep remote visual review in small local-direct batches unless a later slice explicitly widens it.
@@ -56,16 +58,25 @@ public sealed record OpenAiProviderOptions
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
+        return FromTextEndpointEnvironment(configuration.Text, realApiEnabled);
+    }
+
+    public static OpenAiProviderOptions FromTextEndpointEnvironment(
+        ProviderEndpointEnvironmentConfiguration endpoint,
+        bool realApiEnabled = false)
+    {
+        ArgumentNullException.ThrowIfNull(endpoint);
+
         return new OpenAiProviderOptions
         {
-            BaseUri = RequireBaseUri(configuration.Text, "Text provider"),
-            ApiKeySecretName = RequireApiKeySecretName(configuration.Text, "Text provider"),
-            AppIdSecretName = configuration.Text.AppIdSecretName,
-            AppSecretSecretName = configuration.Text.AppSecretSecretName,
+            BaseUri = RequireBaseUri(endpoint, "Text provider"),
+            ApiKeySecretName = RequireApiKeySecretName(endpoint, "Text provider"),
+            AppIdSecretName = endpoint.AppIdSecretName,
+            AppSecretSecretName = endpoint.AppSecretSecretName,
             UsesSharedTextApiKeyFallback = false,
-            TextPlanningModel = RequireModel(configuration.Text, "Text provider"),
+            TextPlanningModel = RequireModel(endpoint, "Text provider"),
             ImageGenerationModel = string.Empty,
-            VisionReviewModel = RequireModel(configuration.Text, "Text provider"),
+            VisionReviewModel = RequireModel(endpoint, "Text provider"),
             AllowedOperations = OpenAiProviderOperation.TextPlanning | OpenAiProviderOperation.VisionReview,
             RealApiEnabled = realApiEnabled,
         };
@@ -77,17 +88,28 @@ public sealed record OpenAiProviderOptions
     {
         ArgumentNullException.ThrowIfNull(configuration);
 
+        return FromImageEndpointEnvironment(configuration.Image, realApiEnabled);
+    }
+
+    public static OpenAiProviderOptions FromImageEndpointEnvironment(
+        ProviderEndpointEnvironmentConfiguration endpoint,
+        bool realApiEnabled = false)
+    {
+        ArgumentNullException.ThrowIfNull(endpoint);
+
         return new OpenAiProviderOptions
         {
-            BaseUri = RequireBaseUri(configuration.Image, "Image provider"),
-            ApiKeySecretName = RequireApiKeySecretName(configuration.Image, "Image provider"),
-            AppIdSecretName = configuration.Image.AppIdSecretName,
-            AppSecretSecretName = configuration.Image.AppSecretSecretName,
-            UsesSharedTextApiKeyFallback = configuration.Image.UsesSharedTextApiKeyFallback,
+            BaseUri = RequireBaseUri(endpoint, "Image provider"),
+            ApiKeySecretName = RequireApiKeySecretName(endpoint, "Image provider"),
+            AppIdSecretName = endpoint.AppIdSecretName,
+            AppSecretSecretName = endpoint.AppSecretSecretName,
+            UsesSharedTextApiKeyFallback = endpoint.UsesSharedTextApiKeyFallback,
             TextPlanningModel = string.Empty,
-            ImageGenerationModel = RequireModel(configuration.Image, "Image provider"),
-            ImageGenerationResponsesModel = configuration.Image.ResponsesModel,
-            ImageGenerationAllowsResponsesState = !string.IsNullOrWhiteSpace(configuration.Image.ResponsesModel),
+            ImageGenerationModel = RequireModel(endpoint, "Image provider"),
+            ImageGenerationResponsesModel = endpoint.ResponsesModel,
+            ImageGenerationAllowsResponsesState = !string.IsNullOrWhiteSpace(endpoint.ResponsesModel),
+            ImageGenerationUsesResponsesByDefault =
+                endpoint.ImageGenerationSurface is ProviderImageGenerationSurface.Responses,
             VisionReviewModel = string.Empty,
             AllowedOperations = OpenAiProviderOperation.ImageGeneration,
             RealApiEnabled = realApiEnabled,
@@ -132,6 +154,11 @@ public sealed record OpenAiProviderOptions
         if (ImageGenerationAllowsResponsesState && string.IsNullOrWhiteSpace(ImageGenerationResponsesModel))
         {
             errors.Add("Responses image generation model is required when stateful image generation is enabled.");
+        }
+
+        if (ImageGenerationUsesResponsesByDefault && string.IsNullOrWhiteSpace(ImageGenerationResponsesModel))
+        {
+            errors.Add("Responses image generation model is required when image generation defaults to the Responses API.");
         }
 
         if (AllowedOperations.HasFlag(OpenAiProviderOperation.VisionReview)

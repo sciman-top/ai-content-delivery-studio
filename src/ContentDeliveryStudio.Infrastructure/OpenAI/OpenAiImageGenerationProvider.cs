@@ -74,7 +74,8 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         var appId = await GetOptionalSecretAsync(_options.AppIdSecretName, cancellationToken);
         var appSecret = await GetOptionalSecretAsync(_options.AppSecretSecretName, cancellationToken);
 
-        return request.UseResponsesApi
+        var useResponsesApi = request.UseResponsesApi || _options.ImageGenerationUsesResponsesByDefault;
+        return useResponsesApi
             ? await GenerateStatefulImageAsync(request, apiKey, appId, appSecret, cancellationToken)
             : await GenerateSingleShotImageAsync(request, apiKey, appId, appSecret, cancellationToken);
     }
@@ -248,7 +249,7 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
                     toolCallId,
                     revisedPrompt,
                     previousResponseId = request.PreviousResponseId,
-                    usedResponsesApi = request.UseResponsesApi,
+                    usedResponsesApi = routing.EndpointFamily is OpenAiEndpointFamily.Responses,
                     seriesItemId = request.SeriesItemId,
                     promptVersionId = request.PromptVersionId,
                     promptText = request.PromptText,

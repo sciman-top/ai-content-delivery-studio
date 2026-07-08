@@ -16,6 +16,7 @@ TEXT_PROVIDER_MODEL=gpt-5.5
 IMAGE_PROVIDER_KIND=openai_compatible_image_only
 IMAGE_PROVIDER_BASE_URL=https://image.example/v1
 IMAGE_PROVIDER_MODEL=image-model
+IMAGE_PROVIDER_IMAGE_SURFACE=images
 IMAGE_PROVIDER_API_KEY_1=sk-image-provider-key-1
 IMAGE_PROVIDER_API_KEY_2=sk-image-provider-key-2
 IMAGE_PROVIDER_API_KEY_3=sk-image-provider-key-3
@@ -25,6 +26,41 @@ IMAGE_PROVIDER_APP_SECRET=as-image-app-secret
 IMAGE_PROVIDER_CONCURRENCY_PER_KEY=10
 IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 ```
+
+## Optional Gateway Failover
+
+Provider failover is profile-scoped. Use the primary provider keys above for the preferred gateway, then append numbered fallback profiles when another gateway is allowed to serve the same role.
+
+For text planning and vision review:
+
+```env
+TEXT_PROVIDER_BASE_URL=https://primary-gateway.example/v1
+TEXT_PROVIDER_API_KEY=sk-primary
+TEXT_PROVIDER_MODEL=gpt-5.5
+
+TEXT_PROVIDER_FALLBACK_1_BASE_URL=https://backup-gateway.example/v1
+TEXT_PROVIDER_FALLBACK_1_API_KEY=sk-backup
+TEXT_PROVIDER_FALLBACK_1_MODEL=gpt-5.5
+```
+
+For image generation:
+
+```env
+IMAGE_PROVIDER_BASE_URL=https://primary-gateway.example/v1
+IMAGE_PROVIDER_MODEL=gpt-image-2
+IMAGE_PROVIDER_IMAGE_SURFACE=responses
+IMAGE_PROVIDER_RESPONSES_MODEL=gpt-5.5
+IMAGE_PROVIDER_API_KEY_1=sk-primary
+
+IMAGE_PROVIDER_FALLBACK_1_BASE_URL=https://backup-gateway.example/v1
+IMAGE_PROVIDER_FALLBACK_1_MODEL=gpt-image-2
+IMAGE_PROVIDER_FALLBACK_1_IMAGE_SURFACE=images
+IMAGE_PROVIDER_FALLBACK_1_API_KEY_1=sk-backup
+```
+
+`IMAGE_PROVIDER_IMAGE_SURFACE=responses` means ordinary image-generation requests default to `POST /responses` with the configured `IMAGE_PROVIDER_RESPONSES_MODEL` and an `image_generation` tool. `IMAGE_PROVIDER_IMAGE_SURFACE=images` means ordinary image-generation requests use `POST /images/generations` with `IMAGE_PROVIDER_MODEL`.
+
+Failover should be used only for transient or reachability failures: network failure, timeout, `408`, `429`, or `5xx`. Do not fail over on `400`, `401`, or `403`; those indicate request, credential, or authorization problems that should fail closed.
 
 ## Hard Boundaries
 
