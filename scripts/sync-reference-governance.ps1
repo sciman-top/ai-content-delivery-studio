@@ -205,8 +205,18 @@ function Set-ManagedBlock {
     )
 
     if ($Check) {
-        if ((Normalize-Text -Text $updated) -ne (Normalize-Text -Text $Content)) {
-            throw "Reference basis document is out of sync with scripts/reference-basis.json. Run .\scripts\sync-reference-governance.ps1."
+        $normalizedUpdated = Normalize-Text -Text $updated
+        $normalizedContent = Normalize-Text -Text $Content
+        if ($normalizedUpdated -ne $normalizedContent) {
+            $firstDifference = 0
+            $sharedLength = [Math]::Min($normalizedUpdated.Length, $normalizedContent.Length)
+            while ($firstDifference -lt $sharedLength -and $normalizedUpdated[$firstDifference] -eq $normalizedContent[$firstDifference]) {
+                $firstDifference++
+            }
+
+            $expectedCodePoint = if ($firstDifference -lt $normalizedUpdated.Length) { [int][char]$normalizedUpdated[$firstDifference] } else { -1 }
+            $actualCodePoint = if ($firstDifference -lt $normalizedContent.Length) { [int][char]$normalizedContent[$firstDifference] } else { -1 }
+            throw "Reference basis document is out of sync with scripts/reference-basis.json (first_difference=$firstDifference; expected_code_point=$expectedCodePoint; actual_code_point=$actualCodePoint; expected_length=$($normalizedUpdated.Length); actual_length=$($normalizedContent.Length)). Run .\scripts\sync-reference-governance.ps1."
         }
 
         return
