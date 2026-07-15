@@ -59,6 +59,29 @@ function Normalize-Text {
     return ($Text -replace "`r`n", "`n") -replace "`r", "`n"
 }
 
+function Get-TopLevelJsonString {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Json,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $document = [System.Text.Json.JsonDocument]::Parse($Json)
+    try {
+        $element = $document.RootElement.GetProperty($Name)
+        if ($element.ValueKind -ne [System.Text.Json.JsonValueKind]::String) {
+            throw "Top-level JSON property must remain a string: $Name"
+        }
+
+        return $element.GetString()
+    }
+    finally {
+        $document.Dispose()
+    }
+}
+
 function Write-Utf8NoBom {
     param(
         [Parameter(Mandatory = $true)]
@@ -205,8 +228,18 @@ function Set-ManagedBlock {
     )
 
     if ($Check) {
-        if ((Normalize-Text -Text $updated) -ne (Normalize-Text -Text $Content)) {
-            throw "Reference basis document is out of sync with scripts/reference-basis.json. Run .\scripts\sync-reference-governance.ps1."
+        $normalizedUpdated = Normalize-Text -Text $updated
+        $normalizedContent = Normalize-Text -Text $Content
+        if ($normalizedUpdated -ne $normalizedContent) {
+            $firstDifference = 0
+            $sharedLength = [Math]::Min($normalizedUpdated.Length, $normalizedContent.Length)
+            while ($firstDifference -lt $sharedLength -and $normalizedUpdated[$firstDifference] -eq $normalizedContent[$firstDifference]) {
+                $firstDifference++
+            }
+
+            $expectedCodePoint = if ($firstDifference -lt $normalizedUpdated.Length) { [int][char]$normalizedUpdated[$firstDifference] } else { -1 }
+            $actualCodePoint = if ($firstDifference -lt $normalizedContent.Length) { [int][char]$normalizedContent[$firstDifference] } else { -1 }
+            throw "Reference basis document is out of sync with scripts/reference-basis.json (first_difference=$firstDifference; expected_code_point=$expectedCodePoint; actual_code_point=$actualCodePoint; expected_length=$($normalizedUpdated.Length); actual_length=$($normalizedContent.Length)). Run .\scripts\sync-reference-governance.ps1."
         }
 
         return
@@ -223,7 +256,9 @@ function Get-ExternalShelfSnapshotObject {
         [string]$ManifestPath
     )
 
-    $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    $manifestJson = Get-Content -LiteralPath $ManifestPath -Raw
+    $manifest = $manifestJson | ConvertFrom-Json
+    $manifest.updatedAt = Get-TopLevelJsonString -Json $manifestJson -Name "updatedAt"
     $entries = @(
         @($manifest.entries) |
             Sort-Object relativePath |
@@ -295,7 +330,9 @@ if (-not (Test-Path -LiteralPath $referenceBasisPath)) {
     throw "Missing reference basis document: $referenceBasisPath"
 }
 
-$referenceBasisManifest = Get-Content -LiteralPath $referenceBasisManifestPath -Raw | ConvertFrom-Json
+$referenceBasisManifestJson = Get-Content -LiteralPath $referenceBasisManifestPath -Raw
+$referenceBasisManifest = $referenceBasisManifestJson | ConvertFrom-Json
+$referenceBasisManifest.updatedAt = Get-TopLevelJsonString -Json $referenceBasisManifestJson -Name "updatedAt"
 $managedBlock = Render-ReferenceBasisManagedBlock -Manifest $referenceBasisManifest
 $referenceBasisContent = Get-Content -LiteralPath $referenceBasisPath -Raw
 

@@ -2,6 +2,7 @@ param(
     [switch]$SkipReferenceEvidence,
     [switch]$SkipPublishWhatIf,
     [switch]$NoRestore,
+    [switch]$ForcePowerShellTextScan,
     [string]$ReferenceEvidenceBaseRef,
     [string]$ReferenceEvidenceHeadRef
 )
@@ -44,18 +45,48 @@ function Invoke-RgFilteredCheck {
         [string[]]$IgnorePatterns = @()
     )
 
-    $raw = & rg -n $Pattern @Targets
-    $exitCode = $LASTEXITCODE
-    if ($exitCode -eq 1) {
+    $rgCommand = if ($ForcePowerShellTextScan) {
+        $null
+    } else {
+        Get-Command rg -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    }
+
+    if ($null -ne $rgCommand) {
+        $raw = & $rgCommand.Source -n $Pattern @Targets
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -eq 1) {
+            $global:LASTEXITCODE = 0
+            return @()
+        }
+
+        if ($exitCode -ne 0) {
+            throw "rg failed with exit code $exitCode."
+        }
+
+        $lines = @($raw | ForEach-Object { $_.ToString() })
+    } else {
+        Write-Host "rg is unavailable; using the tracked-file PowerShell scanner." -ForegroundColor Yellow
+        $trackedFiles = @(& git ls-files -- @Targets)
+        $exitCode = $LASTEXITCODE
+        if ($exitCode -ne 0) {
+            throw "git ls-files failed with exit code $exitCode."
+        }
+
+        $lines = @(
+            foreach ($trackedFile in $trackedFiles) {
+                $relativePath = $trackedFile.ToString()
+                if ([string]::IsNullOrWhiteSpace($relativePath)) {
+                    continue
+                }
+
+                foreach ($match in @(Select-String -LiteralPath $relativePath -Pattern $Pattern -AllMatches -CaseSensitive -Encoding utf8)) {
+                    "{0}:{1}:{2}" -f $relativePath, $match.LineNumber, $match.Line
+                }
+            }
+        )
         $global:LASTEXITCODE = 0
-        return @()
     }
 
-    if ($exitCode -ne 0) {
-        throw "rg failed with exit code $exitCode."
-    }
-
-    $lines = @($raw | ForEach-Object { $_.ToString() })
     if ($IgnorePatterns.Count -gt 0) {
         $lines = @(
             $lines | Where-Object {
