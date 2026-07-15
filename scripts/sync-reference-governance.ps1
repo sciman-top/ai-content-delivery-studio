@@ -59,6 +59,29 @@ function Normalize-Text {
     return ($Text -replace "`r`n", "`n") -replace "`r", "`n"
 }
 
+function Get-TopLevelJsonString {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Json,
+
+        [Parameter(Mandatory = $true)]
+        [string]$Name
+    )
+
+    $document = [System.Text.Json.JsonDocument]::Parse($Json)
+    try {
+        $element = $document.RootElement.GetProperty($Name)
+        if ($element.ValueKind -ne [System.Text.Json.JsonValueKind]::String) {
+            throw "Top-level JSON property must remain a string: $Name"
+        }
+
+        return $element.GetString()
+    }
+    finally {
+        $document.Dispose()
+    }
+}
+
 function Write-Utf8NoBom {
     param(
         [Parameter(Mandatory = $true)]
@@ -233,7 +256,9 @@ function Get-ExternalShelfSnapshotObject {
         [string]$ManifestPath
     )
 
-    $manifest = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
+    $manifestJson = Get-Content -LiteralPath $ManifestPath -Raw
+    $manifest = $manifestJson | ConvertFrom-Json
+    $manifest.updatedAt = Get-TopLevelJsonString -Json $manifestJson -Name "updatedAt"
     $entries = @(
         @($manifest.entries) |
             Sort-Object relativePath |
@@ -305,7 +330,9 @@ if (-not (Test-Path -LiteralPath $referenceBasisPath)) {
     throw "Missing reference basis document: $referenceBasisPath"
 }
 
-$referenceBasisManifest = Get-Content -LiteralPath $referenceBasisManifestPath -Raw | ConvertFrom-Json
+$referenceBasisManifestJson = Get-Content -LiteralPath $referenceBasisManifestPath -Raw
+$referenceBasisManifest = $referenceBasisManifestJson | ConvertFrom-Json
+$referenceBasisManifest.updatedAt = Get-TopLevelJsonString -Json $referenceBasisManifestJson -Name "updatedAt"
 $managedBlock = Render-ReferenceBasisManagedBlock -Manifest $referenceBasisManifest
 $referenceBasisContent = Get-Content -LiteralPath $referenceBasisPath -Raw
 
