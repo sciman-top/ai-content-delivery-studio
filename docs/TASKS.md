@@ -11,9 +11,22 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 
 ## Current Queue Status
 
-- The current repository-owned implementation-plan surface is closed: the existing repo-owned plans are recorded as completed, and this checklist currently contains no unchecked active execution items.
-- Treat this file as a closeout ledger for the completed V1 and repository-side implementation baseline, not as proof that every long-term roadmap idea has been permanently finished.
-- New execution work should reopen only as a new bounded slice with its own repo-owned spec, plan, and fresh verification evidence.
+- The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
+- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design and written specification are approved, its repo-owned implementation plan is recorded, and runtime implementation has not started.
+- The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
+
+## Active Post-V1 Flagship Slice: Trustworthy Scientific Figures
+
+- [x] Approve the physics and natural-science flagship scope, authority chain, SVG-first rendering, three-layer review, and two human gates.
+- [x] Record the repository-owned design specification.
+- [x] Record the risk-first, checkpointed implementation plan.
+- [ ] Establish primary-source dependency decisions and the 12-item human-approved evaluation corpus.
+- [ ] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
+- [ ] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
+- [ ] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
+- [ ] Deliver the five-workspace WPF flow and pass fake-first corpus acceptance.
+- [ ] After explicit paid-call approval, record live-provider and human acceptance evidence.
+- [ ] Synchronize user guidance, roadmap status, launch evidence, migration, rollback, and closeout truth.
 
 ## Near-Term Hardening (Not Current Release Blockers)
 

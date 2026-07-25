@@ -12,7 +12,7 @@ AI, providers, workflow packs, and output formats can evolve quickly. Core domai
 - A workflow is production-ready only when approval evidence, deterministic rendering or composition where required, and real-provider behavior are verified.
 - Current V1 release-claim truth lives in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md); roadmap phase status and completed backlog items do not count as launch proof by themselves.
 - As of the latest recorded launch snapshot on `2026-06-23`, that evidence file keeps all `5 / 5` V1 launch metrics verified. The fresh automated repo gate is current, while the latest recorded live-provider sample in that snapshot still remains the `2026-06-11` artifact set. This does not mean every roadmap phase is complete or that future release snapshots never need refresh.
-- The current repo-side execution queue is closed for the recorded V1 and implementation-plan surface. Remaining lanes below are future or trigger-based continuation points, not an active unfinished backlog.
+- The recorded V1 repo-side execution queue remains closed. A new post-V1 trustworthy-scientific-figure flagship slice has an approved design and implementation plan, but runtime implementation has not started.
 
 ## V1 Release Frame
 
@@ -81,6 +81,16 @@ The current recorded answer is "yes" for the `2026-06-23` snapshot in [V1_LAUNCH
 - The official OpenAI .NET SDK Images path is the stable default, with raw `HttpClient` limited to lagging Responses surfaces; the opt-in Responses image path currently covers stateful revision metadata only.
 - The first low-risk operator execution slice is already bounded and auditable.
 - The external reference system is machine-readable and in parity through `REFERENCE_BASIS.md`, `scripts/reference-basis.json`, and the repo-side external-shelf snapshot.
+
+## Active Post-V1 Flagship Slice
+
+Trustworthy scientific figures are now the only active repository-owned implementation-plan slice:
+
+- Scope: text-bearing physics and natural-science sources -> evidence-grounded understanding -> approved `ScientificFigureSpec` -> deterministic SVG -> three-layer review -> two human gates -> evidence-backed delivery.
+- Design authority: [2026-07-25-scientific-figure-trustworthy-workflow-design.md](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md).
+- Execution authority: [2026-07-25-scientific-figure-trustworthy-workflow.md](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
+- Current state: design and written specification approved; implementation plan recorded; dependency research, evaluation-corpus admission, runtime implementation, live-provider evidence, and human acceptance remain open.
+- Completion boundary: no phase or workflow is complete merely because the design, plan, domain skeleton, fake provider, or UI shell exists. Scientific acceptance requires the fixed corpus, fail-closed mutation coverage, opt-in live samples, both human gates, and fresh repository evidence.
 
 ## Future Trigger Lanes
 
