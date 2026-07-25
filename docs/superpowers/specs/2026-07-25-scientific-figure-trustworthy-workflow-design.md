@@ -2,7 +2,7 @@
 
 ## Status
 
-Design approved in conversation on 2026-07-25. This written specification is awaiting user review before implementation planning.
+Design and written specification approved by the user on 2026-07-25. The implementation plan is recorded in `docs/superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md`; runtime implementation has not started.
 
 ## Goal
 
