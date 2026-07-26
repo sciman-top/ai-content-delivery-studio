@@ -566,14 +566,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Scientific review receives only approved claims, minimum evidence, the specification, and render summary.
-- [ ] Visual review accepts full-resolution output and typed region crops.
-- [ ] `uncertain`, invalid output, missing element findings, or provider failure blocks Gate 2.
+- [x] Scientific review receives only approved claims, minimum evidence, the specification, and render summary.
+- [x] Visual review accepts full-resolution output and typed region crops.
+- [x] `uncertain`, invalid output, missing element findings, or provider failure blocks Gate 2.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificReviewProviderContractTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter FakeScientificReviewProviderTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificReviewProviderContractTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter FakeScientificReviewProviderTests`
 
 **Dependencies:** Task 16
 

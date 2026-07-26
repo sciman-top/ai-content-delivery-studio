@@ -140,3 +140,21 @@ _Avoid_: Low score, optional suggestion
 A bounded informational value retained for reporting that has no authority to
 override a scientific contract hard failure.
 _Avoid_: Pass threshold, acceptance decision
+
+**Scientific Semantic Review Request**:
+A provider-neutral request containing only accepted claims, the exact evidence
+used by the approved Figure Spec, that specification, and a bounded render
+summary.
+_Avoid_: Full paper payload, planner transcript, generic review prompt
+
+**Scientific Visual Review Request**:
+A provider-neutral request containing the original full-resolution output and
+typed, item-addressable region crops; it never uses the compact generic-review
+artifact as scientific acceptance evidence.
+_Avoid_: Thumbnail review, 384px review image
+
+**Scientific Machine Review Decision**:
+The fail-closed combination of independent semantic and visual provider
+results. Any non-pass verdict, invalid output, finding, or provider failure
+creates a blocker; it is not Gate 2 approval.
+_Avoid_: Human approval, averaged review score
