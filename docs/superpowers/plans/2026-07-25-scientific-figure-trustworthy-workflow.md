@@ -292,14 +292,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Critical elements and relations require evidence or explicit `scientific_convention` provenance.
-- [ ] Gate 1 cannot approve a specification with conflicts, uncertainty, missing required coverage, or unsupported content.
-- [ ] A scientific-content change after Gate 1 increments the version and invalidates every downstream approval.
+- [x] Critical elements and relations require evidence or explicit `scientific_convention` provenance.
+- [x] Gate 1 cannot approve a specification with conflicts, uncertainty, missing required coverage, or unsupported content.
+- [x] A scientific-content change after Gate 1 increments the version and invalidates every downstream approval.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureSpecTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkflowStateTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureSpecTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkflowStateTests`
 
 **Dependencies:** Task 7
 

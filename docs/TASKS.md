@@ -12,7 +12,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 ## Current Queue Status
 
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
-- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-7 now establish the source/extraction and claim-evidence domain authority, while adapters, persistence, Gate 1, rendering, review, and UI remain open.
+- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-8 now establish source/extraction, claim-evidence, Figure Spec, and Gate 1 domain authority, while adapters, persistence, rendering, review, and UI remain open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
 
 ## Active Post-V1 Flagship Slice: Trustworthy Scientific Figures
@@ -28,6 +28,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Establish the 12-item human-approved evaluation corpus.
 - [x] Establish immutable scientific source, location, recovery, quality, diagnostic, and blocked-extraction records for Task 6.
 - [x] Establish source-bound scientific claims, role-preserving evidence, conflicts, coverage, and blocked-understanding records for Task 7.
+- [x] Establish evidence-bound Figure Spec elements/relations, Gate 1 approval, versioning, and downstream invalidation records for Task 8.
 - [ ] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [ ] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
 - [ ] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
