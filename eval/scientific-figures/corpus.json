@@ -3,7 +3,7 @@
   "version": 1,
   "corpusId": "scientific-figures-v1",
   "requiredItemCount": 12,
-  "admissionState": "building",
+  "admissionState": "human-approved",
   "localCacheRoot": ".cache",
   "categoryRequirements": {
     "mechanism-process": 4,
@@ -14,7 +14,7 @@
     {
       "itemId": "mechanics-two-car-momentum-transfer",
       "category": "mechanism-process",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-8-2",
         "title": "Physics, Section 8.2: Conservation of Momentum",
@@ -48,7 +48,7 @@
     {
       "itemId": "thermal-heat-engine-energy-flow",
       "category": "mechanism-process",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-12-4",
         "title": "Physics, Section 12.4: Applications of Thermodynamics",
@@ -82,7 +82,7 @@
     {
       "itemId": "optics-convex-lens-real-image",
       "category": "mechanism-process",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-16-3",
         "title": "Physics, Section 16.3: Lenses",
@@ -116,7 +116,7 @@
     {
       "itemId": "electromagnetism-rotating-coil-generator",
       "category": "mechanism-process",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-20-2",
         "title": "Physics, Section 20.2: Motors, Generators, and Transformers",
@@ -150,7 +150,7 @@
     {
       "itemId": "mechanics-static-vs-kinetic-friction",
       "category": "concept-comparison",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-5-4-friction",
         "title": "Physics, Section 5.4: Inclined Planes",
@@ -184,7 +184,7 @@
     {
       "itemId": "thermal-three-mode-heat-transfer-comparison",
       "category": "concept-comparison",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-11-2-transfer-modes",
         "title": "Physics, Section 11.2: Heat, Specific Heat, and Heat Transfer",
@@ -218,7 +218,7 @@
     {
       "itemId": "optics-specular-vs-diffuse-reflection",
       "category": "concept-comparison",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-16-1-reflection-types",
         "title": "Physics, Section 16.1: Reflection",
@@ -252,7 +252,7 @@
     {
       "itemId": "electromagnetism-series-vs-parallel-resistors",
       "category": "concept-comparison",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-sections-19-2-19-3-resistors",
         "title": "Physics, Sections 19.2-19.3: Series and Parallel Circuits",
@@ -286,7 +286,7 @@
     {
       "itemId": "mechanics-projectile-independent-components-summary",
       "category": "graphical-abstract",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-5-3",
         "title": "Physics, Section 5.3: Projectile Motion",
@@ -304,7 +304,7 @@
     {
       "itemId": "acoustics-doppler-relative-motion-summary",
       "category": "graphical-abstract",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-14-3",
         "title": "Physics, Section 14.3: Doppler Effect and Sonic Booms",
@@ -322,7 +322,7 @@
     {
       "itemId": "quantum-photoelectric-threshold-summary",
       "category": "graphical-abstract",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-21-2",
         "title": "Physics, Section 21.2: Einstein and the Photoelectric Effect",
@@ -340,7 +340,7 @@
     {
       "itemId": "nuclear-fission-controlled-chain-summary",
       "category": "graphical-abstract",
-      "admissionStatus": "candidate",
+      "admissionStatus": "accepted",
       "source": {
         "sourceId": "openstax-physics-section-22-4",
         "title": "Physics, Section 22.4: Nuclear Fission and Fusion",

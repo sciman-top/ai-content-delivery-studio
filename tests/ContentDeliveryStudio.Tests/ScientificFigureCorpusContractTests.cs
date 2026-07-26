@@ -116,7 +116,7 @@ public sealed class ScientificFigureCorpusContractTests
         Assert.Equal("./corpus.schema.json", manifest["$schema"]?.GetValue<string>());
         Assert.Equal(1, manifest["version"]?.GetValue<int>());
         Assert.Equal(12, manifest["requiredItemCount"]?.GetValue<int>());
-        Assert.Equal("building", manifest["admissionState"]?.GetValue<string>());
+        Assert.Equal("human-approved", manifest["admissionState"]?.GetValue<string>());
         Assert.Equal(".cache", manifest["localCacheRoot"]?.GetValue<string>());
 
         var categoryRequirements = manifest["categoryRequirements"]?.AsObject();
@@ -148,6 +148,7 @@ public sealed class ScientificFigureCorpusContractTests
         var manifest = LoadObject("eval/scientific-figures/corpus.json");
         manifest["admissionState"] = "human-approved";
         manifest["items"]!.AsArray().RemoveAt(0);
+        manifest["items"]![0]!["admissionStatus"] = "candidate";
 
         var errors = ValidateCorpusManifest(manifest);
         Assert.Contains("items.count", errors);

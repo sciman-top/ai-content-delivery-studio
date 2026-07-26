@@ -32,5 +32,5 @@
     {"mutationId": "scientific-invented-visual-claim-wavefront", "category": "scientific", "description": "Show tighter wavefront spacing while labeling the observed frequency lower.", "expectedOutcome": "block"},
     {"mutationId": "visual-decorative-asset-implying-evidence-rings", "category": "visual", "description": "Use ring opacity, thickness, or a speedometer badge as measured loudness, frequency, or speed.", "expectedOutcome": "block"}
   ],
-  "humanReview": {"status": "draft"}
+  "humanReview": {"status": "accepted", "reviewer": "sciman", "reviewedAt": "2026-07-26"}
 }

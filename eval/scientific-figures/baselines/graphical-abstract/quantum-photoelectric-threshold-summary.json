@@ -32,5 +32,5 @@
     {"mutationId": "scientific-invented-visual-claim-intensity-ke", "category": "scientific", "description": "Show brighter light increasing KE_max at fixed frequency or enabling below-threshold emission.", "expectedOutcome": "block"},
     {"mutationId": "visual-decorative-asset-implying-evidence-photon-count", "category": "visual", "description": "Use exact-looking glyph counts, scaled barriers, axes, or error bars as measured data.", "expectedOutcome": "block"}
   ],
-  "humanReview": {"status": "draft"}
+  "humanReview": {"status": "accepted", "reviewer": "sciman", "reviewedAt": "2026-07-26"}
 }

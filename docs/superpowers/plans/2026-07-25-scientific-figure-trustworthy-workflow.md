@@ -141,14 +141,14 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoR
 
 **Acceptance criteria:**
 
-- [ ] Four sources satisfy corpus admission, licensing, hash, and extraction-quality requirements.
-- [ ] Every required entity, relation, direction, condition, formula, value, and unit maps to an exact source anchor.
-- [ ] Each baseline includes at least one critical scientific mutation and one visual mutation.
+- [x] Four sources satisfy corpus admission, licensing, hash, and extraction-quality requirements.
+- [x] Every required entity, relation, direction, condition, formula, value, and unit maps to an exact source anchor.
+- [x] Each baseline includes at least one critical scientific mutation and one visual mutation.
 
 **Verification:**
 
 - [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
-- [ ] Human corpus review records all four items as accepted.
+- [x] Human corpus review records all four items as accepted.
 
 **Dependencies:** Task 2
 
@@ -175,12 +175,10 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoR
 **Verification:**
 
 - [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
-- [ ] Human corpus review records all four items as accepted.
+- [x] Human corpus review records all four items as accepted.
 
-Candidate preparation is complete as of 2026-07-26. All four records remain
-`admissionStatus: candidate`, all baselines remain `humanReview.status:
-draft`, and the corpus remains `admissionState: building`; therefore Task 4
-admission and Checkpoint 0 remain open.
+Human review by `sciman` accepted all four records on 2026-07-26. The accepted
+state is part of the Checkpoint 0 corpus authority.
 
 **Dependencies:** Task 2
 
@@ -207,12 +205,10 @@ admission and Checkpoint 0 remain open.
 **Verification:**
 
 - [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
-- [ ] Human corpus review records all four items as accepted.
+- [x] Human corpus review records all four items as accepted.
 
-Candidate preparation is complete as of 2026-07-26. All four records remain
-`admissionStatus: candidate`, all baselines remain `humanReview.status:
-draft`, and the corpus remains `admissionState: building`; therefore Task 5
-admission and Checkpoint 0 remain open.
+Human review by `sciman` accepted all four records on 2026-07-26. The accepted
+state is part of the Checkpoint 0 corpus authority.
 
 **Dependencies:** Task 2
 
@@ -228,11 +224,11 @@ admission and Checkpoint 0 remain open.
 
 ### Checkpoint 0: Corpus authority
 
-- [ ] Tasks 1-5 pass their focused verification.
-- [ ] All 12 baselines pass schema validation.
-- [ ] A human approves the corpus as the scientific acceptance authority.
-- [ ] Full repository verification passes.
-- [ ] No renderer or provider implementation starts before this checkpoint.
+- [x] Tasks 1-5 pass their focused verification.
+- [x] All 12 baselines pass schema validation.
+- [x] A human approves the corpus as the scientific acceptance authority.
+- [x] Full repository verification passes.
+- [x] No renderer or provider implementation starts before this checkpoint.
 
 ## Milestone 1: Gate 1 Vertical Slice
 

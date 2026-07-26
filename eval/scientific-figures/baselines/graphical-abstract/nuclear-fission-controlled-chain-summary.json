@@ -34,5 +34,5 @@
     {"mutationId": "scientific-invented-visual-claim-token-count", "category": "scientific", "description": "Use exact token counts or geometry to assert multiplication factor, reaction rate, critical mass, or power.", "expectedOutcome": "block"},
     {"mutationId": "visual-decorative-asset-implying-evidence-reactor", "category": "visual", "description": "Use smoke, facility photos, heat maps, gauges, or scaled containment as accident, dose, operating, or safety evidence.", "expectedOutcome": "block"}
   ],
-  "humanReview": {"status": "draft"}
+  "humanReview": {"status": "accepted", "reviewer": "sciman", "reviewedAt": "2026-07-26"}
 }

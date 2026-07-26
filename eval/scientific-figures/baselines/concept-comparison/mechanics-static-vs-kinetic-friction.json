@@ -149,6 +149,8 @@
     }
   ],
   "humanReview": {
-    "status": "draft"
+    "status": "accepted",
+    "reviewer": "sciman",
+    "reviewedAt": "2026-07-26"
   }
 }
