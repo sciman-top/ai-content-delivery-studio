@@ -1,9 +1,11 @@
+using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.ScientificFigures;
 using Microsoft.EntityFrameworkCore;
 
 namespace ContentDeliveryStudio.Infrastructure.Persistence;
 
 public sealed class EfScientificFigureWorkflowRepository
+    : IScientificFigureWorkflowRepository
 {
     private readonly AppDbContext _dbContext;
 

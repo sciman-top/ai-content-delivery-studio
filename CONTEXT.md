@@ -74,3 +74,18 @@ _Avoid_: Empty paragraph, inferred text
 A formula or table declared necessary for the bounded figure objective; absence
 is represented as a located `Missing` block and blocks extraction readiness.
 _Avoid_: Nice-to-have detail, heuristic match
+
+**Scientific Understanding Chunk**:
+A bounded, ordered set of immutable source blocks sent to one provider-neutral
+understanding call; chunking never changes source block identity.
+_Avoid_: Independent paper, prompt window
+
+**Understanding Merge Conflict**:
+Two evidence-bound claim drafts with the same merge key but incompatible
+normalized statements; it remains explicit and blocks Gate 1 until resolved.
+_Avoid_: Duplicate text, provider disagreement score
+
+**Gate 1 Decision**:
+The explicit human action that either approves the current ready understanding
+and Figure Spec versions or leaves the workflow unapproved.
+_Avoid_: Readiness state, automatic approval

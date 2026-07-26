@@ -377,14 +377,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Fake fixtures produce claims and exact evidence links without network calls.
-- [ ] Overlong sources are chunked within policy, while unresolved merge conflicts block Gate 1.
-- [ ] Gate 1 saves the approved understanding/spec version and never auto-approves.
+- [x] Fake fixtures produce claims and exact evidence links without network calls.
+- [x] Overlong sources are chunked within policy, while unresolved merge conflicts block Gate 1.
+- [x] Gate 1 saves the approved understanding/spec version and never auto-approves.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificUnderstandingProviderTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificGateOneWorkflowTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificUnderstandingProviderTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificGateOneWorkflowTests`
 
 **Dependencies:** Task 7, Task 8, Task 10
 
@@ -402,11 +402,11 @@ state is part of the Checkpoint 0 corpus authority.
 
 ### Checkpoint 1: Source-to-Gate-1
 
-- [ ] A redistribution-safe text-bearing PDF reaches a reviewable understanding/spec draft.
-- [ ] Unsupported extraction and unresolved science fail closed.
-- [ ] Gate 1 requires an explicit human decision.
-- [ ] Save/reload preserves the approved authority chain.
-- [ ] Full repository verification passes.
+- [x] A redistribution-safe text-bearing PDF reaches a reviewable understanding/spec draft.
+- [x] Unsupported extraction and unresolved science fail closed.
+- [x] Gate 1 requires an explicit human decision.
+- [x] Save/reload preserves the approved authority chain.
+- [x] Full repository verification passes.
 
 ## Milestone 2: Deterministic SVG Vertical Slice
 

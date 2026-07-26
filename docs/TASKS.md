@@ -12,7 +12,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 ## Current Queue Status
 
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
-- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-10 now establish source/extraction authority, claim-evidence, Figure Spec, Gate 1 domain authority, backward-compatible workflow persistence, and trustworthy PDF/Markdown/text extraction, while understanding orchestration, rendering, review, and UI remain open.
+- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-11 and the automated Source-to-Gate-1 evidence now establish trustworthy extraction, fake-first understanding, claim-evidence, Figure Spec, explicit Gate 1, and backward-compatible persistence, while deterministic rendering, review, UI, and live acceptance remain open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
 
 ## Active Post-V1 Flagship Slice: Trustworthy Scientific Figures
@@ -31,6 +31,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Establish evidence-bound Figure Spec elements/relations, Gate 1 approval, versioning, and downstream invalidation records for Task 8.
 - [x] Persist the project-owned scientific workflow aggregate with versioned JSON, indexed authority fields, fail-closed reload, and additive SQLite schema initialization for Task 9.
 - [x] Adapt text-bearing PDF, Markdown, text, and paste sources into provenance-preserving scientific extraction with fail-closed OCR, reading-order, and required-content diagnostics for Task 10.
+- [x] Deliver provider-neutral chunked understanding, deterministic fake claims, cross-chunk conflict blocking, explicit Gate 1 decisions, and persisted authority snapshots for Task 11.
 - [ ] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [ ] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
 - [ ] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
