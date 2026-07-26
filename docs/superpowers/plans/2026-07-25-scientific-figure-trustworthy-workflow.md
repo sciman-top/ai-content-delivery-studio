@@ -747,14 +747,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Users can inspect every critical element and relation with evidence.
-- [ ] AI proposals are accepted or rejected as explicit diffs.
-- [ ] Gate 1 controls reflect domain eligibility and show which version is frozen.
+- [x] Users can inspect every critical element and relation with evidence.
+- [x] AI proposals are accepted or rejected as explicit diffs.
+- [x] Gate 1 controls reflect domain eligibility and show which version is frozen.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureSpecViewModelTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificGateOneWorkflowTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureSpecViewModelTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificGateOneWorkflowTests`
 
 **Dependencies:** Task 22
 

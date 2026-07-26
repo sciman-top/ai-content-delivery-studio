@@ -94,9 +94,11 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="1.25*" />
             </Grid.ColumnDefinitions>
             <views:ScientificSourceWorkspaceView Grid.Column="0" />
             <views:ScientificUnderstandingWorkspaceView Grid.Column="1" />
+            <views:ScientificFigureSpecWorkspaceView Grid.Column="2" />
         </Grid>
     </Grid>
 </UserControl>

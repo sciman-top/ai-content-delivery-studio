@@ -22,6 +22,7 @@ public sealed class ScientificFigureWorkspaceLayoutTests
         Assert.Contains("AutomationProperties.AutomationId=\"ScientificDeliveryWorkspace\"", xaml);
         Assert.Contains("<views:ScientificSourceWorkspaceView", xaml);
         Assert.Contains("<views:ScientificUnderstandingWorkspaceView", xaml);
+        Assert.Contains("<views:ScientificFigureSpecWorkspaceView", xaml);
         Assert.DoesNotContain("Prompt", xaml, StringComparison.OrdinalIgnoreCase);
     }
 

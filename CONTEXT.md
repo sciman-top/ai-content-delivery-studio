@@ -218,3 +218,15 @@ _Avoid_: Search result, inferred citation, free-text note
 An audited proposal containing the accepted claim snapshot, proposed wording,
 reviewer, reason, and timestamp; it does not mutate or approve the claim.
 _Avoid_: In-place claim edit, Gate 1 approval
+
+**Scientific Figure Spec Proposal Diff**:
+A typed, target-bound comparison between one current Figure Spec field and a
+proposed value. The current value must match the authoritative spec exactly;
+acceptance requires a new spec revision and never mutates the frozen version.
+_Avoid_: Raw JSON edit, prompt suggestion, Gate 1 approval
+
+**Gate 1 Frozen Authority Versions**:
+The exact understanding and Figure Spec versions recorded by an affirmative
+human Gate 1 decision. Pending or accepted proposal diffs block approval of the
+current version until they are rejected or incorporated into a new revision.
+_Avoid_: Current draft version, display-only status, provider approval
