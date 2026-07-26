@@ -1863,7 +1863,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 }
 
-public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, string EmptyState)
+public sealed record WorkbenchTabViewModel(
+    WorkbenchTabKind Kind,
+    string Title,
+    string EmptyState,
+    ScientificFigureWorkspaceProjection? ScientificWorkspace = null)
 {
     public bool IsBrief => Kind is WorkbenchTabKind.Brief;
 
@@ -1880,6 +1884,8 @@ public sealed record WorkbenchTabViewModel(WorkbenchTabKind Kind, string Title, 
     public bool IsDelivery => Kind is WorkbenchTabKind.Delivery;
 
     public bool IsGraph => Kind is WorkbenchTabKind.Graph;
+
+    public bool IsScientificFigure => Kind is WorkbenchTabKind.ScientificFigure;
 }
 
 public enum WorkbenchTabKind
@@ -1892,6 +1898,7 @@ public enum WorkbenchTabKind
     Review = 5,
     Delivery = 6,
     Graph = 7,
+    ScientificFigure = 8,
 }
 
 public sealed record LanguageOptionViewModel(LanguagePreference Preference, string DisplayName);

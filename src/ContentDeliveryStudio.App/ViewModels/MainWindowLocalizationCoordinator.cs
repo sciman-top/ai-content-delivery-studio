@@ -1,4 +1,5 @@
 using ContentDeliveryStudio.Application.Localization;
+using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.Documents;
 using ContentDeliveryStudio.Core.Styles;
 
@@ -231,7 +232,7 @@ public sealed class MainWindowLocalizationCoordinator
 
     private IReadOnlyList<WorkbenchTabViewModel> BuildWorkbenchTabs()
     {
-        return
+        IReadOnlyList<WorkbenchTabViewModel> standardTabs =
         [
             new(WorkbenchTabKind.Brief, Text(LocalizationKey.Brief), Text(LocalizationKey.BriefEmptyState)),
             new(WorkbenchTabKind.Plan, Text(LocalizationKey.Plan), Text(LocalizationKey.PlanEmptyState)),
@@ -242,6 +243,16 @@ public sealed class MainWindowLocalizationCoordinator
             new(WorkbenchTabKind.Delivery, Text(LocalizationKey.Delivery), Text(LocalizationKey.DeliveryEmptyState)),
             new(WorkbenchTabKind.Graph, Text(LocalizationKey.Graph), Text(LocalizationKey.GraphEmptyState)),
         ];
+
+        return ScientificFigureModule.IsUserVisible
+            ? standardTabs.Concat(
+                [new WorkbenchTabViewModel(
+                    WorkbenchTabKind.ScientificFigure,
+                    Text(LocalizationKey.ScientificFigures),
+                    Text(LocalizationKey.ScientificFiguresEmptyState),
+                    new ScientificFigureWorkflowCoordinator(_localizationService).Build(null))])
+                .ToArray()
+            : standardTabs;
     }
 
     private IReadOnlyList<string> BuildActivityItems()

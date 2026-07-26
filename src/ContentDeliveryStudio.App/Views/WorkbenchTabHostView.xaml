@@ -52,6 +52,9 @@
                                     <DataTrigger Binding="{Binding IsGraph}" Value="True">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                     </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsScientificFigure}" Value="True">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
                                 </Style.Triggers>
                             </Style>
                         </TextBlock.Style>
@@ -64,6 +67,7 @@
                     <views:ReviewView Grid.Row="1" Margin="0,16,0,0" />
                     <views:DeliveryView Grid.Row="1" Margin="0,16,0,0" />
                     <views:WorkflowGraphView Grid.Row="1" Margin="0,16,0,0" />
+                    <views:ScientificFigureWorkspaceView Grid.Row="1" Margin="0,16,0,0" />
                 </Grid>
             </DataTemplate>
         </TabControl.ContentTemplate>

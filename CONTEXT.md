@@ -202,3 +202,9 @@ The ZIP delivery containing SVG, PNG, PDF, Figure Spec, claim-evidence-item map,
 contract and machine reviews, repair history, provider metadata, artifact
 hashes, and both human approvals.
 _Avoid_: Image-only export, preview bundle
+
+**Scientific Workspace Projection**:
+The read-only WPF coordinator view of Source, Understanding, Figure Spec,
+Render & Review, and Delivery status derived from the authoritative workflow
+state; it never edits prompts or creates scientific truth.
+_Avoid_: Workflow aggregate, prompt editor, approval authority

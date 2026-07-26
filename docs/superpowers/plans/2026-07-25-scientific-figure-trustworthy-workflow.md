@@ -689,14 +689,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Source, Understanding, Figure Spec, Render & Review, and Delivery workspace slots have stable dimensions and no placeholder content.
-- [ ] The coordinator projects authoritative workflow state and exposes no direct prompt-editing requirement.
-- [ ] Existing workbench tabs and bindings remain unchanged.
+- [x] Source, Understanding, Figure Spec, Render & Review, and Delivery workspace slots have stable dimensions and no placeholder content.
+- [x] The coordinator projects authoritative workflow state and exposes no direct prompt-editing requirement.
+- [x] Existing workbench tabs and bindings remain unchanged.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkspaceLayoutTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter MainWindowLayoutTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkspaceLayoutTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter MainWindowLayoutTests`
 
 **Dependencies:** Checkpoint 3
 
