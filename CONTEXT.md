@@ -33,3 +33,23 @@ _Avoid_: Paper completeness, general understanding
 A computed, fail-closed state indicating that relevant claims are traceable,
 conflict-free, and completely covered; it is not human approval.
 _Avoid_: Approval, Gate 1
+
+**Scientific Figure Spec**:
+The versioned scientific-content contract that is the sole authority for a
+future render plan.
+_Avoid_: Prompt, layout draft
+
+**Scientific Figure Provenance**:
+The authority for one scientific element or relation, expressed as validated
+claim evidence or an explicit scientific convention.
+_Avoid_: Design rationale, model suggestion
+
+**Scientific Convention**:
+An explicitly named, non-paper convention used to represent accepted scientific
+meaning without being normalized into a paper claim.
+_Avoid_: Common knowledge, implicit convention
+
+**Gate 1 Approval**:
+A human approval snapshot that freezes one understanding version and one
+Scientific Figure Spec version for downstream work.
+_Avoid_: Approval readiness, delivery approval
