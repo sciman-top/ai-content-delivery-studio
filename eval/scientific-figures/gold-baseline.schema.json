@@ -245,6 +245,7 @@
         "relationId",
         "sourceElementId",
         "targetElementId",
+        "relationClass",
         "relationType",
         "anchorIds"
       ],
@@ -260,6 +261,14 @@
         "targetElementId": {
           "type": "string",
           "minLength": 1
+        },
+        "relationClass": {
+          "enum": [
+            "causal",
+            "directional",
+            "comparative",
+            "associative-non-causal"
+          ]
         },
         "relationType": {
           "type": "string",

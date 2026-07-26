@@ -126,6 +126,7 @@
       "relationId": "relation-shaft-rotates-coil",
       "sourceElementId": "shaft-input",
       "targetElementId": "rotating-coil",
+      "relationClass": "causal",
       "relationType": "supplies-mechanical-rotation",
       "anchorIds": [
         "anchor-generator-definition",
@@ -136,6 +137,7 @@
       "relationId": "relation-field-force-drives-current",
       "sourceElementId": "uniform-magnetic-field",
       "targetElementId": "vertical-wire-segments",
+      "relationClass": "causal",
       "relationType": "magnetic-force-parallel-to-wire",
       "anchorIds": [
         "anchor-charge-force-mechanism"
@@ -145,6 +147,7 @@
       "relationId": "relation-rotation-changes-flux",
       "sourceElementId": "rotating-coil",
       "targetElementId": "emf-waveform",
+      "relationClass": "causal",
       "relationType": "changing-flux-induces-sinusoidal-emf",
       "anchorIds": [
         "anchor-figure-20-26-caption",
@@ -155,6 +158,7 @@
       "relationId": "relation-emf-drives-load",
       "sourceElementId": "emf-waveform",
       "targetElementId": "external-load",
+      "relationClass": "causal",
       "relationType": "drives-alternating-current",
       "anchorIds": [
         "anchor-charge-force-mechanism",

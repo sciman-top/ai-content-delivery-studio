@@ -1,0 +1,165 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "electromagnetism-series-vs-parallel-resistors",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Compare ideal series and parallel resistor circuits using matched positive resistors and the same battery voltage.",
+  "claims": [
+    {
+      "claimId": "claim-series-topology",
+      "text": "Series components are connected one after another in the same branch and carry the same current.",
+      "anchorIds": ["anchor-series-topology"]
+    },
+    {
+      "claimId": "claim-parallel-topology",
+      "text": "Parallel resistors share the same two nodes and therefore have the same voltage drop.",
+      "anchorIds": ["anchor-parallel-topology"]
+    },
+    {
+      "claimId": "claim-current-conservation",
+      "text": "Parallel branch currents may differ, but they split and recombine so their sum equals the battery current.",
+      "anchorIds": ["anchor-parallel-current"]
+    },
+    {
+      "claimId": "claim-equivalent-resistance",
+      "text": "Series resistance sums directly; parallel conductances sum and the parallel equivalent is less than the smallest positive branch resistance.",
+      "anchorIds": ["anchor-resistance-equations", "anchor-parallel-less-than-smallest"]
+    }
+  ],
+  "anchors": [
+    {
+      "anchorId": "anchor-series-topology",
+      "location": "OpenStax Physics 19.2, paragraphs fs-id1167064901800 and fs-id1167065821410; official PDF pages 637-638",
+      "evidenceKind": "normalized-text",
+      "normalizedText": "Series components are connected one after another in one branch, with the same current through the original circuit and its equivalent resistor."
+    },
+    {
+      "anchorId": "anchor-parallel-topology",
+      "location": "OpenStax Physics 19.3, paragraphs fs-id1167065746966 and fs-id1167065978239; official PDF page 641",
+      "evidenceKind": "normalized-text",
+      "normalizedText": "Parallel resistors have both ends connected directly together, so the voltage drop across each resistor is the same."
+    },
+    {
+      "anchorId": "anchor-parallel-current",
+      "location": "OpenStax Physics 19.3, paragraphs fs-id1167062315741 and fs-id1167065843479; official PDF pages 641-642",
+      "evidenceKind": "normalized-equation",
+      "normalizedEquation": "I = I1 + I2 + I3; branch currents need not be equal"
+    },
+    {
+      "anchorId": "anchor-resistance-equations",
+      "location": "OpenStax Physics 19.2 equation 19.13 and 19.3 equation 19.28; paragraphs fs-id1167066197380 and fs-id1167065761913; official PDF pages 639 and 642",
+      "evidenceKind": "normalized-equation",
+      "normalizedEquation": "Req(series) = R1 + R2 + R3; 1/Req(parallel) = 1/R1 + 1/R2 + 1/R3"
+    },
+    {
+      "anchorId": "anchor-parallel-less-than-smallest",
+      "location": "OpenStax Physics 19.3, paragraph fs-id1167065722817; official PDF page 641",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "Therefore, the equivalent resistance must be less than the smallest resistance of the parallel resistors."
+    }
+  ],
+  "elements": [
+    {
+      "elementId": "series-circuit",
+      "meaning": "One ideal branch containing positive resistors R1, R2, and R3.",
+      "anchorIds": ["anchor-series-topology"]
+    },
+    {
+      "elementId": "parallel-circuit",
+      "meaning": "Three ideal branches sharing the same two nodes.",
+      "anchorIds": ["anchor-parallel-topology"]
+    },
+    {
+      "elementId": "battery-current",
+      "meaning": "Conventional current I supplied by the common ideal battery.",
+      "anchorIds": ["anchor-parallel-current"]
+    },
+    {
+      "elementId": "branch-currents",
+      "meaning": "Currents I1, I2, and I3 that split and recombine in the parallel circuit.",
+      "anchorIds": ["anchor-parallel-current"]
+    },
+    {
+      "elementId": "shared-parallel-nodes",
+      "meaning": "The two nodes common to both ends of every parallel resistor.",
+      "anchorIds": ["anchor-parallel-topology"]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "relation-more-parallel-paths-lower-req",
+      "sourceElementId": "parallel-circuit",
+      "targetElementId": "series-circuit",
+      "relationClass": "causal",
+      "relationType": "additional-parallel-paths-yield-lower-equivalent-resistance",
+      "anchorIds": ["anchor-resistance-equations", "anchor-parallel-less-than-smallest"]
+    },
+    {
+      "relationId": "relation-current-splits-recombines",
+      "sourceElementId": "battery-current",
+      "targetElementId": "branch-currents",
+      "relationClass": "directional",
+      "relationType": "conventional-current-splits-at-node-and-recombines",
+      "anchorIds": ["anchor-parallel-current"]
+    },
+    {
+      "relationId": "relation-topology-comparison",
+      "sourceElementId": "series-circuit",
+      "targetElementId": "parallel-circuit",
+      "relationClass": "comparative",
+      "relationType": "one-shared-current-and-summed-resistance-versus-shared-voltage-and-reciprocal-sum",
+      "anchorIds": ["anchor-series-topology", "anchor-parallel-topology", "anchor-resistance-equations"]
+    },
+    {
+      "relationId": "relation-branches-share-nodes",
+      "sourceElementId": "shared-parallel-nodes",
+      "targetElementId": "parallel-circuit",
+      "relationClass": "associative-non-causal",
+      "relationType": "all-branch-resistors-connect-to-the-same-two-nodes",
+      "anchorIds": ["anchor-parallel-topology"]
+    }
+  ],
+  "allowedVariation": [
+    {
+      "scope": "layout",
+      "rule": "Circuits may be horizontal or vertical if connectivity and distinct parallel nodes remain unambiguous."
+    },
+    {
+      "scope": "style",
+      "rule": "IEC or ANSI resistor glyphs may be used consistently without changing connectivity."
+    },
+    {
+      "scope": "non-evidentiary-asset",
+      "rule": "Battery enclosure and background may vary; wires, junctions, arrows, and labels remain evidentiary."
+    }
+  ],
+  "mutations": [
+    {
+      "mutationId": "scientific-series-current-mismatch",
+      "category": "scientific",
+      "description": "Show different steady-state currents through series elements without a branch or transient condition.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "scientific-wrong-parallel-resistance",
+      "category": "scientific",
+      "description": "Use Req(parallel) = R1 + R2 + R3 or claim the parallel equivalent exceeds the largest branch resistance.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-break-parallel-junction",
+      "category": "visual",
+      "description": "Omit or misplace a junction so intended parallel branches become series-connected or disconnected.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-current-does-not-recombine",
+      "category": "visual",
+      "description": "Draw branch-current arrows that split but do not recombine while retaining steady-state conservation.",
+      "expectedOutcome": "block"
+    }
+  ],
+  "humanReview": {
+    "status": "draft"
+  }
+}

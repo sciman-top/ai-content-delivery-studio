@@ -168,14 +168,19 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoR
 
 **Acceptance criteria:**
 
-- [ ] Four sources cover at least two different physics subdomains.
-- [ ] Gold relations distinguish causal, directional, comparative, and non-causal associations.
-- [ ] Unsupported entities and reversed or overstated relations are represented as blocking mutations.
+- [x] Four sources cover at least two different physics subdomains.
+- [x] Gold relations distinguish causal, directional, comparative, and non-causal associations.
+- [x] Unsupported entities and reversed or overstated relations are represented as blocking mutations.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
 - [ ] Human corpus review records all four items as accepted.
+
+Candidate preparation is complete as of 2026-07-26. All four records remain
+`admissionStatus: candidate`, all baselines remain `humanReview.status:
+draft`, and the corpus remains `admissionState: building`; therefore Task 4
+admission and Checkpoint 0 remain open.
 
 **Dependencies:** Task 2
 

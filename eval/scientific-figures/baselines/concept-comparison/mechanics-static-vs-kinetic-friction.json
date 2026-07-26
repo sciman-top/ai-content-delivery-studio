@@ -1,0 +1,154 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "mechanics-static-vs-kinetic-friction",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Compare static friction before slipping with kinetic friction during sliding for the same contact pair and normal force.",
+  "claims": [
+    {
+      "claimId": "claim-friction-regimes",
+      "text": "Static friction acts without relative sliding, while kinetic friction acts during relative sliding.",
+      "anchorIds": ["anchor-regime-definition"]
+    },
+    {
+      "claimId": "claim-static-response-and-threshold",
+      "text": "Static friction responds opposite the applied force up to fs(max); motion begins when the applied force exceeds that limit.",
+      "anchorIds": ["anchor-static-response", "anchor-friction-equations"]
+    },
+    {
+      "claimId": "claim-magnitude-qualified",
+      "text": "For the same contact pair, maximum static friction is usually greater than kinetic friction; this is not an exceptionless universal claim.",
+      "anchorIds": ["anchor-regime-definition"]
+    },
+    {
+      "claimId": "claim-friction-direction",
+      "text": "Friction opposes motion or attempted motion between contacting objects.",
+      "anchorIds": ["anchor-figure-5-33"]
+    }
+  ],
+  "anchors": [
+    {
+      "anchorId": "anchor-regime-definition",
+      "location": "OpenStax Physics 5.4, paragraph fs-id1167066811244; official PDF page 179",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "Kinetic friction acts on an object in relative motion, while static friction acts on an object or system at rest relative to each other."
+    },
+    {
+      "anchorId": "anchor-static-response",
+      "location": "OpenStax Physics 5.4, paragraph fs-id1167066836088; official PDF page 180",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "Static friction is a responsive force that increases to be equal and opposite to whatever force is exerted, up to its maximum limit."
+    },
+    {
+      "anchorId": "anchor-friction-equations",
+      "location": "OpenStax Physics 5.4, paragraphs fs-id1167067036387, fs-id1167066879604, and fs-id1167066836088; official PDF page 180",
+      "evidenceKind": "normalized-equation",
+      "normalizedEquation": "fs <= mu_s N; fs(max) = mu_s N; fk = mu_k N"
+    },
+    {
+      "anchorId": "anchor-figure-5-33",
+      "location": "OpenStax Physics 5.4, Figure 5.33 caption; official PDF page 180",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "Frictional forces, such as f, always oppose motion or attempted motion between objects in contact."
+    }
+  ],
+  "elements": [
+    {
+      "elementId": "static-regime",
+      "meaning": "No-slip state in which static friction responds up to its maximum.",
+      "anchorIds": ["anchor-regime-definition", "anchor-static-response"]
+    },
+    {
+      "elementId": "kinetic-regime",
+      "meaning": "Sliding state in which kinetic friction opposes relative motion.",
+      "anchorIds": ["anchor-regime-definition", "anchor-friction-equations"]
+    },
+    {
+      "elementId": "applied-force",
+      "meaning": "Applied force Fapp parallel to the common contact surface.",
+      "anchorIds": ["anchor-static-response"]
+    },
+    {
+      "elementId": "common-contact-pair",
+      "meaning": "The same two surfaces and normal force N used in both panels.",
+      "anchorIds": ["anchor-friction-equations"]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "relation-threshold-causes-sliding",
+      "sourceElementId": "applied-force",
+      "targetElementId": "kinetic-regime",
+      "relationClass": "causal",
+      "relationType": "exceeding-static-maximum-causes-transition-to-sliding",
+      "anchorIds": ["anchor-static-response", "anchor-friction-equations"]
+    },
+    {
+      "relationId": "relation-friction-opposes-motion",
+      "sourceElementId": "kinetic-regime",
+      "targetElementId": "applied-force",
+      "relationClass": "directional",
+      "relationType": "friction-points-opposite-motion-or-attempted-motion",
+      "anchorIds": ["anchor-figure-5-33"]
+    },
+    {
+      "relationId": "relation-regime-magnitude-comparison",
+      "sourceElementId": "static-regime",
+      "targetElementId": "kinetic-regime",
+      "relationClass": "comparative",
+      "relationType": "maximum-static-usually-greater-than-kinetic",
+      "anchorIds": ["anchor-regime-definition"]
+    },
+    {
+      "relationId": "relation-shared-contact-conditions",
+      "sourceElementId": "common-contact-pair",
+      "targetElementId": "static-regime",
+      "relationClass": "associative-non-causal",
+      "relationType": "surface-pair-and-normal-force-scope-both-friction-coefficients",
+      "anchorIds": ["anchor-friction-equations"]
+    }
+  ],
+  "allowedVariation": [
+    {
+      "scope": "layout",
+      "rule": "The two regimes may be side-by-side or stacked if the threshold order and shared contact pair remain explicit."
+    },
+    {
+      "scope": "style",
+      "rule": "Crate appearance, color, and line style may vary; force labels and arrow directions may not."
+    },
+    {
+      "scope": "non-evidentiary-asset",
+      "rule": "A neutral surface texture may be used only if it does not imply different materials between panels."
+    }
+  ],
+  "mutations": [
+    {
+      "mutationId": "scientific-static-always-at-maximum",
+      "category": "scientific",
+      "description": "Replace the static inequality with fs = mu_s N for every static state or show fs above fs(max).",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "scientific-swap-friction-regimes",
+      "category": "scientific",
+      "description": "Assign kinetic friction to the no-slip panel or static friction to the sliding panel.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-reverse-friction-arrow",
+      "category": "visual",
+      "description": "Point a friction arrow in the direction of motion or attempted motion.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-remove-threshold",
+      "category": "visual",
+      "description": "Remove the transition threshold so the panels imply simultaneous states for the same crate.",
+      "expectedOutcome": "block"
+    }
+  ],
+  "humanReview": {
+    "status": "draft"
+  }
+}

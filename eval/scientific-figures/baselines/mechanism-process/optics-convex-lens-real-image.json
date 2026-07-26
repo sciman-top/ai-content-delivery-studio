@@ -130,6 +130,7 @@
       "relationId": "relation-parallel-ray-to-focus",
       "sourceElementId": "object",
       "targetElementId": "far-focal-point",
+      "relationClass": "directional",
       "relationType": "parallel-incident-ray-refracts-through",
       "anchorIds": [
         "anchor-ray-rules"
@@ -139,6 +140,7 @@
       "relationId": "relation-center-ray-to-image",
       "sourceElementId": "object",
       "targetElementId": "real-image",
+      "relationClass": "directional",
       "relationType": "center-ray-continues-undeviated",
       "anchorIds": [
         "anchor-center-ray-rule",
@@ -149,6 +151,7 @@
       "relationId": "relation-near-focus-to-parallel",
       "sourceElementId": "near-focal-point",
       "targetElementId": "real-image",
+      "relationClass": "directional",
       "relationType": "near-focus-ray-exits-parallel-and-reaches-image",
       "anchorIds": [
         "anchor-near-focus-rule",
@@ -159,6 +162,7 @@
       "relationId": "relation-lens-forms-real-image",
       "sourceElementId": "convex-lens",
       "targetElementId": "real-image",
+      "relationClass": "causal",
       "relationType": "thin-lens-equation-and-ray-crossing",
       "anchorIds": [
         "anchor-figure-16-27-caption",

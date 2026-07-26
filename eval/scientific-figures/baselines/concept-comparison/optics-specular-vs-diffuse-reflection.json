@@ -1,0 +1,153 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "optics-specular-vs-diffuse-reflection",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Compare specular and diffuse reflection for the same parallel incident rays while preserving the local law of reflection.",
+  "claims": [
+    {
+      "claimId": "claim-reflection-law",
+      "text": "At each point of incidence, theta_r equals theta_i when both angles are measured from the local normal.",
+      "anchorIds": ["anchor-reflection-law"]
+    },
+    {
+      "claimId": "claim-specular",
+      "text": "A smooth surface with aligned local normals preserves an ordered reflected direction.",
+      "anchorIds": ["anchor-reflection-law"]
+    },
+    {
+      "claimId": "claim-diffuse",
+      "text": "A rough surface has varying local orientations, so parallel incident rays leave in many global directions.",
+      "anchorIds": ["anchor-diffuse-prose", "anchor-figure-16-4"]
+    },
+    {
+      "claimId": "claim-local-law-persists",
+      "text": "Diffuse reflection changes the distribution of global directions but does not suspend the local law of reflection.",
+      "anchorIds": ["anchor-reflection-law", "anchor-diffuse-prose"]
+    }
+  ],
+  "anchors": [
+    {
+      "anchorId": "anchor-reflection-law",
+      "location": "OpenStax Physics 16.1, paragraph fs-id1167067294202 and Figure 16.3; official PDF pages 496-497",
+      "evidenceKind": "normalized-equation",
+      "normalizedEquation": "theta_r = theta_i, with both angles measured from the local normal at the point of incidence"
+    },
+    {
+      "anchorId": "anchor-diffuse-prose",
+      "location": "OpenStax Physics 16.1, paragraph fs-id1167067150525; official PDF page 497",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "Because the light is reflected from different parts of the surface at different angles, the rays go in many different directions, so the reflected light is diffused."
+    },
+    {
+      "anchorId": "anchor-figure-16-4",
+      "location": "OpenStax Physics 16.1, Figure 16.4 caption; official PDF page 497",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "Here, many parallel rays are incident, but they are reflected at many different angles because the surface is rough."
+    }
+  ],
+  "elements": [
+    {
+      "elementId": "parallel-incident-rays",
+      "meaning": "The same ordered incident-ray set used in both panels.",
+      "anchorIds": ["anchor-figure-16-4"]
+    },
+    {
+      "elementId": "smooth-surface",
+      "meaning": "Surface whose local normals remain aligned across the shown region.",
+      "anchorIds": ["anchor-reflection-law"]
+    },
+    {
+      "elementId": "rough-surface",
+      "meaning": "Surface whose local orientations and normals vary across incidence points.",
+      "anchorIds": ["anchor-diffuse-prose", "anchor-figure-16-4"]
+    },
+    {
+      "elementId": "local-normal",
+      "meaning": "Normal at one point of incidence used to measure theta_i and theta_r.",
+      "anchorIds": ["anchor-reflection-law"]
+    },
+    {
+      "elementId": "distributed-reflected-rays",
+      "meaning": "Reflected rays leaving a rough surface in many global directions.",
+      "anchorIds": ["anchor-diffuse-prose"]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "relation-roughness-distributes-rays",
+      "sourceElementId": "rough-surface",
+      "targetElementId": "distributed-reflected-rays",
+      "relationClass": "causal",
+      "relationType": "varying-local-orientations-produce-many-global-directions",
+      "anchorIds": ["anchor-diffuse-prose", "anchor-figure-16-4"]
+    },
+    {
+      "relationId": "relation-ray-reflection-direction",
+      "sourceElementId": "parallel-incident-rays",
+      "targetElementId": "distributed-reflected-rays",
+      "relationClass": "directional",
+      "relationType": "incident-rays-reflect-away-from-points-of-incidence",
+      "anchorIds": ["anchor-reflection-law", "anchor-figure-16-4"]
+    },
+    {
+      "relationId": "relation-surface-outcome-comparison",
+      "sourceElementId": "smooth-surface",
+      "targetElementId": "rough-surface",
+      "relationClass": "comparative",
+      "relationType": "ordered-specular-versus-distributed-diffuse-reflection",
+      "anchorIds": ["anchor-diffuse-prose"]
+    },
+    {
+      "relationId": "relation-angles-share-local-normal",
+      "sourceElementId": "local-normal",
+      "targetElementId": "parallel-incident-rays",
+      "relationClass": "associative-non-causal",
+      "relationType": "incidence-and-reflection-angles-share-one-local-reference",
+      "anchorIds": ["anchor-reflection-law"]
+    }
+  ],
+  "allowedVariation": [
+    {
+      "scope": "layout",
+      "rule": "Panels may be horizontal or vertical if the same incident-ray set is visibly reused."
+    },
+    {
+      "scope": "style",
+      "rule": "Surface and ray colors may vary; local normals must remain distinguishable from physical rays."
+    },
+    {
+      "scope": "non-evidentiary-asset",
+      "rule": "Mirror or page icons may label everyday cases but may not replace the local-normal construction."
+    }
+  ],
+  "mutations": [
+    {
+      "mutationId": "scientific-break-reflection-law",
+      "category": "scientific",
+      "description": "Measure an angle from the surface or show theta_r unequal to theta_i at a local incidence point.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "scientific-roughness-suspends-law",
+      "category": "scientific",
+      "description": "Claim that rough surfaces violate the local law of reflection.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-confuse-normal-and-ray",
+      "category": "visual",
+      "description": "Make normals look like physical rays or omit normals while displaying angle arcs.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-hide-rough-surface-basis",
+      "category": "visual",
+      "description": "Draw distributed rays from a single flat local orientation, hiding the rough-surface basis.",
+      "expectedOutcome": "block"
+    }
+  ],
+  "humanReview": {
+    "status": "draft"
+  }
+}

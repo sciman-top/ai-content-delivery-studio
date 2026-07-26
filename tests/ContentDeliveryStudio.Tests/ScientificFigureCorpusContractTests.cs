@@ -59,6 +59,16 @@ public sealed class ScientificFigureCorpusContractTests
         "evidenceKind",
     ];
 
+    private static readonly string[] RequiredRelationFields =
+    [
+        "relationId",
+        "sourceElementId",
+        "targetElementId",
+        "relationClass",
+        "relationType",
+        "anchorIds",
+    ];
+
     [Fact]
     public void Schemas_RequireScientificCorpusAuthorityFields()
     {
@@ -85,6 +95,9 @@ public sealed class ScientificFigureCorpusContractTests
         Assert.Equal(
             RequiredAnchorFields.Order(),
             ReadRequiredFields(baselineSchema, "$defs", "anchor").Order());
+        Assert.Equal(
+            RequiredRelationFields.Order(),
+            ReadRequiredFields(baselineSchema, "$defs", "relation").Order());
         Assert.Equal(
             ["status"],
             ReadRequiredFields(baselineSchema, "$defs", "humanReview"));
@@ -138,13 +151,15 @@ public sealed class ScientificFigureCorpusContractTests
         Assert.Contains("items.count", ValidateCorpusManifest(manifest));
     }
 
-    [Fact]
-    public void MechanismProcessCorpus_HasFourReviewableDistinctBaselines()
+    [Theory]
+    [InlineData("mechanism-process")]
+    [InlineData("concept-comparison")]
+    public void CorpusCategory_HasFourReviewableDistinctBaselines(string category)
     {
         var manifest = LoadObject("eval/scientific-figures/corpus.json");
         var items = manifest["items"]!.AsArray()
             .Select(Assert.IsType<JsonObject>)
-            .Where(item => item["category"]?.GetValue<string>() == "mechanism-process")
+            .Where(item => item["category"]?.GetValue<string>() == category)
             .ToArray();
 
         Assert.Equal(4, items.Length);
@@ -152,6 +167,7 @@ public sealed class ScientificFigureCorpusContractTests
         Assert.Equal(4, items.Select(item => item["source"]!["sourceId"]!.GetValue<string>()).Distinct().Count());
         Assert.Equal(4, items.Select(item => item["goldBaselinePath"]!.GetValue<string>()).Distinct().Count());
 
+        var relationClasses = new HashSet<string>(StringComparer.Ordinal);
         foreach (var item in items)
         {
             Assert.Empty(ValidateCorpusItem(item));
@@ -161,12 +177,23 @@ public sealed class ScientificFigureCorpusContractTests
             Assert.Equal(
                 item["source"]!["contentHash"]!.GetValue<string>(),
                 baseline["sourceHash"]!.GetValue<string>());
+            foreach (var relation in baseline["relations"]!.AsArray())
+            {
+                relationClasses.Add(relation!["relationClass"]!.GetValue<string>());
+            }
 
             var admissionStatus = item["admissionStatus"]!.GetValue<string>();
             var reviewStatus = baseline["humanReview"]!["status"]!.GetValue<string>();
             Assert.True(
                 (admissionStatus, reviewStatus) is ("candidate", "draft") or ("accepted", "accepted"),
                 $"Unexpected admission/review state: {admissionStatus}/{reviewStatus}");
+        }
+
+        if (category == "concept-comparison")
+        {
+            Assert.Equal(
+                new[] { "associative-non-causal", "causal", "comparative", "directional" },
+                relationClasses.Order());
         }
     }
 
@@ -404,7 +431,13 @@ public sealed class ScientificFigureCorpusContractTests
         {
             for (var index = 0; index < relations.Count; index++)
             {
-                var relation = relations[index];
+                if (relations[index] is not JsonObject relation)
+                {
+                    errors.Add($"relations[{index}]");
+                    continue;
+                }
+
+                AddMissingFields(errors, relation, RequiredRelationFields, $"relations[{index}].");
                 if (!elementIds.Contains(relation?["sourceElementId"]?.GetValue<string>() ?? string.Empty))
                 {
                     errors.Add($"relations[{index}].sourceElementId");
@@ -506,7 +539,7 @@ public sealed class ScientificFigureCorpusContractTests
                 {"elementId": "left-force", "meaning": "The leftward force", "anchorIds": ["anchor-1"]},
                 {"elementId": "right-force", "meaning": "The rightward force", "anchorIds": ["anchor-1"]}
               ],
-              "relations": [{"relationId": "balance", "sourceElementId": "left-force", "targetElementId": "right-force", "relationType": "balances", "anchorIds": ["anchor-1"]}],
+              "relations": [{"relationId": "balance", "sourceElementId": "left-force", "targetElementId": "right-force", "relationClass": "comparative", "relationType": "balances", "anchorIds": ["anchor-1"]}],
               "allowedVariation": [{"scope": "layout", "rule": "Equivalent spacing is allowed."}],
               "mutations": [
                 {"mutationId": "scientific-1", "category": "scientific", "description": "Reverse a force.", "expectedOutcome": "block"},

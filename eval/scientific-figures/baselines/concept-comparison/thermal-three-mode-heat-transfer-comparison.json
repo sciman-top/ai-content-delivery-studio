@@ -1,0 +1,170 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "thermal-three-mode-heat-transfer-comparison",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Compare conduction, convection, and radiation by carrier and material-medium requirement under a temperature difference.",
+  "claims": [
+    {
+      "claimId": "claim-three-modes",
+      "text": "Heat transfer occurs by conduction, convection, and radiation, and the modes may occur simultaneously.",
+      "anchorIds": ["anchor-three-modes"]
+    },
+    {
+      "claimId": "claim-conduction",
+      "text": "Conduction transfers heat through direct physical contact.",
+      "anchorIds": ["anchor-conduction"]
+    },
+    {
+      "claimId": "claim-convection",
+      "text": "Convection transfers heat through the movement of a liquid or gas.",
+      "anchorIds": ["anchor-convection"]
+    },
+    {
+      "claimId": "claim-radiation",
+      "text": "Radiation transfers heat through emitted or absorbed electromagnetic radiation and requires no material medium.",
+      "anchorIds": ["anchor-radiation"]
+    },
+    {
+      "claimId": "claim-temperature-direction",
+      "text": "With a temperature difference, net heat transfer proceeds from the higher-temperature region to the lower-temperature region.",
+      "anchorIds": ["anchor-temperature-direction"]
+    }
+  ],
+  "anchors": [
+    {
+      "anchorId": "anchor-three-modes",
+      "location": "OpenStax Physics 11.2, paragraph fs-id1167064899898; official PDF page 346",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "There are three different heat transfer methods: conduction, convection, and radiation."
+    },
+    {
+      "anchorId": "anchor-conduction",
+      "location": "OpenStax Physics 11.2, paragraph fs-id1167065035104; official PDF page 347",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "Conduction is heat transfer through direct physical contact."
+    },
+    {
+      "anchorId": "anchor-convection",
+      "location": "OpenStax Physics 11.2, paragraph fs-id1167065972910; official PDF page 347",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "Convection is heat transfer by the movement of a fluid."
+    },
+    {
+      "anchorId": "anchor-radiation",
+      "location": "OpenStax Physics 11.2, paragraphs fs-id1167066091544 and fs-id1167062890228; official PDF page 348",
+      "evidenceKind": "normalized-text",
+      "normalizedText": "Radiation transfers heat through emitted or absorbed electromagnetic radiation and is the only heat-transfer method that requires no medium."
+    },
+    {
+      "anchorId": "anchor-temperature-direction",
+      "location": "OpenStax Physics 11.2, paragraph fs-id1167064903342 and Figure 11.4; official PDF pages 346-347",
+      "evidenceKind": "normalized-text",
+      "normalizedText": "A temperature difference produces net heat transfer from a higher-temperature region to a lower-temperature region."
+    }
+  ],
+  "elements": [
+    {
+      "elementId": "high-temperature-region",
+      "meaning": "Higher-temperature origin shared by the three mode examples.",
+      "anchorIds": ["anchor-temperature-direction"]
+    },
+    {
+      "elementId": "low-temperature-region",
+      "meaning": "Lower-temperature destination shared by the three mode examples.",
+      "anchorIds": ["anchor-temperature-direction"]
+    },
+    {
+      "elementId": "conduction-mode",
+      "meaning": "Direct-contact transfer through contacting material.",
+      "anchorIds": ["anchor-conduction"]
+    },
+    {
+      "elementId": "convection-mode",
+      "meaning": "Transfer through moving liquid or gas.",
+      "anchorIds": ["anchor-convection"]
+    },
+    {
+      "elementId": "radiation-mode",
+      "meaning": "Electromagnetic transfer that does not require a material medium.",
+      "anchorIds": ["anchor-radiation"]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "relation-temperature-drives-transfer",
+      "sourceElementId": "high-temperature-region",
+      "targetElementId": "low-temperature-region",
+      "relationClass": "causal",
+      "relationType": "temperature-difference-produces-net-heat-transfer",
+      "anchorIds": ["anchor-temperature-direction"]
+    },
+    {
+      "relationId": "relation-net-transfer-direction",
+      "sourceElementId": "high-temperature-region",
+      "targetElementId": "low-temperature-region",
+      "relationClass": "directional",
+      "relationType": "net-transfer-from-higher-to-lower-temperature",
+      "anchorIds": ["anchor-temperature-direction"]
+    },
+    {
+      "relationId": "relation-mode-comparison",
+      "sourceElementId": "conduction-mode",
+      "targetElementId": "radiation-mode",
+      "relationClass": "comparative",
+      "relationType": "direct-contact-versus-no-required-medium",
+      "anchorIds": ["anchor-conduction", "anchor-convection", "anchor-radiation"]
+    },
+    {
+      "relationId": "relation-modes-share-phenomenon",
+      "sourceElementId": "convection-mode",
+      "targetElementId": "conduction-mode",
+      "relationClass": "associative-non-causal",
+      "relationType": "named-heat-transfer-modes-may-coexist",
+      "anchorIds": ["anchor-three-modes"]
+    }
+  ],
+  "allowedVariation": [
+    {
+      "scope": "layout",
+      "rule": "Columns, rows, or a triangular comparison are allowed if each mode retains its carrier and medium distinction."
+    },
+    {
+      "scope": "style",
+      "rule": "Solid, fluid, and electromagnetic-wave icons may vary while arrows and labels remain unambiguous."
+    },
+    {
+      "scope": "non-evidentiary-asset",
+      "rule": "A stove, room-air, or Sun/Earth mnemonic may appear but may not replace the scientific mode labels."
+    }
+  ],
+  "mutations": [
+    {
+      "mutationId": "scientific-radiation-needs-medium",
+      "category": "scientific",
+      "description": "State that radiation requires air or another material medium.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "scientific-modes-mutually-exclusive",
+      "category": "scientific",
+      "description": "Claim that conduction, convection, and radiation cannot occur simultaneously.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-erase-carrier-distinction",
+      "category": "visual",
+      "description": "Use identical unlabeled arrows or icons so the carrier distinction cannot be read.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-reverse-net-transfer",
+      "category": "visual",
+      "description": "Reverse the net-transfer arrow from lower to higher temperature without a grounded work condition.",
+      "expectedOutcome": "block"
+    }
+  ],
+  "humanReview": {
+    "status": "draft"
+  }
+}

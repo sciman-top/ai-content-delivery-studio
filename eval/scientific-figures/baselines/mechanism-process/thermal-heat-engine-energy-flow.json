@@ -138,6 +138,7 @@
       "relationId": "relation-hot-to-engine",
       "sourceElementId": "hot-reservoir",
       "targetElementId": "heat-engine",
+      "relationClass": "directional",
       "relationType": "transfers-heat-qh",
       "anchorIds": [
         "anchor-energy-flow",
@@ -148,6 +149,7 @@
       "relationId": "relation-engine-to-work",
       "sourceElementId": "heat-engine",
       "targetElementId": "work-output-w",
+      "relationClass": "causal",
       "relationType": "produces-work-w",
       "anchorIds": [
         "anchor-engine-purpose",
@@ -158,6 +160,7 @@
       "relationId": "relation-engine-to-cold",
       "sourceElementId": "heat-engine",
       "targetElementId": "cold-reservoir",
+      "relationClass": "directional",
       "relationType": "rejects-heat-qc",
       "anchorIds": [
         "anchor-energy-flow",
@@ -168,6 +171,7 @@
       "relationId": "relation-energy-balance",
       "sourceElementId": "heat-input-qh",
       "targetElementId": "rejected-heat-qc",
+      "relationClass": "comparative",
       "relationType": "difference-equals-work-output",
       "anchorIds": [
         "anchor-cycle-balance"

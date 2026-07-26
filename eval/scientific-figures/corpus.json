@@ -146,6 +146,142 @@
       },
       "figureObjective": "Show how a uniformly rotating N-turn coil in a magnetic field converts mechanical input into sinusoidal electrical output through changing flux and induced emf.",
       "goldBaselinePath": "eval/scientific-figures/baselines/mechanism-process/electromagnetism-rotating-coil-generator.json"
+    },
+    {
+      "itemId": "mechanics-static-vs-kinetic-friction",
+      "category": "concept-comparison",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-5-4-friction",
+        "title": "Physics, Section 5.4: Inclined Planes",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/5-4-inclined-planes",
+        "license": {
+          "spdxOrExpression": "CC-BY-4.0",
+          "redistribution": "allowed",
+          "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583",
+          "reviewedAt": "2026-07-26"
+        },
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": [
+          "Section 5.4 paragraphs fs-id1167066811244, fs-id1167067036387, fs-id1167066879604, fs-id1167066836088",
+          "Figure 5.33",
+          "Official PDF printed pages 179-180"
+        ],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {
+          "status": "passed",
+          "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF",
+          "assessedAt": "2026-07-26",
+          "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4",
+          "anchorCoverage": "complete",
+          "notes": "Static and kinetic regimes, threshold equations, magnitude qualification, and Figure 5.33 direction evidence were cross-checked against first-party HTML and extracted text."
+        }
+      },
+      "figureObjective": "Compare static friction before slipping with kinetic friction during sliding for the same contact pair and normal force.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/concept-comparison/mechanics-static-vs-kinetic-friction.json"
+    },
+    {
+      "itemId": "thermal-three-mode-heat-transfer-comparison",
+      "category": "concept-comparison",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-11-2-transfer-modes",
+        "title": "Physics, Section 11.2: Heat, Specific Heat, and Heat Transfer",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/11-2-heat-specific-heat-and-heat-transfer",
+        "license": {
+          "spdxOrExpression": "CC-BY-4.0",
+          "redistribution": "allowed",
+          "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583",
+          "reviewedAt": "2026-07-26"
+        },
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": [
+          "Section 11.2 paragraphs fs-id1167064899898, fs-id1167064903342, fs-id1167065035104, fs-id1167065972910, fs-id1167066032304, fs-id1167066091544, fs-id1167062890228",
+          "Figures 11.3-11.7",
+          "Official PDF printed pages 346-349"
+        ],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {
+          "status": "passed",
+          "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF",
+          "assessedAt": "2026-07-26",
+          "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4",
+          "anchorCoverage": "complete",
+          "notes": "All three mode definitions, temperature-difference direction, coexistence, and radiation medium distinction were cross-checked against first-party HTML and extracted text."
+        }
+      },
+      "figureObjective": "Compare conduction, convection, and radiation by carrier and material-medium requirement under a temperature difference.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/concept-comparison/thermal-three-mode-heat-transfer-comparison.json"
+    },
+    {
+      "itemId": "optics-specular-vs-diffuse-reflection",
+      "category": "concept-comparison",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-16-1-reflection-types",
+        "title": "Physics, Section 16.1: Reflection",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/16-1-reflection",
+        "license": {
+          "spdxOrExpression": "CC-BY-4.0",
+          "redistribution": "allowed",
+          "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583",
+          "reviewedAt": "2026-07-26"
+        },
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": [
+          "Section 16.1 paragraphs fs-id1167067294202 and fs-id1167067150525",
+          "Figures 16.3 and 16.4",
+          "Official PDF printed pages 496-497"
+        ],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {
+          "status": "passed",
+          "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF",
+          "assessedAt": "2026-07-26",
+          "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4",
+          "anchorCoverage": "complete",
+          "notes": "Law-of-reflection geometry, local-normal angle reference, and smooth-versus-rough outcomes were cross-checked against first-party HTML and extracted text."
+        }
+      },
+      "figureObjective": "Compare specular and diffuse reflection for the same parallel incident rays while preserving the local law of reflection.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/concept-comparison/optics-specular-vs-diffuse-reflection.json"
+    },
+    {
+      "itemId": "electromagnetism-series-vs-parallel-resistors",
+      "category": "concept-comparison",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-sections-19-2-19-3-resistors",
+        "title": "Physics, Sections 19.2-19.3: Series and Parallel Circuits",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/19-2-series-circuits",
+        "license": {
+          "spdxOrExpression": "CC-BY-4.0",
+          "redistribution": "allowed",
+          "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583",
+          "reviewedAt": "2026-07-26"
+        },
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": [
+          "Section 19.2 paragraphs fs-id1167064901800, fs-id1167065821410, fs-id1167066036066, fs-id1167066197380 and Figure 19.14",
+          "Section 19.3 paragraphs fs-id1167065746966, fs-id1167065978239, fs-id1167062315741, fs-id1167065722817, fs-id1167065843479, fs-id1167065761913 and Figure 19.16",
+          "Official PDF printed pages 638-642"
+        ],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {
+          "status": "passed",
+          "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF",
+          "assessedAt": "2026-07-26",
+          "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4",
+          "anchorCoverage": "complete",
+          "notes": "Series and parallel topology, current and voltage constraints, and equivalent-resistance equations were cross-checked against first-party HTML and extracted text."
+        }
+      },
+      "figureObjective": "Compare ideal series and parallel resistor circuits using matched positive resistors and the same battery voltage.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/concept-comparison/electromagnetism-series-vs-parallel-resistors.json"
     }
   ]
 }
