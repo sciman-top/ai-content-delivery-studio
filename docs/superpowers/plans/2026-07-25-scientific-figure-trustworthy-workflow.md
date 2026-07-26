@@ -4,7 +4,10 @@
 
 The design in `docs/superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md` is approved.
 
-Implementation has not started. All implementation tasks below remain open. The recorded V1 launch baseline remains closed and unchanged; this is a new post-V1 flagship slice.
+Task 1 supply-chain research and benchmark decisions are complete. Runtime
+implementation has not started, Tasks 2-30 remain open, and the recorded V1
+launch baseline remains closed and unchanged. This is a new post-V1 flagship
+slice.
 
 ## Objective
 
@@ -77,15 +80,15 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoR
 
 **Acceptance criteria:**
 
-- [ ] The research note compares current PdfPig behavior, GROBID or an equivalent adapter, SVG generation, formula rendering, and export candidates.
-- [ ] Each selected dependency or standard-library approach records license, version, maintenance, security, deterministic-output behavior, and rollback.
-- [ ] `scripts/reference-basis.json` and generated reference documentation are in parity for every newly enforced area.
+- [x] The research note compares current PdfPig behavior, GROBID or an equivalent adapter, SVG generation, formula rendering, and export candidates.
+- [x] Each selected dependency or standard-library approach records license, version, maintenance, security, deterministic-output behavior, and rollback.
+- [x] `scripts/reference-basis.json` and generated reference documentation are in parity for every newly enforced area.
 
 **Verification:**
 
-- [ ] `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/sync-reference-governance.ps1 -Check`
-- [ ] `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1`
-- [ ] `git diff --check`
+- [x] `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/sync-reference-governance.ps1 -Check`
+- [x] `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1`
+- [x] `git diff --check`
 
 **Dependencies:** None
 

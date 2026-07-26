@@ -146,6 +146,21 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig` (kind: `community-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/Open-XML-SDK` (kind: `official-source`; reuse: `direct-pattern`)
 
+### `scientific-figure-workflow`
+
+- `required`: `true`
+- Source rules: `src/ContentDeliveryStudio.Core/ScientificFigures/`, `src/ContentDeliveryStudio.Application/ScientificFigures/`, `src/ContentDeliveryStudio.Infrastructure/ScientificFigures/`, `src/ContentDeliveryStudio.App/Views/ScientificFigures/`, `src/ContentDeliveryStudio.App/ViewModels/ScientificFigures/`
+- Evidence rules: `docs/research/SCIENTIFIC_FIGURE_WORKFLOW_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md`, `docs/superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md`
+- Required triggers: `scholarly-source-extraction`, `claim-evidence-authority`, `formula-to-svg`, `deterministic-svg-generation`, `svg-to-png-pdf-export`, `scientific-contract-review`, `scientific-workflow-ui`
+- Local references:
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/GROBID` (kind: `community-source`; reuse: `adapt-with-review`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling` (kind: `community-source`; reuse: `adapt-with-review`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig` (kind: `community-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/MathJax` (kind: `official-source`; reuse: `adapt-with-review`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/Svg.Skia` (kind: `community-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/SkiaSharp` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/ai-content-delivery-studio/docs/research/SCIENTIFIC_FIGURE_WORKFLOW_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
+
 <!-- END GENERATED REFERENCE BASIS SUMMARY -->
 
 ## Reference Areas
@@ -437,13 +452,17 @@ Add or keep freshly added:
   - because host and diagnostics hardening already depend on real instrumentation and exporter extension patterns beyond the core SDK surface
 - `05-document-rendering/Open-XML-SDK`
   - because the current codebase already extracts DOCX content locally and the built-in packs already expose `docx` and `pptx` delivery formats
+- `05-document-rendering/GROBID`
+  - because scholarly PDF extraction and paper-figure evidence extraction are now active in the trustworthy-scientific-figure slice; evaluate it only through an isolated service boundary
+- `05-document-rendering/MathJax`
+  - because the active slice requires formula-to-SVG output with pinned offline assets and explicit Windows adapter evidence
+- `05-document-rendering/Svg.Skia`
+  - because the active slice requires PNG and PDF exports to derive from one approved SVG authority
 
 ### Add Later When Activated
 
 - OCR references such as `Tesseract` or `OCRmyPDF`
   - only when scanned-document hardening becomes an active near-term slice
-- `GROBID`
-  - only when scholarly PDF extraction or paper-figure evidence extraction becomes an active near-term slice
 - `WindowsAppSDK-Samples`
   - only when package identity, lifecycle, or WinUI migration becomes active
 

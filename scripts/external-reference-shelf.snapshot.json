@@ -2,8 +2,8 @@
   "version": 1,
   "snapshotKind": "external-reference-shelf",
   "sourceManifestPath": "D:\\CODE\\external\\ai-content-delivery-studio-references\\references.manifest.json",
-  "sourceManifestUpdatedAt": "2026-07-06T12:48:35+08:00",
-  "entryCount": 23,
+  "sourceManifestUpdatedAt": "2026-07-26T12:10:59+08:00",
+  "entryCount": 26,
   "entries": [
     {
       "relativePath": "01-openai/openai-cookbook-selected",
@@ -117,6 +117,18 @@
       "sharedTargetPath": "D:\\CODE\\external\\_shared\\repos\\docling"
     },
     {
+      "relativePath": "05-document-rendering/GROBID",
+      "group": "core",
+      "category": "document-rendering",
+      "sourceType": "git",
+      "upstream": "https://github.com/grobidOrg/grobid.git",
+      "branch": "master",
+      "updateStrategy": "reclone_shallow",
+      "storageMode": "direct",
+      "isSharedBacked": false,
+      "lastVerifiedCommit": "f0daa78"
+    },
+    {
       "relativePath": "05-document-rendering/markitdown",
       "group": "core",
       "category": "document-rendering",
@@ -127,6 +139,18 @@
       "storageMode": "direct",
       "isSharedBacked": false,
       "lastVerifiedCommit": "e144e0a"
+    },
+    {
+      "relativePath": "05-document-rendering/MathJax",
+      "group": "core",
+      "category": "document-rendering",
+      "sourceType": "git",
+      "upstream": "https://github.com/mathjax/MathJax-src.git",
+      "branch": "master",
+      "updateStrategy": "reclone_shallow",
+      "storageMode": "direct",
+      "isSharedBacked": false,
+      "lastVerifiedCommit": "fb98717"
     },
     {
       "relativePath": "05-document-rendering/Open-XML-SDK",
@@ -175,6 +199,18 @@
       "storageMode": "direct",
       "isSharedBacked": false,
       "lastVerifiedCommit": "d713374"
+    },
+    {
+      "relativePath": "05-document-rendering/Svg.Skia",
+      "group": "core",
+      "category": "document-rendering",
+      "sourceType": "git",
+      "upstream": "https://github.com/wieslawsoltes/Svg.Skia.git",
+      "branch": "master",
+      "updateStrategy": "reclone_shallow",
+      "storageMode": "direct",
+      "isSharedBacked": false,
+      "lastVerifiedCommit": "03f64b6"
     },
     {
       "relativePath": "06-automation-testing/FlaUI",

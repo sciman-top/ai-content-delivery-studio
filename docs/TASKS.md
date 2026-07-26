@@ -20,7 +20,8 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Approve the physics and natural-science flagship scope, authority chain, SVG-first rendering, three-layer review, and two human gates.
 - [x] Record the repository-owned design specification.
 - [x] Record the risk-first, checkpointed implementation plan.
-- [ ] Establish primary-source dependency decisions and the 12-item human-approved evaluation corpus.
+- [x] Establish primary-source dependency decisions for extraction, SVG, formula rendering, and export without adopting new runtime dependencies.
+- [ ] Establish the 12-item human-approved evaluation corpus.
 - [ ] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [ ] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
 - [ ] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.

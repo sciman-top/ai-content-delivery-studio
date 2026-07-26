@@ -89,7 +89,7 @@ Trustworthy scientific figures are now the only active repository-owned implemen
 - Scope: text-bearing physics and natural-science sources -> evidence-grounded understanding -> approved `ScientificFigureSpec` -> deterministic SVG -> three-layer review -> two human gates -> evidence-backed delivery.
 - Design authority: [2026-07-25-scientific-figure-trustworthy-workflow-design.md](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md).
 - Execution authority: [2026-07-25-scientific-figure-trustworthy-workflow.md](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
-- Current state: design and written specification approved; implementation plan recorded; dependency research, evaluation-corpus admission, runtime implementation, live-provider evidence, and human acceptance remain open.
+- Current state: design and written specification approved; implementation plan recorded; Task 1 dependency research and benchmark decisions complete; evaluation-corpus admission, runtime implementation, live-provider evidence, and human acceptance remain open.
 - Completion boundary: no phase or workflow is complete merely because the design, plan, domain skeleton, fake provider, or UI shell exists. Scientific acceptance requires the fixed corpus, fail-closed mutation coverage, opt-in live samples, both human gates, and fresh repository evidence.
 
 ## Future Trigger Lanes
