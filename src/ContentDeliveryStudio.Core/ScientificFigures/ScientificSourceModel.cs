@@ -175,11 +175,13 @@ public sealed record ScientificSourceBlock
         ScientificSourceGuard.RequireDefined(recoveryStatus, nameof(recoveryStatus));
         ArgumentNullException.ThrowIfNull(location);
 
-        var requiresRecovery = kind is ScientificSourceBlockKind.Formula or ScientificSourceBlockKind.Table;
+        var requiresRecovery = kind is ScientificSourceBlockKind.Formula
+            or ScientificSourceBlockKind.Table
+            or ScientificSourceBlockKind.UnrecoverableRegion;
         if (requiresRecovery && recoveryStatus == ScientificRecoveryStatus.NotRequired)
         {
             throw new ArgumentException(
-                "Formula and table blocks require an explicit recovery result.",
+                "Formula, table, and unrecoverable-region blocks require an explicit recovery result.",
                 nameof(recoveryStatus));
         }
 
@@ -434,6 +436,7 @@ public enum ScientificSourceBlockKind
     SupplementalStatement = 5,
     Formula = 6,
     Table = 7,
+    UnrecoverableRegion = 8,
 }
 
 public enum ScientificRecoveryStatus

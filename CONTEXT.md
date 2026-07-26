@@ -64,3 +64,13 @@ _Avoid_: Prompt history, generated asset
 The explicit version contract for a persisted scientific workflow JSON
 snapshot; unsupported versions fail closed before domain restoration.
 _Avoid_: Database schema version, provider response schema
+
+**Unrecoverable Source Region**:
+A located source area where no text can be safely recovered; it remains
+explicitly missing and can never serve as claim evidence.
+_Avoid_: Empty paragraph, inferred text
+
+**Required Scientific Content**:
+A formula or table declared necessary for the bounded figure objective; absence
+is represented as a located `Missing` block and blocks extraction readiness.
+_Avoid_: Nice-to-have detail, heuristic match

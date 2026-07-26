@@ -349,14 +349,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Redistribution-safe fixtures preserve page and block provenance through extraction.
-- [ ] Unsupported OCR, missing required formulas/tables, and corrupted order return structured blocked results.
-- [ ] The adapter never converts low-confidence extraction into accepted evidence.
+- [x] Redistribution-safe fixtures preserve page and block provenance through extraction.
+- [x] Unsupported OCR, missing required formulas/tables, and corrupted order return structured blocked results.
+- [x] The adapter never converts low-confidence extraction into accepted evidence.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificDocumentExtractionTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter DocumentExtractionProviderTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificDocumentExtractionTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter DocumentExtractionProviderTests`
 
 **Dependencies:** Task 6, Task 9
 
