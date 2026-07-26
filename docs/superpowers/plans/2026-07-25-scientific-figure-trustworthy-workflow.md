@@ -416,14 +416,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Only a Gate-1-approved specification can compile.
-- [ ] Every critical render-plan item maps back to one approved specification item.
-- [ ] Unsupported render strategies, missing relation endpoints, or unapproved content fail before rendering.
+- [x] Only a Gate-1-approved specification can compile.
+- [x] Every critical render-plan item maps back to one approved specification item.
+- [x] Unsupported render strategies, missing relation endpoints, or unapproved content fail before rendering.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureSpecCompilerTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter SvgRenderPlanValidatorTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureSpecCompilerTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter SvgRenderPlanValidatorTests`
 
 **Dependencies:** Checkpoint 1
 

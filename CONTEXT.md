@@ -89,3 +89,14 @@ _Avoid_: Duplicate text, provider disagreement score
 The explicit human action that either approves the current ready understanding
 and Figure Spec versions or leaves the workflow unapproved.
 _Avoid_: Readiness state, automatic approval
+
+**SVG Render Plan**:
+The deterministic, pre-render compilation target for one current Gate-1-
+approved Figure Spec version, including stable item authority, layers, exact
+content, layout constraints, style tokens, accessibility, and export settings.
+_Avoid_: SVG output, provider prompt
+
+**Render Item Authority**:
+The stable Figure Spec element or relation identifier from which one critical
+render element or connection was compiled.
+_Avoid_: Visual node ID, evidence quote

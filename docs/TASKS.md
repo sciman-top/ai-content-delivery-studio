@@ -32,6 +32,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Persist the project-owned scientific workflow aggregate with versioned JSON, indexed authority fields, fail-closed reload, and additive SQLite schema initialization for Task 9.
 - [x] Adapt text-bearing PDF, Markdown, text, and paste sources into provenance-preserving scientific extraction with fail-closed OCR, reading-order, and required-content diagnostics for Task 10.
 - [x] Deliver provider-neutral chunked understanding, deterministic fake claims, cross-chunk conflict blocking, explicit Gate 1 decisions, and persisted authority snapshots for Task 11.
+- [x] Compile only current Gate-1-approved Figure Specs into deterministic, validated SVG render plans with stable authority mappings for Task 12.
 - [ ] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [ ] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
 - [ ] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
