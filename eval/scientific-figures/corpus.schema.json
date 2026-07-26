@@ -240,6 +240,7 @@
           "enum": [
             "paper",
             "scholarly-article",
+            "open-textbook",
             "repo-fixture"
           ]
         },

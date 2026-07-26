@@ -1,0 +1,173 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "mechanics-two-car-momentum-transfer",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Show before, contact, and after states for momentum transfer between two co-directional cars under negligible external force.",
+  "claims": [
+    {
+      "claimId": "claim-m1-slows-m2-speeds",
+      "text": "During the collision, car m1 loses momentum and slows while car m2 gains momentum and speeds up.",
+      "anchorIds": [
+        "anchor-momentum-transfer"
+      ]
+    },
+    {
+      "claimId": "claim-equal-opposite-forces",
+      "text": "The contact forces and resulting impulses on the two cars are equal in magnitude and opposite in direction.",
+      "anchorIds": [
+        "anchor-newton-third-law"
+      ]
+    },
+    {
+      "claimId": "claim-total-momentum-conserved",
+      "text": "The two-car system has the same total momentum before and after the collision when friction and other external forces are negligible.",
+      "anchorIds": [
+        "anchor-figure-8-4-caption",
+        "anchor-momentum-equations"
+      ]
+    },
+    {
+      "claimId": "claim-symbolic-only",
+      "text": "This bounded source example supplies symbolic masses, velocities, momenta, forces, and collision duration but no required numeric values or units.",
+      "anchorIds": [
+        "anchor-momentum-equations"
+      ]
+    }
+  ],
+  "anchors": [
+    {
+      "anchorId": "anchor-momentum-transfer",
+      "location": "OpenStax Physics 8.2, paragraph fs-id1167067043785; official PDF pages 265-266",
+      "evidenceKind": "normalized-text",
+      "normalizedText": "Car m1 slows down as a result of the collision, losing some momentum, while car m2 speeds up and gains some momentum."
+    },
+    {
+      "anchorId": "anchor-newton-third-law",
+      "location": "OpenStax Physics 8.2, paragraph fs-id1167066967155; official PDF page 266",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "We know from Newton’s third law of motion"
+    },
+    {
+      "anchorId": "anchor-figure-8-4-caption",
+      "location": "OpenStax Physics 8.2, Figure 8.4 caption; official PDF page 266",
+      "evidenceKind": "normalized-text",
+      "normalizedText": "The momentum of each car is changed, but the total momentum ptot of the two cars is the same before and after the collision if you assume friction is negligible."
+    },
+    {
+      "anchorId": "anchor-momentum-equations",
+      "location": "OpenStax Physics 8.2, equations eip-167, fs-id1167066874701, fs-id1167067066930; official PDF pages 265-267",
+      "evidenceKind": "normalized-equation",
+      "normalizedEquation": "Delta p1 = F1 Delta t; F2 = -F1; Delta p2 = -Delta p1; p1 + p2 = p1-prime + p2-prime"
+    }
+  ],
+  "elements": [
+    {
+      "elementId": "car-m1",
+      "meaning": "Rear car m1, which slows and loses momentum during contact.",
+      "anchorIds": [
+        "anchor-momentum-transfer"
+      ]
+    },
+    {
+      "elementId": "car-m2",
+      "meaning": "Lead car m2, which speeds up and gains momentum during contact.",
+      "anchorIds": [
+        "anchor-momentum-transfer"
+      ]
+    },
+    {
+      "elementId": "two-car-system",
+      "meaning": "System boundary containing both cars and excluding negligible friction.",
+      "anchorIds": [
+        "anchor-figure-8-4-caption"
+      ]
+    },
+    {
+      "elementId": "before-state",
+      "meaning": "Initial co-directional velocities v1 and v2.",
+      "anchorIds": [
+        "anchor-momentum-equations"
+      ]
+    },
+    {
+      "elementId": "contact-state",
+      "meaning": "Shared collision interval with equal-and-opposite contact impulses.",
+      "anchorIds": [
+        "anchor-newton-third-law"
+      ]
+    },
+    {
+      "elementId": "after-state",
+      "meaning": "Final velocities v1-prime and v2-prime after momentum transfer.",
+      "anchorIds": [
+        "anchor-momentum-transfer",
+        "anchor-momentum-equations"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "relation-m1-to-m2-transfer",
+      "sourceElementId": "car-m1",
+      "targetElementId": "car-m2",
+      "relationType": "transfers-momentum-during-contact",
+      "anchorIds": [
+        "anchor-momentum-transfer"
+      ]
+    },
+    {
+      "relationId": "relation-contact-to-after",
+      "sourceElementId": "contact-state",
+      "targetElementId": "after-state",
+      "relationType": "equal-opposite-impulses-produce-final-momenta",
+      "anchorIds": [
+        "anchor-newton-third-law",
+        "anchor-momentum-equations"
+      ]
+    },
+    {
+      "relationId": "relation-before-after-conservation",
+      "sourceElementId": "before-state",
+      "targetElementId": "after-state",
+      "relationType": "total-momentum-equal-under-negligible-external-force",
+      "anchorIds": [
+        "anchor-figure-8-4-caption",
+        "anchor-momentum-equations"
+      ]
+    }
+  ],
+  "allowedVariation": [
+    {
+      "scope": "layout",
+      "rule": "The three states may be arranged horizontally or vertically if time order, system boundary, and every arrow direction remain unambiguous."
+    },
+    {
+      "scope": "style",
+      "rule": "Car silhouettes, colors, and line weights may vary without implying different masses or speeds."
+    }
+  ],
+  "mutations": [
+    {
+      "mutationId": "scientific-reverse-transfer",
+      "category": "scientific",
+      "description": "Make m1 speed up and m2 slow down, or draw both contact impulses in the same direction.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "scientific-remove-external-force-condition",
+      "category": "scientific",
+      "description": "State unconditional momentum conservation after removing the negligible-friction and external-force condition.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-ambiguous-final-velocities",
+      "category": "visual",
+      "description": "Swap the v1-prime and v2-prime labels or remove arrowheads so final directions cannot be read.",
+      "expectedOutcome": "block"
+    }
+  ],
+  "humanReview": {
+    "status": "draft"
+  }
+}

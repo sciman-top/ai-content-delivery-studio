@@ -5,9 +5,11 @@
 The design in `docs/superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md` is approved.
 
 Task 1 supply-chain research and benchmark decisions and Task 2 corpus
-contract are complete. Runtime implementation and corpus admission have not
-started, Tasks 3-30 remain open, and the recorded V1 launch baseline remains
-closed and unchanged. This is a new post-V1 flagship slice.
+contract are complete. Task 3 has four schema-valid mechanism/process
+candidates awaiting human review; no corpus item is accepted. Runtime
+implementation has not started, Tasks 3-30 remain open, and the recorded V1
+launch baseline remains closed and unchanged. This is a new post-V1 flagship
+slice.
 
 ## Objective
 
@@ -145,7 +147,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoR
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
 - [ ] Human corpus review records all four items as accepted.
 
 **Dependencies:** Task 2

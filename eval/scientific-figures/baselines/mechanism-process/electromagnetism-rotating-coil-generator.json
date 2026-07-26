@@ -1,0 +1,199 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "electromagnetism-rotating-coil-generator",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Show how a uniformly rotating N-turn coil in a magnetic field converts mechanical input into sinusoidal electrical output through changing flux and induced emf.",
+  "claims": [
+    {
+      "claimId": "claim-vertical-wire-forces",
+      "text": "Charges in the two vertical wire segments experience forces parallel to the wire and drive current through a connected external circuit; top and bottom segment forces do not drive current.",
+      "anchorIds": [
+        "anchor-charge-force-mechanism"
+      ]
+    },
+    {
+      "claimId": "claim-energy-conversion",
+      "text": "The generator converts mechanical energy supplied at the shaft into electrical energy.",
+      "anchorIds": [
+        "anchor-generator-definition"
+      ]
+    },
+    {
+      "claimId": "claim-flux-change-induces-emf",
+      "text": "Rotating the coil changes magnetic flux and induces an emf that drives current through the external circuit.",
+      "anchorIds": [
+        "anchor-figure-20-26-caption"
+      ]
+    },
+    {
+      "claimId": "claim-sinusoidal-emf",
+      "text": "For N turns of area A rotating at constant angular velocity omega in uniform field B, epsilon = N A B omega sin(omega t), with peak epsilon0 = N A B omega.",
+      "anchorIds": [
+        "anchor-generator-equations"
+      ]
+    },
+    {
+      "claimId": "claim-period-and-units",
+      "text": "The output alternates with period T = 2 pi / omega; B uses tesla, A square metres, omega radians per second, emf volts, and T seconds if numeric values are introduced.",
+      "anchorIds": [
+        "anchor-generator-equations",
+        "anchor-figure-20-28-caption"
+      ]
+    }
+  ],
+  "anchors": [
+    {
+      "anchorId": "anchor-charge-force-mechanism",
+      "location": "OpenStax Physics 20.2, paragraph fs-id1167063183921; official PDF page 686",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "charges in the vertical wires experience forces parallel to the wire, causing a current to flow through the wire and through an external circuit if one is connected."
+    },
+    {
+      "anchorId": "anchor-generator-definition",
+      "location": "OpenStax Physics 20.2, paragraph fs-id1167063183921; official PDF page 686",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "A device such as this that converts mechanical energy into electrical energy is called a generator."
+    },
+    {
+      "anchorId": "anchor-figure-20-26-caption",
+      "location": "OpenStax Physics 20.2, Figure 20.26 caption; official PDF page 687",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "When this coil is rotated through one-fourth of a revolution, the magnetic flux Φ changes from its maximum to zero, inducing an emf, which drives a current through an external circuit."
+    },
+    {
+      "anchorId": "anchor-generator-equations",
+      "location": "OpenStax Physics 20.2, equations 20.16-20.18; official PDF page 687",
+      "evidenceKind": "normalized-equation",
+      "normalizedEquation": "epsilon = N A B omega sin(omega t); epsilon = epsilon0 sin(omega t); epsilon0 = N A B omega"
+    },
+    {
+      "anchorId": "anchor-figure-20-28-caption",
+      "location": "OpenStax Physics 20.2, Figure 20.28 caption; official PDF page 688",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "The graph gives the emf of the generator as a function of time."
+    }
+  ],
+  "elements": [
+    {
+      "elementId": "uniform-magnetic-field",
+      "meaning": "Uniform magnetic field B across the rotating coil.",
+      "anchorIds": [
+        "anchor-generator-equations"
+      ]
+    },
+    {
+      "elementId": "rotating-coil",
+      "meaning": "N-turn coil of area A rotating at constant angular velocity omega.",
+      "anchorIds": [
+        "anchor-figure-20-26-caption",
+        "anchor-generator-equations"
+      ]
+    },
+    {
+      "elementId": "vertical-wire-segments",
+      "meaning": "Two coil sides where magnetic force is parallel to the wire and drives current.",
+      "anchorIds": [
+        "anchor-charge-force-mechanism"
+      ]
+    },
+    {
+      "elementId": "shaft-input",
+      "meaning": "Mechanical rotation supplied to the generator shaft.",
+      "anchorIds": [
+        "anchor-generator-definition"
+      ]
+    },
+    {
+      "elementId": "external-load",
+      "meaning": "Connected external circuit receiving the induced alternating current.",
+      "anchorIds": [
+        "anchor-charge-force-mechanism",
+        "anchor-figure-20-26-caption"
+      ]
+    },
+    {
+      "elementId": "emf-waveform",
+      "meaning": "Sinusoidal induced emf with peak epsilon0 and period T.",
+      "anchorIds": [
+        "anchor-generator-equations",
+        "anchor-figure-20-28-caption"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "relation-shaft-rotates-coil",
+      "sourceElementId": "shaft-input",
+      "targetElementId": "rotating-coil",
+      "relationType": "supplies-mechanical-rotation",
+      "anchorIds": [
+        "anchor-generator-definition",
+        "anchor-figure-20-26-caption"
+      ]
+    },
+    {
+      "relationId": "relation-field-force-drives-current",
+      "sourceElementId": "uniform-magnetic-field",
+      "targetElementId": "vertical-wire-segments",
+      "relationType": "magnetic-force-parallel-to-wire",
+      "anchorIds": [
+        "anchor-charge-force-mechanism"
+      ]
+    },
+    {
+      "relationId": "relation-rotation-changes-flux",
+      "sourceElementId": "rotating-coil",
+      "targetElementId": "emf-waveform",
+      "relationType": "changing-flux-induces-sinusoidal-emf",
+      "anchorIds": [
+        "anchor-figure-20-26-caption",
+        "anchor-generator-equations"
+      ]
+    },
+    {
+      "relationId": "relation-emf-drives-load",
+      "sourceElementId": "emf-waveform",
+      "targetElementId": "external-load",
+      "relationType": "drives-alternating-current",
+      "anchorIds": [
+        "anchor-charge-force-mechanism",
+        "anchor-figure-20-26-caption",
+        "anchor-figure-20-28-caption"
+      ]
+    }
+  ],
+  "allowedVariation": [
+    {
+      "scope": "layout",
+      "rule": "The coil mechanism and waveform may be arranged side-by-side or sequentially if mechanical input, field, current path, and time relation stay explicit."
+    },
+    {
+      "scope": "style",
+      "rule": "Field, force, current, and rotation arrows may use different colors if every vector type has an unambiguous legend."
+    }
+  ],
+  "mutations": [
+    {
+      "mutationId": "scientific-constant-nonzero-emf",
+      "category": "scientific",
+      "description": "Show constant nonzero emf for constant-speed rotation or place a peak where the sine relation requires a zero crossing.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "scientific-wrong-current-segments",
+      "category": "scientific",
+      "description": "Make forces in the top and bottom wire segments the source of loop current while omitting the vertical-side contribution.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-field-current-mismatch",
+      "category": "visual",
+      "description": "Reverse the magnetic-field direction without updating force/current arrows, or disconnect the coil from the depicted load while claiming current through it.",
+      "expectedOutcome": "block"
+    }
+  ],
+  "humanReview": {
+    "status": "draft"
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "thermal-heat-engine-energy-flow",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Show heat flow from a hot reservoir through a cyclic heat engine to work output and rejected heat at a cold reservoir.",
+  "claims": [
+    {
+      "claimId": "claim-engine-uses-part-of-heat",
+      "text": "A heat engine uses part of the energy transferred from a hot source to do work.",
+      "anchorIds": [
+        "anchor-engine-purpose"
+      ]
+    },
+    {
+      "claimId": "claim-directed-energy-flow",
+      "text": "Qh flows from the hot reservoir into the engine, W leaves as work output, and Qc leaves the engine for the cold reservoir.",
+      "anchorIds": [
+        "anchor-energy-flow",
+        "anchor-figure-12-14-caption"
+      ]
+    },
+    {
+      "claimId": "claim-cycle-balance",
+      "text": "For a complete cycle, internal energy returns to its original value and the work output is W = Qh - Qc.",
+      "anchorIds": [
+        "anchor-cycle-condition",
+        "anchor-cycle-balance"
+      ]
+    },
+    {
+      "claimId": "claim-efficiency",
+      "text": "Thermal efficiency is Eff = W / Qh and cannot be represented as perfect heat-to-work conversion for this heat-engine mechanism.",
+      "anchorIds": [
+        "anchor-efficiency",
+        "anchor-figure-12-14-caption"
+      ]
+    },
+    {
+      "claimId": "claim-symbolic-energy-units",
+      "text": "No numeric energy is required; if values are later shown, Qh, Qc, and W must use one consistent energy unit.",
+      "anchorIds": [
+        "anchor-cycle-balance",
+        "anchor-efficiency"
+      ]
+    }
+  ],
+  "anchors": [
+    {
+      "anchorId": "anchor-engine-purpose",
+      "location": "OpenStax Physics 12.4, paragraph fs-id1167063517821; official PDF page 387",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "Heat engines do work by using part of the energy transferred by heat from some source."
+    },
+    {
+      "anchorId": "anchor-energy-flow",
+      "location": "OpenStax Physics 12.4, paragraph fs-id1167063517821; official PDF page 387",
+      "evidenceKind": "normalized-text",
+      "normalizedText": "heat transfers energy, Qh, from the high-temperature object (or hot reservoir), whereas heat transfers unused energy, Qc, into the low-temperature object (or cold reservoir), and the work done by the engine is W."
+    },
+    {
+      "anchorId": "anchor-figure-12-14-caption",
+      "location": "OpenStax Physics 12.4, Figure 12.14 caption; official PDF page 388",
+      "evidenceKind": "normalized-text",
+      "normalizedText": "Qh is the heat out of the hot reservoir, W is the work output, and Qc is the unused heat into the cold reservoir."
+    },
+    {
+      "anchorId": "anchor-cycle-condition",
+      "location": "OpenStax Physics 12.4, paragraph fs-id1167063710956; official PDF page 388",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "a cyclical process brings the system back to its original condition at the end of every cycle."
+    },
+    {
+      "anchorId": "anchor-cycle-balance",
+      "location": "OpenStax Physics 12.4, equation 12.21; official PDF page 388",
+      "evidenceKind": "normalized-equation",
+      "normalizedEquation": "W = Qh - Qc"
+    },
+    {
+      "anchorId": "anchor-efficiency",
+      "location": "OpenStax Physics 12.4, equation 12.26; official PDF page 391",
+      "evidenceKind": "normalized-equation",
+      "normalizedEquation": "Eff = W / Qh"
+    }
+  ],
+  "elements": [
+    {
+      "elementId": "hot-reservoir",
+      "meaning": "High-temperature reservoir Th supplying heat Qh.",
+      "anchorIds": [
+        "anchor-energy-flow",
+        "anchor-figure-12-14-caption"
+      ]
+    },
+    {
+      "elementId": "heat-engine",
+      "meaning": "Cyclic working system that converts part of Qh into work.",
+      "anchorIds": [
+        "anchor-engine-purpose",
+        "anchor-cycle-balance"
+      ]
+    },
+    {
+      "elementId": "cold-reservoir",
+      "meaning": "Low-temperature reservoir Tc receiving rejected heat Qc.",
+      "anchorIds": [
+        "anchor-energy-flow",
+        "anchor-figure-12-14-caption"
+      ]
+    },
+    {
+      "elementId": "heat-input-qh",
+      "meaning": "Heat transfer Qh from the hot reservoir to the engine.",
+      "anchorIds": [
+        "anchor-energy-flow",
+        "anchor-figure-12-14-caption"
+      ]
+    },
+    {
+      "elementId": "work-output-w",
+      "meaning": "Useful work W leaving the engine.",
+      "anchorIds": [
+        "anchor-engine-purpose",
+        "anchor-figure-12-14-caption"
+      ]
+    },
+    {
+      "elementId": "rejected-heat-qc",
+      "meaning": "Unused heat Qc leaving the engine for the cold reservoir.",
+      "anchorIds": [
+        "anchor-energy-flow",
+        "anchor-figure-12-14-caption"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "relation-hot-to-engine",
+      "sourceElementId": "hot-reservoir",
+      "targetElementId": "heat-engine",
+      "relationType": "transfers-heat-qh",
+      "anchorIds": [
+        "anchor-energy-flow",
+        "anchor-figure-12-14-caption"
+      ]
+    },
+    {
+      "relationId": "relation-engine-to-work",
+      "sourceElementId": "heat-engine",
+      "targetElementId": "work-output-w",
+      "relationType": "produces-work-w",
+      "anchorIds": [
+        "anchor-engine-purpose",
+        "anchor-cycle-balance"
+      ]
+    },
+    {
+      "relationId": "relation-engine-to-cold",
+      "sourceElementId": "heat-engine",
+      "targetElementId": "cold-reservoir",
+      "relationType": "rejects-heat-qc",
+      "anchorIds": [
+        "anchor-energy-flow",
+        "anchor-figure-12-14-caption"
+      ]
+    },
+    {
+      "relationId": "relation-energy-balance",
+      "sourceElementId": "heat-input-qh",
+      "targetElementId": "rejected-heat-qc",
+      "relationType": "difference-equals-work-output",
+      "anchorIds": [
+        "anchor-cycle-balance"
+      ]
+    }
+  ],
+  "allowedVariation": [
+    {
+      "scope": "layout",
+      "rule": "Reservoirs may be stacked or arranged left-to-right if Qh, W, and Qc directions remain explicit."
+    },
+    {
+      "scope": "style",
+      "rule": "Hot and cold colors may vary if labels Th and Tc and all energy-flow labels remain readable."
+    }
+  ],
+  "mutations": [
+    {
+      "mutationId": "scientific-perfect-conversion",
+      "category": "scientific",
+      "description": "Delete Qc and show Qh = W, implying perfect conversion of heat to work.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "scientific-reverse-heat-flow",
+      "category": "scientific",
+      "description": "Reverse Qh or Qc while continuing to label the device as a heat engine.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-misattach-energy-arrows",
+      "category": "visual",
+      "description": "Point W into the engine or attach Qh and Qc to the wrong reservoirs.",
+      "expectedOutcome": "block"
+    }
+  ],
+  "humanReview": {
+    "status": "draft"
+  }
+}

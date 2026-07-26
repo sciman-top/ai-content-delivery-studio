@@ -1,0 +1,203 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "optics-convex-lens-real-image",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Draw a to-scale principal-ray mechanism for a convex lens with f = 0.50 m and do = 0.75 m, producing a real inverted image at di = 1.5 m with m = -2.0.",
+  "claims": [
+    {
+      "claimId": "claim-parallel-ray",
+      "text": "A ray entering the converging lens parallel to the optical axis exits through the far focal point.",
+      "anchorIds": [
+        "anchor-ray-rules"
+      ]
+    },
+    {
+      "claimId": "claim-center-ray",
+      "text": "A ray through the center of the lens continues without changing direction.",
+      "anchorIds": [
+        "anchor-center-ray-rule"
+      ]
+    },
+    {
+      "claimId": "claim-near-focus-ray",
+      "text": "A ray entering through the near focal point exits parallel to the optical axis.",
+      "anchorIds": [
+        "anchor-near-focus-rule"
+      ]
+    },
+    {
+      "claimId": "claim-real-image",
+      "text": "The refracted rays cross at a projectable real image.",
+      "anchorIds": [
+        "anchor-figure-16-27-caption"
+      ]
+    },
+    {
+      "claimId": "claim-example-values",
+      "text": "For f = +0.50 m and do = +0.75 m, the thin-lens relation gives di = +1.5 m and magnification m = -2.0, so the image is real, inverted, and twice the object height.",
+      "anchorIds": [
+        "anchor-worked-example",
+        "anchor-lens-equations"
+      ]
+    }
+  ],
+  "anchors": [
+    {
+      "anchorId": "anchor-ray-rules",
+      "location": "OpenStax Physics 16.3 ray-tracing rules; official PDF page 518",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "A ray entering a converging lens parallel to its axis passes through the focal point, F, of the lens on the other side"
+    },
+    {
+      "anchorId": "anchor-center-ray-rule",
+      "location": "OpenStax Physics 16.3 ray-tracing rule 3; official PDF page 518",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "A ray passing through the center of either a converging or a diverging lens does not change direction"
+    },
+    {
+      "anchorId": "anchor-near-focus-rule",
+      "location": "OpenStax Physics 16.3 ray-tracing rule 4; official PDF page 518",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "A ray entering a converging lens through its focal point exits parallel to its axis"
+    },
+    {
+      "anchorId": "anchor-figure-16-27-caption",
+      "location": "OpenStax Physics 16.3, Figure 16.27 caption; official PDF page 519",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "The image is located at the point where the rays cross. In this case, a real image—one that can be projected on a screen—is formed."
+    },
+    {
+      "anchorId": "anchor-worked-example",
+      "location": "OpenStax Physics 16.3, paragraph fs-id1167066138560 and Figure 16.36; official PDF page 527",
+      "evidenceKind": "verbatim-text",
+      "exactQuote": "A clear glass light bulb is placed 0.75 m from a convex lens with a 0.50 m focal length"
+    },
+    {
+      "anchorId": "anchor-lens-equations",
+      "location": "OpenStax Physics 16.3, equations 16.18 and 16.19; official PDF page 528",
+      "evidenceKind": "normalized-equation",
+      "normalizedEquation": "1/f = 1/di + 1/do; di = f do / (do - f) = 1.5 m; m = -di/do = -2.0"
+    }
+  ],
+  "elements": [
+    {
+      "elementId": "optical-axis",
+      "meaning": "Reference axis through the lens center and both focal points.",
+      "anchorIds": [
+        "anchor-ray-rules"
+      ]
+    },
+    {
+      "elementId": "convex-lens",
+      "meaning": "Thin converging lens with focal length f = +0.50 m.",
+      "anchorIds": [
+        "anchor-worked-example"
+      ]
+    },
+    {
+      "elementId": "object",
+      "meaning": "Upright object at do = +0.75 m on the incident-light side.",
+      "anchorIds": [
+        "anchor-worked-example"
+      ]
+    },
+    {
+      "elementId": "far-focal-point",
+      "meaning": "Focal point on the image side through which the parallel incident ray refracts.",
+      "anchorIds": [
+        "anchor-ray-rules"
+      ]
+    },
+    {
+      "elementId": "near-focal-point",
+      "meaning": "Focal point on the object side through which the third incident ray travels.",
+      "anchorIds": [
+        "anchor-near-focus-rule"
+      ]
+    },
+    {
+      "elementId": "real-image",
+      "meaning": "Inverted image at di = +1.5 m with magnification -2.0.",
+      "anchorIds": [
+        "anchor-figure-16-27-caption",
+        "anchor-lens-equations"
+      ]
+    }
+  ],
+  "relations": [
+    {
+      "relationId": "relation-parallel-ray-to-focus",
+      "sourceElementId": "object",
+      "targetElementId": "far-focal-point",
+      "relationType": "parallel-incident-ray-refracts-through",
+      "anchorIds": [
+        "anchor-ray-rules"
+      ]
+    },
+    {
+      "relationId": "relation-center-ray-to-image",
+      "sourceElementId": "object",
+      "targetElementId": "real-image",
+      "relationType": "center-ray-continues-undeviated",
+      "anchorIds": [
+        "anchor-center-ray-rule",
+        "anchor-figure-16-27-caption"
+      ]
+    },
+    {
+      "relationId": "relation-near-focus-to-parallel",
+      "sourceElementId": "near-focal-point",
+      "targetElementId": "real-image",
+      "relationType": "near-focus-ray-exits-parallel-and-reaches-image",
+      "anchorIds": [
+        "anchor-near-focus-rule",
+        "anchor-figure-16-27-caption"
+      ]
+    },
+    {
+      "relationId": "relation-lens-forms-real-image",
+      "sourceElementId": "convex-lens",
+      "targetElementId": "real-image",
+      "relationType": "thin-lens-equation-and-ray-crossing",
+      "anchorIds": [
+        "anchor-figure-16-27-caption",
+        "anchor-worked-example",
+        "anchor-lens-equations"
+      ]
+    }
+  ],
+  "allowedVariation": [
+    {
+      "scope": "layout",
+      "rule": "The diagram may be uniformly scaled if the relative distances 0.50 m, 0.75 m, and 1.5 m remain geometrically consistent."
+    },
+    {
+      "scope": "style",
+      "rule": "Ray colors and line styles may vary if the three ray paths and all arrow directions remain distinguishable."
+    }
+  ],
+  "mutations": [
+    {
+      "mutationId": "scientific-break-principal-ray",
+      "category": "scientific",
+      "description": "Route the parallel incident ray away from the far focal point or bend the center ray.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "scientific-wrong-image-type",
+      "category": "scientific",
+      "description": "Label the result upright or virtual despite do = 0.75 m and f = 0.50 m.",
+      "expectedOutcome": "block"
+    },
+    {
+      "mutationId": "visual-ambiguous-or-misplaced-image",
+      "category": "visual",
+      "description": "Remove ray arrowheads, swap focal labels, or place the image at 0.15 m while retaining the 1.5 m label.",
+      "expectedOutcome": "block"
+    }
+  ],
+  "humanReview": {
+    "status": "draft"
+  }
+}

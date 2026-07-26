@@ -22,6 +22,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Record the risk-first, checkpointed implementation plan.
 - [x] Establish primary-source dependency decisions for extraction, SVG, formula rendering, and export without adopting new runtime dependencies.
 - [x] Establish the machine-readable corpus, gold-baseline, and local-cache contracts without admitting source binaries.
+- [x] Prepare four mechanism/process candidates and draft baselines for human corpus review without marking them accepted.
 - [ ] Establish the 12-item human-approved evaluation corpus.
 - [ ] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [ ] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.

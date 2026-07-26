@@ -147,7 +147,7 @@
       "required": [
         "anchorId",
         "location",
-        "exactQuote"
+        "evidenceKind"
       ],
       "properties": {
         "anchorId": {
@@ -158,11 +158,58 @@
           "type": "string",
           "minLength": 1
         },
+        "evidenceKind": {
+          "enum": [
+            "verbatim-text",
+            "normalized-text",
+            "normalized-equation"
+          ]
+        },
         "exactQuote": {
           "type": "string",
           "minLength": 1
+        },
+        "normalizedText": {
+          "type": "string",
+          "minLength": 1
+        },
+        "normalizedEquation": {
+          "type": "string",
+          "minLength": 1
         }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "evidenceKind": {
+              "const": "verbatim-text"
+            }
+          },
+          "required": [
+            "exactQuote"
+          ]
+        },
+        {
+          "properties": {
+            "evidenceKind": {
+              "const": "normalized-text"
+            }
+          },
+          "required": [
+            "normalizedText"
+          ]
+        },
+        {
+          "properties": {
+            "evidenceKind": {
+              "const": "normalized-equation"
+            }
+          },
+          "required": [
+            "normalizedEquation"
+          ]
+        }
+      ]
     },
     "element": {
       "type": "object",

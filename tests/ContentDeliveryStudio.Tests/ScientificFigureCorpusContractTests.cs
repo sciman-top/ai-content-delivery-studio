@@ -52,6 +52,13 @@ public sealed class ScientificFigureCorpusContractTests
         "humanReview",
     ];
 
+    private static readonly string[] RequiredAnchorFields =
+    [
+        "anchorId",
+        "location",
+        "evidenceKind",
+    ];
+
     [Fact]
     public void Schemas_RequireScientificCorpusAuthorityFields()
     {
@@ -67,9 +74,17 @@ public sealed class ScientificFigureCorpusContractTests
         Assert.Equal(
             RequiredExtractionAssessmentFields.Order(),
             ReadRequiredFields(corpusSchema, "$defs", "extractionAssessment").Order());
+        Assert.Contains(
+            "open-textbook",
+            corpusSchema["$defs"]!["source"]!["properties"]!["sourceType"]!["enum"]!
+                .AsArray()
+                .Select(value => value!.GetValue<string>()));
         Assert.Equal(
             RequiredBaselineFields.Order(),
             ReadRequiredFields(baselineSchema).Order());
+        Assert.Equal(
+            RequiredAnchorFields.Order(),
+            ReadRequiredFields(baselineSchema, "$defs", "anchor").Order());
         Assert.Equal(
             ["status"],
             ReadRequiredFields(baselineSchema, "$defs", "humanReview"));
@@ -121,6 +136,38 @@ public sealed class ScientificFigureCorpusContractTests
         manifest["admissionState"] = "human-approved";
 
         Assert.Contains("items.count", ValidateCorpusManifest(manifest));
+    }
+
+    [Fact]
+    public void MechanismProcessCorpus_HasFourReviewableDistinctBaselines()
+    {
+        var manifest = LoadObject("eval/scientific-figures/corpus.json");
+        var items = manifest["items"]!.AsArray()
+            .Select(Assert.IsType<JsonObject>)
+            .Where(item => item["category"]?.GetValue<string>() == "mechanism-process")
+            .ToArray();
+
+        Assert.Equal(4, items.Length);
+        Assert.Equal(4, items.Select(item => item["itemId"]!.GetValue<string>()).Distinct().Count());
+        Assert.Equal(4, items.Select(item => item["source"]!["sourceId"]!.GetValue<string>()).Distinct().Count());
+        Assert.Equal(4, items.Select(item => item["goldBaselinePath"]!.GetValue<string>()).Distinct().Count());
+
+        foreach (var item in items)
+        {
+            Assert.Empty(ValidateCorpusItem(item));
+            var baseline = LoadObject(item["goldBaselinePath"]!.GetValue<string>());
+            Assert.Empty(ValidateGoldBaseline(baseline));
+            Assert.Equal(item["itemId"]!.GetValue<string>(), baseline["itemId"]!.GetValue<string>());
+            Assert.Equal(
+                item["source"]!["contentHash"]!.GetValue<string>(),
+                baseline["sourceHash"]!.GetValue<string>());
+
+            var admissionStatus = item["admissionStatus"]!.GetValue<string>();
+            var reviewStatus = baseline["humanReview"]!["status"]!.GetValue<string>();
+            Assert.True(
+                (admissionStatus, reviewStatus) is ("candidate", "draft") or ("accepted", "accepted"),
+                $"Unexpected admission/review state: {admissionStatus}/{reviewStatus}");
+        }
     }
 
     public static TheoryData<string> MissingCorpusAuthorityCases => new()
@@ -182,6 +229,17 @@ public sealed class ScientificFigureCorpusContractTests
         baseline["humanReview"] = JsonNode.Parse("""{"status":"draft"}""");
 
         Assert.Empty(ValidateGoldBaseline(baseline));
+    }
+
+    [Fact]
+    public void GoldBaselineContract_RejectsDanglingEvidenceAndElementReferences()
+    {
+        var baseline = CreateValidGoldBaseline();
+        baseline["claims"]![0]!["anchorIds"]![0] = "missing-anchor";
+        baseline["relations"]![0]!["targetElementId"] = "missing-element";
+
+        Assert.Contains("claims[0].anchorIds", ValidateGoldBaseline(baseline));
+        Assert.Contains("relations[0].targetElementId", ValidateGoldBaseline(baseline));
     }
 
     private static IReadOnlyCollection<string> ValidateCorpusItem(JsonObject item)
@@ -300,9 +358,61 @@ public sealed class ScientificFigureCorpusContractTests
         {
             for (var index = 0; index < anchors.Count; index++)
             {
-                if (anchors[index] is not JsonObject anchor || !HasValue(anchor, "location"))
+                if (anchors[index] is not JsonObject anchor)
                 {
                     errors.Add($"anchors[{index}].location");
+                    continue;
+                }
+
+                AddMissingFields(errors, anchor, RequiredAnchorFields, $"anchors[{index}].");
+                var evidenceKind = anchor["evidenceKind"]?.GetValue<string>();
+                if (evidenceKind == "verbatim-text" && !HasValue(anchor, "exactQuote"))
+                {
+                    errors.Add($"anchors[{index}].exactQuote");
+                }
+                else if (evidenceKind == "normalized-text" && !HasValue(anchor, "normalizedText"))
+                {
+                    errors.Add($"anchors[{index}].normalizedText");
+                }
+                else if (evidenceKind == "normalized-equation" && !HasValue(anchor, "normalizedEquation"))
+                {
+                    errors.Add($"anchors[{index}].normalizedEquation");
+                }
+            }
+        }
+
+        var anchorIds = ReadIds(baseline["anchors"], "anchorId");
+        foreach (var collectionName in new[] { "claims", "elements", "relations" })
+        {
+            if (baseline[collectionName] is not JsonArray records)
+            {
+                continue;
+            }
+
+            for (var index = 0; index < records.Count; index++)
+            {
+                if (records[index]?["anchorIds"] is not JsonArray referencedAnchors
+                    || referencedAnchors.Any(node => !anchorIds.Contains(node?.GetValue<string>() ?? string.Empty)))
+                {
+                    errors.Add($"{collectionName}[{index}].anchorIds");
+                }
+            }
+        }
+
+        var elementIds = ReadIds(baseline["elements"], "elementId");
+        if (baseline["relations"] is JsonArray relations)
+        {
+            for (var index = 0; index < relations.Count; index++)
+            {
+                var relation = relations[index];
+                if (!elementIds.Contains(relation?["sourceElementId"]?.GetValue<string>() ?? string.Empty))
+                {
+                    errors.Add($"relations[{index}].sourceElementId");
+                }
+
+                if (!elementIds.Contains(relation?["targetElementId"]?.GetValue<string>() ?? string.Empty))
+                {
+                    errors.Add($"relations[{index}].targetElementId");
                 }
             }
         }
@@ -390,7 +500,7 @@ public sealed class ScientificFigureCorpusContractTests
               "sourceHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
               "figureObjective": "Explain a balanced-force mechanism.",
               "claims": [{"claimId": "claim-1", "text": "The forces balance.", "anchorIds": ["anchor-1"]}],
-              "anchors": [{"anchorId": "anchor-1", "location": "fixture.md: paragraph 1", "exactQuote": "The forces balance."}],
+              "anchors": [{"anchorId": "anchor-1", "location": "fixture.md: paragraph 1", "evidenceKind": "verbatim-text", "exactQuote": "The forces balance."}],
               "elements": [
                 {"elementId": "body", "meaning": "The body", "anchorIds": ["anchor-1"]},
                 {"elementId": "left-force", "meaning": "The leftward force", "anchorIds": ["anchor-1"]},
@@ -471,6 +581,17 @@ public sealed class ScientificFigureCorpusContractTests
     private static bool ContainsMutationCategory(JsonNode? node, string category)
     {
         return node?["contains"]?["properties"]?["category"]?["const"]?.GetValue<string>() == category;
+    }
+
+    private static HashSet<string> ReadIds(JsonNode? collection, string idField)
+    {
+        return collection is JsonArray values
+            ? values
+                .Select(value => value?[idField]?.GetValue<string>())
+                .Where(value => !string.IsNullOrWhiteSpace(value))
+                .Select(value => value!)
+                .ToHashSet(StringComparer.Ordinal)
+            : [];
     }
 
     private static JsonObject LoadObject(string relativePath)

@@ -10,5 +10,142 @@
     "concept-comparison": 4,
     "graphical-abstract": 4
   },
-  "items": []
+  "items": [
+    {
+      "itemId": "mechanics-two-car-momentum-transfer",
+      "category": "mechanism-process",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-8-2",
+        "title": "Physics, Section 8.2: Conservation of Momentum",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/8-2-conservation-of-momentum",
+        "license": {
+          "spdxOrExpression": "CC-BY-4.0",
+          "redistribution": "allowed",
+          "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583",
+          "reviewedAt": "2026-07-26"
+        },
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": [
+          "Section 8.2 paragraphs fs-id1167067043785, fs-id1167066967155, fs-id1167066854057",
+          "Figure 8.4 and equations eip-167, fs-id1167066874701, fs-id1167067066930",
+          "Official PDF printed pages 265-267"
+        ],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {
+          "status": "passed",
+          "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF",
+          "assessedAt": "2026-07-26",
+          "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4",
+          "anchorCoverage": "complete",
+          "notes": "Required prose, equations, and Figure 8.4 caption were located in extracted text and cross-checked against first-party HTML anchors."
+        }
+      },
+      "figureObjective": "Show before, contact, and after states for momentum transfer between two co-directional cars under negligible external force.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/mechanism-process/mechanics-two-car-momentum-transfer.json"
+    },
+    {
+      "itemId": "thermal-heat-engine-energy-flow",
+      "category": "mechanism-process",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-12-4",
+        "title": "Physics, Section 12.4: Applications of Thermodynamics",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/12-4-applications-of-thermodynamics-heat-engines-heat-pumps-and-refrigerators",
+        "license": {
+          "spdxOrExpression": "CC-BY-4.0",
+          "redistribution": "allowed",
+          "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583",
+          "reviewedAt": "2026-07-26"
+        },
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": [
+          "Section 12.4 paragraphs fs-id1167063517821 and fs-id1167063710956",
+          "Figure 12.14 and equations 12.21 and 12.26",
+          "Official PDF printed pages 386-391"
+        ],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {
+          "status": "passed",
+          "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF",
+          "assessedAt": "2026-07-26",
+          "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4",
+          "anchorCoverage": "complete",
+          "notes": "Required prose, Figure 12.14 caption, cycle condition, energy balance, and efficiency equation were located and cross-checked against first-party HTML anchors."
+        }
+      },
+      "figureObjective": "Show heat flow from a hot reservoir through a cyclic heat engine to work output and rejected heat at a cold reservoir.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/mechanism-process/thermal-heat-engine-energy-flow.json"
+    },
+    {
+      "itemId": "optics-convex-lens-real-image",
+      "category": "mechanism-process",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-16-3",
+        "title": "Physics, Section 16.3: Lenses",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/16-3-lenses",
+        "license": {
+          "spdxOrExpression": "CC-BY-4.0",
+          "redistribution": "allowed",
+          "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583",
+          "reviewedAt": "2026-07-26"
+        },
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": [
+          "Section 16.3 paragraph fs-id1167065892046 and Figure 16.27",
+          "Worked example paragraph fs-id1167066138560, Figure 16.36, equations 16.18 and 16.19",
+          "Official PDF printed pages 517-519 and 527-528"
+        ],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {
+          "status": "passed",
+          "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF",
+          "assessedAt": "2026-07-26",
+          "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4",
+          "anchorCoverage": "complete",
+          "notes": "Three ray-tracing rules, real-image caption, worked-example values, and lens/magnification equations were located and cross-checked against first-party HTML anchors."
+        }
+      },
+      "figureObjective": "Draw a to-scale principal-ray mechanism for a convex lens with f = 0.50 m and do = 0.75 m, producing a real inverted image at di = 1.5 m with m = -2.0.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/mechanism-process/optics-convex-lens-real-image.json"
+    },
+    {
+      "itemId": "electromagnetism-rotating-coil-generator",
+      "category": "mechanism-process",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-20-2",
+        "title": "Physics, Section 20.2: Motors, Generators, and Transformers",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/20-2-motors-generators-and-transformers",
+        "license": {
+          "spdxOrExpression": "CC-BY-4.0",
+          "redistribution": "allowed",
+          "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583",
+          "reviewedAt": "2026-07-26"
+        },
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": [
+          "Section 20.2 paragraphs fs-id1167063183921, fs-id1167064534859, fs-id1167064928983",
+          "Figures 20.26-20.28 and equations 20.16-20.18",
+          "Official PDF printed pages 684-688"
+        ],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {
+          "status": "passed",
+          "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF",
+          "assessedAt": "2026-07-26",
+          "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4",
+          "anchorCoverage": "complete",
+          "notes": "Charge-force mechanism, flux-change caption, constant-angular-velocity condition, generator equations, and sinusoidal output were located and cross-checked against first-party HTML anchors."
+        }
+      },
+      "figureObjective": "Show how a uniformly rotating N-turn coil in a magnetic field converts mechanical input into sinusoidal electrical output through changing flux and induced emf.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/mechanism-process/electromagnetism-rotating-coil-generator.json"
+    }
+  ]
 }
