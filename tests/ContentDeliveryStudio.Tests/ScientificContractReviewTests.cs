@@ -46,6 +46,7 @@ public sealed class ScientificContractReviewTests
 }
 
 internal sealed record ScientificContractReviewFixture(
+    ScientificDocumentUnderstanding Understanding,
     ScientificFigureSpec Specification,
     SvgRenderPlan Plan,
     ScientificSvgArtifact Svg,
@@ -124,7 +125,13 @@ internal sealed record ScientificContractReviewFixture(
             svg,
             exports,
             advisoryScore);
-        return new ScientificContractReviewFixture(specification, plan, svg, exports, request);
+        return new ScientificContractReviewFixture(
+            understanding,
+            specification,
+            plan,
+            svg,
+            exports,
+            request);
     }
 
     public SvgRenderPlan CopyPlan(

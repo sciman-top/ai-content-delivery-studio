@@ -158,3 +158,19 @@ The fail-closed combination of independent semantic and visual provider
 results. Any non-pass verdict, invalid output, finding, or provider failure
 creates a blocker; it is not Gate 2 approval.
 _Avoid_: Human approval, averaged review score
+
+**Scientific Review Manifest**:
+A local, exportable index of specification/render identity, minimum approved
+evidence identifiers, critical SVG structure rows, full-resolution output
+metadata, and typed crop IDs with private filesystem paths removed.
+_Avoid_: Provider prompt log, local workspace dump
+
+**Scientific SVG Structure Row**:
+An item-addressable record linking one critical element or relation to its
+scientific summary, typed visual role, and bounded pixel region.
+_Avoid_: OCR guess, untyped bounding box
+
+**Scientific Review Dispatch Budget**:
+The full-resolution byte/pixel, crop-count, and per-crop byte limits checked
+before any scientific review provider receives artifacts.
+_Avoid_: 384px compact-review policy, provider quota

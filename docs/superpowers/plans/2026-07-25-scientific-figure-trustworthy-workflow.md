@@ -594,14 +594,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Each critical element and relation has a reviewable structural row or crop.
-- [ ] Review manifests contain only the minimum approved evidence and redact private paths in exportable records.
-- [ ] Missing or oversized review artifacts fail before remote dispatch.
+- [x] Each critical element and relation has a reviewable structural row or crop.
+- [x] Review manifests contain only the minimum approved evidence and redact private paths in exportable records.
+- [x] Missing or oversized review artifacts fail before remote dispatch.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificReviewPrepTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter VisionReviewExecutionPolicyTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificReviewPrepTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter VisionReviewExecutionPolicyTests`
 
 **Dependencies:** Task 14, Task 17
 

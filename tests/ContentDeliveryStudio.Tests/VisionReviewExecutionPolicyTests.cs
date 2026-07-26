@@ -51,4 +51,23 @@ public sealed class VisionReviewExecutionPolicyTests
         Assert.NotNull(promptEvidence.Summary);
         Assert.True(promptEvidence.Summary!.Length <= VisionReviewExecutionPolicy.DefaultCompactSummaryCharacters);
     }
+
+    [Fact]
+    public void ScientificPolicy_AllowsFullResolutionWithoutCompact384Limit()
+    {
+        ScientificReviewExecutionPolicy.ValidateFullResolutionArtifact(
+            width: 4096,
+            height: 2160,
+            byteCount: 4 * 1024 * 1024);
+    }
+
+    [Fact]
+    public void ScientificPolicy_RejectsMissingOrOversizedCropPlan()
+    {
+        Assert.Throws<InvalidOperationException>(() =>
+            ScientificReviewExecutionPolicy.ValidateCropPlan(0));
+        Assert.Throws<InvalidOperationException>(() =>
+            ScientificReviewExecutionPolicy.ValidateCropPlan(
+                ScientificReviewExecutionPolicy.MaximumRegionCrops + 1));
+    }
 }
