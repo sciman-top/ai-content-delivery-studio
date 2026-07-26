@@ -282,6 +282,78 @@
       },
       "figureObjective": "Compare ideal series and parallel resistor circuits using matched positive resistors and the same battery voltage.",
       "goldBaselinePath": "eval/scientific-figures/baselines/concept-comparison/electromagnetism-series-vs-parallel-resistors.json"
+    },
+    {
+      "itemId": "mechanics-projectile-independent-components-summary",
+      "category": "graphical-abstract",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-5-3",
+        "title": "Physics, Section 5.3: Projectile Motion",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/5-3-projectile-motion",
+        "license": {"spdxOrExpression": "CC-BY-4.0", "redistribution": "allowed", "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583", "reviewedAt": "2026-07-26"},
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": ["Section 5.3 paragraphs fs-id1167067029756, fs-id1167066778142, fs-id1167067053283; Figures 5.27 and 5.29; PDF pages 170-173"],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {"status": "passed", "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF", "assessedAt": "2026-07-26", "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4", "anchorCoverage": "complete"}
+      },
+      "figureObjective": "Summarize ideal projectile motion as independent horizontal and vertical components sharing time and recombining into one trajectory.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/graphical-abstract/mechanics-projectile-independent-components-summary.json"
+    },
+    {
+      "itemId": "acoustics-doppler-relative-motion-summary",
+      "category": "graphical-abstract",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-14-3",
+        "title": "Physics, Section 14.3: Doppler Effect and Sonic Booms",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/14-3-doppler-effect-and-sonic-booms",
+        "license": {"spdxOrExpression": "CC-BY-4.0", "redistribution": "allowed", "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583", "reviewedAt": "2026-07-26"},
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": ["Section 14.3 paragraphs fs-id1164566981984, fs-id1167063520278, fs-id1167063836052, fs-id1167063772054; Figures 14.14-14.16; PDF pages 446-448"],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {"status": "passed", "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF", "assessedAt": "2026-07-26", "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4", "anchorCoverage": "complete"}
+      },
+      "figureObjective": "Summarize how source-observer approach raises and separation lowers observed sound frequency in a material medium.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/graphical-abstract/acoustics-doppler-relative-motion-summary.json"
+    },
+    {
+      "itemId": "quantum-photoelectric-threshold-summary",
+      "category": "graphical-abstract",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-21-2",
+        "title": "Physics, Section 21.2: Einstein and the Photoelectric Effect",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/21-2-einstein-and-the-photoelectric-effect",
+        "license": {"spdxOrExpression": "CC-BY-4.0", "redistribution": "allowed", "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583", "reviewedAt": "2026-07-26"},
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": ["Section 21.2 paragraphs fs-id1167065947633, fs-id1167066086108, fs-id1164567516604; Figures 21.6-21.8; PDF pages 718-720"],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {"status": "passed", "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF", "assessedAt": "2026-07-26", "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4", "anchorCoverage": "complete"}
+      },
+      "figureObjective": "Summarize photoelectric threshold and separate the effects of photon frequency and intensity on electron emission.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/graphical-abstract/quantum-photoelectric-threshold-summary.json"
+    },
+    {
+      "itemId": "nuclear-fission-controlled-chain-summary",
+      "category": "graphical-abstract",
+      "admissionStatus": "candidate",
+      "source": {
+        "sourceId": "openstax-physics-section-22-4",
+        "title": "Physics, Section 22.4: Nuclear Fission and Fusion",
+        "sourceType": "open-textbook",
+        "publicUrl": "https://openstax.org/books/physics/pages/22-4-nuclear-fission-and-fusion",
+        "license": {"spdxOrExpression": "CC-BY-4.0", "redistribution": "allowed", "sourceUrl": "https://openstax.org/books/physics/pages/preface#fs-id1163975727583", "reviewedAt": "2026-07-26"},
+        "contentHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+        "evidenceLocations": ["Section 22.4 paragraphs fs-id1167067092552, fs-id1167066961774, fs-id1167067029303, fs-id1167067103429; Figures 22.26-22.28; PDF pages 771-774"],
+        "localCacheKey": "openstax/physics/2026-07-26/Physics-WEB-a3f75487411e.pdf",
+        "extractionAssessment": {"status": "passed", "method": "pdftotext 24.04.0 -layout on hash-matched OpenStax Physics PDF", "assessedAt": "2026-07-26", "textHash": "sha256:331a75a0d1b4238943d24bfb8bef478216979abe29794e20f0ed5ca4f1a62bf4", "anchorCoverage": "complete"}
+      },
+      "figureObjective": "Summarize conditional fission-chain feedback, neutron regulation, and the residual-decay-heat limitation without providing reactor design parameters.",
+      "goldBaselinePath": "eval/scientific-figures/baselines/graphical-abstract/nuclear-fission-controlled-chain-summary.json"
     }
   ]
 }

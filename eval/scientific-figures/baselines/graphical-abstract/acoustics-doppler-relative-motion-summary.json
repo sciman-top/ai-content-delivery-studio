@@ -1,0 +1,36 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "acoustics-doppler-relative-motion-summary",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Summarize how source-observer approach raises and separation lowers observed sound frequency in a material medium.",
+  "claims": [
+    {"claimId": "central-message", "text": "Approach increases observed sound frequency and separation decreases it through wavefront spacing or encounter-rate changes.", "anchorIds": ["anchor-definition", "anchor-summary"]},
+    {"claimId": "approved-abstraction", "text": "The schematic uses separate nonrelativistic sound cases and does not report measured speed, loudness, or distance.", "anchorIds": ["anchor-equations"]}
+  ],
+  "anchors": [
+    {"anchorId": "anchor-definition", "location": "OpenStax Physics 14.3, fs-id1164566981984; PDF page 446", "evidenceKind": "verbatim-text", "exactQuote": "The Doppler effect is a change in the observed pitch of a sound, due to relative motion between the source and the observer."},
+    {"anchorId": "anchor-summary", "location": "OpenStax Physics 14.3, fs-id1167063772054; PDF page 447", "evidenceKind": "verbatim-text", "exactQuote": "In general, then, relative motion of source and observer toward one another increases the perceived frequency. Relative motion apart decreases the perceived frequency."},
+    {"anchorId": "anchor-equations", "location": "OpenStax Physics 14.3, equations 14.11 and 14.12; PDF pages 447-448", "evidenceKind": "normalized-equation", "normalizedEquation": "moving source: f_obs = f_s v_w/(v_w +/- v_s); moving observer: f_obs = f_s (v_w +/- v_obs)/v_w"}
+  ],
+  "elements": [
+    {"elementId": "source", "meaning": "Sound source moving or stationary relative to the medium.", "anchorIds": ["anchor-definition", "anchor-equations"]},
+    {"elementId": "observer", "meaning": "Observer encountering sound wavefronts.", "anchorIds": ["anchor-definition", "anchor-equations"]},
+    {"elementId": "wavefronts", "meaning": "Wavefront spacing in the material medium.", "anchorIds": ["anchor-summary"]}
+  ],
+  "relations": [
+    {"relationId": "approach-frequency", "sourceElementId": "source", "targetElementId": "observer", "relationClass": "causal", "relationType": "approach-increases-observed-frequency", "anchorIds": ["anchor-summary"]},
+    {"relationId": "wavefront-encounter", "sourceElementId": "wavefronts", "targetElementId": "observer", "relationClass": "directional", "relationType": "wavefronts-propagate-to-observer", "anchorIds": ["anchor-equations"]}
+  ],
+  "allowedVariation": [
+    {"scope": "layout", "rule": "Stationary, approach, and separation cases may be columns or rows if source and observer motion remain distinct."},
+    {"scope": "style", "rule": "Colors may distinguish cases but may not encode frequency or loudness without evidence."},
+    {"scope": "non-evidentiary-asset", "rule": "Generic vehicle, loudspeaker, listener, and road icons may establish roles but do not encode measurements."}
+  ],
+  "mutations": [
+    {"mutationId": "scientific-omitted-limitation-material-medium", "category": "scientific", "description": "Present the bounded sound equations as universal for light or relativistic speeds.", "expectedOutcome": "block"},
+    {"mutationId": "scientific-invented-visual-claim-wavefront", "category": "scientific", "description": "Show tighter wavefront spacing while labeling the observed frequency lower.", "expectedOutcome": "block"},
+    {"mutationId": "visual-decorative-asset-implying-evidence-rings", "category": "visual", "description": "Use ring opacity, thickness, or a speedometer badge as measured loudness, frequency, or speed.", "expectedOutcome": "block"}
+  ],
+  "humanReview": {"status": "draft"}
+}

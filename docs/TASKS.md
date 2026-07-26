@@ -24,6 +24,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Establish the machine-readable corpus, gold-baseline, and local-cache contracts without admitting source binaries.
 - [x] Prepare four mechanism/process candidates and draft baselines for human corpus review without marking them accepted.
 - [x] Prepare four concept/comparison candidates and draft baselines with explicit relation classes for human corpus review without marking them accepted.
+- [x] Prepare four graphical-abstract candidates and draft baselines with explicit non-evidentiary asset boundaries for human corpus review without marking them accepted.
 - [ ] Establish the 12-item human-approved evaluation corpus.
 - [ ] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [ ] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.

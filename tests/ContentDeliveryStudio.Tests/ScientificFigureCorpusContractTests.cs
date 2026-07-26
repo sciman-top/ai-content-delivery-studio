@@ -147,13 +147,17 @@ public sealed class ScientificFigureCorpusContractTests
     {
         var manifest = LoadObject("eval/scientific-figures/corpus.json");
         manifest["admissionState"] = "human-approved";
+        manifest["items"]!.AsArray().RemoveAt(0);
 
-        Assert.Contains("items.count", ValidateCorpusManifest(manifest));
+        var errors = ValidateCorpusManifest(manifest);
+        Assert.Contains("items.count", errors);
+        Assert.Contains("items.admissionStatus", errors);
     }
 
     [Theory]
     [InlineData("mechanism-process")]
     [InlineData("concept-comparison")]
+    [InlineData("graphical-abstract")]
     public void CorpusCategory_HasFourReviewableDistinctBaselines(string category)
     {
         var manifest = LoadObject("eval/scientific-figures/corpus.json");
@@ -194,6 +198,23 @@ public sealed class ScientificFigureCorpusContractTests
             Assert.Equal(
                 new[] { "associative-non-causal", "causal", "comparative", "directional" },
                 relationClasses.Order());
+        }
+
+        if (category == "graphical-abstract")
+        {
+            foreach (var item in items)
+            {
+                var baseline = LoadObject(item["goldBaselinePath"]!.GetValue<string>());
+                Assert.Contains(
+                    baseline["allowedVariation"]!.AsArray(),
+                    variation => variation!["scope"]!.GetValue<string>() == "non-evidentiary-asset");
+                var mutationIds = baseline["mutations"]!.AsArray()
+                    .Select(mutation => mutation!["mutationId"]!.GetValue<string>())
+                    .ToArray();
+                Assert.Contains(mutationIds, id => id.StartsWith("scientific-omitted-limitation-", StringComparison.Ordinal));
+                Assert.Contains(mutationIds, id => id.StartsWith("scientific-invented-visual-claim-", StringComparison.Ordinal));
+                Assert.Contains(mutationIds, id => id.StartsWith("visual-decorative-asset-implying-evidence-", StringComparison.Ordinal));
+            }
         }
     }
 

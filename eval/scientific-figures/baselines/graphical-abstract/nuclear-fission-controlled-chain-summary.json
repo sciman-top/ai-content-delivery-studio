@@ -1,0 +1,38 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "nuclear-fission-controlled-chain-summary",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Summarize conditional fission-chain feedback, neutron regulation, and residual decay heat without providing reactor design parameters.",
+  "claims": [
+    {"claimId": "central-message", "text": "A self-sustaining chain requires enough released neutrons to induce later fissions; moderation and absorption regulate feedback, but stopping the chain does not remove decay heat.", "anchorIds": ["anchor-chain", "anchor-regulation"]},
+    {"claimId": "approved-abstraction", "text": "Tokens and reactor silhouettes are qualitative system roles, not counts, geometry, operating parameters, or a safety case.", "anchorIds": ["anchor-fission"]}
+  ],
+  "anchors": [
+    {"anchorId": "anchor-fission", "location": "OpenStax Physics 22.4, fs-id1167067092552 and Figure 22.26; PDF pages 771-772", "evidenceKind": "normalized-text", "normalizedText": "Neutron absorption can deform and split a heavy nucleus, releasing energy and additional neutrons."},
+    {"anchorId": "anchor-chain", "location": "OpenStax Physics 22.4, fs-id1167066961774 and Figure 22.27; PDF page 772", "evidenceKind": "verbatim-text", "exactQuote": "However, not every neutron produced by fission induces further fission."},
+    {"anchorId": "anchor-regulation", "location": "OpenStax Physics 22.4, fs-id1167067029303 and Figure 22.28; PDF page 773", "evidenceKind": "normalized-text", "normalizedText": "Water slows neutrons, control rods absorb neutrons to regulate flux, and radioactive fission products continue generating heat after the chain terminates."}
+  ],
+  "elements": [
+    {"elementId": "fission-event", "meaning": "Neutron-induced splitting with fragments, energy, and emitted neutrons.", "anchorIds": ["anchor-fission"]},
+    {"elementId": "chain-feedback", "meaning": "Subset of emitted neutrons that induce subsequent fissions.", "anchorIds": ["anchor-chain"]},
+    {"elementId": "reactor-controls", "meaning": "Moderator and control rods regulating neutron behavior in the cited reactor context.", "anchorIds": ["anchor-regulation"]},
+    {"elementId": "residual-heat", "meaning": "Heat from radioactive fission products after chain termination.", "anchorIds": ["anchor-regulation"]}
+  ],
+  "relations": [
+    {"relationId": "fission-feeds-chain", "sourceElementId": "fission-event", "targetElementId": "chain-feedback", "relationClass": "causal", "relationType": "released-neutrons-may-induce-subsequent-fissions", "anchorIds": ["anchor-fission", "anchor-chain"]},
+    {"relationId": "controls-regulate-chain", "sourceElementId": "reactor-controls", "targetElementId": "chain-feedback", "relationClass": "causal", "relationType": "moderation-and-absorption-regulate-neutron-feedback", "anchorIds": ["anchor-regulation"]},
+    {"relationId": "termination-not-zero-heat", "sourceElementId": "chain-feedback", "targetElementId": "residual-heat", "relationClass": "associative-non-causal", "relationType": "chain-termination-does-not-immediately-eliminate-decay-heat", "anchorIds": ["anchor-regulation"]}
+  ],
+  "allowedVariation": [
+    {"scope": "layout", "rule": "Fission, feedback, regulation, and residual-heat layers may be rearranged if causal order remains clear."},
+    {"scope": "style", "rule": "Token colors and branch spacing may vary without encoding probability, flux, power, or critical mass."},
+    {"scope": "non-evidentiary-asset", "rule": "Generic tokens, water band, rod silhouettes, containment outline, and warning icon establish roles but carry no facility or measurement evidence."}
+  ],
+  "mutations": [
+    {"mutationId": "scientific-omitted-limitation-residual-heat", "category": "scientific", "description": "State that stopping the chain or inserting rods immediately removes all heat.", "expectedOutcome": "block"},
+    {"mutationId": "scientific-invented-visual-claim-token-count", "category": "scientific", "description": "Use exact token counts or geometry to assert multiplication factor, reaction rate, critical mass, or power.", "expectedOutcome": "block"},
+    {"mutationId": "visual-decorative-asset-implying-evidence-reactor", "category": "visual", "description": "Use smoke, facility photos, heat maps, gauges, or scaled containment as accident, dose, operating, or safety evidence.", "expectedOutcome": "block"}
+  ],
+  "humanReview": {"status": "draft"}
+}

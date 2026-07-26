@@ -1,0 +1,36 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "mechanics-projectile-independent-components-summary",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Summarize ideal projectile motion as independent horizontal and vertical components sharing time and recombining into one trajectory.",
+  "claims": [
+    {"claimId": "central-message", "text": "With negligible air resistance and uniform downward gravity, independent horizontal and vertical motions share time and recombine into one trajectory.", "anchorIds": ["anchor-central", "anchor-components"]},
+    {"claimId": "approved-abstraction", "text": "This is a qualitative-to-symbolic schematic, not a measured or to-scale trajectory.", "anchorIds": ["anchor-limitation"]}
+  ],
+  "anchors": [
+    {"anchorId": "anchor-limitation", "location": "OpenStax Physics 5.3, fs-id1167067029756; PDF page 170", "evidenceKind": "verbatim-text", "exactQuote": "Projectile motion is the motion of an object thrown (projected) into the air when, after the initial force that launches the object, air resistance is negligible and the only other force that object experiences is the force of gravity."},
+    {"anchorId": "anchor-central", "location": "OpenStax Physics 5.3, fs-id1167066778142; PDF pages 170-171", "evidenceKind": "verbatim-text", "exactQuote": "The most important concept in projectile motion is that when air resistance is ignored, horizontal and vertical motions are independent, meaning that they don’t influence one another."},
+    {"anchorId": "anchor-components", "location": "OpenStax Physics 5.3, component discussion and Table 5.1; PDF pages 171-172", "evidenceKind": "normalized-equation", "normalizedEquation": "a_x = 0; a_y = -g; horizontal and vertical components share t"}
+  ],
+  "elements": [
+    {"elementId": "horizontal-lane", "meaning": "Constant-horizontal-velocity component lane.", "anchorIds": ["anchor-components"]},
+    {"elementId": "vertical-lane", "meaning": "Downward-acceleration vertical component lane.", "anchorIds": ["anchor-components"]},
+    {"elementId": "trajectory", "meaning": "Vector recombination of component positions and velocities at shared times.", "anchorIds": ["anchor-central", "anchor-components"]}
+  ],
+  "relations": [
+    {"relationId": "components-recombine", "sourceElementId": "horizontal-lane", "targetElementId": "trajectory", "relationClass": "directional", "relationType": "component-vectors-recombine", "anchorIds": ["anchor-components"]},
+    {"relationId": "lanes-share-time", "sourceElementId": "horizontal-lane", "targetElementId": "vertical-lane", "relationClass": "associative-non-causal", "relationType": "independent-components-share-time", "anchorIds": ["anchor-central", "anchor-components"]}
+  ],
+  "allowedVariation": [
+    {"scope": "layout", "rule": "Component lanes may stack or align beside the trajectory if shared time markers remain explicit."},
+    {"scope": "style", "rule": "Color coding may vary without encoding measured speed, time, or uncertainty."},
+    {"scope": "non-evidentiary-asset", "rule": "A generic projectile, ground band, sky fill, and ghost positions may orient the reader but carry no measurement evidence."}
+  ],
+  "mutations": [
+    {"mutationId": "scientific-omitted-limitation-air-resistance", "category": "scientific", "description": "Remove the negligible-air-resistance condition while retaining independence and parabolic-trajectory claims.", "expectedOutcome": "block"},
+    {"mutationId": "scientific-invented-visual-claim-spacing", "category": "scientific", "description": "Use unequal horizontal spacing at equal times while labeling horizontal velocity constant.", "expectedOutcome": "block"},
+    {"mutationId": "visual-decorative-asset-implying-evidence-terrain", "category": "visual", "description": "Use a scaled terrain grid, flame trail, or uncertainty band as if it reports range, drag, speed, or error.", "expectedOutcome": "block"}
+  ],
+  "humanReview": {"status": "draft"}
+}

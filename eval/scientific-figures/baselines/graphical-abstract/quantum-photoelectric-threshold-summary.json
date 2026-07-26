@@ -1,0 +1,36 @@
+{
+  "$schema": "../../gold-baseline.schema.json",
+  "version": 1,
+  "itemId": "quantum-photoelectric-threshold-summary",
+  "sourceHash": "sha256:a3f75487411ef13d0270c65fc801ceff2b28e6b339afed9b407fe477f7e8453e",
+  "figureObjective": "Summarize photoelectric threshold and separate the effects of photon frequency and intensity on electron emission.",
+  "claims": [
+    {"claimId": "central-message", "text": "Frequency determines threshold and maximum kinetic energy; above threshold, intensity changes emitted-electron count rather than maximum kinetic energy.", "anchorIds": ["anchor-threshold", "anchor-intensity", "anchor-energy"]},
+    {"claimId": "approved-abstraction", "text": "Photon, electron, and barrier glyphs are qualitative and do not report a material-specific dataset.", "anchorIds": ["anchor-energy"]}
+  ],
+  "anchors": [
+    {"anchorId": "anchor-threshold", "location": "OpenStax Physics 21.2, fs-id1167065947633 property 1; PDF page 719", "evidenceKind": "verbatim-text", "exactQuote": "For a given material, there is a threshold frequency f0 for the EM radiation below which no electrons are ejected, regardless of intensity."},
+    {"anchorId": "anchor-intensity", "location": "OpenStax Physics 21.2, fs-id1167065947633 property 4; PDF page 719", "evidenceKind": "verbatim-text", "exactQuote": "The maximum kinetic energy of ejected electrons is independent of the intensity of the EM radiation."},
+    {"anchorId": "anchor-energy", "location": "OpenStax Physics 21.2, fs-id1164567516604 and equation 21.6; PDF page 719", "evidenceKind": "normalized-equation", "normalizedEquation": "E = h f; KE_max = h f - BE; BE = h f_0"}
+  ],
+  "elements": [
+    {"elementId": "incident-photons", "meaning": "Photons characterized separately by frequency and count.", "anchorIds": ["anchor-energy"]},
+    {"elementId": "metal-surface", "meaning": "Clean material surface with binding energy BE.", "anchorIds": ["anchor-threshold", "anchor-energy"]},
+    {"elementId": "ejected-electrons", "meaning": "Electrons emitted only when photon energy reaches the material threshold.", "anchorIds": ["anchor-threshold", "anchor-intensity"]}
+  ],
+  "relations": [
+    {"relationId": "frequency-threshold", "sourceElementId": "incident-photons", "targetElementId": "ejected-electrons", "relationClass": "causal", "relationType": "photon-energy-above-threshold-enables-emission", "anchorIds": ["anchor-threshold", "anchor-energy"]},
+    {"relationId": "intensity-not-ke", "sourceElementId": "incident-photons", "targetElementId": "ejected-electrons", "relationClass": "associative-non-causal", "relationType": "intensity-does-not-increase-maximum-kinetic-energy-at-fixed-frequency", "anchorIds": ["anchor-intensity"]}
+  ],
+  "allowedVariation": [
+    {"scope": "layout", "rule": "Frequency and intensity lanes may be stacked or split if their distinct outcomes remain explicit."},
+    {"scope": "style", "rule": "Color may distinguish threshold cases but may not encode wavelength without a legend and evidence."},
+    {"scope": "non-evidentiary-asset", "rule": "Stylized photons, electrons, lamp housing, plate texture, and barrier motif identify roles but carry no quantitative evidence."}
+  ],
+  "mutations": [
+    {"mutationId": "scientific-omitted-limitation-material-threshold", "category": "scientific", "description": "Remove the material-dependent threshold while claiming one universal work function.", "expectedOutcome": "block"},
+    {"mutationId": "scientific-invented-visual-claim-intensity-ke", "category": "scientific", "description": "Show brighter light increasing KE_max at fixed frequency or enabling below-threshold emission.", "expectedOutcome": "block"},
+    {"mutationId": "visual-decorative-asset-implying-evidence-photon-count", "category": "visual", "description": "Use exact-looking glyph counts, scaled barriers, axes, or error bars as measured data.", "expectedOutcome": "block"}
+  ],
+  "humanReview": {"status": "draft"}
+}

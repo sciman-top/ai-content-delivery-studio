@@ -200,14 +200,19 @@ admission and Checkpoint 0 remain open.
 
 **Acceptance criteria:**
 
-- [ ] Four sources identify the central message, approved abstraction level, and explicit non-evidentiary asset boundary.
-- [ ] Every scientific element remains evidence-linked even when visual variation is allowed.
-- [ ] Mutations cover omitted limitations, invented visual claims, and decorative assets that imply evidence.
+- [x] Four sources identify the central message, approved abstraction level, and explicit non-evidentiary asset boundary.
+- [x] Every scientific element remains evidence-linked even when visual variation is allowed.
+- [x] Mutations cover omitted limitations, invented visual claims, and decorative assets that imply evidence.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
 - [ ] Human corpus review records all four items as accepted.
+
+Candidate preparation is complete as of 2026-07-26. All four records remain
+`admissionStatus: candidate`, all baselines remain `humanReview.status:
+draft`, and the corpus remains `admissionState: building`; therefore Task 5
+admission and Checkpoint 0 remain open.
 
 **Dependencies:** Task 2
 
