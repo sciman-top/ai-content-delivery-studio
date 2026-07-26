@@ -179,7 +179,39 @@
           "type": "string",
           "pattern": "^eval/scientific-figures/[a-z0-9][a-z0-9./-]+\\.json$"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "admissionStatus": {
+                "const": "accepted"
+              }
+            },
+            "required": [
+              "admissionStatus"
+            ]
+          },
+          "then": {
+            "properties": {
+              "source": {
+                "properties": {
+                  "extractionAssessment": {
+                    "properties": {
+                      "status": {
+                        "const": "passed"
+                      },
+                      "anchorCoverage": {
+                        "const": "complete"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "source": {
       "type": "object",
@@ -192,7 +224,8 @@
         "license",
         "contentHash",
         "evidenceLocations",
-        "localCacheKey"
+        "localCacheKey",
+        "extractionAssessment"
       ],
       "properties": {
         "sourceId": {
@@ -232,6 +265,51 @@
         "localCacheKey": {
           "type": "string",
           "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._/-]+$"
+        },
+        "extractionAssessment": {
+          "$ref": "#/$defs/extractionAssessment"
+        }
+      }
+    },
+    "extractionAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "method",
+        "assessedAt",
+        "textHash",
+        "anchorCoverage"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "passed",
+            "blocked"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "assessedAt": {
+          "type": "string",
+          "format": "date"
+        },
+        "textHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "anchorCoverage": {
+          "enum": [
+            "complete",
+            "partial",
+            "none"
+          ]
+        },
+        "notes": {
+          "type": "string",
+          "minLength": 1
         }
       }
     },

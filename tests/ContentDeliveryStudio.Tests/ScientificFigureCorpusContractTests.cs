@@ -25,6 +25,16 @@ public sealed class ScientificFigureCorpusContractTests
         "contentHash",
         "evidenceLocations",
         "localCacheKey",
+        "extractionAssessment",
+    ];
+
+    private static readonly string[] RequiredExtractionAssessmentFields =
+    [
+        "status",
+        "method",
+        "assessedAt",
+        "textHash",
+        "anchorCoverage",
     ];
 
     private static readonly string[] RequiredBaselineFields =
@@ -55,8 +65,14 @@ public sealed class ScientificFigureCorpusContractTests
             RequiredSourceFields.Order(),
             ReadRequiredFields(corpusSchema, "$defs", "source").Order());
         Assert.Equal(
+            RequiredExtractionAssessmentFields.Order(),
+            ReadRequiredFields(corpusSchema, "$defs", "extractionAssessment").Order());
+        Assert.Equal(
             RequiredBaselineFields.Order(),
             ReadRequiredFields(baselineSchema).Order());
+        Assert.Equal(
+            ["status"],
+            ReadRequiredFields(baselineSchema, "$defs", "humanReview"));
 
         var mutationCoverage = baselineSchema["properties"]?["mutations"]?["allOf"]?.AsArray();
         Assert.NotNull(mutationCoverage);
@@ -112,6 +128,7 @@ public sealed class ScientificFigureCorpusContractTests
         "source.license",
         "source.contentHash",
         "source.evidenceLocations",
+        "source.extractionAssessment",
     };
 
     [Theory]
@@ -146,6 +163,27 @@ public sealed class ScientificFigureCorpusContractTests
         Assert.Contains($"mutations.{category}", ValidateGoldBaseline(baseline));
     }
 
+    [Fact]
+    public void GoldBaselineContract_RejectsAcceptedReviewWithoutReviewer()
+    {
+        var baseline = CreateValidGoldBaseline();
+        var humanReview = baseline["humanReview"]!.AsObject();
+        humanReview.Remove("reviewer");
+        humanReview.Remove("reviewedAt");
+
+        Assert.Contains("humanReview.reviewer", ValidateGoldBaseline(baseline));
+        Assert.Contains("humanReview.reviewedAt", ValidateGoldBaseline(baseline));
+    }
+
+    [Fact]
+    public void GoldBaselineContract_AllowsDraftWithoutFabricatedReviewer()
+    {
+        var baseline = CreateValidGoldBaseline();
+        baseline["humanReview"] = JsonNode.Parse("""{"status":"draft"}""");
+
+        Assert.Empty(ValidateGoldBaseline(baseline));
+    }
+
     private static IReadOnlyCollection<string> ValidateCorpusItem(JsonObject item)
     {
         var errors = new List<string>();
@@ -175,6 +213,30 @@ public sealed class ScientificFigureCorpusContractTests
         if (source["evidenceLocations"] is not JsonArray { Count: > 0 })
         {
             errors.Add("source.evidenceLocations");
+        }
+
+        if (source["extractionAssessment"] is not JsonObject extractionAssessment)
+        {
+            errors.Add("source.extractionAssessment");
+        }
+        else
+        {
+            AddMissingFields(
+                errors,
+                extractionAssessment,
+                RequiredExtractionAssessmentFields,
+                "source.extractionAssessment.");
+            if (!HasSha256(extractionAssessment["textHash"]))
+            {
+                errors.Add("source.extractionAssessment.textHash");
+            }
+
+            if (item["admissionStatus"]?.GetValue<string>() == "accepted"
+                && (extractionAssessment["status"]?.GetValue<string>() != "passed"
+                    || extractionAssessment["anchorCoverage"]?.GetValue<string>() != "complete"))
+            {
+                errors.Add("source.extractionAssessment.acceptance");
+            }
         }
 
         return errors;
@@ -261,6 +323,24 @@ public sealed class ScientificFigureCorpusContractTests
             }
         }
 
+        if (baseline["humanReview"] is not JsonObject humanReview
+            || !HasValue(humanReview, "status"))
+        {
+            errors.Add("humanReview.status");
+        }
+        else if (humanReview["status"]?.GetValue<string>() is "accepted" or "rejected")
+        {
+            if (!HasValue(humanReview, "reviewer"))
+            {
+                errors.Add("humanReview.reviewer");
+            }
+
+            if (!HasValue(humanReview, "reviewedAt"))
+            {
+                errors.Add("humanReview.reviewedAt");
+            }
+        }
+
         return errors;
     }
 
@@ -285,7 +365,14 @@ public sealed class ScientificFigureCorpusContractTests
                 },
                 "contentHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "evidenceLocations": ["fixture.md: paragraph 1"],
-                "localCacheKey": "fixture-mechanism-01.md"
+                "localCacheKey": "fixture-mechanism-01.md",
+                "extractionAssessment": {
+                  "status": "passed",
+                  "method": "repository fixture direct-text read",
+                  "assessedAt": "2026-07-26",
+                  "textHash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                  "anchorCoverage": "complete"
+                }
               },
               "figureObjective": "Explain a balanced-force mechanism.",
               "goldBaselinePath": "eval/scientific-figures/fixtures/fixture-mechanism-01.json"

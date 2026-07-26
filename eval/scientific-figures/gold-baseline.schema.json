@@ -282,9 +282,7 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "status",
-        "reviewer",
-        "reviewedAt"
+        "status"
       ],
       "properties": {
         "status": {
@@ -302,7 +300,30 @@
           "type": "string",
           "format": "date"
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "accepted",
+                  "rejected"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          },
+          "then": {
+            "required": [
+              "reviewer",
+              "reviewedAt"
+            ]
+          }
+        }
+      ]
     }
   }
 }
