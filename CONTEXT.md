@@ -110,3 +110,13 @@ _Avoid_: PNG preview, generated image
 A render-plan-approved decorative geometry group that cannot contain visible
 text, relations, images, or scientific provenance.
 _Avoid_: Scientific element, generated background with labels
+
+**Approved SVG Hash**:
+The SHA-256 identity explicitly authorized for PNG/PDF derivation; the exporter
+recomputes the SVG bytes and fails closed unless artifact and approval match.
+_Avoid_: Preview hash, semantic hash
+
+**Scientific Export Semantics**:
+The canonical accessibility, element, exact-text, relation, direction, and
+specification-provenance fixtures shared by every export from one SVG authority.
+_Avoid_: OCR result, visual-review score

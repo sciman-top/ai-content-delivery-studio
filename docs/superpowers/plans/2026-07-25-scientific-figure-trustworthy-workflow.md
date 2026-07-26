@@ -472,14 +472,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] PNG and PDF are derived from the exact approved SVG hash.
-- [ ] Export metadata records source SVG, exporter identity, version, dimensions, and file hashes.
-- [ ] Formula, label, arrow, legend, and accessibility fixtures remain equivalent across exports.
+- [x] PNG and PDF are derived from the exact approved SVG hash.
+- [x] Export metadata records source SVG, exporter identity, version, dimensions, and file hashes.
+- [x] Formula, label, arrow, legend, and accessibility fixtures remain equivalent across exports.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureExporterTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificExportEquivalenceTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureExporterTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificExportEquivalenceTests`
 
 **Dependencies:** Task 13
 

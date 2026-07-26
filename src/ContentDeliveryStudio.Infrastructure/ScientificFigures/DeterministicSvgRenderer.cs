@@ -102,7 +102,7 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
                 new XAttribute("markerHeight", 7),
                 new XAttribute("refX", 9),
                 new XAttribute("refY", 3.5),
-                new XAttribute("orient", "auto"),
+                new XAttribute("orient", "auto-start-reverse"),
                 new XAttribute("markerUnits", "strokeWidth"),
                 new XElement(
                     Svg + "path",
@@ -117,6 +117,8 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
     {
         var source = positions[connection.SourceRenderElementId];
         var target = positions[connection.TargetRenderElementId];
+        var sourcePoint = source.EdgeToward(target.CenterX, target.CenterY);
+        var targetPoint = target.EdgeToward(source.CenterX, source.CenterY);
         var path = new XElement(
             Svg + "path",
             new XAttribute("id", EncodeId(connection.RenderConnectionId)),
@@ -127,7 +129,7 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
             new XAttribute(
                 "d",
                 FormattableString.Invariant(
-                    $"M {source.CenterX:0.###} {source.CenterY:0.###} L {target.CenterX:0.###} {target.CenterY:0.###}")),
+                    $"M {sourcePoint.X:0.###} {sourcePoint.Y:0.###} L {targetPoint.X:0.###} {targetPoint.Y:0.###}")),
             new XAttribute("fill", "none"),
             new XAttribute("stroke", Style(plan, "scientific-stroke", "#1F2937")),
             new XAttribute("stroke-width", 2));
@@ -153,8 +155,8 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
             path,
             new XElement(
                 Svg + "text",
-                new XAttribute("x", Number((source.CenterX + target.CenterX) / 2)),
-                new XAttribute("y", Number((source.CenterY + target.CenterY) / 2 - 8)),
+                new XAttribute("x", Number((sourcePoint.X + targetPoint.X) / 2)),
+                new XAttribute("y", Number((sourcePoint.Y + targetPoint.Y) / 2 - 8)),
                 new XAttribute("text-anchor", "middle"),
                 new XAttribute("font-family", Style(plan, "font-family", "Segoe UI")),
                 new XAttribute("font-size", 16),
@@ -300,5 +302,24 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
         public double CenterX => X + (Width / 2);
 
         public double CenterY => Y + (Height / 2);
+
+        public ElementPoint EdgeToward(double targetX, double targetY)
+        {
+            var deltaX = targetX - CenterX;
+            var deltaY = targetY - CenterY;
+            if (deltaX == 0 && deltaY == 0)
+            {
+                return new ElementPoint(CenterX, CenterY);
+            }
+
+            var scale = 1 / Math.Max(
+                Math.Abs(deltaX) / (Width / 2),
+                Math.Abs(deltaY) / (Height / 2));
+            return new ElementPoint(
+                CenterX + (deltaX * scale),
+                CenterY + (deltaY * scale));
+        }
     }
+
+    private sealed record ElementPoint(double X, double Y);
 }

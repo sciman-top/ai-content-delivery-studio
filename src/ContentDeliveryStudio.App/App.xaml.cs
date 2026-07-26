@@ -48,6 +48,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddTransient<ScientificFigureApplicationService>();
         builder.Services.AddSingleton<ScientificFigureSpecCompiler>();
         builder.Services.AddSingleton<IScientificFigureRenderer, DeterministicSvgRenderer>();
+        builder.Services.AddSingleton<IScientificFigureExporter, ScientificFigureExporter>();
         builder.Services.AddTransient<ProjectApplicationService>();
         builder.Services.AddSingleton<IProviderCenterConfigurationService, DotEnvProviderCenterConfigurationService>();
         builder.Services.AddOpenAiProviderHttpClient(new OpenAiProviderOptions());

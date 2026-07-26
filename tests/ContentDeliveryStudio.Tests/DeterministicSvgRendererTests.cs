@@ -92,6 +92,50 @@ public sealed class DeterministicSvgRendererTests
         Assert.Single(relations);
     }
 
+    [Fact]
+    public void Render_DirectedRelationTerminatesAtNodeBoundaries()
+    {
+        var document = XDocument.Parse(
+            new DeterministicSvgRenderer().Render(Plan()).Svg);
+        var relation = document.Descendants(Svg + "path")
+            .Single(element => (string?)element.Attribute("id") == "render-relation-force-formula");
+
+        Assert.Equal("M 458 400 L 742 400", (string?)relation.Attribute("d"));
+        Assert.Equal("url(#arrowhead)", (string?)relation.Attribute("marker-end"));
+    }
+
+    [Fact]
+    public void Render_BidirectionalRelationReversesTheStartMarker()
+    {
+        var original = Plan();
+        var plan = SvgRenderPlan.Create(
+            original.PlanId,
+            original.SpecificationId,
+            original.SpecificationVersion,
+            original.Canvas,
+            original.Layers,
+            original.Elements,
+            original.Connections
+                .Select(connection => connection with
+                {
+                    Direction = FigureRelationDirection.Bidirectional,
+                })
+                .ToArray(),
+            original.Accessibility,
+            original.Export,
+            original.LayoutConstraints,
+            original.StyleTokens);
+
+        var document = XDocument.Parse(new DeterministicSvgRenderer().Render(plan).Svg);
+        var relation = document.Descendants(Svg + "path")
+            .Single(element => (string?)element.Attribute("id") == "render-relation-force-formula");
+        var marker = document.Descendants(Svg + "marker").Single();
+
+        Assert.Equal("url(#arrowhead)", (string?)relation.Attribute("marker-start"));
+        Assert.Equal("url(#arrowhead)", (string?)relation.Attribute("marker-end"));
+        Assert.Equal("auto-start-reverse", (string?)marker.Attribute("orient"));
+    }
+
     internal static SvgRenderPlan Plan(bool includeDecoration = false)
     {
         var elements = new List<SvgRenderElement>
