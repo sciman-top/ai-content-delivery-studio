@@ -4,10 +4,10 @@
 
 The design in `docs/superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md` is approved.
 
-Task 1 supply-chain research and benchmark decisions are complete. Runtime
-implementation has not started, Tasks 2-30 remain open, and the recorded V1
-launch baseline remains closed and unchanged. This is a new post-V1 flagship
-slice.
+Task 1 supply-chain research and benchmark decisions and Task 2 corpus
+contract are complete. Runtime implementation and corpus admission have not
+started, Tasks 3-30 remain open, and the recorded V1 launch baseline remains
+closed and unchanged. This is a new post-V1 flagship slice.
 
 ## Objective
 
@@ -109,15 +109,15 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoR
 
 **Acceptance criteria:**
 
-- [ ] Corpus and gold-baseline schemas require source identity, stable hash, figure objective, claims, anchors, elements, relations, allowed variation, and mutations.
-- [ ] Repository tests reject missing licensing, source hash, evidence location, or required mutation coverage.
-- [ ] Paper binaries remain outside Git while redistribution-safe fixtures remain available to default tests.
+- [x] Corpus and gold-baseline schemas require source identity, stable hash, figure objective, claims, anchors, elements, relations, allowed variation, and mutations.
+- [x] Repository tests reject missing licensing, source hash, evidence location, or required mutation coverage.
+- [x] Paper binaries remain outside Git while redistribution-safe fixtures remain available to default tests.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
-- [ ] `git check-ignore eval/scientific-figures/.cache/probe.pdf`
-- [ ] `git diff --check`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusContractTests`
+- [x] `git check-ignore eval/scientific-figures/.cache/probe.pdf`
+- [x] `git diff --check`
 
 **Dependencies:** Task 1
 

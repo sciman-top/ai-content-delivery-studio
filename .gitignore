@@ -5,6 +5,7 @@ obj/
 .idea/
 TestResults/
 /artifacts/
+/eval/scientific-figures/.cache/
 dist/
 publish/
 .worktrees/

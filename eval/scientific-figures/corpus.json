@@ -1,0 +1,14 @@
+{
+  "$schema": "./corpus.schema.json",
+  "version": 1,
+  "corpusId": "scientific-figures-v1",
+  "requiredItemCount": 12,
+  "admissionState": "building",
+  "localCacheRoot": ".cache",
+  "categoryRequirements": {
+    "mechanism-process": 4,
+    "concept-comparison": 4,
+    "graphical-abstract": 4
+  },
+  "items": []
+}

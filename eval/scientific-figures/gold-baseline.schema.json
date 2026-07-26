@@ -1,0 +1,308 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciman.top/schemas/content-delivery-studio/scientific-figure-gold-baseline.v1.schema.json",
+  "title": "Scientific Figure Gold Baseline",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "itemId",
+    "sourceHash",
+    "figureObjective",
+    "claims",
+    "anchors",
+    "elements",
+    "relations",
+    "allowedVariation",
+    "mutations",
+    "humanReview"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "const": 1
+    },
+    "itemId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]+$"
+    },
+    "sourceHash": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "figureObjective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    },
+    "anchors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/anchor"
+      }
+    },
+    "elements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/element"
+      }
+    },
+    "relations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/relation"
+      }
+    },
+    "allowedVariation": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/allowedVariation"
+      }
+    },
+    "mutations": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "#/$defs/mutation"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "category"
+            ],
+            "properties": {
+              "category": {
+                "const": "scientific"
+              }
+            }
+          },
+          "minContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "category"
+            ],
+            "properties": {
+              "category": {
+                "const": "visual"
+              }
+            }
+          },
+          "minContains": 1
+        }
+      ]
+    },
+    "humanReview": {
+      "$ref": "#/$defs/humanReview"
+    }
+  },
+  "$defs": {
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "text",
+        "anchorIds"
+      ],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "anchorIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "anchorId",
+        "location",
+        "exactQuote"
+      ],
+      "properties": {
+        "anchorId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "location": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exactQuote": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "element": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "elementId",
+        "meaning",
+        "anchorIds"
+      ],
+      "properties": {
+        "elementId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "meaning": {
+          "type": "string",
+          "minLength": 1
+        },
+        "anchorIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "relation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "relationId",
+        "sourceElementId",
+        "targetElementId",
+        "relationType",
+        "anchorIds"
+      ],
+      "properties": {
+        "relationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceElementId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "targetElementId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "relationType": {
+          "type": "string",
+          "minLength": 1
+        },
+        "anchorIds": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "allowedVariation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "rule"
+      ],
+      "properties": {
+        "scope": {
+          "enum": [
+            "layout",
+            "style",
+            "non-evidentiary-asset"
+          ]
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "mutation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mutationId",
+        "category",
+        "description",
+        "expectedOutcome"
+      ],
+      "properties": {
+        "mutationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "category": {
+          "enum": [
+            "scientific",
+            "visual"
+          ]
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "expectedOutcome": {
+          "const": "block"
+        }
+      }
+    },
+    "humanReview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reviewer",
+        "reviewedAt"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "draft",
+            "accepted",
+            "rejected"
+          ]
+        },
+        "reviewer": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    }
+  }
+}

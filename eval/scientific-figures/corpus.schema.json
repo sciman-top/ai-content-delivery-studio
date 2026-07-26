@@ -1,0 +1,270 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sciman.top/schemas/content-delivery-studio/scientific-figure-corpus.v1.schema.json",
+  "title": "Scientific Figure Evaluation Corpus",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "corpusId",
+    "requiredItemCount",
+    "admissionState",
+    "localCacheRoot",
+    "categoryRequirements",
+    "items"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "const": 1
+    },
+    "corpusId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "requiredItemCount": {
+      "const": 12
+    },
+    "admissionState": {
+      "enum": [
+        "building",
+        "human-approved"
+      ]
+    },
+    "localCacheRoot": {
+      "const": ".cache"
+    },
+    "categoryRequirements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mechanism-process",
+        "concept-comparison",
+        "graphical-abstract"
+      ],
+      "properties": {
+        "mechanism-process": {
+          "const": 4
+        },
+        "concept-comparison": {
+          "const": 4
+        },
+        "graphical-abstract": {
+          "const": 4
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "maxItems": 12,
+      "items": {
+        "$ref": "#/$defs/corpusItem"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "admissionState": {
+            "const": "human-approved"
+          }
+        },
+        "required": [
+          "admissionState"
+        ]
+      },
+      "then": {
+        "properties": {
+          "items": {
+            "minItems": 12,
+            "items": {
+              "properties": {
+                "admissionStatus": {
+                  "const": "accepted"
+                }
+              }
+            },
+            "allOf": [
+              {
+                "contains": {
+                  "properties": {
+                    "category": {
+                      "const": "mechanism-process"
+                    }
+                  },
+                  "required": [
+                    "category"
+                  ]
+                },
+                "minContains": 4,
+                "maxContains": 4
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "category": {
+                      "const": "concept-comparison"
+                    }
+                  },
+                  "required": [
+                    "category"
+                  ]
+                },
+                "minContains": 4,
+                "maxContains": 4
+              },
+              {
+                "contains": {
+                  "properties": {
+                    "category": {
+                      "const": "graphical-abstract"
+                    }
+                  },
+                  "required": [
+                    "category"
+                  ]
+                },
+                "minContains": 4,
+                "maxContains": 4
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "corpusItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "itemId",
+        "category",
+        "admissionStatus",
+        "source",
+        "figureObjective",
+        "goldBaselinePath"
+      ],
+      "properties": {
+        "itemId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]+$"
+        },
+        "category": {
+          "enum": [
+            "mechanism-process",
+            "concept-comparison",
+            "graphical-abstract"
+          ]
+        },
+        "admissionStatus": {
+          "enum": [
+            "candidate",
+            "accepted",
+            "rejected"
+          ]
+        },
+        "source": {
+          "$ref": "#/$defs/source"
+        },
+        "figureObjective": {
+          "type": "string",
+          "minLength": 1
+        },
+        "goldBaselinePath": {
+          "type": "string",
+          "pattern": "^eval/scientific-figures/[a-z0-9][a-z0-9./-]+\\.json$"
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourceId",
+        "title",
+        "sourceType",
+        "publicUrl",
+        "license",
+        "contentHash",
+        "evidenceLocations",
+        "localCacheKey"
+      ],
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceType": {
+          "enum": [
+            "paper",
+            "scholarly-article",
+            "repo-fixture"
+          ]
+        },
+        "publicUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "license": {
+          "$ref": "#/$defs/license"
+        },
+        "contentHash": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "evidenceLocations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "localCacheKey": {
+          "type": "string",
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._/-]+$"
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "spdxOrExpression",
+        "redistribution",
+        "sourceUrl",
+        "reviewedAt"
+      ],
+      "properties": {
+        "spdxOrExpression": {
+          "type": "string",
+          "minLength": 1
+        },
+        "redistribution": {
+          "enum": [
+            "allowed",
+            "local-cache-only",
+            "metadata-only"
+          ]
+        },
+        "sourceUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "reviewedAt": {
+          "type": "string",
+          "format": "date"
+        }
+      }
+    }
+  }
+}
