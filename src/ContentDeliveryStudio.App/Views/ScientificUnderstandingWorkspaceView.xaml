@@ -1,0 +1,112 @@
+<UserControl x:Class="ContentDeliveryStudio.App.Views.ScientificUnderstandingWorkspaceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore">
+    <ScrollViewer Margin="6,12,0,0"
+                  VerticalScrollBarVisibility="Auto"
+                  HorizontalScrollBarVisibility="Disabled">
+        <StackPanel>
+            <DockPanel>
+            <TextBlock Text="{Binding ScientificSourceUnderstanding.UnderstandingTitle}" FontWeight="SemiBold" FontSize="15" />
+            <TextBlock DockPanel.Dock="Right"
+                       Text="{Binding ScientificSourceUnderstanding.UnderstandingStatus}"
+                       Foreground="#4D5B6A" />
+            </DockPanel>
+            <TextBlock Text="{Binding ScientificSourceUnderstanding.ClaimsTitle}"
+                       FontWeight="SemiBold"
+                       Margin="0,8,0,0" />
+            <ListBox Height="120"
+                 Margin="0,8,0,0"
+                 ItemsSource="{Binding ScientificSourceUnderstanding.Claims}"
+                 SelectedItem="{Binding ScientificSourceUnderstanding.SelectedClaim, Mode=TwoWay}"
+                 automation:AutomationProperties.AutomationId="ScientificClaimList"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Margin="4">
+                        <TextBlock Text="{Binding ClaimId}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding NormalizedStatement}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            </ListBox>
+            <StackPanel Margin="0,8,0,0">
+                <TextBlock Text="{Binding ScientificSourceUnderstanding.EvidenceTitle}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding ScientificSourceUnderstanding.SelectedEvidence.QuotedText}"
+                       TextWrapping="Wrap"
+                       automation:AutomationProperties.AutomationId="ScientificSelectedEvidenceQuote" />
+                <TextBlock Foreground="#4D5B6A">
+                    <Run Text="{Binding ScientificSourceUnderstanding.SelectedEvidence.Section}" />
+                    <Run Text=" / p." />
+                    <Run Text="{Binding ScientificSourceUnderstanding.SelectedEvidence.PageNumber}" />
+                </TextBlock>
+            </StackPanel>
+            <TextBlock Text="{Binding ScientificSourceUnderstanding.ConflictsTitle}"
+                       FontWeight="SemiBold"
+                       Margin="0,8,0,0" />
+            <ItemsControl Margin="0,4,0,0"
+                      ItemsSource="{Binding ScientificSourceUnderstanding.Conflicts}"
+                      automation:AutomationProperties.AutomationId="ScientificConflictList">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock Text="{Binding Description}" Foreground="#A33A2B" TextWrapping="Wrap" />
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Grid Margin="0,8,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+                <TextBlock Text="{Binding ScientificSourceUnderstanding.CorrectionDraftTitle}" FontWeight="SemiBold" />
+                <TextBlock Grid.Row="1"
+                           Text="{Binding ScientificSourceUnderstanding.ProposedStatementLabel}"
+                           Margin="0,4,0,2" />
+                <TextBox Grid.Row="2"
+                     Text="{Binding ScientificSourceUnderstanding.ProposedStatement, UpdateSourceTrigger=PropertyChanged}"
+                     MinHeight="44"
+                     TextWrapping="Wrap"
+                     AcceptsReturn="True"
+                     automation:AutomationProperties.Name="{Binding ScientificSourceUnderstanding.ProposedStatementLabel}" />
+                <Grid Grid.Row="3" Margin="0,6,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Margin="0,0,3,0">
+                        <TextBlock Text="{Binding ScientificSourceUnderstanding.ReviewerLabel}" />
+                        <TextBox Text="{Binding ScientificSourceUnderstanding.CorrectionReviewer, UpdateSourceTrigger=PropertyChanged}"
+                                 automation:AutomationProperties.Name="{Binding ScientificSourceUnderstanding.ReviewerLabel}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Margin="3,0,0,0">
+                        <TextBlock Text="{Binding ScientificSourceUnderstanding.ReasonLabel}" />
+                        <TextBox Text="{Binding ScientificSourceUnderstanding.CorrectionReason, UpdateSourceTrigger=PropertyChanged}"
+                                 automation:AutomationProperties.Name="{Binding ScientificSourceUnderstanding.ReasonLabel}" />
+                    </StackPanel>
+                </Grid>
+                <Button Grid.Row="4"
+                    Margin="0,6,0,0"
+                    HorizontalAlignment="Left"
+                    Padding="12,5"
+                    Content="{Binding ScientificSourceUnderstanding.CreateCorrectionDraftText}"
+                    Command="{Binding ScientificSourceUnderstanding.CreateCorrectionDraftCommand}"
+                    automation:AutomationProperties.AutomationId="CreateScientificClaimCorrectionDraft" />
+                <ListBox Grid.Row="5"
+                     Margin="0,6,0,0"
+                     MaxHeight="80"
+                     ItemsSource="{Binding ScientificSourceUnderstanding.CorrectionDrafts}"
+                     automation:AutomationProperties.AutomationId="ScientificClaimCorrectionDrafts">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding ProposedStatement}" TextWrapping="Wrap" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

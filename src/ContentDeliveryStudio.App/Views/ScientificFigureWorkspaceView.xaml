@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
+             xmlns:views="clr-namespace:ContentDeliveryStudio.App.Views"
              mc:Ignorable="d"
              MinWidth="460"
              MinHeight="360"
@@ -19,6 +20,10 @@
                 </Style.Triggers>
             </Style>
         </Grid.Style>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="72" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
@@ -28,6 +33,7 @@
         </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0"
+                Grid.Row="0"
                 BorderBrush="#D9DEE8"
                 BorderThickness="0,0,1,0"
                 Padding="12"
@@ -39,6 +45,7 @@
             </StackPanel>
         </Border>
         <Border Grid.Column="1"
+                Grid.Row="0"
                 BorderBrush="#D9DEE8"
                 BorderThickness="0,0,1,0"
                 Padding="12"
@@ -50,6 +57,7 @@
             </StackPanel>
         </Border>
         <Border Grid.Column="2"
+                Grid.Row="0"
                 BorderBrush="#D9DEE8"
                 BorderThickness="0,0,1,0"
                 Padding="12"
@@ -61,6 +69,7 @@
             </StackPanel>
         </Border>
         <Border Grid.Column="3"
+                Grid.Row="0"
                 BorderBrush="#D9DEE8"
                 BorderThickness="0,0,1,0"
                 Padding="12"
@@ -72,6 +81,7 @@
             </StackPanel>
         </Border>
         <Border Grid.Column="4"
+                Grid.Row="0"
                 Padding="12"
                 automation:AutomationProperties.AutomationId="ScientificDeliveryWorkspace"
                 automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[4].Title}">
@@ -80,5 +90,13 @@
                 <TextBlock Text="{Binding ScientificWorkspace.Workspaces[4].StatusText}" Margin="0,8,0,0" Foreground="#4D5B6A" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
+        <Grid Grid.Row="1" Grid.ColumnSpan="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <views:ScientificSourceWorkspaceView Grid.Column="0" />
+            <views:ScientificUnderstandingWorkspaceView Grid.Column="1" />
+        </Grid>
     </Grid>
 </UserControl>

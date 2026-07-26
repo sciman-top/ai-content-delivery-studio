@@ -1867,7 +1867,8 @@ public sealed record WorkbenchTabViewModel(
     WorkbenchTabKind Kind,
     string Title,
     string EmptyState,
-    ScientificFigureWorkspaceProjection? ScientificWorkspace = null)
+    ScientificFigureWorkspaceProjection? ScientificWorkspace = null,
+    ScientificSourceUnderstandingViewModel? ScientificSourceUnderstanding = null)
 {
     public bool IsBrief => Kind is WorkbenchTabKind.Brief;
 

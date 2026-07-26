@@ -208,3 +208,13 @@ The read-only WPF coordinator view of Source, Understanding, Figure Spec,
 Render & Review, and Delivery status derived from the authoritative workflow
 state; it never edits prompts or creates scientific truth.
 _Avoid_: Workflow aggregate, prompt editor, approval authority
+
+**Scientific Evidence Selection**:
+The WPF selection that links one claim row to its exact authoritative source
+block, page, section, and verbatim quotation without changing either record.
+_Avoid_: Search result, inferred citation, free-text note
+
+**Scientific Claim Correction Draft**:
+An audited proposal containing the accepted claim snapshot, proposed wording,
+reviewer, reason, and timestamp; it does not mutate or approve the claim.
+_Avoid_: In-place claim edit, Gate 1 approval

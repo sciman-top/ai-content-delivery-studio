@@ -718,14 +718,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Selecting a claim locates its exact source evidence.
-- [ ] Missing evidence, conflicts, and extraction blocks are visible and prevent progression.
-- [ ] Claim edits create audited drafts rather than mutating approved records.
+- [x] Selecting a claim locates its exact source evidence.
+- [x] Missing evidence, conflicts, and extraction blocks are visible and prevent progression.
+- [x] Claim edits create audited drafts rather than mutating approved records.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificSourceUnderstandingViewModelTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkspaceLayoutTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificSourceUnderstandingViewModelTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkspaceLayoutTests`
 
 **Dependencies:** Task 21
 

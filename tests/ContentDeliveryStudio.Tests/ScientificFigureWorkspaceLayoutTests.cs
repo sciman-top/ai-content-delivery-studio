@@ -13,13 +13,15 @@ public sealed class ScientificFigureWorkspaceLayoutTests
 
         Assert.Contains("MinWidth=\"460\"", xaml);
         Assert.Contains("MinHeight=\"360\"", xaml);
-        Assert.Equal(5, Count(xaml, "Width=\"*\""));
+        Assert.Equal(7, Count(xaml, "Width=\"*\""));
         Assert.Equal(10, Count(xaml, "TextWrapping=\"Wrap\""));
         Assert.Contains("AutomationProperties.AutomationId=\"ScientificSourceWorkspace\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"ScientificUnderstandingWorkspace\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"ScientificFigureSpecWorkspace\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"ScientificRenderReviewWorkspace\"", xaml);
         Assert.Contains("AutomationProperties.AutomationId=\"ScientificDeliveryWorkspace\"", xaml);
+        Assert.Contains("<views:ScientificSourceWorkspaceView", xaml);
+        Assert.Contains("<views:ScientificUnderstandingWorkspaceView", xaml);
         Assert.DoesNotContain("Prompt", xaml, StringComparison.OrdinalIgnoreCase);
     }
 

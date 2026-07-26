@@ -12,7 +12,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 ## Current Queue Status
 
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
-- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-20 and Checkpoint 3 establish the complete hidden machine-trust loop, and Task 21 adds the hidden five-workspace WPF shell. Interactive WPF Tasks 22-25, corpus acceptance, live-provider acceptance, and final closeout remain open.
+- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-20 and Checkpoint 3 establish the complete hidden machine-trust loop, Task 21 adds the hidden five-workspace shell, and Task 22 adds source/understanding evidence navigation with audited correction drafts. WPF Tasks 23-25, corpus acceptance, live-provider acceptance, and final closeout remain open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
 
 ## Active Post-V1 Flagship Slice: Trustworthy Scientific Figures
@@ -42,6 +42,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Route extraction/understanding/specification/renderer/layout/asset/export findings, restrict automation to presentation/non-evidentiary assets, invalidate scientific approvals, and reject a fourth automatic repair for Task 19.
 - [x] Enforce explicit Gate 2, route human rejection to repair, and package SVG/PNG/PDF plus specification, provenance map, reviews, repairs, providers, and both human approvals for Task 20 and Checkpoint 3.
 - [x] Add the localized five-stage scientific workspace shell, authoritative workflow-state projection, stable AutomationIds, and hidden-by-default tab registration for Task 21.
+- [x] Add source extraction diagnostics, exact claim-evidence navigation, visible conflicts/blocks, and non-mutating audited claim correction drafts for Task 22.
 - [x] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [x] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
 - [x] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
