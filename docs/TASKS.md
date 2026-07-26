@@ -26,6 +26,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Prepare four concept/comparison candidates and draft baselines with explicit relation classes for human corpus review without marking them accepted.
 - [x] Prepare four graphical-abstract candidates and draft baselines with explicit non-evidentiary asset boundaries for human corpus review without marking them accepted.
 - [x] Establish the 12-item human-approved evaluation corpus.
+- [x] Establish immutable scientific source, location, recovery, quality, diagnostic, and blocked-extraction records for Task 6.
 - [ ] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [ ] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
 - [ ] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.

@@ -9,7 +9,7 @@ public sealed class ApplicationModuleCatalogTests
     {
         var modules = ApplicationModuleCatalog.BuiltInModules;
 
-        Assert.Equal(6, modules.Count);
+        Assert.Equal(7, modules.Count);
         AssertModule(
             ApplicationModuleCatalog.GetRequired("source-ingestion"),
             "source-ingestion",
@@ -57,6 +57,13 @@ public sealed class ApplicationModuleCatalogTests
             null,
             "src/ContentDeliveryStudio.Infrastructure/RemoteWorkflows",
             ["RemoteWorkflowEngineAdapter"]);
+        AssertModule(
+            ApplicationModuleCatalog.GetRequired("scientific-figures"),
+            "scientific-figures",
+            "src/ContentDeliveryStudio.Application/ScientificFigures",
+            "src/ContentDeliveryStudio.Core/ScientificFigures",
+            null,
+            ["ScientificSourceModel"]);
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using ContentDeliveryStudio.Core.Packs;
+using ContentDeliveryStudio.Application.ScientificFigures;
 
 namespace ContentDeliveryStudio.Application.Modules;
 
@@ -238,6 +239,13 @@ public static class ApplicationModuleCatalog
                 null,
                 "src/ContentDeliveryStudio.Infrastructure/RemoteWorkflows",
                 ["RemoteWorkflowEngineAdapter"]),
+            ApplicationModuleDefinition.Create(
+                ScientificFigureModule.ModuleId,
+                "Scientific Figures",
+                "src/ContentDeliveryStudio.Application/ScientificFigures",
+                "src/ContentDeliveryStudio.Core/ScientificFigures",
+                null,
+                ["ScientificSourceModel"]),
         ]);
 
     public static IReadOnlyList<ApplicationModuleDefinition> Create(

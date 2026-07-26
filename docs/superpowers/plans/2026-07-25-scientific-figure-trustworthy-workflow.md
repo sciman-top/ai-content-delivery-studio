@@ -238,14 +238,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Records preserve source hash, page, section, bounding region or offset, original text, extractor identity, and diagnostics.
-- [ ] Invalid ranges, missing hashes, or undefined recovery states fail fast.
-- [ ] Scanned, corrupted-order, and missing-required-content cases produce explicit blocked outcomes.
+- [x] Records preserve source hash, page, section, bounding region or offset, original text, extractor identity, and diagnostics.
+- [x] Invalid ranges, missing hashes, or undefined recovery states fail fast.
+- [x] Scanned, corrupted-order, and missing-required-content cases produce explicit blocked outcomes.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificSourceModelTests`
-- [ ] `dotnet build ContentDeliveryStudio.sln`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificSourceModelTests`
+- [x] `dotnet build ContentDeliveryStudio.sln`
 
 **Dependencies:** Checkpoint 0
 
