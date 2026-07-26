@@ -538,14 +538,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Missing required elements, extra scientific content, reversed arrows, formula/value/unit drift, and export drift are hard failures.
-- [ ] A score cannot override a hard failure.
-- [ ] Every finding identifies the failed invariant, responsible item, evidence, and repair layer.
+- [x] Missing required elements, extra scientific content, reversed arrows, formula/value/unit drift, and export drift are hard failures.
+- [x] A score cannot override a hard failure.
+- [x] Every finding identifies the failed invariant, responsible item, evidence, and repair layer.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificContractReviewTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificMutationTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificContractReviewTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificMutationTests`
 
 **Dependencies:** Checkpoint 2
 

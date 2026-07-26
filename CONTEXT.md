@@ -125,3 +125,18 @@ _Avoid_: OCR result, visual-review score
 The registered `scientific-figure` workflow, blueprint, domain, renderer, and
 three-layer rubric family; it remains unavailable to WPF users until acceptance.
 _Avoid_: Article illustration pack, enabled feature
+
+**Scientific Contract Review**:
+A deterministic comparison of the approved Figure Spec, render plan, SVG
+authority, and hash-bound exports; it does not call or imitate an AI reviewer.
+_Avoid_: Scientific semantic review, visual-quality score
+
+**Scientific Contract Hard Failure**:
+A non-overridable invariant violation naming the responsible item, concrete
+evidence, and repair layer; any such finding makes contract review fail.
+_Avoid_: Low score, optional suggestion
+
+**Scientific Contract Advisory Score**:
+A bounded informational value retained for reporting that has no authority to
+override a scientific contract hard failure.
+_Avoid_: Pass threshold, acceptance decision

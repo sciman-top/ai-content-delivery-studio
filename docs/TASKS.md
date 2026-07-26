@@ -12,7 +12,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 ## Current Queue Status
 
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
-- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-15 and Checkpoint 2 now establish trustworthy extraction, fake-first understanding, claim-evidence, Figure Spec, explicit Gate 1, persistence, deterministic SVG authority, hash-bound PNG/PDF export, and a hidden internal workflow pack, while contract/scientific/visual review, Gate 2, UI, and live acceptance remain open.
+- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-16 and Checkpoint 2 now establish trustworthy extraction, fake-first understanding, claim-evidence, Figure Spec, explicit Gate 1, persistence, deterministic SVG authority, hash-bound PNG/PDF export, a hidden internal workflow pack, and deterministic contract review, while provider-backed scientific/visual review, Gate 2, UI, and live acceptance remain open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
 
 ## Active Post-V1 Flagship Slice: Trustworthy Scientific Figures
@@ -36,6 +36,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Render deterministic, editable scientific SVG with stable IDs, exact text/formulas, accessibility metadata, and non-authoritative decorative boundaries for Task 13.
 - [x] Export PNG and PDF only from the exact approved SVG hash with provenance metadata, semantic fixtures, bounded rendering, and visual equivalence checks for Task 14.
 - [x] Register the internal `scientific-figure` pack family and complete the approved-spec-to-export Checkpoint 2 while keeping WPF availability disabled for Task 15.
+- [x] Compare Figure Spec, render plan, SVG authority, and exports deterministically; hard-fail missing/extra/reversed/exact-content/export mutations without allowing advisory scores to override findings for Task 16.
 - [x] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [x] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
 - [ ] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
