@@ -103,7 +103,7 @@ public sealed class BuiltInPackCatalogTests
         Assert.Equal([BuiltInPackCatalog.PosterReportDeliveryReviewRubricPackId], posterWorkflow.ReviewRubricPackIds);
         Assert.Contains("pdf", posterRenderer.OutputFormats);
         Assert.Contains(ReviewRubricTemplateCatalog.TextHeavyPoster, posterRubric.RubricTemplateIds);
-        Assert.Equal(25, registry.Packs.Count);
+        Assert.Equal(30, registry.Packs.Count);
     }
 
     [Fact]
@@ -167,6 +167,7 @@ public sealed class BuiltInPackCatalogTests
                 BuiltInPackCatalog.DocumentReviewTranslationWorkflowPackId,
                 BuiltInPackCatalog.CoursewareVisualWorkflowPackId,
                 BuiltInPackCatalog.PosterReportDeliveryWorkflowPackId,
+                BuiltInPackCatalog.ScientificFigureWorkflowPackId,
             ],
             StringComparer.OrdinalIgnoreCase);
 
@@ -185,6 +186,42 @@ public sealed class BuiltInPackCatalogTests
                 Assert.NotNull(registry.GetRequired<IndustryPack>(workflow.IndustryPackIds[0]));
                 Assert.NotNull(registry.GetRequired<RendererPack>(workflow.RendererPackIds[0]));
                 Assert.NotNull(registry.GetRequired<ReviewRubricPack>(workflow.ReviewRubricPackIds[0]));
+            });
+    }
+
+    [Fact]
+    public void BuiltInPackCatalog_RegistersInternalScientificFigurePackFamily()
+    {
+        var createdAt = DateTimeOffset.Parse("2026-07-26T14:00:00Z");
+        var registry = BuiltInPackCatalog.CreateStarterPackRegistry("1.5.0", createdAt);
+
+        var workflow = registry.GetRequired<WorkflowPack>(BuiltInPackCatalog.ScientificFigureWorkflowPackId);
+        var blueprints = registry.GetRequired<BlueprintPack>(BuiltInPackCatalog.ScientificFigureBlueprintPackId);
+        var industry = registry.GetRequired<IndustryPack>(BuiltInPackCatalog.ScientificFigureIndustryPackId);
+        var renderer = registry.GetRequired<RendererPack>(BuiltInPackCatalog.ScientificFigureRendererPackId);
+        var rubric = registry.GetRequired<ReviewRubricPack>(BuiltInPackCatalog.ScientificFigureReviewRubricPackId);
+
+        Assert.Equal(
+            ["Source", "Brief", "Plan", "Produce", "Review", "Repair", "Deliver"],
+            workflow.StageIds);
+        Assert.Equal([BuiltInPackCatalog.ScientificFigureBlueprintPackId], workflow.BlueprintPackIds);
+        Assert.Equal([BuiltInPackCatalog.ScientificFigureIndustryPackId], workflow.IndustryPackIds);
+        Assert.Equal([BuiltInPackCatalog.ScientificFigureRendererPackId], workflow.RendererPackIds);
+        Assert.Equal([BuiltInPackCatalog.ScientificFigureReviewRubricPackId], workflow.ReviewRubricPackIds);
+        Assert.Equal(
+            ["scientific-concept-comparison", "scientific-mechanism-process", "scientific-graphical-abstract"],
+            blueprints.BlueprintIds);
+        Assert.Equal(["physics", "natural-science", "research"], industry.AudienceTags);
+        Assert.Equal(["svg", "png", "pdf"], renderer.OutputFormats);
+        Assert.Equal(
+            ["scientific-contract", "scientific-semantic", "scientific-visual-quality"],
+            rubric.RubricTemplateIds);
+        Assert.All(
+            new IPackDefinition[] { workflow, blueprints, industry, renderer, rubric },
+            pack =>
+            {
+                Assert.Equal("1.0.0", pack.Metadata.Compatibility.MinimumAppVersion.ToString());
+                Assert.Equal("2.0.0", pack.Metadata.Compatibility.MaximumAppVersion?.ToString());
             });
     }
 

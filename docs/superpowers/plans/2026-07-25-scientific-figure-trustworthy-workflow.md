@@ -500,14 +500,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Pack compatibility, stages, renderer outputs, and rubric IDs match the approved design.
-- [ ] The module catalog names the scientific source, understanding, rendering, review, and delivery use cases.
-- [ ] Feature availability remains disabled until the WPF acceptance checkpoint.
+- [x] Pack compatibility, stages, renderer outputs, and rubric IDs match the approved design.
+- [x] The module catalog names the scientific source, understanding, rendering, review, and delivery use cases.
+- [x] Feature availability remains disabled until the WPF acceptance checkpoint.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter BuiltInPackCatalogTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ApplicationModuleCatalogTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter BuiltInPackCatalogTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ApplicationModuleCatalogTests`
 
 **Dependencies:** Task 12, Task 14
 
@@ -524,11 +524,11 @@ state is part of the Checkpoint 0 corpus authority.
 
 ### Checkpoint 2: Approved-spec-to-export
 
-- [ ] One approved fake specification renders to editable SVG.
-- [ ] PNG/PDF are traceable to the same SVG hash.
-- [ ] Critical structure is deterministic and generated assets remain non-authoritative.
-- [ ] Existing workflows remain unchanged and the new UI is still hidden.
-- [ ] Full repository verification passes.
+- [x] One approved fake specification renders to editable SVG.
+- [x] PNG/PDF are traceable to the same SVG hash.
+- [x] Critical structure is deterministic and generated assets remain non-authoritative.
+- [x] Existing workflows remain unchanged and the new UI is still hidden.
+- [x] Full repository verification passes.
 
 ## Milestone 3: Review, Repair, Gate 2, And Delivery
 

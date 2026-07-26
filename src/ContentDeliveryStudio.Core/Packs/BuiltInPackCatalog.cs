@@ -54,6 +54,16 @@ public static class BuiltInPackCatalog
 
     public const string PosterReportDeliveryReviewRubricPackId = "poster-report-delivery-review-rubric";
 
+    public const string ScientificFigureWorkflowPackId = "scientific-figure";
+
+    public const string ScientificFigureBlueprintPackId = "scientific-figure-blueprints";
+
+    public const string ScientificFigureIndustryPackId = "scientific-figure-industry";
+
+    public const string ScientificFigureRendererPackId = "scientific-figure-renderer";
+
+    public const string ScientificFigureReviewRubricPackId = "scientific-figure-review-rubric";
+
     public static PackRegistry CreateGenericImageSeriesRegistry(
         string appVersion,
         DateTimeOffset createdAt)
@@ -319,6 +329,46 @@ public static class BuiltInPackCatalog
             [PosterReportDeliveryBlueprintPackId],
             compatibility,
             createdAt);
+        var scientificBlueprint = CreateBlueprintPack(
+            ScientificFigureBlueprintPackId,
+            "Scientific Figure Blueprints",
+            ["scientific-concept-comparison", "scientific-mechanism-process", "scientific-graphical-abstract"],
+            compatibility,
+            createdAt);
+        var scientificIndustry = IndustryPack.Create(
+            ScientificFigureIndustryPackId,
+            "Scientific Figure Domains",
+            "1.0.0",
+            compatibility,
+            ["physics", "natural-science", "research"],
+            [ScientificFigureWorkflowPackId],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var scientificRenderer = RendererPack.Create(
+            ScientificFigureRendererPackId,
+            "Scientific Figure Renderer",
+            "1.0.0",
+            compatibility,
+            ["svg", "png", "pdf"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var scientificReviewRubric = ReviewRubricPack.Create(
+            ScientificFigureReviewRubricPackId,
+            "Scientific Figure Review Rubric",
+            "1.0.0",
+            compatibility,
+            ["scientific-contract", "scientific-semantic", "scientific-visual-quality"],
+            PackLifecycleState.Active,
+            [],
+            createdAt);
+        var scientificWorkflow = CreateWorkflowPack(
+            ScientificFigureWorkflowPackId,
+            "Scientific Figure",
+            [ScientificFigureBlueprintPackId],
+            compatibility,
+            createdAt);
 
         return PackRegistry.Create(
             appVersion,
@@ -348,6 +398,11 @@ public static class BuiltInPackCatalog
                 posterIndustry,
                 posterRenderer,
                 posterReviewRubric,
+                scientificWorkflow,
+                scientificBlueprint,
+                scientificIndustry,
+                scientificRenderer,
+                scientificReviewRubric,
             ]);
     }
 
@@ -376,6 +431,7 @@ public static class BuiltInPackCatalog
                 DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationIndustryPackId],
                 CoursewareVisualWorkflowPackId => [CoursewareVisualIndustryPackId],
                 PosterReportDeliveryWorkflowPackId => [PosterReportDeliveryIndustryPackId],
+                ScientificFigureWorkflowPackId => [ScientificFigureIndustryPackId],
                 _ => [],
             },
             rendererPackIds: id switch
@@ -385,6 +441,7 @@ public static class BuiltInPackCatalog
                 DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationRendererPackId],
                 CoursewareVisualWorkflowPackId => [CoursewareVisualRendererPackId],
                 PosterReportDeliveryWorkflowPackId => [PosterReportDeliveryRendererPackId],
+                ScientificFigureWorkflowPackId => [ScientificFigureRendererPackId],
                 _ => [],
             },
             reviewRubricPackIds: id switch
@@ -394,6 +451,7 @@ public static class BuiltInPackCatalog
                 DocumentReviewTranslationWorkflowPackId => [DocumentReviewTranslationReviewRubricPackId],
                 CoursewareVisualWorkflowPackId => [CoursewareVisualReviewRubricPackId],
                 PosterReportDeliveryWorkflowPackId => [PosterReportDeliveryReviewRubricPackId],
+                ScientificFigureWorkflowPackId => [ScientificFigureReviewRubricPackId],
                 _ => [],
             });
     }

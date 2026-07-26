@@ -244,8 +244,15 @@ public static class ApplicationModuleCatalog
                 "Scientific Figures",
                 "src/ContentDeliveryStudio.Application/ScientificFigures",
                 "src/ContentDeliveryStudio.Core/ScientificFigures",
-                null,
-                ["ScientificSourceModel"]),
+                "src/ContentDeliveryStudio.Infrastructure/ScientificFigures",
+                [
+                    "ScientificSource",
+                    "ScientificUnderstanding",
+                    "ScientificFigureSpecification",
+                    "ScientificRendering",
+                    "ScientificReview",
+                    "ScientificDelivery",
+                ]),
         ]);
 
     public static IReadOnlyList<ApplicationModuleDefinition> Create(

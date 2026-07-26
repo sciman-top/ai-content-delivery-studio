@@ -1,4 +1,5 @@
 using ContentDeliveryStudio.Application.Modules;
+using ContentDeliveryStudio.Application.ScientificFigures;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -62,8 +63,16 @@ public sealed class ApplicationModuleCatalogTests
             "scientific-figures",
             "src/ContentDeliveryStudio.Application/ScientificFigures",
             "src/ContentDeliveryStudio.Core/ScientificFigures",
-            null,
-            ["ScientificSourceModel"]);
+            "src/ContentDeliveryStudio.Infrastructure/ScientificFigures",
+            [
+                "ScientificSource",
+                "ScientificUnderstanding",
+                "ScientificFigureSpecification",
+                "ScientificRendering",
+                "ScientificReview",
+                "ScientificDelivery",
+            ]);
+        Assert.False(ScientificFigureModule.IsUserVisible);
     }
 
     [Fact]

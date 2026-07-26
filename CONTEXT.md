@@ -120,3 +120,8 @@ _Avoid_: Preview hash, semantic hash
 The canonical accessibility, element, exact-text, relation, direction, and
 specification-provenance fixtures shared by every export from one SVG authority.
 _Avoid_: OCR result, visual-review score
+
+**Internal Scientific Workflow Pack**:
+The registered `scientific-figure` workflow, blueprint, domain, renderer, and
+three-layer rubric family; it remains unavailable to WPF users until acceptance.
+_Avoid_: Article illustration pack, enabled feature
