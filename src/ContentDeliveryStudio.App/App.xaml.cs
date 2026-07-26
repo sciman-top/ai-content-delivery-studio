@@ -74,7 +74,7 @@ public partial class App : System.Windows.Application
         await using (var scope = _host.Services.CreateAsyncScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            await dbContext.Database.EnsureCreatedAsync();
+            await AppDatabaseInitializer.InitializeAsync(dbContext, CancellationToken.None);
         }
 
         var mainWindow = _host.Services.GetRequiredService<MainWindow>();

@@ -53,3 +53,14 @@ _Avoid_: Common knowledge, implicit convention
 A human approval snapshot that freezes one understanding version and one
 Scientific Figure Spec version for downstream work.
 _Avoid_: Approval readiness, delivery approval
+
+**Scientific Figure Workflow Aggregate**:
+The project-owned persistence boundary containing one source extraction,
+versioned understanding, Figure Spec, Gate 1 snapshot, downstream approvals,
+and invalidation state.
+_Avoid_: Prompt history, generated asset
+
+**Scientific Workflow Payload Schema**:
+The explicit version contract for a persisted scientific workflow JSON
+snapshot; unsupported versions fail closed before domain restoration.
+_Avoid_: Database schema version, provider response schema

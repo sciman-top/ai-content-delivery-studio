@@ -48,6 +48,9 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<RoutedRepairPatch> RoutedRepairPatches => Set<RoutedRepairPatch>();
 
+    internal DbSet<ScientificFigureWorkflowPersistenceRecord> ScientificFigureWorkflows =>
+        Set<ScientificFigureWorkflowPersistenceRecord>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Ignore<ArtifactManifest>();
@@ -91,6 +94,8 @@ public sealed class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new DeliveryPackageConfiguration());
 
         modelBuilder.ApplyConfiguration(new ProviderProfileConfiguration());
+
+        modelBuilder.ApplyConfiguration(new ScientificFigureWorkflowConfiguration());
     }
 
 }

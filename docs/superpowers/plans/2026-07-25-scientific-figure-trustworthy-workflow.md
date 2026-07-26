@@ -320,14 +320,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Existing databases and projects without scientific records continue to load.
-- [ ] Save/reload preserves stable identifiers, versions, evidence links, Gate 1 state, and invalidation state.
-- [ ] Persistence migration and rollback evidence are recorded.
+- [x] Existing databases and projects without scientific records continue to load.
+- [x] Save/reload preserves stable identifiers, versions, evidence links, Gate 1 state, and invalidation state.
+- [x] Persistence migration and rollback evidence are recorded.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigurePersistenceTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter PersistenceTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigurePersistenceTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter PersistenceTests`
 
 **Dependencies:** Task 8
 
