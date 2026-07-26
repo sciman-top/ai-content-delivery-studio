@@ -444,14 +444,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] The same render plan produces semantically equivalent SVG across repeated runs.
-- [ ] Every scientific element and relation is addressable by stable SVG ID.
-- [ ] Generated assets cannot introduce labels, arrows, values, formulas, or authoritative scientific structure.
+- [x] The same render plan produces semantically equivalent SVG across repeated runs.
+- [x] Every scientific element and relation is addressable by stable SVG ID.
+- [x] Generated assets cannot introduce labels, arrows, values, formulas, or authoritative scientific structure.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter DeterministicSvgRendererTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificSvgGoldenTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter DeterministicSvgRendererTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificSvgGoldenTests`
 
 **Dependencies:** Task 12, Task 1
 

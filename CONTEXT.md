@@ -100,3 +100,13 @@ _Avoid_: SVG output, provider prompt
 The stable Figure Spec element or relation identifier from which one critical
 render element or connection was compiled.
 _Avoid_: Visual node ID, evidence quote
+
+**Scientific SVG Authority**:
+The deterministic editable SVG string rendered solely from a validated SVG
+Render Plan; its hash and embedded plan/spec metadata anchor later exports.
+_Avoid_: PNG preview, generated image
+
+**Non-Authoritative Decoration**:
+A render-plan-approved decorative geometry group that cannot contain visible
+text, relations, images, or scientific provenance.
+_Avoid_: Scientific element, generated background with labels
