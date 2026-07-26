@@ -650,14 +650,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Gate 2 is unavailable while any hard failure, uncertainty, invalidated version, or unresolved issue exists.
-- [ ] Approved delivery includes SVG, PNG, PDF, specification, claim-evidence-element map, reviews, repairs, provider metadata, and both approvals.
-- [ ] Rejected final review routes through the responsible repair layer and never silently approves.
+- [x] Gate 2 is unavailable while any hard failure, uncertainty, invalidated version, or unresolved issue exists.
+- [x] Approved delivery includes SVG, PNG, PDF, specification, claim-evidence-element map, reviews, repairs, provider metadata, and both approvals.
+- [x] Rejected final review routes through the responsible repair layer and never silently approves.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificGateTwoWorkflowTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureDeliveryPackageTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificGateTwoWorkflowTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureDeliveryPackageTests`
 
 **Dependencies:** Task 19
 
@@ -674,12 +674,12 @@ state is part of the Checkpoint 0 corpus authority.
 
 ### Checkpoint 3: Machine trust loop
 
-- [ ] Contract, semantic, and visual review remain separate.
-- [ ] Every fixed mutation available at this stage is blocked.
-- [ ] Presentation repairs preserve approved science.
-- [ ] Scientific repairs return to Gate 1.
-- [ ] An approved package requires both human decisions.
-- [ ] Full repository verification passes.
+- [x] Contract, semantic, and visual review remain separate.
+- [x] Every fixed mutation available at this stage is blocked.
+- [x] Presentation repairs preserve approved science.
+- [x] Scientific repairs return to Gate 1.
+- [x] An approved package requires both human decisions.
+- [x] Full repository verification passes.
 
 ## Milestone 4: WPF Scientific Figure Workflow
 

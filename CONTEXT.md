@@ -190,3 +190,15 @@ A change to claims, meaning, exact content, relations, conditions, values, or
 units that creates a new Figure Spec version and invalidates Gate 1 plus every
 downstream artifact and approval.
 _Avoid_: Layout adjustment, visual polish
+
+**Gate 2 Approval**:
+The explicit final human decision for one current specification version after
+deterministic contract, independent semantic/visual review, and repair closure
+all pass.
+_Avoid_: Machine readiness, provider pass, delivery export
+
+**Scientific Delivery Package**:
+The ZIP delivery containing SVG, PNG, PDF, Figure Spec, claim-evidence-item map,
+contract and machine reviews, repair history, provider metadata, artifact
+hashes, and both human approvals.
+_Avoid_: Image-only export, preview bundle

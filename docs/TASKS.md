@@ -12,7 +12,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 ## Current Queue Status
 
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
-- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-19 and Checkpoint 2 now establish trustworthy extraction, fake-first understanding, claim-evidence, Figure Spec, explicit Gate 1, persistence, deterministic SVG authority, hash-bound PNG/PDF export, a hidden internal workflow pack, deterministic contract review, independent semantic/visual review contracts with fakes, bounded full-resolution review preparation, and responsibility-routed repair with a three-round automatic limit, while Gate 2, UI, and live acceptance remain open.
+- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-20 and Checkpoint 3 now establish the complete hidden machine-trust loop through explicit Gate 2 and evidence-backed delivery, while WPF UI, corpus acceptance, live-provider acceptance, and final closeout remain open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
 
 ## Active Post-V1 Flagship Slice: Trustworthy Scientific Figures
@@ -40,9 +40,10 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Define minimum-evidence scientific semantic review and full-resolution typed-crop visual review contracts, deterministic fakes, and strict non-pass/invalid/missing/provider-failure blocking for Task 17.
 - [x] Build path-redacted review manifests, critical SVG structure rows, real full-resolution PNG crops, and pre-dispatch missing/oversized artifact guards for Task 18.
 - [x] Route extraction/understanding/specification/renderer/layout/asset/export findings, restrict automation to presentation/non-evidentiary assets, invalidate scientific approvals, and reject a fourth automatic repair for Task 19.
+- [x] Enforce explicit Gate 2, route human rejection to repair, and package SVG/PNG/PDF plus specification, provenance map, reviews, repairs, providers, and both human approvals for Task 20 and Checkpoint 3.
 - [x] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [x] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
-- [ ] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
+- [x] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
 - [ ] Deliver the five-workspace WPF flow and pass fake-first corpus acceptance.
 - [ ] After explicit paid-call approval, record live-provider and human acceptance evidence.
 - [ ] Synchronize user guidance, roadmap status, launch evidence, migration, rollback, and closeout truth.
