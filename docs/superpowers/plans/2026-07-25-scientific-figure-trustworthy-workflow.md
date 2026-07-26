@@ -266,14 +266,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Accepted claims require at least one valid evidence link.
-- [ ] Qualification and contradiction links cannot be normalized into unqualified support.
-- [ ] Missing evidence, unresolved conflicts, or incomplete required coverage blocks understanding approval.
+- [x] Accepted claims require at least one valid evidence link.
+- [x] Qualification and contradiction links cannot be normalized into unqualified support.
+- [x] Missing evidence, unresolved conflicts, or incomplete required coverage blocks understanding approval.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificUnderstandingTests`
-- [ ] `dotnet build ContentDeliveryStudio.sln`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificUnderstandingTests`
+- [x] `dotnet build ContentDeliveryStudio.sln`
 
 **Dependencies:** Task 6
 
