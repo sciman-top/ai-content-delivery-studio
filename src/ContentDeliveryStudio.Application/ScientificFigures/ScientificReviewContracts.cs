@@ -277,6 +277,7 @@ public enum ScientificProviderFindingKind
     ScientificMismatch = 0,
     MissingElement = 1,
     VisualDefect = 2,
+    NonEvidentiaryAssetDefect = 3,
 }
 
 public sealed record ScientificProviderFinding(
@@ -300,7 +301,8 @@ public sealed record ScientificReviewBlocker(
     ScientificReviewLayer Layer,
     string Code,
     string ResponsibleItemId,
-    string Evidence);
+    string Evidence,
+    ScientificProviderFindingKind? FindingKind = null);
 
 public sealed record ScientificMachineReviewDecision(
     IReadOnlyList<ScientificReviewBlocker> Blockers)
@@ -383,7 +385,8 @@ public sealed class ScientificReviewExecutionService
             layer,
             finding.Code,
             finding.ResponsibleItemId,
-            finding.Evidence)).ToList();
+            finding.Evidence,
+            finding.Kind)).ToList();
         if (result.Verdict != ScientificReviewVerdict.Pass)
         {
             blockers.Add(new ScientificReviewBlocker(

@@ -174,3 +174,19 @@ _Avoid_: OCR guess, untyped bounding box
 The full-resolution byte/pixel, crop-count, and per-crop byte limits checked
 before any scientific review provider receives artifacts.
 _Avoid_: 384px compact-review policy, provider quota
+
+**Scientific Repair Layer**:
+The single owning boundary for a finding: extraction, scientific understanding,
+Figure Spec, SVG renderer, layout/style, non-evidentiary asset, or exporter.
+_Avoid_: Generic repair, prompt retry
+
+**Automatic Scientific-Figure Repair**:
+A bounded repair allowed only for layout/style or non-evidentiary assets, with
+at most three completed attempts before human action is mandatory.
+_Avoid_: Formula rewrite, claim correction, unlimited retry
+
+**Scientific Revision**:
+A change to claims, meaning, exact content, relations, conditions, values, or
+units that creates a new Figure Spec version and invalidates Gate 1 plus every
+downstream artifact and approval.
+_Avoid_: Layout adjustment, visual polish

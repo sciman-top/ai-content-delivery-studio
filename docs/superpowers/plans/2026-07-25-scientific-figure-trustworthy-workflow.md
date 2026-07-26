@@ -622,14 +622,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Only layout/style and non-evidentiary asset repairs run automatically.
-- [ ] Scientific repair invalidates Gate 1 and all downstream artifacts.
-- [ ] A fourth automatic attempt is rejected and requires human action.
+- [x] Only layout/style and non-evidentiary asset repairs run automatically.
+- [x] Scientific repair invalidates Gate 1 and all downstream artifacts.
+- [x] A fourth automatic attempt is rejected and requires human action.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificRepairRoutingTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificRepairLoopTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificRepairRoutingTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificRepairLoopTests`
 
 **Dependencies:** Task 16, Task 17, Task 18
 
