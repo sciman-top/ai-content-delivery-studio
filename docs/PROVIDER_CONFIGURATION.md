@@ -70,7 +70,7 @@ The desktop app keeps fake providers as the default runtime. To let the App host
 PROVIDER_MODE=live
 ```
 
-When live mode is enabled, startup reads the local `.env`, validates the text and image profiles, and registers failover providers for text planning, image generation, and vision review. Missing or invalid `.env` configuration fails closed at registration time instead of silently falling back to fake providers. Image edit remains fake until a separate live-edit provider slice is implemented and tested.
+When live mode is enabled, startup reads the local `.env`, validates the text and image profiles, and registers live providers for text planning, image generation, vision review, and scientific understanding. Scientific understanding uses the primary text profile through bounded, strict, stateless Responses requests; generic text/image/vision retain their existing failover policies. Missing or invalid `.env` configuration fails closed at registration time instead of silently falling back to fake providers. Image edit remains fake until a separate live-edit provider slice is implemented and tested.
 
 ## Hard Boundaries
 

@@ -69,6 +69,29 @@ Key findings:
 
 AI 推荐: model `Review + Repair + Operator` as three separate product stages. Review finds issues, Repair plans the correct layer to change, and Operator executes controlled local or UI actions with risk, dry-run, approval, and audit metadata.
 
+### Responses Structured Outputs For Scientific Understanding
+
+Sources:
+
+- https://developers.openai.com/api/docs/guides/structured-outputs
+- https://developers.openai.com/api/reference/resources/responses/methods/create
+
+Key findings:
+
+- Non-tool structured Responses output uses `text.format` with a strict
+  `json_schema`; this is a better fit than function calling when the model is
+  returning typed analysis rather than invoking application operations.
+- Structured Outputs enforce schema shape, but scientific correctness and
+  application suitability still require local validation. Refusal, missing
+  output, unknown source IDs, non-verbatim quotations, unsupported enums,
+  conflicts, and unsupported proposal authority must remain fail-closed.
+- The Responses `store` field controls whether generated response data is
+  retained for later API retrieval. Scientific understanding keeps repository
+  evidence authoritative and sends `store: false`.
+- The request remains bounded to the application contract of at most `8`
+  blocks and `12,000` source characters per chunk, with explicit source block,
+  page, section, character-range, and bounding-region identifiers.
+
 ## Official Google Vertex AI References
 
 ### Image Generation

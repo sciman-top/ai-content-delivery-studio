@@ -1,7 +1,9 @@
 using System.IO;
+using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Infrastructure.Fakes;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
+using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ContentDeliveryStudio.App.Services;
@@ -35,6 +37,7 @@ public static class ProviderRuntimeServiceCollectionExtensions
         services.AddSingleton<IImageEditProvider>(serviceProvider =>
             serviceProvider.GetRequiredService<FakeImageGenerationProvider>());
         services.AddSingleton<IVisionReviewProvider, FakeVisionReviewProvider>();
+        services.AddSingleton<IScientificUnderstandingProvider, FakeScientificUnderstandingProvider>();
 
         return services;
     }
@@ -61,6 +64,7 @@ public static class ProviderRuntimeServiceCollectionExtensions
         var secretStore = new DotEnvSecretStore(envPath);
         services.AddSingleton(configuration);
         services.AddSingleton<IOpenAiSecretStore>(secretStore);
+        services.AddSingleton<OpenAiSdkClientFactory>();
         services.AddSingleton<FakeImageGenerationProvider>();
         services.AddSingleton<ITextPlanningProvider>(serviceProvider =>
             OpenAiProviderFailoverFactory.CreateTextPlanningProvider(
@@ -82,6 +86,14 @@ public static class ProviderRuntimeServiceCollectionExtensions
                 secretStore,
                 serviceProvider.GetService<IProviderCallTelemetrySink>(),
                 realApiEnabled: true));
+        services.AddSingleton<IScientificUnderstandingProvider>(serviceProvider =>
+            new OpenAiScientificUnderstandingProvider(
+                OpenAiProviderOptions.FromTextProviderEnvironment(
+                    configuration,
+                    realApiEnabled: true),
+                serviceProvider.GetRequiredService<OpenAiSdkClientFactory>(),
+                secretStore,
+                serviceProvider.GetService<IProviderCallTelemetrySink>()));
 
         return services;
     }

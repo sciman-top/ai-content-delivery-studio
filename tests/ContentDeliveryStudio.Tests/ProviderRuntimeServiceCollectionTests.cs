@@ -1,7 +1,9 @@
 using ContentDeliveryStudio.App.Services;
+using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Infrastructure.Fakes;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
+using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ContentDeliveryStudio.Tests;
@@ -20,6 +22,8 @@ public sealed class ProviderRuntimeServiceCollectionTests
         Assert.IsType<FakeImageGenerationProvider>(provider.GetRequiredService<IImageGenerationProvider>());
         Assert.IsType<FakeImageGenerationProvider>(provider.GetRequiredService<IImageEditProvider>());
         Assert.IsType<FakeVisionReviewProvider>(provider.GetRequiredService<IVisionReviewProvider>());
+        Assert.IsType<FakeScientificUnderstandingProvider>(
+            provider.GetRequiredService<IScientificUnderstandingProvider>());
     }
 
     [Fact]
@@ -60,6 +64,8 @@ public sealed class ProviderRuntimeServiceCollectionTests
             Assert.IsType<FailoverImageGenerationProvider>(provider.GetRequiredService<IImageGenerationProvider>());
             Assert.IsType<FakeImageGenerationProvider>(provider.GetRequiredService<IImageEditProvider>());
             Assert.IsType<FailoverVisionReviewProvider>(provider.GetRequiredService<IVisionReviewProvider>());
+            Assert.IsType<OpenAiScientificUnderstandingProvider>(
+                provider.GetRequiredService<IScientificUnderstandingProvider>());
         }
         finally
         {

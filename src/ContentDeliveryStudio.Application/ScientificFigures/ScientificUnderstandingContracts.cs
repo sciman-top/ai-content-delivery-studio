@@ -30,7 +30,48 @@ public sealed record ScientificUnderstandingClaimDraft(
 
 public sealed record ScientificUnderstandingChunkResult(
     IReadOnlyList<ScientificUnderstandingClaimDraft> Claims,
-    string ProviderTraceId);
+    string ProviderTraceId)
+{
+    public IReadOnlyList<ScientificUnderstandingTermDraft> Terms { get; init; } = [];
+
+    public IReadOnlyList<ScientificUnderstandingConflictDraft> Conflicts { get; init; } = [];
+
+    public ScientificFigureProposalDraft? FigureProposal { get; init; }
+
+    public IReadOnlyList<string> BlockingCodes { get; init; } = [];
+
+    public bool IsBlocked => BlockingCodes.Count > 0;
+}
+
+public sealed record ScientificUnderstandingTermDraft(
+    string TermId,
+    string CanonicalTerm,
+    string Definition,
+    IReadOnlyList<string> Aliases,
+    string SourceBlockId);
+
+public sealed record ScientificUnderstandingConflictDraft(
+    string ConflictId,
+    string FirstMergeKey,
+    string SecondMergeKey,
+    string Description);
+
+public sealed record ScientificFigureElementProposalDraft(
+    string ProposalId,
+    string Meaning,
+    IReadOnlyList<string> SourceBlockIds);
+
+public sealed record ScientificFigureRelationProposalDraft(
+    string ProposalId,
+    string SourceProposalId,
+    string TargetProposalId,
+    string RelationClass,
+    IReadOnlyList<string> SourceBlockIds);
+
+public sealed record ScientificFigureProposalDraft(
+    string CentralMessage,
+    IReadOnlyList<ScientificFigureElementProposalDraft> Elements,
+    IReadOnlyList<ScientificFigureRelationProposalDraft> Relations);
 
 public sealed record ScientificUnderstandingChunkPolicy(
     int MaxBlocksPerChunk = 8,

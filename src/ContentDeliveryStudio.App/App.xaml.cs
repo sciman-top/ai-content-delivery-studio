@@ -44,7 +44,6 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<LocalizationService>();
         builder.Services.AddTransient<IProjectRepository, EfProjectRepository>();
         builder.Services.AddTransient<IScientificFigureWorkflowRepository, EfScientificFigureWorkflowRepository>();
-        builder.Services.AddSingleton<IScientificUnderstandingProvider, FakeScientificUnderstandingProvider>();
         builder.Services.AddTransient<ScientificFigureApplicationService>();
         builder.Services.AddSingleton<ScientificFigureSpecCompiler>();
         builder.Services.AddSingleton<IScientificFigureRenderer, DeterministicSvgRenderer>();

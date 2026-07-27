@@ -12,7 +12,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 ## Current Queue Status
 
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
-- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-20 and Checkpoint 3 establish the complete machine-trust loop, Tasks 21-25 and Checkpoint 4 provide the user-visible fake-first five-workspace flow through explicit Gate 2 and delivery export, and Task 26 accepts all 12 fixed corpus baselines plus 40 blocking mutations offline. Live-provider acceptance and final closeout remain open.
+- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-20 and Checkpoint 3 establish the complete machine-trust loop, Tasks 21-25 and Checkpoint 4 provide the user-visible fake-first five-workspace flow through explicit Gate 2 and delivery export, Task 26 accepts all 12 fixed corpus baselines plus 40 blocking mutations offline, and Task 27 adds explicit live-mode OpenAI scientific understanding behind strict local authority checks. Scientific/visual live review, live acceptance, and final closeout remain open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
 
 ## Active Post-V1 Flagship Slice: Trustworthy Scientific Figures
@@ -47,6 +47,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Add sanitized zoomable SVG review, item-to-source provenance, separated contract/semantic/visual findings, and presentation-only automatic repair controls for Task 24.
 - [x] Add cross-format SVG/PNG/PDF delivery comparison, complete evidence and provider projection, explicit Gate 2 approval/rejection, user-initiated package export, and user-visible fake-first WPF acceptance for Task 25 and Checkpoint 4.
 - [x] Replay all 12 human-approved corpus baselines through extraction, understanding, Gate 1, deterministic rendering/export, contract review, and fake machine review; block all 40 declared scientific and visual mutations and write a deterministic Task 26 report.
+- [x] Add opt-in OpenAI scientific understanding with bounded source-location chunks, strict stateless Responses Structured Outputs, local evidence/proposal/conflict validation, captured contract tests, and fake-by-default runtime selection for Task 27.
 - [x] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [x] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
 - [x] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.

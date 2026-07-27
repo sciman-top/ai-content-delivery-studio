@@ -1,5 +1,6 @@
 using ContentDeliveryStudio.Core.Documents;
 using ContentDeliveryStudio.Core.Providers;
+using ContentDeliveryStudio.Application.ScientificFigures;
 using OpenAI.Responses;
 
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
@@ -42,6 +43,27 @@ public static class OpenAiSdkResponseOptionsFactory
                 TextFormat = ResponseTextFormat.CreateJsonSchemaFormat(
                     "document_illustration_plan",
                     OpenAiTextPlanningRequestMapper.CreateDocumentIllustrationPlanSchemaBinaryData(),
+                    jsonSchemaIsStrict: true),
+            },
+        };
+    }
+
+    public static CreateResponseOptions CreateScientificUnderstandingOptions(
+        OpenAiProviderOptions options,
+        ScientificUnderstandingChunkRequest request)
+    {
+        return new CreateResponseOptions(
+            options.TextPlanningModel,
+            [ResponseItem.CreateUserMessageItem(OpenAiScientificUnderstandingMapper.BuildInput(request))])
+        {
+            Instructions = OpenAiScientificUnderstandingMapper.Instructions,
+            StoredOutputEnabled = false,
+            MaxOutputTokenCount = OpenAiScientificUnderstandingMapper.MaxOutputTokens,
+            TextOptions = new ResponseTextOptions
+            {
+                TextFormat = ResponseTextFormat.CreateJsonSchemaFormat(
+                    "scientific_understanding_chunk",
+                    OpenAiScientificUnderstandingMapper.CreateSchemaBinaryData(),
                     jsonSchemaIsStrict: true),
             },
         };

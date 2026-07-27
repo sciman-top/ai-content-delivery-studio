@@ -26,6 +26,7 @@ public static class OpenAiServiceCollectionExtensions
         services.TryAddSingleton<IOpenAiSdkImageTransport, OpenAiSdkImageTransport>();
         services.TryAddSingleton<OpenAiSdkClientFactory>();
         services.TryAddTransient<OpenAiSdkTextPlanningProvider>();
+        services.TryAddTransient<OpenAiScientificUnderstandingProvider>();
 
         var builder = services.AddHttpClient(
             OpenAiHttpClientNames.Provider,

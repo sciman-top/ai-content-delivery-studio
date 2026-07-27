@@ -51,7 +51,10 @@ public sealed class ScientificFigureApplicationService
         var understanding = BuildUnderstanding(
             extraction,
             request.Objective,
-            chunkResults.SelectMany(result => result.Claims).ToArray());
+            chunkResults.SelectMany(result => result.Claims).ToArray(),
+            chunkResults.SelectMany(result => result.BlockingCodes)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray());
         var specification = BuildSpecification(understanding, request);
         var aggregate = ScientificFigureWorkflowAggregate.Create(
             Guid.NewGuid(),
@@ -130,7 +133,8 @@ public sealed class ScientificFigureApplicationService
     private static ScientificDocumentUnderstanding BuildUnderstanding(
         ScientificDocumentExtraction extraction,
         string objective,
-        IReadOnlyList<ScientificUnderstandingClaimDraft> drafts)
+        IReadOnlyList<ScientificUnderstandingClaimDraft> drafts,
+        IReadOnlyList<string> providerBlockingCodes)
     {
         var blockById = extraction.Blocks.ToDictionary(
             block => block.BlockId,
@@ -190,14 +194,27 @@ public sealed class ScientificFigureApplicationService
             })
             .ToArray();
         var claims = materialized.Select(item => item.Claim).ToArray();
-        var coverage = ScientificCoverageRequirement.Create(
+        var coverage = new List<ScientificCoverageRequirement>
+        {
+            ScientificCoverageRequirement.Create(
             "coverage-figure-objective",
             "All claims selected for the bounded figure objective are represented.",
             isRequired: true,
             claims.Length == 0
                 ? ScientificCoverageStatus.Incomplete
                 : ScientificCoverageStatus.Complete,
-            claims.Select(claim => claim.ClaimId).ToArray());
+            claims.Select(claim => claim.ClaimId).ToArray()),
+        };
+        if (providerBlockingCodes.Count > 0)
+        {
+            coverage.Add(ScientificCoverageRequirement.Create(
+                "coverage-provider-output-validation",
+                $"Provider output validation blocked: {string.Join(", ", providerBlockingCodes)}.",
+                isRequired: true,
+                ScientificCoverageStatus.Incomplete,
+                claims.Select(claim => claim.ClaimId).ToArray()));
+        }
+
         return ScientificDocumentUnderstanding.Create(
             Guid.NewGuid(),
             extraction,
@@ -206,7 +223,7 @@ public sealed class ScientificFigureApplicationService
             terminology: [],
             claims,
             conflicts,
-            [coverage]);
+            coverage);
     }
 
     private static ScientificFigureSpec BuildSpecification(

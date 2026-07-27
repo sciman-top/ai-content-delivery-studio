@@ -871,14 +871,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Requests use bounded chunks, structured schemas, `store: false`, and source-location identifiers.
-- [ ] Invalid, unsupported, unanchored, or conflicting output becomes a blocked draft.
-- [ ] Default repository tests use captured contract payloads and make no network calls.
+- [x] Requests use bounded chunks, structured schemas, `store: false`, and source-location identifiers.
+- [x] Invalid, unsupported, unanchored, or conflicting output becomes a blocked draft.
+- [x] Default repository tests use captured contract payloads and make no network calls.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter OpenAiScientificUnderstandingContractTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter OpenAiProviderConfigurationTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter OpenAiScientificUnderstandingContractTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter OpenAiProviderConfigurationTests`
 
 **Dependencies:** Task 11, Task 26
 
