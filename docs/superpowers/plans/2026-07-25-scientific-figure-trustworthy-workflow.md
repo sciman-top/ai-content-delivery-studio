@@ -929,8 +929,9 @@ state is part of the Checkpoint 0 corpus authority.
 completed the machine path for the mechanism, concept-comparison, and
 graphical-abstract samples. The designated human reviewer `sciman` accepted all
 three Gate 2 decisions at `2026-07-27T23:57:09.9758439+08:00` with no
-corrections. Task 29 is accepted; Task 30 and Checkpoint 5 remain open until
-their documentation and full-gate closeout completes. See
+corrections. Task 29 is accepted. Task 30 and Checkpoint 5 subsequently closed
+under `docs/change-evidence/20260725-scientific-figure-closeout.md`; the live
+decision details remain in
 `docs/change-evidence/20260725-scientific-figure-live-acceptance.md`.
 
 **Acceptance criteria:**
@@ -963,17 +964,23 @@ their documentation and full-gate closeout completes. See
 
 **Description:** Update user guidance, task status, roadmap status, launch evidence, and rollback notes using fresh test, corpus, live-provider, and human-approval evidence.
 
+**Current status (2026-07-28):** Accepted. User guidance, roadmap, task status,
+V1/post-V1 evidence separation, migration, rollback, excluded capabilities,
+and bilingual companions are synchronized. Fresh corpus replay remains `12 /
+12` with `40 / 40` mutations blocked; the accepted live run remains `3 / 3`;
+the fixed-order repository and release gates pass `664 / 664` tests.
+
 **Acceptance criteria:**
 
-- [ ] Documentation distinguishes implemented, fake-first verified, live verified, and human accepted states.
-- [ ] No V1 or scientific-workflow completion claim exceeds available evidence.
-- [ ] Rollback, migration, dependency, and operator guidance are complete.
+- [x] Documentation distinguishes implemented, fake-first verified, live verified, and human accepted states.
+- [x] No V1 or scientific-workflow completion claim exceeds available evidence.
+- [x] Rollback, migration, dependency, and operator guidance are complete.
 
 **Verification:**
 
-- [ ] Full repository fixed-order gate passes.
-- [ ] Documentation placeholder and conflict scans pass.
-- [ ] `git diff --check`
+- [x] Full repository fixed-order gate passes.
+- [x] Documentation placeholder and conflict scans pass.
+- [x] `git diff --check`
 
 **Dependencies:** Task 29
 
@@ -991,12 +998,12 @@ their documentation and full-gate closeout completes. See
 
 ### Checkpoint 5: Scientific workflow acceptance
 
-- [ ] All 12 corpus baselines and mutations pass the recorded acceptance contract.
-- [ ] Three representative live samples have fresh provider and human evidence.
-- [ ] Both human gates are proven in the workbench.
-- [ ] No excluded capability is presented as supported.
-- [ ] Full repository and release preflight gates pass.
-- [ ] Only then may the flagship slice be reported `accepted`.
+- [x] All 12 corpus baselines and mutations pass the recorded acceptance contract.
+- [x] Three representative live samples have fresh provider and human evidence.
+- [x] Both human gates are proven in the workbench.
+- [x] No excluded capability is presented as supported.
+- [x] Full repository and release preflight gates pass.
+- [x] Only then may the flagship slice be reported `accepted`.
 
 ## Parallelism And Ownership
 

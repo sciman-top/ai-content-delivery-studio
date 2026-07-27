@@ -49,11 +49,33 @@ The goal is to keep launch readiness honest. Completed implementation slices are
 - The latest live OpenAI evidence in this snapshot still comes from `artifacts/live-openai-v1-sample/20260611-132947`; no newer paid-provider rerun was required for this readout refresh.
 - The repository now has both the read-only preflight path and one recorded live provider evidence set for the same release claim.
 
+## Post-V1 Scientific Workflow Acceptance
+
+This section is a separate post-V1 ledger. It does not change the historical
+`2026-06-23` V1 snapshot or inflate its `5 / 5` launch metrics.
+
+| Evidence layer | Status | Authority |
+| --- | --- | --- |
+| Implemented | Complete through Task 30 and Checkpoint 5 | Scientific extraction, authority persistence, deterministic SVG/PNG/PDF, three-layer review, bounded repair, two gates, five WPF workspaces, delivery packaging, and documentation closeout are covered by the implementation plan and `664 / 664` repository tests. |
+| Fake-first verified | Accepted | `artifacts/scientific-figure-corpus-acceptance/report.json` records all 12 human-approved baselines passing and all 40 declared blocking mutations being rejected. |
+| Live verified | Accepted | `artifacts/scientific-figure-live-acceptance/20260727-150622/report.json` records one mechanism, one concept-comparison, and one graphical-abstract sample completing OpenAI understanding, semantic review, visual review, deterministic contract review, and export. |
+| Human accepted | Accepted | Reviewer `sciman` accepted all three Gate 2 items at `2026-07-27T23:57:09.9758439+08:00` with no corrections; the committed summary is [20260725-scientific-figure-live-acceptance.md](./change-evidence/20260725-scientific-figure-live-acceptance.md). |
+| Final documentation closeout | Accepted | Task 30 synchronizes guidance, roadmap, migration, rollback, exclusions, and bilingual companions. The fixed-order closeout passes build with no warnings/errors, `664 / 664` tests, reference evidence, format, and release preflight. |
+
+The accepted boundary does not include OCR-heavy sources, measured or
+fabricated data plots, microscope-like observations, automatic changes to
+scientific meaning, or generated visuals represented as observed evidence.
+Provider credentials, local SQLite data, workspaces, and accepted live artifacts
+remain outside Git.
+
 ## Recommended Next Evidence Slices
 
 1. If provider behavior changes later, rerun the opt-in OpenAI `2-item` sample path and refresh the live evidence artifact set.
 2. If needed later, add a user-facing script that mirrors the automated three-run fake-first launch suite.
 3. If needed later, add a user-facing sample export bundle that mirrors the automated educational-poster proof.
+4. Refresh the accepted scientific live run only when provider behavior or the
+   scientific contract materially changes; do not spend paid calls merely to
+   reproduce an unchanged approval record.
 
 ## Evidence Sources Used For This Snapshot
 

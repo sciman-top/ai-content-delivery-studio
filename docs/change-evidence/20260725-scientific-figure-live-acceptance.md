@@ -9,8 +9,8 @@ Date: 2026-07-27
 The opt-in paid-provider machine path completed for all three representative
 scientific-figure categories. The designated human reviewer then inspected and
 accepted all three final PNGs with no corrections. Task 29 is accepted. Task 30
-and Checkpoint 5 remain open until documentation synchronization and the final
-fixed-order repository gate complete.
+and Checkpoint 5 were subsequently accepted in
+`docs/change-evidence/20260725-scientific-figure-closeout.md`.
 
 ## Authorized Live Run
 
@@ -61,8 +61,7 @@ authority for actual spend.
 
 The ignored report and all three review bundles preserve the same reviewer,
 review time, decision, and empty correction record. Task 29 is complete. Task
-30 may now start, but Checkpoint 5 and the flagship scientific workflow remain
-open until Task 30 and its final fixed-order gate complete.
+30 and Checkpoint 5 later closed under the dedicated closeout evidence.
 
 ## Harness And Regression Coverage
 

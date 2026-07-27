@@ -51,11 +51,26 @@
 - 本快照中的最新真实 OpenAI 证据仍来自 `artifacts/live-openai-v1-sample/20260611-132947`；这次读数刷新不需要新增付费 provider 重跑。
 - 仓库现在同时具备只读 preflight 路径，以及一组与同一发布声明对应的已记录真实 provider 证据。
 
+## Post-V1 科研工作流验收
+
+本节是独立的 post-V1 台账，不改变历史 `2026-06-23` V1 快照，也不扩大其 `5 / 5` 发布指标。
+
+| 证据层 | 状态 | 权威依据 |
+| --- | --- | --- |
+| Implemented | 完成至 Task 30 与 Checkpoint 5 | 科研提取、权威状态持久化、确定性 SVG/PNG/PDF、三层审查、受控修复、两个人类门禁、五个 WPF 工作区、交付打包和文档收口均已实现，并由 `664 / 664` 仓库测试覆盖。 |
+| Fake-first verified | 已验收 | `artifacts/scientific-figure-corpus-acceptance/report.json` 记录 12 项人类批准 baseline 全部通过，40 项声明的阻断 mutation 全部被拒绝。 |
+| Live verified | 已验收 | `artifacts/scientific-figure-live-acceptance/20260727-150622/report.json` 记录一项机制图、一项概念比较图和一项图形摘要完成 OpenAI 理解、语义审查、视觉审查、确定性 contract review 和导出。 |
+| Human accepted | 已验收 | 审查人 `sciman` 于 `2026-07-27T23:57:09.9758439+08:00` 批准全部三项 Gate 2，纠正记录为空；提交到仓库的摘要见 [20260725-scientific-figure-live-acceptance.md](../change-evidence/20260725-scientific-figure-live-acceptance.md)。 |
+| 最终文档收口 | 已验收 | Task 30 已同步用户指南、路线图、迁移、回滚、排除边界和中英文 companion。固定顺序收口通过无警告/错误 build、`664 / 664` tests、reference evidence、format 和 release preflight。 |
+
+已验收边界不包括 OCR-heavy 来源、实测或伪造数据图、显微镜式观测、自动改变科学含义，或把生成图像表述为真实观测证据。provider 凭据、本地 SQLite 数据、workspace 与已批准 live artifact 均保持在 Git 外。
+
 ## 建议的下一批证据切片
 
 1. 如果后续 provider 行为发生变化，重新执行 opt-in OpenAI `2-item` 样本路径，并刷新 live evidence 资产集。
 2. 若后续需要，可增加一条面向用户的脚本，镜像当前自动化“三次 fake-first 发布套件”。
 3. 若后续需要，可增加一份面向用户的样本导出包，镜像自动化的教学海报证明路径。
+4. 只有当 provider 行为或科研契约发生实质变化时，才刷新已批准的科研 live run；不得只为重复不变的批准记录而消耗付费调用。
 
 ## 本快照使用的证据来源
 

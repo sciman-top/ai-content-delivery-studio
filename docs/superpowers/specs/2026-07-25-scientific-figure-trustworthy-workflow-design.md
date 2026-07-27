@@ -2,7 +2,10 @@
 
 ## Status
 
-Design and written specification approved by the user on 2026-07-25. The implementation plan is recorded in `docs/superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md`; runtime implementation has not started.
+Design and written specification approved by the user on 2026-07-25. Runtime
+implementation, fake/live verification, both human acceptance gates, Task 30
+documentation, and Checkpoint 5 final-gate closeout are accepted under
+`docs/superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md`.
 
 ## Goal
 

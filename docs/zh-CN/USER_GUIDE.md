@@ -30,6 +30,7 @@ AI Content Delivery Studio 是一个 Windows 桌面工作台，用于规划、�
 - 需求优先的图像序列: 当前最强的端到端路径，也是最新 V1 快照中最核心的主发布主干。
 - 纯文本或文章插图规划: fake-first 路径，可将已批准的目标提升到现有图像序列工作流；在当前 V1 范围内已有自动化路线证明。
 - 文本密集型教学或海报输出: 当前 V1 范围内已有自动化证明的路径。当标签、公式或标注必须清晰可读时，应把生成图像视为背景底板，再使用确定性后合成与单独的可读性评审。
+- 可信科研绘图: 已验收的 post-V1 路径，面向含文本的物理与自然科学来源，覆盖证据约束主张、确定性 SVG/PNG/PDF、三层评审、两个人类门禁和可追溯交付。
 
 ## 文档插图
 
@@ -59,7 +60,34 @@ Scholarly draft mode 有更严格的安全边界。
 - 不适合: 伪造数据图、实验结果图、显微镜式证据图，或任何可能被误认为真实观测证据的图像。
 - 该工作流不得虚构证据图、模拟未发表结果，也不得暗示 AI 生成视觉结果是真实科学观测。
 
-如果目标需要承载证据的图表、测量曲线，或需要从二进制文档中做高保真原生提取，应在规划层止步，并在后续切片中以显式的 provider 和 extraction 支持单独处理。
+在通用 document-illustration 路径中，如果目标需要承载科学证据结构，应在规划层止步。对于含文本的物理和自然科学来源，应改用下述可信科研绘图路径。实测曲线、OCR-heavy 来源、显微镜式证据，以及任何被表述为真实实验观测的生成结果，仍不在已验收边界内。
+
+## 可信科研绘图
+
+post-V1 科研绘图工作流已经在受控范围内通过验收。状态必须分层理解：
+
+- `Implemented`: 已具备提取、主张/证据理解、权威状态持久化、确定性 SVG/PNG/PDF、contract/semantic/visual review、受控修复、两个人类门禁、五个 WPF 工作区和交付打包。
+- `Fake-first verified`: 12 项人类批准 corpus baseline 已全部重放，40 项声明的阻断 mutation 全部 fail closed。
+- `Live verified`: run `20260727-150622` 已让一项机制图、一项概念比较图和一项图形摘要完成 OpenAI 理解、独立语义审查和全分辨率视觉审查。
+- `Human accepted`: 审查人 `sciman` 于 `2026-07-27T23:57:09.9758439+08:00` 批准三张最终 live PNG，纠正记录为空。
+
+按 Source、Understanding、Figure Spec、Render & Review、Delivery 的顺序使用五个科研工作区。Gate 1 在渲染前冻结已批准的主张、元素、关系、限制条件和 specification version。只有确定性 contract review 与两项机器审查都通过后，Gate 2 才可用。人工拒绝会路由回受控修复；自动修复不能改变科学含义，也不能静默替换 Gate 1 权威。
+
+默认 provider 模式仍为 fake。刷新 live 证据必须先获得明确付费调用批准，再运行：
+
+```powershell
+.\scripts\run-scientific-figure-live-acceptance.ps1
+```
+
+不要为了重新读取已批准证据而重复付费运行。已批准的本地报告位于 `artifacts/scientific-figure-live-acceptance/20260727-150622`；该目录与 provider secret 均保持在 Git 外。提交到仓库的摘要见 [20260725-scientific-figure-live-acceptance.md](../change-evidence/20260725-scientific-figure-live-acceptance.md)。
+
+科研交付包保留 SVG、PNG、PDF、已批准 specification、provenance map、review/repair 记录、provider metadata 和两个人类批准。每个包都应视为不可变快照。
+
+迁移与回滚边界：
+
+- 现有图像序列项目无需手工迁移；科研工作流持久化是增量式的，旧 workspace 仍可读取。
+- 更改 provider mode 或回退代码前，应保留本地 SQLite/workspace 数据和已批准 artifact 目录；Git 回滚不能恢复本地运行数据。
+- 停止 live 执行时应返回 fake provider mode。回退科研实现提交只会移除代码行为，不得被表述为删除或撤销已经记录的人类证据。
 
 ## 安全默认值
 

@@ -28,6 +28,7 @@ Domain identifiers, provider IDs, model IDs, and error strings remain in English
 - Requirement-first image series: the strongest current end-to-end path and the primary verified launch spine in the latest recorded V1 snapshot.
 - Plain-text or article illustration planning: a fake-first path that promotes approved targets into the existing image-series workflow and already has automated route proof for the current V1 scope.
 - Text-heavy educational or poster output: an automated-proof path for the current V1 scope. When readable labels, formulas, or callouts matter, treat generated visuals as background plates and use deterministic post-render composition plus separate readability review.
+- Trustworthy scientific figures: an accepted post-V1 path for text-bearing physics and natural-science sources, evidence-grounded claims, deterministic SVG/PNG/PDF, three-layer review, two human gates, and provenance-backed delivery.
 
 ## Document Illustration
 
@@ -57,7 +58,62 @@ Scholarly draft mode has stricter safety limits.
 - Do not use it for fabricated data plots, experimental result images, microscope-like evidence, or any image that could be mistaken for real observed evidence.
 - The workflow must not invent evidence images, simulate unpublished results, or imply that generated visuals are authentic scientific observations.
 
-If a target requires evidence-bearing figures, measured plots, or document-native extraction from binary files, stop at planning and handle that requirement in a later slice with explicit provider and extraction support.
+In the generic document-illustration route, stop at planning when a target needs
+evidence-bearing scientific structure. For text-bearing physics and
+natural-science sources, use the dedicated trustworthy-scientific-figure route
+below. Measured plots, OCR-heavy sources, microscope-like evidence, and any
+generated output presented as observed experimental evidence remain outside the
+accepted boundary.
+
+## Trustworthy Scientific Figures
+
+The post-V1 scientific-figure workflow is accepted for its bounded scope. Its
+status layers are deliberately separate:
+
+- `Implemented`: extraction, claim/evidence understanding, persisted authority,
+  deterministic SVG/PNG/PDF, contract/semantic/visual review, bounded repair,
+  two gates, five WPF workspaces, and delivery packaging are present.
+- `Fake-first verified`: all 12 human-approved corpus baselines replay through
+  the workflow and all 40 declared blocking mutations fail closed.
+- `Live verified`: run `20260727-150622` completed one mechanism, one concept
+  comparison, and one graphical abstract through OpenAI understanding plus
+  independent semantic and full-resolution visual review.
+- `Human accepted`: reviewer `sciman` accepted all three final live PNGs at
+  `2026-07-27T23:57:09.9758439+08:00` with no corrections.
+
+Use the five scientific workspaces in order: Source, Understanding, Figure
+Spec, Render & Review, then Delivery. Gate 1 freezes the approved claims,
+elements, relations, limitations, and specification version before rendering.
+Gate 2 is available only after deterministic contract review and both machine
+reviews pass. Human rejection routes back to bounded repair; automatic repair
+cannot change scientific meaning or silently replace Gate 1 authority.
+
+The default provider mode remains fake. A live refresh requires explicit paid
+call approval and runs:
+
+```powershell
+.\scripts\run-scientific-figure-live-acceptance.ps1
+```
+
+Do not rerun it merely to re-read accepted evidence. The accepted local report
+is under `artifacts/scientific-figure-live-acceptance/20260727-150622`; that
+directory and provider secrets stay outside Git. The committed summary is
+[20260725-scientific-figure-live-acceptance.md](./change-evidence/20260725-scientific-figure-live-acceptance.md).
+
+Scientific delivery packages preserve SVG, PNG, PDF, the approved
+specification, provenance map, review and repair records, provider metadata,
+and both human approvals. Treat every package as an immutable snapshot.
+
+Migration and rollback boundaries:
+
+- Existing image-series projects need no manual migration. Scientific workflow
+  persistence is additive and old workspaces remain readable.
+- Preserve local SQLite/workspace data and accepted artifact directories before
+  changing provider mode or reverting code; Git rollback does not restore local
+  runtime data.
+- To stop live execution, return to fake provider mode. Reverting a scientific
+  implementation commit removes code behavior but must not be represented as
+  deleting or revoking already-recorded human evidence.
 
 ## Safety Defaults
 

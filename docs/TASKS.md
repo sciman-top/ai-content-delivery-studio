@@ -12,10 +12,10 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 ## Current Queue Status
 
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
-- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-20 and Checkpoint 3 establish the complete machine-trust loop, Tasks 21-25 and Checkpoint 4 provide the user-visible fake-first five-workspace flow through explicit Gate 2 and delivery export, Task 26 accepts all 12 fixed corpus baselines plus 40 blocking mutations offline, Task 27 adds explicit live-mode OpenAI scientific understanding behind strict local authority checks, and Task 28 adds stateless scientific semantic plus full-resolution typed-crop visual review. Paid live acceptance and final closeout remain open.
+- The post-V1 trustworthy-scientific-figure flagship is accepted through Task 30 and Checkpoint 5. Tasks 6-20 and Checkpoint 3 establish the machine-trust loop; Tasks 21-25 and Checkpoint 4 provide the user-visible fake-first five-workspace flow; Task 26 accepts all 12 baselines plus 40 blocking mutations; Tasks 27-28 add opt-in OpenAI understanding and independent review; Task 29 records three live samples and their human Gate 2 approvals; Task 30 synchronizes documentation and final repository evidence. No scientific-figure implementation task remains open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
 
-## Active Post-V1 Flagship Slice: Trustworthy Scientific Figures
+## Accepted Post-V1 Flagship Slice: Trustworthy Scientific Figures
 
 - [x] Approve the physics and natural-science flagship scope, authority chain, SVG-first rendering, three-layer review, and two human gates.
 - [x] Record the repository-owned design specification.
@@ -54,8 +54,8 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
 - [x] Deliver the five-workspace WPF flow and pass fake-first workbench acceptance.
 - [x] Replay and accept all 12 fixed corpus baselines and blocking mutations.
-- [ ] After explicit paid-call approval, record live-provider and human acceptance evidence.
-- [ ] Synchronize user guidance, roadmap status, launch evidence, migration, rollback, and closeout truth.
+- [x] After explicit paid-call approval, record live-provider and human acceptance evidence.
+- [x] Synchronize user guidance, roadmap status, launch evidence, migration, rollback, and closeout truth.
 
 ## Near-Term Hardening (Not Current Release Blockers)
 

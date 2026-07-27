@@ -12,7 +12,7 @@ AI, providers, workflow packs, and output formats can evolve quickly. Core domai
 - A workflow is production-ready only when approval evidence, deterministic rendering or composition where required, and real-provider behavior are verified.
 - Current V1 release-claim truth lives in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md); roadmap phase status and completed backlog items do not count as launch proof by themselves.
 - As of the latest recorded launch snapshot on `2026-06-23`, that evidence file keeps all `5 / 5` V1 launch metrics verified. The fresh automated repo gate is current, while the latest recorded live-provider sample in that snapshot still remains the `2026-06-11` artifact set. This does not mean every roadmap phase is complete or that future release snapshots never need refresh.
-- The recorded V1 repo-side execution queue remains closed. A new post-V1 trustworthy-scientific-figure flagship slice has an approved design and implementation plan, but runtime implementation has not started.
+- The recorded V1 repo-side execution queue remains closed. The post-V1 trustworthy-scientific-figure flagship implementation, fake/live verification, human acceptance, Task 30 documentation, and Checkpoint 5 final-gate closeout are accepted.
 
 ## V1 Release Frame
 
@@ -82,15 +82,17 @@ The current recorded answer is "yes" for the `2026-06-23` snapshot in [V1_LAUNCH
 - The first low-risk operator execution slice is already bounded and auditable.
 - The external reference system is machine-readable and in parity through `REFERENCE_BASIS.md`, `scripts/reference-basis.json`, and the repo-side external-shelf snapshot.
 
-## Active Post-V1 Flagship Slice
+## Accepted Post-V1 Flagship Slice
 
-Trustworthy scientific figures are now the only active repository-owned implementation-plan slice:
+Trustworthy scientific figures have reached the accepted implementation boundary:
 
 - Scope: text-bearing physics and natural-science sources -> evidence-grounded understanding -> approved `ScientificFigureSpec` -> deterministic SVG -> three-layer review -> two human gates -> evidence-backed delivery.
 - Design authority: [2026-07-25-scientific-figure-trustworthy-workflow-design.md](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md).
 - Execution authority: [2026-07-25-scientific-figure-trustworthy-workflow.md](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
-- Current state: design and written specification approved; implementation plan recorded; Task 1 dependency research and benchmark decisions complete; evaluation-corpus admission, runtime implementation, live-provider evidence, and human acceptance remain open.
-- Completion boundary: no phase or workflow is complete merely because the design, plan, domain skeleton, fake provider, or UI shell exists. Scientific acceptance requires the fixed corpus, fail-closed mutation coverage, opt-in live samples, both human gates, and fresh repository evidence.
+- Current state: Tasks 1-30 and Checkpoint 5 are accepted. The 12-item human-approved corpus and all 40 blocking mutations pass; the five-workspace WPF flow, deterministic SVG/PNG/PDF delivery, OpenAI understanding and dual review, three representative live samples, both human gates, bilingual guidance, migration/rollback notes, and final repository gates have recorded evidence.
+- Live authority: `artifacts/scientific-figure-live-acceptance/20260727-150622` records three accepted Gate 2 decisions by `sciman`; the committed summary is [20260725-scientific-figure-live-acceptance.md](./change-evidence/20260725-scientific-figure-live-acceptance.md).
+- Excluded boundary: OCR-heavy sources, measured or fabricated data plots, microscope-like observations, automatic scientific-meaning repair, and generated visuals represented as experimental evidence are not accepted capabilities.
+- Completion boundary: design, plan, domain skeleton, fake provider, or UI shell alone never counted. Acceptance is based on fixed-corpus replay, fail-closed mutations, opt-in live samples, both human gates, and fresh repository evidence.
 
 ## Future Trigger Lanes
 
