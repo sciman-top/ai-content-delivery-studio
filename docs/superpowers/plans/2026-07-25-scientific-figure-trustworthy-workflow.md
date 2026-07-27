@@ -843,14 +843,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] All 12 valid baselines reach the expected pre-human state.
-- [ ] Every critical scientific mutation and first-slice visual mutation is blocked.
-- [ ] The runner writes a deterministic report with per-item coverage, finding, and workflow-state evidence.
+- [x] All 12 valid baselines reach the expected pre-human state.
+- [x] Every critical scientific mutation and first-slice visual mutation is blocked.
+- [x] The runner writes a deterministic report with per-item coverage, finding, and workflow-state evidence.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusAcceptanceTests`
-- [ ] Run the repo-owned corpus acceptance command recorded by this task.
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureCorpusAcceptanceTests`
+- [x] `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-corpus.ps1`
 
 **Dependencies:** Checkpoint 4
 

@@ -34,6 +34,12 @@ A computed, fail-closed state indicating that relevant claims are traceable,
 conflict-free, and completely covered; it is not human approval.
 _Avoid_: Approval, Gate 1
 
+**Scientific Figure Corpus Acceptance**:
+An offline, deterministic replay of every human-approved baseline and declared
+blocking mutation through the real scientific workflow contracts. It proves
+fixed-corpus behavior only and is not live-provider or human delivery approval.
+_Avoid_: General scientific acceptance, live acceptance
+
 **Scientific Figure Spec**:
 The versioned scientific-content contract that is the sole authority for a
 future render plan.

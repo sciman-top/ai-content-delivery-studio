@@ -96,6 +96,13 @@ UI complexity rules:
   five-workspace flow, both human gates, cross-format hash checks, WPF layout,
   screenshot, and UI Automation contract have passed. Corpus and live-provider
   acceptance remain separate later gates.
+- The offline scientific corpus runner is an application-layer acceptance
+  boundary. It loads only `human-approved` / `accepted` corpus authority,
+  rebuilds domain extraction, understanding, Figure Spec, workflow, SVG,
+  PNG/PDF, contract review, and provider-neutral review requests, then records
+  deterministic per-item and per-mutation evidence. It depends on renderer,
+  exporter, and cropper contracts; it neither imports infrastructure provider
+  types nor treats fixed-corpus success as live or general acceptance.
 
 ## Provider Boundaries
 
