@@ -18,6 +18,7 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
     private const int MaximumDimension = 16_384;
     private const long MaximumPixels = 100_000_000;
 
+    private static readonly object PdfRenderSync = new();
     private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
     private static readonly HashSet<string> SupportedElements =
     [
@@ -246,23 +247,27 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
         string sourceSvgHash,
         ScientificSvgArtifact source)
     {
-        using var stream = new MemoryStream();
-        var metadata = new SKDocumentPdfMetadata
+        // Skia's native PDF writer corrupts text resources under concurrent writes.
+        lock (PdfRenderSync)
         {
-            Title = semantics.AccessibilityTitle,
-            Subject = sourceSvgHash,
-            Author = "AI Content Delivery Studio",
-            Creator = ExporterIdentity,
-            Producer = $"{ExporterIdentity}/{ExporterVersion}",
-            Keywords = $"plan:{source.PlanId};specification:{source.SpecificationId:D};version:{source.SpecificationVersion}",
-        };
-        using var pdf = SKDocument.CreatePdf(stream, metadata)
-            ?? throw new InvalidOperationException("Could not create the scientific PDF.");
-        var canvas = pdf.BeginPage(width, height);
-        DrawDocument(canvas, document, width, height);
-        pdf.EndPage();
-        pdf.Close();
-        return stream.ToArray();
+            using var stream = new MemoryStream();
+            var metadata = new SKDocumentPdfMetadata
+            {
+                Title = semantics.AccessibilityTitle,
+                Subject = sourceSvgHash,
+                Author = "AI Content Delivery Studio",
+                Creator = ExporterIdentity,
+                Producer = $"{ExporterIdentity}/{ExporterVersion}",
+                Keywords = $"plan:{source.PlanId};specification:{source.SpecificationId:D};version:{source.SpecificationVersion}",
+            };
+            using var pdf = SKDocument.CreatePdf(stream, metadata)
+                ?? throw new InvalidOperationException("Could not create the scientific PDF.");
+            var canvas = pdf.BeginPage(width, height);
+            DrawDocument(canvas, document, width, height);
+            pdf.EndPage();
+            pdf.Close();
+            return stream.ToArray();
+        }
     }
 
     private static void DrawDocument(SKCanvas canvas, XDocument document, int width, int height)

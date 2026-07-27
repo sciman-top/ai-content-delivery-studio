@@ -3,6 +3,7 @@ using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 using SkiaSharp;
 using System.Security.Cryptography;
 using System.Text;
+using UglyToad.PdfPig;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -58,6 +59,43 @@ public sealed class ScientificFigureExporterTests
                 Assert.Equal(svg.Sha256, artifact.SourceSvgSha256);
                 Assert.Equal(bundle.SemanticSha256, artifact.SemanticSha256);
             });
+    }
+
+    [Fact]
+    public void Export_ConcurrentPdfRendersRemainReadable()
+    {
+        var svg = new DeterministicSvgRenderer().Render(
+            DeterministicSvgRendererTests.Plan());
+        var failures = new System.Collections.Concurrent.ConcurrentQueue<Exception>();
+
+        Parallel.For(
+            0,
+            32,
+            _ =>
+            {
+                try
+                {
+                    var bundle = new ScientificFigureExporter().Export(
+                        new ScientificFigureExportRequest(
+                            svg,
+                            svg.Sha256,
+                            Width: 1200,
+                            Height: 800));
+                    var pdf = Assert.Single(
+                        bundle.Artifacts,
+                        artifact => artifact.Format == "pdf");
+                    using var document = PdfDocument.Open(pdf.Bytes);
+                    var text = string.Join(" ", document.GetPages().Select(page => page.Text));
+                    Assert.Contains("Net force", text, StringComparison.Ordinal);
+                    Assert.Contains("bounded", text, StringComparison.Ordinal);
+                }
+                catch (Exception exception)
+                {
+                    failures.Enqueue(exception);
+                }
+            });
+
+        Assert.Empty(failures);
     }
 
     [Fact]
