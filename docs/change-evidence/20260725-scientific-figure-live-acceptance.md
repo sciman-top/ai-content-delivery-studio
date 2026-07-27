@@ -4,12 +4,13 @@ Date: 2026-07-27
 
 ## Status
 
-`machine-ready / pending-human-review`
+`accepted`
 
 The opt-in paid-provider machine path completed for all three representative
-scientific-figure categories. This evidence does not accept Task 29: each final
-PNG still requires a fresh Gate 2 decision from the designated human reviewer.
-Task 30 and Checkpoint 5 therefore remain open.
+scientific-figure categories. The designated human reviewer then inspected and
+accepted all three final PNGs with no corrections. Task 29 is accepted. Task 30
+and Checkpoint 5 remain open until documentation synchronization and the final
+fixed-order repository gate complete.
 
 ## Authorized Live Run
 
@@ -20,8 +21,8 @@ Task 30 and Checkpoint 5 therefore remain open.
 - Paid calls authorized: `true`
 - Machine path: `passedMachinePath=true`
 - Human-review readiness: `readyForHumanReview=true`
-- Final acceptance: `accepted=false`
-- Blocking reason: `Three fresh Gate 2 human decisions are required.`
+- Final acceptance: `accepted=true`
+- Blocking reason: none
 
 The ignored artifact report is the detailed local evidence authority. It
 preserves per-call request/provider trace ids, latency, input/output/cached and
@@ -33,9 +34,9 @@ base64 image bodies, and absolute local paths are omitted from request evidence.
 
 | Category | Item | Machine result | Provider calls | Total tokens | Gate 2 |
 | --- | --- | --- | ---: | ---: | --- |
-| mechanism/process | `electromagnetism-rotating-coil-generator` | understanding unblocked; contract, semantic, and visual review passed | 3 | 7,731 | `pending-human-review` |
-| concept comparison | `thermal-three-mode-heat-transfer-comparison` | understanding unblocked; contract, semantic, and visual review passed | 3 | 8,780 | `pending-human-review` |
-| graphical abstract | `quantum-photoelectric-threshold-summary` | understanding unblocked; contract, semantic, and visual review passed | 3 | 6,368 | `pending-human-review` |
+| mechanism/process | `electromagnetism-rotating-coil-generator` | understanding unblocked; contract, semantic, and visual review passed | 3 | 7,731 | `accepted` |
+| concept comparison | `thermal-three-mode-heat-transfer-comparison` | understanding unblocked; contract, semantic, and visual review passed | 3 | 8,780 | `accepted` |
+| graphical abstract | `quantum-photoelectric-threshold-summary` | understanding unblocked; contract, semantic, and visual review passed | 3 | 6,368 | `accepted` |
 
 Each sample reuses its Checkpoint 0 human-approved baseline as Gate 1 authority
 without mutation. Each machine review used one scientific-understanding call,
@@ -51,16 +52,17 @@ amount is invented. Configuring a reviewed local rate card is required before a
 currency estimate can be asserted; the provider's external bill remains the
 authority for actual spend.
 
-## Human Gate Boundary
+## Human Gate Decision
 
-The three Gate 2 records remain `pending-human-review` with null reviewer and
-review time. The reviewer must inspect the final PNGs, approve or reject each
-item, and record all corrections. Until then:
+- Decision: all three Gate 2 items accepted
+- Reviewer: `sciman`
+- Reviewed at: `2026-07-27T23:57:09.9758439+08:00`
+- Corrections: none
 
-- Task 29 is not complete.
-- Task 30 must not start.
-- Checkpoint 5 and the flagship scientific workflow must not be reported
-  `accepted`.
+The ignored report and all three review bundles preserve the same reviewer,
+review time, decision, and empty correction record. Task 29 is complete. Task
+30 may now start, but Checkpoint 5 and the flagship scientific workflow remain
+open until Task 30 and its final fixed-order gate complete.
 
 ## Harness And Regression Coverage
 
@@ -116,3 +118,9 @@ A second fresh post-evidence fixed-order run also passed with build `0`
 warnings/errors, test `663 / 663`, reference evidence, format, and the complete
 release preflight. The final commit preflight repeats the same fixed order so
 the submitted tree is covered by fresh evidence.
+
+After the Gate 2 human decision, the acceptance-closeout fixed-order run passed
+again with build `0` warnings/errors, test `664 / 664`, reference evidence,
+format, and complete release preflight. The additional regression proves
+concurrent native PDF exports remain readable; its root-cause fix is recorded
+separately in `docs/change-evidence/20260727-scientific-pdf-concurrency-fix.md`.

@@ -927,21 +927,23 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Current status (2026-07-27):** The authorized run `20260727-150622`
 completed the machine path for the mechanism, concept-comparison, and
-graphical-abstract samples. All three are ready for review, but Gate 2 remains
-`pending-human-review`; Task 29, Task 30, and Checkpoint 5 are not accepted.
-See `docs/change-evidence/20260725-scientific-figure-live-acceptance.md`.
+graphical-abstract samples. The designated human reviewer `sciman` accepted all
+three Gate 2 decisions at `2026-07-27T23:57:09.9758439+08:00` with no
+corrections. Task 29 is accepted; Task 30 and Checkpoint 5 remain open until
+their documentation and full-gate closeout completes. See
+`docs/change-evidence/20260725-scientific-figure-live-acceptance.md`.
 
 **Acceptance criteria:**
 
-- [ ] One mechanism, one concept, and one graphical-abstract source complete the intended live path.
-- [ ] Scientific experts or the designated human reviewer approve element-level correctness and record all corrections.
-- [ ] Cost, provider, prompt, redaction, hashes, reviews, repairs, and both approvals are preserved.
+- [x] One mechanism, one concept, and one graphical-abstract source complete the intended live path.
+- [x] Scientific experts or the designated human reviewer approve element-level correctness and record all corrections.
+- [x] Cost, provider, prompt, redaction, hashes, reviews, repairs, and both approvals are preserved.
 
 **Verification:**
 
-- [ ] Run the explicit opt-in live acceptance command recorded by this task.
-- [ ] `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1`
-- [ ] Human review signs the live acceptance evidence.
+- [x] Run the explicit opt-in live acceptance command recorded by this task.
+- [x] `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1`
+- [x] Human review signs the live acceptance evidence.
 
 **Dependencies:** Task 27, Task 28
 
