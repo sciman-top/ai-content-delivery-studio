@@ -92,6 +92,36 @@ Key findings:
   blocks and `12,000` source characters per chunk, with explicit source block,
   page, section, character-range, and bounding-region identifiers.
 
+### Responses Vision And Structured Outputs For Scientific Review
+
+Sources:
+
+- https://developers.openai.com/api/docs/guides/images-vision
+- https://developers.openai.com/api/docs/guides/structured-outputs
+- https://developers.openai.com/api/reference/resources/responses/methods/create
+
+Key findings:
+
+- Responses accepts base64 data URLs and multiple `input_image` parts in one
+  content array. Scientific review can therefore send the unchanged exported
+  PNG bytes followed by typed critical-item crops in a deterministic order.
+- `detail: high` requests standard high-fidelity analysis, but model-specific
+  tokenization may still resize an input. The application must not claim that
+  provider-side processing preserves every source pixel. Full exported bytes,
+  bounded region crops, local deterministic checks, and human approval remain
+  separate controls.
+- Vision has documented limitations for small text, graphs, styled lines,
+  spatial reasoning, and accuracy. A model `Pass` cannot prove scientific
+  correctness; malformed output, `Uncertain`, provider failure, or item-level
+  findings must fail closed before the human Gate 2 decision.
+- Strict `text.format` JSON Schema constrains the response shape but does not
+  validate responsible item authority. Element/relation identifiers, enums,
+  required failure findings, and non-empty evidence still require local checks.
+- Scientific semantic and visual review remain fresh and stateless with
+  `store: false`; no `previous_response_id` or remote conversation history is
+  used. Image count and byte budgets are enforced locally because every image
+  contributes tokens and cost.
+
 ## Official Google Vertex AI References
 
 ### Image Generation

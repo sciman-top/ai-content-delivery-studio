@@ -24,6 +24,10 @@ public sealed class ProviderRuntimeServiceCollectionTests
         Assert.IsType<FakeVisionReviewProvider>(provider.GetRequiredService<IVisionReviewProvider>());
         Assert.IsType<FakeScientificUnderstandingProvider>(
             provider.GetRequiredService<IScientificUnderstandingProvider>());
+        Assert.IsType<FakeScientificSemanticReviewProvider>(
+            provider.GetRequiredService<IScientificSemanticReviewProvider>());
+        Assert.IsType<FakeScientificVisualReviewProvider>(
+            provider.GetRequiredService<IScientificVisualReviewProvider>());
     }
 
     [Fact]
@@ -66,6 +70,10 @@ public sealed class ProviderRuntimeServiceCollectionTests
             Assert.IsType<FailoverVisionReviewProvider>(provider.GetRequiredService<IVisionReviewProvider>());
             Assert.IsType<OpenAiScientificUnderstandingProvider>(
                 provider.GetRequiredService<IScientificUnderstandingProvider>());
+            Assert.IsType<OpenAiScientificReviewProvider>(
+                provider.GetRequiredService<IScientificSemanticReviewProvider>());
+            Assert.IsType<OpenAiScientificReviewProvider>(
+                provider.GetRequiredService<IScientificVisualReviewProvider>());
         }
         finally
         {

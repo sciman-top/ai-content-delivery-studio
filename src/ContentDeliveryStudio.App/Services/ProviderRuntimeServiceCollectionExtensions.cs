@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net.Http;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Infrastructure.Fakes;
@@ -38,6 +39,8 @@ public static class ProviderRuntimeServiceCollectionExtensions
             serviceProvider.GetRequiredService<FakeImageGenerationProvider>());
         services.AddSingleton<IVisionReviewProvider, FakeVisionReviewProvider>();
         services.AddSingleton<IScientificUnderstandingProvider, FakeScientificUnderstandingProvider>();
+        services.AddSingleton<IScientificSemanticReviewProvider, FakeScientificSemanticReviewProvider>();
+        services.AddSingleton<IScientificVisualReviewProvider, FakeScientificVisualReviewProvider>();
 
         return services;
     }
@@ -94,6 +97,18 @@ public static class ProviderRuntimeServiceCollectionExtensions
                 serviceProvider.GetRequiredService<OpenAiSdkClientFactory>(),
                 secretStore,
                 serviceProvider.GetService<IProviderCallTelemetrySink>()));
+        services.AddSingleton<OpenAiScientificReviewProvider>(serviceProvider =>
+            new OpenAiScientificReviewProvider(
+                new HttpClient { BaseAddress = configuration.Text.BaseUri },
+                OpenAiProviderOptions.FromTextProviderEnvironment(
+                    configuration,
+                    realApiEnabled: true),
+                secretStore,
+                serviceProvider.GetService<IProviderCallTelemetrySink>()));
+        services.AddSingleton<IScientificSemanticReviewProvider>(serviceProvider =>
+            serviceProvider.GetRequiredService<OpenAiScientificReviewProvider>());
+        services.AddSingleton<IScientificVisualReviewProvider>(serviceProvider =>
+            serviceProvider.GetRequiredService<OpenAiScientificReviewProvider>());
 
         return services;
     }

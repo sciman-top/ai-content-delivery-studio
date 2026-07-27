@@ -899,14 +899,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Scientific review receives approved evidence and reports per-element and per-relation findings.
-- [ ] Visual review receives full-resolution artifacts and typed crops.
-- [ ] Provider errors, malformed output, `uncertain`, and missing findings fail closed.
+- [x] Scientific review receives approved evidence and reports per-element and per-relation findings.
+- [x] Visual review receives full-resolution artifacts and typed crops.
+- [x] Provider errors, malformed output, `uncertain`, and missing findings fail closed.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter OpenAiScientificReviewContractTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter OpenAiProviderSmokeTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter OpenAiScientificReviewContractTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter OpenAiProviderSmokeTests`
 
 **Dependencies:** Task 17, Task 18, Task 27
 
