@@ -72,7 +72,7 @@ public sealed class ApplicationModuleCatalogTests
                 "ScientificReview",
                 "ScientificDelivery",
             ]);
-        Assert.False(ScientificFigureModule.IsUserVisible);
+        Assert.True(ScientificFigureModule.IsUserVisible);
     }
 
     [Fact]

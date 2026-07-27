@@ -203,6 +203,19 @@ contract and machine reviews, repair history, provider metadata, artifact
 hashes, and both human approvals.
 _Avoid_: Image-only export, preview bundle
 
+**Gate 2 Readiness**:
+A fail-closed application-layer eligibility result proving current Gate 1,
+contract and machine review, repair closure, provider metadata, exact format
+cardinality, and artifact hash bindings. It enables a human decision but is not
+itself approval.
+_Avoid_: Gate 2 approval, visual pass score
+
+**Scientific Delivery Workspace**:
+The terminal WPF projection for comparing SVG, PNG, and PDF identities and
+previews, inspecting review and evidence provenance, recording the explicit
+Gate 2 decision, and exporting the resulting package on user command.
+_Avoid_: Package writer, scientific authority, automatic approval
+
 **Scientific Workspace Projection**:
 The read-only WPF coordinator view of Source, Understanding, Figure Spec,
 Render & Review, and Delivery status derived from the authoritative workflow

@@ -57,11 +57,11 @@
                            Foreground="#4D5B6A"
                            TextWrapping="Wrap" />
                 <TextBlock Foreground="#4D5B6A">
-                    <Run Text="{Binding ScientificRenderReview.SelectedProvenance.SourceBlockId}" />
+                    <Run Text="{Binding ScientificRenderReview.SelectedProvenance.SourceBlockId, Mode=OneWay}" />
                     <Run Text=" / " />
-                    <Run Text="{Binding ScientificRenderReview.SelectedProvenance.Section}" />
+                    <Run Text="{Binding ScientificRenderReview.SelectedProvenance.Section, Mode=OneWay}" />
                     <Run Text=" / p." />
-                    <Run Text="{Binding ScientificRenderReview.SelectedProvenance.PageNumber}" />
+                    <Run Text="{Binding ScientificRenderReview.SelectedProvenance.PageNumber, Mode=OneWay}" />
                 </TextBlock>
             </StackPanel>
             <Expander Margin="0,8,0,0"
@@ -71,9 +71,9 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Margin="0,2" Foreground="#A33A2B" TextWrapping="Wrap">
-                                <Run Text="{Binding Code}" FontWeight="Bold" />
+                                <Run Text="{Binding Code, Mode=OneWay}" FontWeight="Bold" />
                                 <Run Text=": " />
-                                <Run Text="{Binding Evidence}" />
+                                <Run Text="{Binding Evidence, Mode=OneWay}" />
                             </TextBlock>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -109,9 +109,9 @@
                     <DataTemplate>
                         <StackPanel Margin="4">
                             <TextBlock FontWeight="SemiBold">
-                                <Run Text="{Binding FindingCode}" />
+                                <Run Text="{Binding FindingCode, Mode=OneWay}" />
                                 <Run Text=" / " />
-                                <Run Text="{Binding Layer}" />
+                                <Run Text="{Binding Layer, Mode=OneWay}" />
                             </TextBlock>
                             <TextBlock Text="{Binding ExecutionMode}" Foreground="#4D5B6A" />
                         </StackPanel>
@@ -131,11 +131,11 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <TextBlock TextWrapping="Wrap">
-                            <Run Text="{Binding Attempt}" />
+                            <Run Text="{Binding Attempt, Mode=OneWay}" />
                             <Run Text=". " />
-                            <Run Text="{Binding FindingCode}" />
+                            <Run Text="{Binding FindingCode, Mode=OneWay}" />
                             <Run Text=" / " />
-                            <Run Text="{Binding Layer}" />
+                            <Run Text="{Binding Layer, Mode=OneWay}" />
                         </TextBlock>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>

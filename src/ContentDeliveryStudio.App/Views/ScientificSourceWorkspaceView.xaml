@@ -10,12 +10,13 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <DockPanel>
+        <StackPanel>
             <TextBlock Text="{Binding ScientificSourceUnderstanding.SourceTitle}" FontWeight="SemiBold" FontSize="15" />
-            <TextBlock DockPanel.Dock="Right"
+            <TextBlock Margin="0,2,0,0"
                        Text="{Binding ScientificSourceUnderstanding.ExtractionStatus}"
+                       TextTrimming="CharacterEllipsis"
                        Foreground="#4D5B6A" />
-        </DockPanel>
+        </StackPanel>
         <StackPanel Grid.Row="1" Margin="0,8,0,0">
             <TextBlock Text="{Binding ScientificSourceUnderstanding.DiagnosticsTitle}" FontWeight="SemiBold" />
             <ItemsControl ItemsSource="{Binding ScientificSourceUnderstanding.Diagnostics}"

@@ -8,10 +8,14 @@ namespace ContentDeliveryStudio.App.ViewModels;
 public sealed class MainWindowLocalizationCoordinator
 {
     private readonly LocalizationService _localizationService;
+    private readonly Action<byte[]>? _scientificPackageExportRequested;
 
-    public MainWindowLocalizationCoordinator(LocalizationService localizationService)
+    public MainWindowLocalizationCoordinator(
+        LocalizationService localizationService,
+        Action<byte[]>? scientificPackageExportRequested = null)
     {
         _localizationService = localizationService;
+        _scientificPackageExportRequested = scientificPackageExportRequested;
     }
 
     public MainWindowLocalizationPayload BuildPayload()
@@ -246,11 +250,9 @@ public sealed class MainWindowLocalizationCoordinator
 
         return ScientificFigureModule.IsUserVisible
             ? standardTabs.Concat(
-                [new WorkbenchTabViewModel(
-                    WorkbenchTabKind.ScientificFigure,
-                    Text(LocalizationKey.ScientificFigures),
-                    Text(LocalizationKey.ScientificFiguresEmptyState),
-                    new ScientificFigureWorkflowCoordinator(_localizationService).Build(null))])
+                [new ScientificFigureWorkspaceFactory(
+                    _localizationService,
+                    _scientificPackageExportRequested).Create()])
                 .ToArray()
             : standardTabs;
     }

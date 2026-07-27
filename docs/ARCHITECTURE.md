@@ -72,6 +72,18 @@ Recommended composition model:
 
 The WPF shell owns layout slots and navigation state. Workflow packs select stages and modules. Feature modules own their own views and view models. Application use cases own behavior. Provider and tool adapters remain outside the UI layer.
 
+The trustworthy scientific-figure module follows this split through five
+feature-owned workspaces: Source, Understanding, Figure Spec, Render & Review,
+and Delivery. The WPF layer projects the authoritative workflow, review, hash,
+repair, and approval records; it does not infer scientific eligibility. Gate 2
+readiness and package construction remain in
+`ScientificFigureDeliveryService`, while the Delivery view model only gathers
+the explicit reviewer decision and projects the resulting immutable package.
+The desktop host registers `IScientificDeliveryPackageSaveService` through the
+Generic Host composition root. That service opens a system save dialog and
+writes bytes only after the user invokes the enabled export command; approval
+alone has no filesystem side effect.
+
 UI complexity rules:
 
 - Keep the canonical stage vocabulary small: `Source`, `Brief`, `Plan`, `Produce`, `Review`, `Repair`, `Deliver`.
@@ -80,6 +92,10 @@ UI complexity rules:
 - Prefer task-first commands such as `Generate directions`, `Run extraction`, `Approve repair`, or `Export package` over raw tool names.
 - Each new task pack must declare which stage modules it needs before any UI is added.
 - A new UI module must be testable with fake application services and must not depend on a real provider.
+- Scientific workspace visibility is enabled only after the complete fake-first
+  five-workspace flow, both human gates, cross-format hash checks, WPF layout,
+  screenshot, and UI Automation contract have passed. Corpus and live-provider
+  acceptance remain separate later gates.
 
 ## Provider Boundaries
 

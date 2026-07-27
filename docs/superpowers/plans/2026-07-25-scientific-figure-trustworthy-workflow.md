@@ -803,15 +803,15 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Gate 2 and export commands remain disabled until domain eligibility is true.
-- [ ] Users can compare SVG, PNG, and PDF and inspect the complete evidence chain.
-- [ ] The workflow pack becomes visible only after fake-first WPF acceptance passes.
+- [x] Gate 2 and export commands remain disabled until domain eligibility is true.
+- [x] Users can compare SVG, PNG, and PDF and inspect the complete evidence chain.
+- [x] The workflow pack becomes visible only after fake-first WPF acceptance passes.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificDeliveryViewModelTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkspaceLayoutTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter MainWindowViewModelTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificDeliveryViewModelTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkspaceLayoutTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter MainWindowViewModelTests`
 
 **Dependencies:** Task 24
 
@@ -829,11 +829,11 @@ state is part of the Checkpoint 0 corpus authority.
 
 ### Checkpoint 4: User-visible fake-first workflow
 
-- [ ] A user can complete all five workspaces with fake providers.
-- [ ] Both approval gates are explicit and persisted.
-- [ ] Text fits and controls remain usable at supported desktop sizes.
-- [ ] Existing primary launch routes remain green.
-- [ ] Full repository verification passes.
+- [x] A user can complete all five workspaces with fake providers.
+- [x] Both approval gates are explicit and persisted.
+- [x] Text fits and controls remain usable at supported desktop sizes.
+- [x] Existing primary launch routes remain green.
+- [x] Full repository verification passes.
 
 ## Milestone 5: Corpus And Live Provider Acceptance
 

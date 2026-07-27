@@ -36,11 +36,13 @@
                 Grid.Row="0"
                 BorderBrush="#D9DEE8"
                 BorderThickness="0,0,1,0"
-                Padding="12"
-                automation:AutomationProperties.AutomationId="ScientificSourceWorkspace"
-                automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[0].Title}">
+                Padding="12">
             <StackPanel>
-                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[0].Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[0].Title}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           automation:AutomationProperties.AutomationId="ScientificSourceWorkspace"
+                           automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[0].Title}" />
                 <TextBlock Text="{Binding ScientificWorkspace.Workspaces[0].StatusText}" Margin="0,8,0,0" Foreground="#4D5B6A" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
@@ -48,11 +50,13 @@
                 Grid.Row="0"
                 BorderBrush="#D9DEE8"
                 BorderThickness="0,0,1,0"
-                Padding="12"
-                automation:AutomationProperties.AutomationId="ScientificUnderstandingWorkspace"
-                automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[1].Title}">
+                Padding="12">
             <StackPanel>
-                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[1].Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[1].Title}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           automation:AutomationProperties.AutomationId="ScientificUnderstandingWorkspace"
+                           automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[1].Title}" />
                 <TextBlock Text="{Binding ScientificWorkspace.Workspaces[1].StatusText}" Margin="0,8,0,0" Foreground="#4D5B6A" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
@@ -60,11 +64,13 @@
                 Grid.Row="0"
                 BorderBrush="#D9DEE8"
                 BorderThickness="0,0,1,0"
-                Padding="12"
-                automation:AutomationProperties.AutomationId="ScientificFigureSpecWorkspace"
-                automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[2].Title}">
+                Padding="12">
             <StackPanel>
-                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[2].Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[2].Title}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           automation:AutomationProperties.AutomationId="ScientificFigureSpecWorkspace"
+                           automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[2].Title}" />
                 <TextBlock Text="{Binding ScientificWorkspace.Workspaces[2].StatusText}" Margin="0,8,0,0" Foreground="#4D5B6A" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
@@ -72,21 +78,25 @@
                 Grid.Row="0"
                 BorderBrush="#D9DEE8"
                 BorderThickness="0,0,1,0"
-                Padding="12"
-                automation:AutomationProperties.AutomationId="ScientificRenderReviewWorkspace"
-                automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[3].Title}">
+                Padding="12">
             <StackPanel>
-                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[3].Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[3].Title}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           automation:AutomationProperties.AutomationId="ScientificRenderReviewWorkspace"
+                           automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[3].Title}" />
                 <TextBlock Text="{Binding ScientificWorkspace.Workspaces[3].StatusText}" Margin="0,8,0,0" Foreground="#4D5B6A" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
         <Border Grid.Column="4"
                 Grid.Row="0"
-                Padding="12"
-                automation:AutomationProperties.AutomationId="ScientificDeliveryWorkspace"
-                automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[4].Title}">
+                Padding="12">
             <StackPanel>
-                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[4].Title}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <TextBlock Text="{Binding ScientificWorkspace.Workspaces[4].Title}"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           automation:AutomationProperties.AutomationId="ScientificDeliveryWorkspace"
+                           automation:AutomationProperties.Name="{Binding ScientificWorkspace.Workspaces[4].Title}" />
                 <TextBlock Text="{Binding ScientificWorkspace.Workspaces[4].StatusText}" Margin="0,8,0,0" Foreground="#4D5B6A" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
@@ -104,6 +114,9 @@
                 </TabItem>
                 <TabItem Header="{Binding ScientificWorkspace.Workspaces[3].Title}">
                     <views:ScientificRenderReviewWorkspaceView />
+                </TabItem>
+                <TabItem Header="{Binding ScientificWorkspace.Workspaces[4].Title}">
+                    <views:ScientificDeliveryWorkspaceView />
                 </TabItem>
             </TabControl>
         </Grid>

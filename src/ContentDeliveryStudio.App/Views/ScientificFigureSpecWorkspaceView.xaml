@@ -32,9 +32,9 @@
                             <TextBlock Text="{Binding ScientificMeaning}" TextWrapping="Wrap" />
                             <TextBlock Text="{Binding ExactQuote}" Foreground="#4D5B6A" TextWrapping="Wrap" />
                             <TextBlock Foreground="#4D5B6A">
-                                <Run Text="{Binding ClaimId}" />
+                                <Run Text="{Binding ClaimId, Mode=OneWay}" />
                                 <Run Text=" / " />
-                                <Run Text="{Binding SourceBlockId}" />
+                                <Run Text="{Binding SourceBlockId, Mode=OneWay}" />
                             </TextBlock>
                         </StackPanel>
                     </DataTemplate>
@@ -71,9 +71,9 @@
                     <DataTemplate>
                         <StackPanel Margin="4">
                             <TextBlock FontWeight="SemiBold">
-                                <Run Text="{Binding TargetId}" />
+                                <Run Text="{Binding TargetId, Mode=OneWay}" />
                                 <Run Text=" / " />
-                                <Run Text="{Binding Field}" />
+                                <Run Text="{Binding Field, Mode=OneWay}" />
                             </TextBlock>
                             <TextBlock Text="{Binding CurrentValue}" TextWrapping="Wrap" />
                             <TextBlock Text="{Binding ProposedValue}" Foreground="#245D3A" TextWrapping="Wrap" />
@@ -95,13 +95,13 @@
                        Text="{Binding ScientificFigureSpec.GateOneTitle}"
                        FontWeight="SemiBold" />
             <TextBlock Margin="0,3,0,0" Foreground="#4D5B6A" TextWrapping="Wrap">
-                <Run Text="{Binding ScientificFigureSpec.UnderstandingVersionLabel}" />
+                <Run Text="{Binding ScientificFigureSpec.UnderstandingVersionLabel, Mode=OneWay}" />
                 <Run Text=": " />
-                <Run Text="{Binding ScientificFigureSpec.UnderstandingVersion}" />
+                <Run Text="{Binding ScientificFigureSpec.UnderstandingVersion, Mode=OneWay}" />
                 <Run Text=" / " />
-                <Run Text="{Binding ScientificFigureSpec.SpecificationVersionLabel}" />
+                <Run Text="{Binding ScientificFigureSpec.SpecificationVersionLabel, Mode=OneWay}" />
                 <Run Text=": " />
-                <Run Text="{Binding ScientificFigureSpec.SpecificationVersion}" />
+                <Run Text="{Binding ScientificFigureSpec.SpecificationVersion, Mode=OneWay}" />
             </TextBlock>
             <ItemsControl Margin="0,4,0,0"
                           ItemsSource="{Binding ScientificFigureSpec.GateOneBlockingReasons}">
@@ -125,11 +125,11 @@
                     Command="{Binding ScientificFigureSpec.ApproveGateOneCommand}"
                     automation:AutomationProperties.AutomationId="ApproveScientificGateOne" />
             <TextBlock Margin="0,6,0,0" Foreground="#245D3A" TextWrapping="Wrap">
-                <Run Text="{Binding ScientificFigureSpec.FrozenVersionsTitle}" />
+                <Run Text="{Binding ScientificFigureSpec.FrozenVersionsTitle, Mode=OneWay}" />
                 <Run Text=": " />
-                <Run Text="{Binding ScientificFigureSpec.FrozenUnderstandingVersion}" />
+                <Run Text="{Binding ScientificFigureSpec.FrozenUnderstandingVersion, Mode=OneWay}" />
                 <Run Text=" / " />
-                <Run Text="{Binding ScientificFigureSpec.FrozenSpecificationVersion}" />
+                <Run Text="{Binding ScientificFigureSpec.FrozenSpecificationVersion, Mode=OneWay}" />
             </TextBlock>
         </StackPanel>
     </ScrollViewer>

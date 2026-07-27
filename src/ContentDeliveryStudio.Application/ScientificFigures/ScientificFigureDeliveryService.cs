@@ -112,7 +112,7 @@ public sealed class ScientificFigureDeliveryService
                 ScientificRepairPlan.Create([action]));
         }
 
-        ValidateApprovalReadiness(request);
+        ValidateGateTwoReadiness(request);
         var specification = request.Workflow.Specification;
         var gateTwo = new ScientificGateTwoApproval(
             specification.SpecificationId,
@@ -148,9 +148,11 @@ public sealed class ScientificFigureDeliveryService
             RejectionRepairPlan: null);
     }
 
-    private static void ValidateApprovalReadiness(
+    public static void ValidateGateTwoReadiness(
         ScientificFigureDeliveryRequest request)
     {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.HumanDecision);
         ArgumentNullException.ThrowIfNull(request.Workflow);
         ArgumentNullException.ThrowIfNull(request.Svg);
         ArgumentNullException.ThrowIfNull(request.Exports);
@@ -228,12 +230,16 @@ public sealed class ScientificFigureDeliveryService
         }
 
         var formats = request.Exports.Artifacts
-            .Select(item => item.Format)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        if (!formats.Contains("png") || !formats.Contains("pdf"))
+            .GroupBy(item => item.Format, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+        if (formats.Count != 2
+            || !formats.TryGetValue("png", out var pngCount)
+            || pngCount != 1
+            || !formats.TryGetValue("pdf", out var pdfCount)
+            || pdfCount != 1)
         {
             throw new InvalidOperationException(
-                "Gate 2 delivery requires PNG and PDF exports.");
+                "Gate 2 delivery requires exactly one PNG and one PDF export.");
         }
 
         if (request.Exports.Artifacts.Any(item =>

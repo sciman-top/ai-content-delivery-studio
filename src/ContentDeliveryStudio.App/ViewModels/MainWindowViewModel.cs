@@ -215,7 +215,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ProjectApplicationService projectService,
         ProviderCenterViewModel providerCenter,
         GalleryThumbnailWarmupService galleryThumbnailWarmupService,
-        IDocumentSourceFilePickerService? documentSourceFilePickerService = null)
+        IDocumentSourceFilePickerService? documentSourceFilePickerService = null,
+        IScientificDeliveryPackageSaveService? scientificDeliveryPackageSaveService = null)
     {
         _localizationService = localizationService;
         _projectService = projectService;
@@ -238,7 +239,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _projectWorkspaceCoordinator,
             _planningWorkflowCoordinator,
             _generationWorkflowCoordinator);
-        _mainWindowLocalizationCoordinator = new MainWindowLocalizationCoordinator(localizationService);
+        _mainWindowLocalizationCoordinator = new MainWindowLocalizationCoordinator(
+            localizationService,
+            scientificDeliveryPackageSaveService is null
+                ? null
+                : bytes => scientificDeliveryPackageSaveService.SavePackage(bytes));
         _mainWindowSelectionSummaryCoordinator = new MainWindowSelectionSummaryCoordinator();
         _operationGate = new MainWindowOperationGate(SetExclusiveBusyState);
         ProviderCenter = providerCenter;
@@ -1870,7 +1875,8 @@ public sealed record WorkbenchTabViewModel(
     ScientificFigureWorkspaceProjection? ScientificWorkspace = null,
     ScientificSourceUnderstandingViewModel? ScientificSourceUnderstanding = null,
     ScientificFigureSpecViewModel? ScientificFigureSpec = null,
-    ScientificRenderReviewViewModel? ScientificRenderReview = null)
+    ScientificRenderReviewViewModel? ScientificRenderReview = null,
+    ScientificDeliveryViewModel? ScientificDelivery = null)
 {
     public bool IsBrief => Kind is WorkbenchTabKind.Brief;
 

@@ -731,6 +731,9 @@ public sealed class MainWindowViewModelTests
         Assert.Equal(["工作区", "项目", "设置"], viewModel.NavigationItems);
         Assert.Equal("需求设计", viewModel.WorkbenchTabs.First(tab => tab.Kind is WorkbenchTabKind.Brief).Title);
         Assert.Equal("图视图", viewModel.WorkbenchTabs.First(tab => tab.Kind is WorkbenchTabKind.Graph).Title);
+        Assert.Contains(
+            viewModel.WorkbenchTabs,
+            tab => tab.Kind is WorkbenchTabKind.ScientificFigure && tab.Title == "科研绘图");
         Assert.Equal(["跟随系统", "中文", "英文"], viewModel.LanguageOptions.Select(option => option.DisplayName));
         Assert.Equal("学术草稿", viewModel.SelectedDocumentStrictnessOption?.DisplayName);
     }

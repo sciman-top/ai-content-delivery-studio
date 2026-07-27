@@ -22,6 +22,10 @@ public sealed class MainWindowLocalizationCoordinatorTests
         Assert.Equal(["工作区", "项目", "设置"], payload.NavigationItems);
         Assert.Equal("需求设计", payload.WorkbenchTabs.First(tab => tab.Kind is WorkbenchTabKind.Brief).Title);
         Assert.Equal("图视图", payload.WorkbenchTabs.First(tab => tab.Kind is WorkbenchTabKind.Graph).Title);
+        Assert.Equal(9, payload.WorkbenchTabs.Count);
+        Assert.Contains(
+            payload.WorkbenchTabs,
+            tab => tab.Kind is WorkbenchTabKind.ScientificFigure && tab.Title == "科研绘图");
         Assert.Equal(
             [
                 localizationService.GetText(LocalizationKey.GenericHostStarted),

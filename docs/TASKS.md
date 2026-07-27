@@ -12,7 +12,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 ## Current Queue Status
 
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
-- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-20 and Checkpoint 3 establish the complete hidden machine-trust loop, Task 21 adds the hidden five-workspace shell, Task 22 adds source/understanding evidence navigation with audited correction drafts, Task 23 adds typed Figure Spec diffs plus explicit Gate 1 approval, and Task 24 adds authority-bound SVG review plus layer-gated repair controls. WPF Task 25, corpus acceptance, live-provider acceptance, and final closeout remain open.
+- A new post-V1 flagship slice is active for trustworthy scientific figures. Its design, written specification, and repo-owned implementation plan are approved; Tasks 6-20 and Checkpoint 3 establish the complete machine-trust loop, Tasks 21-25 and Checkpoint 4 provide the user-visible fake-first five-workspace flow through explicit Gate 2 and delivery export. Corpus acceptance, live-provider acceptance, and final closeout remain open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
 
 ## Active Post-V1 Flagship Slice: Trustworthy Scientific Figures
@@ -45,10 +45,12 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Add source extraction diagnostics, exact claim-evidence navigation, visible conflicts/blocks, and non-mutating audited claim correction drafts for Task 22.
 - [x] Add evidence-linked element/relation inspection, validated typed proposal diffs, domain-eligible Gate 1 controls, and frozen authority versions for Task 23.
 - [x] Add sanitized zoomable SVG review, item-to-source provenance, separated contract/semantic/visual findings, and presentation-only automatic repair controls for Task 24.
+- [x] Add cross-format SVG/PNG/PDF delivery comparison, complete evidence and provider projection, explicit Gate 2 approval/rejection, user-initiated package export, and user-visible fake-first WPF acceptance for Task 25 and Checkpoint 4.
 - [x] Deliver trustworthy extraction, claim-evidence understanding, persistence, and Gate 1.
 - [x] Deliver deterministic SVG, PNG/PDF export, and the internal `scientific-figure` pack.
 - [x] Deliver contract/scientific/visual review, bounded repair, Gate 2, and evidence-backed delivery.
-- [ ] Deliver the five-workspace WPF flow and pass fake-first corpus acceptance.
+- [x] Deliver the five-workspace WPF flow and pass fake-first workbench acceptance.
+- [ ] Replay and accept all 12 fixed corpus baselines and blocking mutations.
 - [ ] After explicit paid-call approval, record live-provider and human acceptance evidence.
 - [ ] Synchronize user guidance, roadmap status, launch evidence, migration, rollback, and closeout truth.
 

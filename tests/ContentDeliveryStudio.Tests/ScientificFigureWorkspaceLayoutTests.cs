@@ -1,3 +1,5 @@
+using ContentDeliveryStudio.Application.ScientificFigures;
+
 namespace ContentDeliveryStudio.Tests;
 
 public sealed class ScientificFigureWorkspaceLayoutTests
@@ -28,7 +30,7 @@ public sealed class ScientificFigureWorkspaceLayoutTests
     }
 
     [Fact]
-    public void WorkbenchHost_RegistersScientificViewWithoutExposingHiddenModule()
+    public void WorkbenchHost_RegistersVisibleScientificViewBehindCompletedGate()
     {
         var host = ReadRepoFile(
             "src",
@@ -45,6 +47,32 @@ public sealed class ScientificFigureWorkspaceLayoutTests
             "ViewModels",
             "MainWindowLocalizationCoordinator.cs");
         Assert.Contains("ScientificFigureModule.IsUserVisible", localization);
+        Assert.True(ScientificFigureModule.IsUserVisible);
+    }
+
+    [Fact]
+    public void ScientificWorkspace_DisplayRunsUseOneWayBindings()
+    {
+        var viewNames = new[]
+        {
+            "ScientificUnderstandingWorkspaceView.xaml",
+            "ScientificFigureSpecWorkspaceView.xaml",
+            "ScientificRenderReviewWorkspaceView.xaml",
+            "ScientificDeliveryWorkspaceView.xaml",
+        };
+
+        foreach (var viewName in viewNames)
+        {
+            var xaml = ReadRepoFile(
+                "src",
+                "ContentDeliveryStudio.App",
+                "Views",
+                viewName);
+
+            Assert.Equal(
+                Count(xaml, "<Run Text=\"{Binding"),
+                Count(xaml, ", Mode=OneWay}\""));
+        }
     }
 
     private static int Count(string value, string token)

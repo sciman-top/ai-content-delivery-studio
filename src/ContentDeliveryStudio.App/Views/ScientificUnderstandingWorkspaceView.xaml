@@ -6,12 +6,13 @@
                   VerticalScrollBarVisibility="Auto"
                   HorizontalScrollBarVisibility="Disabled">
         <StackPanel>
-            <DockPanel>
-            <TextBlock Text="{Binding ScientificSourceUnderstanding.UnderstandingTitle}" FontWeight="SemiBold" FontSize="15" />
-            <TextBlock DockPanel.Dock="Right"
-                       Text="{Binding ScientificSourceUnderstanding.UnderstandingStatus}"
-                       Foreground="#4D5B6A" />
-            </DockPanel>
+            <StackPanel>
+                <TextBlock Text="{Binding ScientificSourceUnderstanding.UnderstandingTitle}" FontWeight="SemiBold" FontSize="15" />
+                <TextBlock Margin="0,2,0,0"
+                           Text="{Binding ScientificSourceUnderstanding.UnderstandingStatus}"
+                           TextTrimming="CharacterEllipsis"
+                           Foreground="#4D5B6A" />
+            </StackPanel>
             <TextBlock Text="{Binding ScientificSourceUnderstanding.ClaimsTitle}"
                        FontWeight="SemiBold"
                        Margin="0,8,0,0" />
@@ -24,7 +25,10 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Margin="4">
-                        <TextBlock Text="{Binding ClaimId}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding ClaimId}"
+                                   FontWeight="SemiBold"
+                                   TextTrimming="CharacterEllipsis"
+                                   ToolTip="{Binding ClaimId}" />
                         <TextBlock Text="{Binding NormalizedStatement}" TextWrapping="Wrap" />
                     </StackPanel>
                 </DataTemplate>
@@ -36,9 +40,9 @@
                        TextWrapping="Wrap"
                        automation:AutomationProperties.AutomationId="ScientificSelectedEvidenceQuote" />
                 <TextBlock Foreground="#4D5B6A">
-                    <Run Text="{Binding ScientificSourceUnderstanding.SelectedEvidence.Section}" />
+                    <Run Text="{Binding ScientificSourceUnderstanding.SelectedEvidence.Section, Mode=OneWay}" />
                     <Run Text=" / p." />
-                    <Run Text="{Binding ScientificSourceUnderstanding.SelectedEvidence.PageNumber}" />
+                    <Run Text="{Binding ScientificSourceUnderstanding.SelectedEvidence.PageNumber, Mode=OneWay}" />
                 </TextBlock>
             </StackPanel>
             <TextBlock Text="{Binding ScientificSourceUnderstanding.ConflictsTitle}"

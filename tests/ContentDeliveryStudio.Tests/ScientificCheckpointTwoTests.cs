@@ -10,7 +10,7 @@ public sealed class ScientificCheckpointTwoTests
     private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
 
     [Fact]
-    public void ApprovedFakeSpecificationReachesTraceableHiddenExports()
+    public void ApprovedFakeSpecificationRemainsTraceableAfterVisibilityGate()
     {
         var understanding = ScientificFigureTestFixture.ReadyUnderstanding();
         var claim = Assert.Single(understanding.Claims);
@@ -48,6 +48,6 @@ public sealed class ScientificCheckpointTwoTests
         Assert.Equal("false", (string?)decorationGroup.Attribute("data-authoritative"));
         Assert.Equal(["png", "pdf"], bundle.Artifacts.Select(artifact => artifact.Format));
         Assert.All(bundle.Artifacts, artifact => Assert.Equal(svg.Sha256, artifact.SourceSvgSha256));
-        Assert.False(ScientificFigureModule.IsUserVisible);
+        Assert.True(ScientificFigureModule.IsUserVisible);
     }
 }

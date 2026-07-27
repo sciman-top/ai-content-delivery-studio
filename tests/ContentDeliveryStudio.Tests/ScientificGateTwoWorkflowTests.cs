@@ -113,6 +113,23 @@ public sealed class ScientificGateTwoWorkflowTests
     }
 
     [Fact]
+    public void DecideGateTwo_RequiresExactlyOnePngAndOnePdf()
+    {
+        var fixture = ScientificDeliveryTestFixture.Create();
+        var duplicatePng = fixture.Request.Exports.Artifacts
+            .Append(fixture.Request.Exports.Artifacts.Single(item => item.Format == "png"))
+            .ToArray();
+
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            fixture.Service.DecideGateTwo(fixture.Request with
+            {
+                Exports = fixture.Request.Exports with { Artifacts = duplicatePng },
+            }));
+
+        Assert.Contains("exactly one PNG", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void DecideGateTwo_HumanRejectionRoutesRepairAndNeverBuildsPackage()
     {
         var fixture = ScientificDeliveryTestFixture.Create();

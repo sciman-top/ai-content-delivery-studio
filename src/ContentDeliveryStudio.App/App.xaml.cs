@@ -58,6 +58,7 @@ public partial class App : System.Windows.Application
             serviceProvider.GetRequiredService<IOpenAiSecretStore>()));
         builder.Services.AddSingleton<IProviderCenterHealthCheckService, DotEnvProviderCenterHealthCheckService>();
         builder.Services.AddSingleton<IDocumentSourceFilePickerService, DocumentSourceFilePickerService>();
+        builder.Services.AddSingleton<IScientificDeliveryPackageSaveService, ScientificDeliveryPackageSaveService>();
         builder.Services.AddContentDeliveryStudioProviderRuntime(new ProviderRuntimeRegistrationOptions());
         builder.Services.AddSingleton<IDocumentExtractionProvider, LocalBinaryDocumentExtractionProvider>();
         builder.Services.AddSingleton<ISourceIngestionProvider>(serviceProvider =>
