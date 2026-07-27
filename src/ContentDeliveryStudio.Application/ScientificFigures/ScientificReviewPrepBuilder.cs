@@ -279,19 +279,36 @@ public sealed class ScientificReviewPrepBuilder
             var y1 = Parse(match.Groups[2].Value);
             var x2 = Parse(match.Groups[3].Value);
             var y2 = Parse(match.Groups[4].Value);
+            var labels = paths[0].Parent?.Elements(Svg + "text")
+                .Where(item => item.Attribute("data-relation-label") is not null)
+                .ToArray() ?? [];
+            var labelX = labels.Length == 0 ? (x1 + x2) / 2 : Number(labels[0], "x");
+            var labelY = labels.Length == 0
+                ? (y1 + y2) / 2
+                : labels.Average(item => Number(item, "y"));
+            var labelLines = labels.Select(item => item.Value).ToArray();
+            var maximumLineLength = labelLines.Length == 0
+                ? relation.Label?.Length ?? 0
+                : labelLines.Max(item => item.Length);
+            var labelHalfWidth = Math.Clamp(maximumLineLength * 4.5, 36, 180);
+            var labelHalfHeight = Math.Max(14, labelLines.Length * 10);
+            var left = Math.Min(Math.Min(x1, x2), labelX - labelHalfWidth);
+            var top = Math.Min(Math.Min(y1, y2), labelY - labelHalfHeight);
+            var right = Math.Max(Math.Max(x1, x2), labelX + labelHalfWidth);
+            var bottom = Math.Max(Math.Max(y1, y2), labelY + labelHalfHeight);
             rows.Add(new ScientificSvgStructureRow(
                 relation.SourceSpecificationItemId,
                 ScientificVisualRegionKind.Relation,
                 IsCritical: true,
                 Redact($"{relation.Kind} {relation.Direction}: {relation.Label}"),
                 ClampRegion(
-                    Math.Min(x1, x2),
-                    Math.Min(y1, y2),
-                    Math.Abs(x2 - x1),
-                    Math.Abs(y2 - y1),
+                    left,
+                    top,
+                    right - left,
+                    bottom - top,
                     width,
                     height,
-                    padding: 24)));
+                    padding: 12)));
         }
 
         return rows;

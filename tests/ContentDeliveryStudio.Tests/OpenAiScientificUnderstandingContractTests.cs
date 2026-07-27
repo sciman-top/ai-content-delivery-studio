@@ -60,6 +60,27 @@ public sealed class OpenAiScientificUnderstandingContractTests
                 .Select(item => item.GetString()));
     }
 
+    [Fact]
+    public void Schema_UsesDomainEvidenceValidationNames()
+    {
+        var schema = OpenAiScientificUnderstandingMapper.CreateSchemaBinaryData().ToString();
+
+        Assert.Contains("\"Draft\"", schema, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"Unvalidated\"", schema, StringComparison.Ordinal);
+        Assert.Contains("mechanically verified", OpenAiScientificUnderstandingMapper.Instructions, StringComparison.Ordinal);
+        using var document = JsonDocument.Parse(schema);
+        var limitationCategories = document.RootElement
+            .GetProperty("$defs")
+            .GetProperty("limitation")
+            .GetProperty("properties")
+            .GetProperty("category")
+            .GetProperty("enum")
+            .EnumerateArray()
+            .Select(item => item.GetString())
+            .ToArray();
+        Assert.Equal("Limitation", Assert.Single(limitationCategories));
+    }
+
     [Theory]
     [InlineData("{ definitely not json", "invalid-json")]
     [InlineData("{\"terms\":[],\"claims\":[{\"mergeKey\":\"x\",\"category\":\"Mechanism\",\"normalizedStatement\":\"invented\",\"sourceWording\":\"invented\",\"confidence\":0.9,\"status\":\"Accepted\",\"sourceBlockId\":\"unknown\",\"quotedText\":\"invented\",\"evidenceRole\":\"Support\",\"evidenceValidationState\":\"Validated\"}],\"limitations\":[],\"conflicts\":[],\"figureProposal\":null}", "unknown-source-block")]

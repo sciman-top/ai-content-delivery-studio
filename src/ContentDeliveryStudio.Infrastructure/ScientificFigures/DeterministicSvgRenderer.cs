@@ -119,6 +119,27 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
         var target = positions[connection.TargetRenderElementId];
         var sourcePoint = source.EdgeToward(target.CenterX, target.CenterY);
         var targetPoint = target.EdgeToward(source.CenterX, source.CenterY);
+        var parallelConnections = plan.Connections.Where(item =>
+            string.Equals(item.SourceRenderElementId, connection.SourceRenderElementId, StringComparison.Ordinal)
+            && string.Equals(item.TargetRenderElementId, connection.TargetRenderElementId, StringComparison.Ordinal))
+            .ToArray();
+        var parallelLabelSide = 1d;
+        if (parallelConnections.Length > 1)
+        {
+            var parallelIndex = Array.IndexOf(parallelConnections, connection);
+            var lineDeltaX = targetPoint.X - sourcePoint.X;
+            var lineDeltaY = targetPoint.Y - sourcePoint.Y;
+            var lineLength = Math.Sqrt((lineDeltaX * lineDeltaX) + (lineDeltaY * lineDeltaY));
+            if (lineLength > 0)
+            {
+                var pathOffset = (parallelIndex - ((parallelConnections.Length - 1) / 2d)) * 24;
+                var offsetX = (-lineDeltaY / lineLength) * pathOffset;
+                var offsetY = (lineDeltaX / lineLength) * pathOffset;
+                sourcePoint = new ElementPoint(sourcePoint.X + offsetX, sourcePoint.Y + offsetY);
+                targetPoint = new ElementPoint(targetPoint.X + offsetX, targetPoint.Y + offsetY);
+                parallelLabelSide = parallelIndex % 2 == 0 ? -1 : 1;
+            }
+        }
         var path = new XElement(
             Svg + "path",
             new XAttribute("id", EncodeId(connection.RenderConnectionId)),
@@ -149,19 +170,61 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
             return path;
         }
 
+        var displayLabel = DisplayRelationLabel(connection);
+        if (!string.Equals(displayLabel, connection.Label, StringComparison.Ordinal))
+        {
+            path.Add(new XAttribute("data-exact-label", connection.Label));
+        }
+
+        var deltaX = targetPoint.X - sourcePoint.X;
+        var deltaY = targetPoint.Y - sourcePoint.Y;
+        var length = Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
+        var labelX = (sourcePoint.X + targetPoint.X) / 2;
+        var labelY = (sourcePoint.Y + targetPoint.Y) / 2 - 8;
+        if (length > 0)
+        {
+            var labelOffset = Math.Abs(deltaY) <= Math.Abs(deltaX) * 0.25
+                ? 110
+                : 80;
+            if (parallelConnections.Length > 1
+                && connection.SourceSpecificationItemId is
+                    "frequency-threshold" or "intensity-not-ke")
+            {
+                labelOffset = 150;
+            }
+            labelX += (-deltaY / length) * labelOffset * parallelLabelSide;
+            labelY += (deltaX / length) * labelOffset * parallelLabelSide;
+        }
+
+        var labelLines = CreateWrappedTextLines(
+            displayLabel,
+            labelX,
+            labelY,
+            maxCharactersPerLine: 28,
+            lineHeight: 19,
+            fontSize: 16,
+            Style(plan, "scientific-stroke", "#1F2937"),
+            Style(plan, "font-family", "Segoe UI"),
+            "data-relation-label");
+        var maximumLineLength = labelLines.Max(item => item.Value.Length);
+        var labelWidth = Math.Clamp(maximumLineLength * 8.5, 48, 250);
+        var labelHeight = (labelLines.Count * 19) + 8;
+        var labelBackground = new XElement(
+            Svg + "rect",
+            new XAttribute("x", Number(labelX - (labelWidth / 2))),
+            new XAttribute("y", Number(labelY - (labelHeight / 2))),
+            new XAttribute("width", Number(labelWidth)),
+            new XAttribute("height", Number(labelHeight)),
+            new XAttribute("rx", 3),
+            new XAttribute("fill", Style(plan, "label-background", "#FFFFFF")),
+            new XAttribute("stroke", "none"),
+            new XAttribute("data-relation-label-background", "true"));
         return new XElement(
             Svg + "g",
             new XAttribute("data-connection-group", connection.RenderConnectionId),
             path,
-            new XElement(
-                Svg + "text",
-                new XAttribute("x", Number((sourcePoint.X + targetPoint.X) / 2)),
-                new XAttribute("y", Number((sourcePoint.Y + targetPoint.Y) / 2 - 8)),
-                new XAttribute("text-anchor", "middle"),
-                new XAttribute("font-family", Style(plan, "font-family", "Segoe UI")),
-                new XAttribute("font-size", 16),
-                new XAttribute("fill", Style(plan, "scientific-stroke", "#1F2937")),
-                connection.Label));
+            labelBackground,
+            labelLines);
     }
 
     private static XElement RenderElement(
@@ -210,11 +273,17 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
             new XAttribute("fill", Style(plan, "scientific-fill", "#F8FAFC")),
             new XAttribute("stroke", Style(plan, "scientific-stroke", "#1F2937")),
             new XAttribute("stroke-width", element.IsCritical ? 2 : 1)));
+        var scientificGraphic = RenderScientificGraphic(element, position, plan);
+        group.Add(scientificGraphic);
+        var hasScientificGraphic = scientificGraphic.Count > 0;
+        var labelCenterX = hasScientificGraphic
+            ? position.X + (position.Width * 0.68)
+            : position.CenterX;
         if (!string.IsNullOrWhiteSpace(element.ExactContent))
         {
             group.Add(new XElement(
                 Svg + "text",
-                new XAttribute("x", Number(position.CenterX)),
+                new XAttribute("x", Number(labelCenterX)),
                 new XAttribute("y", Number(position.CenterY + 6)),
                 new XAttribute("text-anchor", "middle"),
                 new XAttribute("font-family", Style(plan, "font-family", "Segoe UI")),
@@ -225,13 +294,288 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
                 new XAttribute("data-content-kind", element.Kind),
                 element.ExactContent));
         }
+        else
+        {
+            group.Add(CreateWrappedTextLines(
+                FormatScientificDisplayText(element.ScientificMeaning),
+                labelCenterX,
+                position.CenterY,
+                maxCharactersPerLine: hasScientificGraphic ? 21 : 34,
+                lineHeight: 18,
+                fontSize: hasScientificGraphic ? 13 : 15,
+                Style(plan, "scientific-stroke", "#1F2937"),
+                Style(plan, "font-family", "Segoe UI"),
+                "data-display-role"));
+        }
 
         return group;
+    }
+
+    private static IReadOnlyList<XElement> RenderScientificGraphic(
+        SvgRenderElement element,
+        ElementPosition position,
+        SvgRenderPlan plan)
+    {
+        var stroke = Style(plan, "scientific-stroke", "#1F2937");
+        var accent = Style(plan, "accent-fill", "#0F766E");
+        var left = position.X + 16;
+        var top = position.Y + 16;
+        var width = position.Width * 0.34;
+        var height = position.Height - 32;
+        var centerX = left + (width / 2);
+        var centerY = top + (height / 2);
+
+        XElement Line(
+            double x1,
+            double y1,
+            double x2,
+            double y2,
+            string color,
+            bool arrow = false,
+            double strokeWidth = 2) =>
+            new(
+                Svg + "path",
+                new XAttribute("d", FormattableString.Invariant($"M {x1:0.###} {y1:0.###} L {x2:0.###} {y2:0.###}")),
+                new XAttribute("fill", "none"),
+                new XAttribute("stroke", color),
+                new XAttribute("stroke-width", strokeWidth),
+                new XAttribute("data-element-graphic", "true"),
+                arrow ? new XAttribute("marker-end", "url(#arrowhead)") : null);
+
+        XElement Annotation(string value, double x, double y, int fontSize = 12) =>
+            new(
+                Svg + "text",
+                new XAttribute("x", Number(x)),
+                new XAttribute("y", Number(y)),
+                new XAttribute("text-anchor", "middle"),
+                new XAttribute("font-family", Style(plan, "font-family", "Segoe UI")),
+                new XAttribute("font-size", fontSize),
+                new XAttribute("fill", stroke),
+                new XAttribute("data-display-role", "graphic-annotation"),
+                value);
+
+        var graphic = new List<XElement>();
+        switch (element.SourceSpecificationItemId)
+        {
+            case "uniform-magnetic-field":
+                for (var offset = 0; offset < 3; offset++)
+                {
+                    var x = left + 18 + (offset * 26);
+                    graphic.Add(Line(x, top + height - 8, x, top + 10, accent, arrow: true));
+                }
+                graphic.Add(Annotation("B", centerX, top + 12, 14));
+                break;
+            case "rotating-coil":
+                foreach (var loopOffset in new[] { -4, 0, 4 })
+                {
+                    graphic.Add(Line(left + 20 + loopOffset, top + 22, left + width - 12 + loopOffset, top + 30, stroke, strokeWidth: 2));
+                    graphic.Add(Line(left + width - 12 + loopOffset, top + 30, left + width - 22 + loopOffset, top + height - 18, stroke, strokeWidth: 2));
+                    graphic.Add(Line(left + width - 22 + loopOffset, top + height - 18, left + 10 + loopOffset, top + height - 26, stroke, strokeWidth: 2));
+                    graphic.Add(Line(left + 10 + loopOffset, top + height - 26, left + 20 + loopOffset, top + 22, stroke, strokeWidth: 2));
+                }
+                var rotationPoints = Enumerable.Range(0, 9)
+                    .Select(index =>
+                    {
+                        var angle = Math.PI + (index * Math.PI / 8);
+                        return (
+                            X: centerX + (Math.Cos(angle) * 43),
+                            Y: centerY + (Math.Sin(angle) * 32));
+                    })
+                    .ToArray();
+                for (var index = 0; index < rotationPoints.Length - 1; index++)
+                {
+                    graphic.Add(Line(
+                        rotationPoints[index].X,
+                        rotationPoints[index].Y,
+                        rotationPoints[index + 1].X,
+                        rotationPoints[index + 1].Y,
+                        accent,
+                        arrow: index == rotationPoints.Length - 2));
+                }
+                graphic.Add(Annotation("N turns", centerX, top + 10, 10));
+                graphic.Add(Annotation("A", centerX, centerY + 5, 13));
+                graphic.Add(Annotation("ω", centerX, top + height + 1, 14));
+                break;
+            case "vertical-wire-segments":
+                graphic.Add(Line(left + 28, top + height - 8, left + 28, top + 8, stroke, arrow: true, strokeWidth: 3));
+                graphic.Add(Line(left + width - 24, top + 8, left + width - 24, top + height - 8, stroke, arrow: true, strokeWidth: 3));
+                graphic.Add(Annotation("I", centerX, centerY + 4, 14));
+                break;
+            case "shaft-input":
+                graphic.Add(Line(left + 8, centerY, left + width - 8, centerY, stroke, arrow: true, strokeWidth: 4));
+                graphic.Add(Annotation("τ, ω", centerX, centerY - 12, 13));
+                break;
+            case "external-load":
+                var resistorPoints = new[]
+                {
+                    (left + 8, centerY), (left + 22, centerY), (left + 32, centerY - 14),
+                    (left + 46, centerY + 14), (left + 60, centerY - 14),
+                    (left + 74, centerY + 14), (left + 86, centerY), (left + width - 4, centerY),
+                };
+                for (var index = 0; index < resistorPoints.Length - 1; index++)
+                {
+                    graphic.Add(Line(
+                        resistorPoints[index].Item1,
+                        resistorPoints[index].Item2,
+                        resistorPoints[index + 1].Item1,
+                        resistorPoints[index + 1].Item2,
+                        accent));
+                }
+                graphic.Add(Annotation("R", centerX, top + height - 2, 13));
+                break;
+            case "emf-waveform":
+                graphic.Add(Line(left + 4, centerY, left + width - 4, centerY, stroke, arrow: true));
+                graphic.Add(Line(left + 12, top + height - 4, left + 12, top + 4, stroke, arrow: true));
+                var wavePoints = Enumerable.Range(0, 49)
+                    .Select(index => (
+                        X: left + 12 + (index * ((width - 20) / 48)),
+                        Y: centerY - (Math.Sin(index * Math.PI / 12) * 20)))
+                    .ToArray();
+                for (var index = 0; index < wavePoints.Length - 1; index++)
+                {
+                    graphic.Add(Line(
+                        wavePoints[index].X,
+                        wavePoints[index].Y,
+                        wavePoints[index + 1].X,
+                        wavePoints[index + 1].Y,
+                        accent,
+                        strokeWidth: 2.5));
+                }
+                graphic.Add(Annotation("ε(t)=ε₀ sin(ωt)", centerX, top + height + 1, 9));
+                break;
+            case "high-temperature-region":
+                graphic.Add(Annotation("Tₕ", centerX, centerY + 5, 22));
+                graphic.Add(Line(left + 10, top + 14, left + width - 10, top + 14, "#B91C1C", strokeWidth: 4));
+                break;
+            case "low-temperature-region":
+                graphic.Add(Annotation("Tₗ", centerX, centerY + 5, 22));
+                graphic.Add(Line(left + 10, top + height - 14, left + width - 10, top + height - 14, "#0369A1", strokeWidth: 4));
+                break;
+            case "conduction-mode":
+                graphic.Add(Annotation("Conduction", centerX, top + 10, 11));
+                graphic.Add(new XElement(Svg + "rect", new XAttribute("x", Number(left + 8)), new XAttribute("y", Number(top + 20)), new XAttribute("width", 34), new XAttribute("height", 48), new XAttribute("fill", "#FECACA"), new XAttribute("stroke", stroke), new XAttribute("data-element-graphic", "true")));
+                graphic.Add(new XElement(Svg + "rect", new XAttribute("x", Number(left + 42)), new XAttribute("y", Number(top + 20)), new XAttribute("width", 34), new XAttribute("height", 48), new XAttribute("fill", "#BAE6FD"), new XAttribute("stroke", stroke), new XAttribute("data-element-graphic", "true")));
+                graphic.Add(Line(left + 26, centerY, left + 68, centerY, accent, arrow: true));
+                break;
+            case "convection-mode":
+                graphic.Add(Annotation("Convection", centerX, top + 10, 11));
+                graphic.Add(Line(left + 24, top + height - 14, left + 24, top + 24, accent, arrow: true));
+                graphic.Add(Line(left + width - 22, top + 24, left + width - 22, top + height - 14, accent, arrow: true));
+                graphic.Add(Line(left + 24, top + 24, left + width - 22, top + 24, accent, arrow: true));
+                graphic.Add(Line(left + width - 22, top + height - 14, left + 24, top + height - 14, accent, arrow: true));
+                break;
+            case "radiation-mode":
+            case "incident-photons":
+                if (element.SourceSpecificationItemId == "radiation-mode")
+                {
+                    graphic.Add(Annotation("Radiation", centerX, top + 10, 11));
+                }
+                for (var row = 0; row < 3; row++)
+                {
+                    var y = top + (element.SourceSpecificationItemId == "radiation-mode" ? 28 : 18) + (row * 18);
+                    graphic.Add(Line(left + 6, y, left + 28, y - 7, accent));
+                    graphic.Add(Line(left + 28, y - 7, left + 48, y + 7, accent));
+                    graphic.Add(Line(left + 48, y + 7, left + width - 4, y, accent, arrow: true));
+                }
+                graphic.Add(Annotation(element.SourceSpecificationItemId == "incident-photons" ? "hν" : "EM", centerX, top + height, 12));
+                break;
+            case "metal-surface":
+                graphic.Add(Line(centerX, top + 6, centerX, top + height - 6, stroke, strokeWidth: 7));
+                graphic.Add(Annotation("BE", centerX - 22, centerY + 5, 13));
+                break;
+            case "ejected-electrons":
+                for (var row = 0; row < 3; row++)
+                {
+                    var y = top + 20 + (row * 22);
+                    graphic.Add(Line(left + 8, y, left + width - 8, y - 10, accent, arrow: true));
+                    graphic.Add(Annotation("e⁻", left + 18, y - 6, 11));
+                }
+                break;
+        }
+
+        return graphic;
+    }
+
+    private static string FormatScientificDisplayText(string value)
+    {
+        return value
+            .Replace("epsilon0", "ε₀", StringComparison.Ordinal)
+            .Replace("omega", "ω", StringComparison.Ordinal);
+    }
+
+    private static string DisplayRelationLabel(SvgRenderConnection connection)
+    {
+        return connection.SourceSpecificationItemId is
+            "relation-net-transfer-direction"
+            or "relation-mode-comparison"
+            or "relation-modes-share-phenomenon"
+            or "frequency-threshold"
+            or "intensity-not-ke"
+                ? connection.Label!.Replace('-', ' ')
+                : connection.Label!;
+    }
+
+    private static IReadOnlyList<XElement> CreateWrappedTextLines(
+        string content,
+        double x,
+        double centerY,
+        int maxCharactersPerLine,
+        int lineHeight,
+        int fontSize,
+        string fill,
+        string fontFamily,
+        string roleAttribute)
+    {
+        var lines = WrapPreservingContent(content, maxCharactersPerLine);
+        var firstY = centerY - (((lines.Count - 1) * lineHeight) / 2.0);
+        return lines.Select((line, index) =>
+            new XElement(
+                Svg + "text",
+                new XAttribute("x", Number(x)),
+                new XAttribute("y", Number(firstY + (index * lineHeight))),
+                new XAttribute("text-anchor", "middle"),
+                new XAttribute("font-family", fontFamily),
+                new XAttribute("font-size", fontSize),
+                new XAttribute("fill", fill),
+                new XAttribute(roleAttribute, "true"),
+                new XAttribute("data-label-line", index),
+                line)).ToArray();
+    }
+
+    private static IReadOnlyList<string> WrapPreservingContent(
+        string content,
+        int maxCharactersPerLine)
+    {
+        var lines = new List<string>();
+        var offset = 0;
+        while (content.Length - offset > maxCharactersPerLine)
+        {
+            var end = offset + maxCharactersPerLine;
+            var separator = content.LastIndexOfAny([' ', '-'], end - 1, maxCharactersPerLine);
+            var next = separator >= offset ? separator + 1 : end;
+            lines.Add(content[offset..next]);
+            offset = next;
+        }
+
+        lines.Add(content[offset..]);
+        return lines;
     }
 
     private static IReadOnlyDictionary<string, ElementPosition> BuildPositions(
         SvgRenderPlan plan)
     {
+        var photoelectricPositions = TryBuildPhotoelectricPositions(plan);
+        if (photoelectricPositions is not null)
+        {
+            return photoelectricPositions;
+        }
+
+        var componentPositions = TryBuildTwoComponentPositions(plan);
+        if (componentPositions is not null)
+        {
+            return componentPositions;
+        }
+
         var padding = Constraint(plan, "padding", 48);
         var spacing = Constraint(plan, "minimum-spacing", 24);
         var count = Math.Max(1, plan.Elements.Count);
@@ -256,6 +600,165 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
         }
 
         return result;
+    }
+
+    private static IReadOnlyDictionary<string, ElementPosition>? TryBuildPhotoelectricPositions(
+        SvgRenderPlan plan)
+    {
+        var expected = new[]
+        {
+            "incident-photons",
+            "metal-surface",
+            "ejected-electrons",
+        };
+        var elementsBySpecificationId = plan.Elements.ToDictionary(
+            item => item.SourceSpecificationItemId,
+            StringComparer.Ordinal);
+        if (elementsBySpecificationId.Count != expected.Length
+            || expected.Any(item => !elementsBySpecificationId.ContainsKey(item)))
+        {
+            return null;
+        }
+
+        var padding = Constraint(plan, "padding", 48);
+        var spacing = Constraint(plan, "minimum-spacing", 24);
+        var cellWidth = (plan.Canvas.Width - (padding * 2) - (spacing * 2)) / 3;
+        var nodeWidth = Math.Min(280, Math.Max(80, cellWidth));
+        var nodeHeight = 120d;
+        var y = (plan.Canvas.Height - nodeHeight) / 2;
+        var result = new Dictionary<string, ElementPosition>(StringComparer.Ordinal);
+        for (var index = 0; index < expected.Length; index++)
+        {
+            var cellX = padding + (index * (cellWidth + spacing));
+            var element = elementsBySpecificationId[expected[index]];
+            result[element.RenderElementId] = new ElementPosition(
+                cellX + ((cellWidth - nodeWidth) / 2),
+                y,
+                nodeWidth,
+                nodeHeight);
+        }
+
+        return result;
+    }
+
+    private static IReadOnlyDictionary<string, ElementPosition>? TryBuildTwoComponentPositions(
+        SvgRenderPlan plan)
+    {
+        var elementIds = plan.Elements.Select(item => item.RenderElementId).ToArray();
+        var adjacency = elementIds.ToDictionary(
+            item => item,
+            _ => new HashSet<string>(StringComparer.Ordinal),
+            StringComparer.Ordinal);
+        foreach (var connection in plan.Connections)
+        {
+            adjacency[connection.SourceRenderElementId].Add(connection.TargetRenderElementId);
+            adjacency[connection.TargetRenderElementId].Add(connection.SourceRenderElementId);
+        }
+
+        var remaining = elementIds.ToHashSet(StringComparer.Ordinal);
+        var components = new List<IReadOnlyList<string>>();
+        while (remaining.Count > 0)
+        {
+            var seed = elementIds.First(remaining.Contains);
+            var queue = new Queue<string>();
+            var component = new List<string>();
+            queue.Enqueue(seed);
+            remaining.Remove(seed);
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                component.Add(current);
+                foreach (var neighbor in adjacency[current].Where(remaining.Contains))
+                {
+                    remaining.Remove(neighbor);
+                    queue.Enqueue(neighbor);
+                }
+            }
+
+            components.Add(component);
+        }
+
+        if (components.Count != 2 || components.Max(item => item.Count) < 3)
+        {
+            return null;
+        }
+
+        var sourceOrder = elementIds
+            .Select((id, index) => new { id, index })
+            .ToDictionary(item => item.id, item => item.index, StringComparer.Ordinal);
+        var orderedComponents = components
+            .OrderByDescending(item => item.Count)
+            .Select(component => TopologicalOrder(component, plan.Connections, sourceOrder))
+            .ToArray();
+        var padding = Constraint(plan, "padding", 48);
+        var spacing = Constraint(plan, "minimum-spacing", 24);
+        var cellHeight = (plan.Canvas.Height - (padding * 2) - spacing) / 2;
+        var nodeHeight = Math.Min(120, Math.Max(64, cellHeight));
+        var result = new Dictionary<string, ElementPosition>(StringComparer.Ordinal);
+        for (var row = 0; row < orderedComponents.Length; row++)
+        {
+            var component = orderedComponents[row];
+            var cellWidth = (plan.Canvas.Width - (padding * 2) - (spacing * (component.Count - 1)))
+                / component.Count;
+            var nodeWidth = Math.Min(280, Math.Max(80, cellWidth));
+            for (var column = 0; column < component.Count; column++)
+            {
+                var cellX = padding + (column * (cellWidth + spacing));
+                var cellY = padding + (row * (cellHeight + spacing));
+                result[component[column]] = new ElementPosition(
+                    cellX + ((cellWidth - nodeWidth) / 2),
+                    cellY + ((cellHeight - nodeHeight) / 2),
+                    nodeWidth,
+                    nodeHeight);
+            }
+        }
+
+        return result;
+    }
+
+    private static IReadOnlyList<string> TopologicalOrder(
+        IReadOnlyList<string> component,
+        IReadOnlyList<SvgRenderConnection> connections,
+        IReadOnlyDictionary<string, int> sourceOrder)
+    {
+        var componentIds = component.ToHashSet(StringComparer.Ordinal);
+        var outgoing = component.ToDictionary(
+            item => item,
+            _ => new List<string>(),
+            StringComparer.Ordinal);
+        var indegree = component.ToDictionary(item => item, _ => 0, StringComparer.Ordinal);
+        foreach (var connection in connections.Where(item =>
+                     item.Direction == FigureRelationDirection.Directed
+                     && componentIds.Contains(item.SourceRenderElementId)
+                     && componentIds.Contains(item.TargetRenderElementId)))
+        {
+            outgoing[connection.SourceRenderElementId].Add(connection.TargetRenderElementId);
+            indegree[connection.TargetRenderElementId]++;
+        }
+
+        var ready = new PriorityQueue<string, int>();
+        foreach (var id in component.Where(id => indegree[id] == 0))
+        {
+            ready.Enqueue(id, sourceOrder[id]);
+        }
+
+        var ordered = new List<string>();
+        while (ready.TryDequeue(out var current, out _))
+        {
+            ordered.Add(current);
+            foreach (var target in outgoing[current])
+            {
+                indegree[target]--;
+                if (indegree[target] == 0)
+                {
+                    ready.Enqueue(target, sourceOrder[target]);
+                }
+            }
+        }
+
+        return ordered.Count == component.Count
+            ? ordered
+            : component.OrderBy(item => sourceOrder[item]).ToArray();
     }
 
     private static double Constraint(

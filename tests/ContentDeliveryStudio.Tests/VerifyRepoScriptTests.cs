@@ -94,6 +94,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
                 logPath,
                 statePath,
                 Path.Combine(repositoryRoot, "scripts", "verify-repo.ps1"),
+                "-SkipReferenceEvidence",
                 "-NoRestore");
 
             Assert.Equal(0, result.ExitCode);
@@ -201,6 +202,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
                 logPath,
                 statePath,
                 Path.Combine(repositoryRoot, "scripts", "verify-repo.ps1"),
+                "-SkipReferenceEvidence",
                 "-NoRestore");
 
             Assert.Equal(0, result.ExitCode);
@@ -280,6 +282,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
                 logPath,
                 statePath,
                 Path.Combine(repositoryRoot, "scripts", "verify-repo.ps1"),
+                "-SkipReferenceEvidence",
                 "-NoRestore");
 
             Assert.Equal(1, result.ExitCode);

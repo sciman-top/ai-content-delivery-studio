@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.ScientificFigures;
 using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 
@@ -49,6 +50,210 @@ public sealed class DeterministicSvgRendererTests
 
         Assert.Equal("F < m × a & bounded", formula.Value);
         Assert.Contains("F &lt; m × a &amp; bounded", artifact.Svg, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Render_EntityWithoutExactContentDisplaysApprovedScientificMeaning()
+    {
+        var original = Plan();
+        var entity = original.Elements[0] with { ExactContent = null };
+        var plan = SvgRenderPlan.Create(
+            original.PlanId,
+            original.SpecificationId,
+            original.SpecificationVersion,
+            original.Canvas,
+            original.Layers,
+            [entity, original.Elements[1]],
+            original.Connections,
+            original.Accessibility,
+            original.Export,
+            original.LayoutConstraints,
+            original.StyleTokens);
+
+        var document = XDocument.Parse(new DeterministicSvgRenderer().Render(plan).Svg);
+        var group = document.Descendants(Svg + "g")
+            .Single(element => (string?)element.Attribute("id") == "render-element-force");
+        var display = group.Elements(Svg + "text")
+            .Where(element => (string?)element.Attribute("data-display-role") == "true")
+            .OrderBy(element => (int?)element.Attribute("data-label-line"))
+            .ToArray();
+
+        Assert.NotEmpty(display);
+        Assert.Equal(entity.ScientificMeaning, string.Concat(display.Select(item => item.Value)));
+        Assert.All(display, item => Assert.Null(item.Attribute("data-content-kind")));
+    }
+
+    [Fact]
+    public void Render_LongRelationLabelPreservesExactTextAndSeparatesItFromLine()
+    {
+        var original = Plan();
+        const string label = "changing-flux-induces-sinusoidal-electromotive-force";
+        var plan = SvgRenderPlan.Create(
+            original.PlanId,
+            original.SpecificationId,
+            original.SpecificationVersion,
+            original.Canvas,
+            original.Layers,
+            original.Elements,
+            [original.Connections[0] with { Label = label }],
+            original.Accessibility,
+            original.Export,
+            original.LayoutConstraints,
+            original.StyleTokens);
+
+        var document = XDocument.Parse(new DeterministicSvgRenderer().Render(plan).Svg);
+        var relationText = document.Descendants(Svg + "text")
+            .Where(element => (string?)element.Attribute("data-relation-label") == "true")
+            .OrderBy(element => (int?)element.Attribute("data-label-line"))
+            .ToArray();
+
+        Assert.True(relationText.Length > 1);
+        Assert.Equal(label, string.Concat(relationText.Select(item => item.Value)));
+        Assert.All(relationText, item => Assert.NotEqual("392", (string?)item.Attribute("y")));
+        Assert.Contains(
+            document.Descendants(Svg + "rect"),
+            element => (string?)element.Attribute("data-relation-label-background") == "true");
+        Assert.All(
+            relationText,
+            item => Assert.True(
+                double.Parse((string)item.Attribute("y")!, System.Globalization.CultureInfo.InvariantCulture) > 480));
+    }
+
+    [Fact]
+    public async Task Render_DisconnectedMechanismChainsOccupySeparateRowsInCausalOrder()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var corpus = await ScientificFigureCorpusBaselineLoader.LoadAsync(
+            Path.Combine(repositoryRoot, "eval", "scientific-figures", "corpus.json"),
+            CancellationToken.None);
+        var item = corpus.Items.Single(item =>
+            item.ItemId == "electromagnetism-rotating-coil-generator");
+        var model = ScientificFigureCorpusRunner.BuildModel(item);
+        var workflow = ScientificFigureWorkflow.Create(model.Specification)
+            .ApproveGate1(
+                "renderer-layout-test",
+                "Accepted baseline layout projection.",
+                DateTimeOffset.Parse("2026-07-26T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture));
+        var plan = new ScientificFigureSpecCompiler().Compile(workflow);
+        var document = XDocument.Parse(new DeterministicSvgRenderer().Render(plan).Svg);
+
+        (double X, double Y) Position(string specificationItemId)
+        {
+            var rectangle = document.Descendants(Svg + "g")
+                .Single(element =>
+                    (string?)element.Attribute("data-spec-id") == specificationItemId)
+                .Element(Svg + "rect")!;
+            return (
+                double.Parse((string)rectangle.Attribute("x")!, System.Globalization.CultureInfo.InvariantCulture),
+                double.Parse((string)rectangle.Attribute("y")!, System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        var main = new[]
+        {
+            Position("shaft-input"),
+            Position("rotating-coil"),
+            Position("emf-waveform"),
+            Position("external-load"),
+        };
+        var secondary = new[]
+        {
+            Position("uniform-magnetic-field"),
+            Position("vertical-wire-segments"),
+        };
+
+        Assert.Single(main.Select(item => item.Y).Distinct());
+        Assert.Single(secondary.Select(item => item.Y).Distinct());
+        Assert.NotEqual(main[0].Y, secondary[0].Y);
+        Assert.True(main.Zip(main.Skip(1)).All(pair => pair.First.X < pair.Second.X));
+        Assert.True(secondary[0].X < secondary[1].X);
+        Assert.All(
+            ["uniform-magnetic-field", "rotating-coil", "vertical-wire-segments", "emf-waveform"],
+            specificationItemId =>
+            {
+                var group = document.Descendants(Svg + "g").Single(element =>
+                    (string?)element.Attribute("data-spec-id") == specificationItemId);
+                Assert.Contains(
+                    group.Elements(Svg + "path"),
+                    path => (string?)path.Attribute("data-element-graphic") == "true");
+            });
+    }
+
+    [Fact]
+    public void Render_ParallelRelationsUseDistinctPathsAndLabelBands()
+    {
+        var original = Plan();
+        var second = original.Connections[0] with
+        {
+            RenderConnectionId = "render-relation-force-formula-secondary",
+            SourceSpecificationItemId = "relation-force-formula-secondary",
+            Label = "secondary relation",
+        };
+        var plan = SvgRenderPlan.Create(
+            original.PlanId,
+            original.SpecificationId,
+            original.SpecificationVersion,
+            original.Canvas,
+            original.Layers,
+            original.Elements,
+            [original.Connections[0], second],
+            original.Accessibility,
+            original.Export,
+            original.LayoutConstraints,
+            original.StyleTokens);
+
+        var document = XDocument.Parse(new DeterministicSvgRenderer().Render(plan).Svg);
+        var paths = document.Descendants(Svg + "path")
+            .Where(item => item.Attribute("data-relation-kind") is not null)
+            .ToArray();
+        var labelGroups = document.Descendants(Svg + "g")
+            .Where(item => item.Attribute("data-connection-group") is not null)
+            .ToArray();
+
+        Assert.Equal(2, paths.Length);
+        Assert.Equal(2, paths.Select(item => (string?)item.Attribute("d")).Distinct().Count());
+        Assert.Equal(
+            2,
+            labelGroups.Select(group => group.Elements(Svg + "text").First().Attribute("y")?.Value)
+                .Distinct(StringComparer.Ordinal)
+                .Count());
+    }
+
+    [Fact]
+    public async Task Render_PhotoelectricSummaryPlacesSurfaceBetweenPhotonsAndElectrons()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var corpus = await ScientificFigureCorpusBaselineLoader.LoadAsync(
+            Path.Combine(repositoryRoot, "eval", "scientific-figures", "corpus.json"),
+            CancellationToken.None);
+        var item = corpus.Items.Single(item =>
+            item.ItemId == "quantum-photoelectric-threshold-summary");
+        var model = ScientificFigureCorpusRunner.BuildModel(item);
+        var workflow = ScientificFigureWorkflow.Create(model.Specification)
+            .ApproveGate1(
+                "renderer-layout-test",
+                "Accepted baseline layout projection.",
+                DateTimeOffset.Parse("2026-07-26T00:00:00Z", System.Globalization.CultureInfo.InvariantCulture));
+        var plan = new ScientificFigureSpecCompiler().Compile(workflow);
+        var document = XDocument.Parse(new DeterministicSvgRenderer().Render(plan).Svg);
+
+        (double X, double Y) Position(string specificationItemId)
+        {
+            var rectangle = document.Descendants(Svg + "g")
+                .Single(element =>
+                    (string?)element.Attribute("data-spec-id") == specificationItemId)
+                .Element(Svg + "rect")!;
+            return (
+                double.Parse((string)rectangle.Attribute("x")!, System.Globalization.CultureInfo.InvariantCulture),
+                double.Parse((string)rectangle.Attribute("y")!, System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        var photons = Position("incident-photons");
+        var surface = Position("metal-surface");
+        var electrons = Position("ejected-electrons");
+
+        Assert.Equal(photons.Y, surface.Y);
+        Assert.Equal(surface.Y, electrons.Y);
+        Assert.True(photons.X < surface.X && surface.X < electrons.X);
     }
 
     [Fact]
@@ -215,5 +420,20 @@ public sealed class DeterministicSvgRendererTests
                 ["scientific-fill"] = "#F8FAFC",
                 ["accent-fill"] = "#0F766E",
             });
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory);
+             directory is not null;
+             directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "ContentDeliveryStudio.sln")))
+            {
+                return directory.FullName;
+            }
+        }
+
+        throw new DirectoryNotFoundException("Could not locate ContentDeliveryStudio.sln.");
     }
 }

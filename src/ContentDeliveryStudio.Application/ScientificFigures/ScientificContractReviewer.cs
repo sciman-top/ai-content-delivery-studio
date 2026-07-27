@@ -509,7 +509,8 @@ public sealed class ScientificContractReviewer
                     Required(item, "data-spec-id"),
                     Required(item, "data-relation-kind"),
                     Required(item, "data-direction"),
-                    item.Parent?.Element(SvgNamespace + "text")?.Value,
+                    (string?)item.Attribute("data-exact-label")
+                        ?? ReadRelationLabel(item.Parent),
                     Required(item, "data-provenance-kind"),
                     item.Attribute("marker-start") is not null,
                     item.Attribute("marker-end") is not null))
@@ -551,6 +552,16 @@ public sealed class ScientificContractReviewer
         private static string Required(XElement element, string attribute) =>
             (string?)element.Attribute(attribute)
             ?? throw new InvalidOperationException($"SVG attribute is missing: {attribute}.");
+
+        private static string? ReadRelationLabel(XElement? group)
+        {
+            var lines = group?.Elements(SvgNamespace + "text")
+                .Where(text => text.Attribute("data-relation-label") is not null)
+                .OrderBy(text => (int?)text.Attribute("data-label-line") ?? int.MaxValue)
+                .Select(text => text.Value)
+                .ToArray() ?? [];
+            return lines.Length == 0 ? null : string.Concat(lines);
+        }
 
         private static bool ParseBoolean(XElement element, string attribute)
         {

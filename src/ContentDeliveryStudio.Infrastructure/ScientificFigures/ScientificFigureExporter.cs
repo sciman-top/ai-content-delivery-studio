@@ -125,7 +125,9 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
     {
         var unboundText = root.Descendants(Svg + "text").FirstOrDefault(element =>
             element.Attribute("data-content-kind") is null
-            && element.Parent?.Attribute("data-connection-group") is null);
+            && element.Parent?.Attribute("data-connection-group") is null
+            && (element.Attribute("data-display-role") is null
+                || element.Parent?.Attribute("data-element-kind") is null));
         if (unboundText is not null)
         {
             throw new InvalidOperationException(
@@ -134,7 +136,8 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
 
         var unboundRectangle = root.Descendants(Svg + "rect").FirstOrDefault(element =>
             !element.Ancestors(Svg + "g")
-                .Any(group => group.Attribute("data-element-kind") is not null));
+                .Any(group => group.Attribute("data-element-kind") is not null
+                    || group.Attribute("data-connection-group") is not null));
         if (unboundRectangle is not null)
         {
             throw new InvalidOperationException(
@@ -143,7 +146,10 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
 
         var unboundPath = root.Descendants(Svg + "path").FirstOrDefault(element =>
             !element.Ancestors(Svg + "defs").Any()
-            && element.Attribute("data-relation-kind") is null);
+            && element.Attribute("data-relation-kind") is null
+            && (element.Attribute("data-element-graphic") is null
+                || !element.Ancestors(Svg + "g")
+                    .Any(group => group.Attribute("data-element-kind") is not null)));
         if (unboundPath is not null)
         {
             throw new InvalidOperationException(
@@ -192,7 +198,8 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
                 RequiredAttribute(element, "id"),
                 RequiredAttribute(element, "data-spec-id"),
                 RequiredAttribute(element, "data-direction"),
-                element.Parent?.Element(Svg + "text")?.Value,
+                (string?)element.Attribute("data-exact-label")
+                    ?? ReadRelationLabel(element.Parent),
                 RequiredAttribute(element, "data-provenance-kind")))
             .ToArray();
 
@@ -204,6 +211,16 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
             elements,
             texts,
             relations);
+    }
+
+    private static string? ReadRelationLabel(XElement? group)
+    {
+        var lines = group?.Elements(Svg + "text")
+            .Where(item => item.Attribute("data-relation-label") is not null)
+            .OrderBy(item => OptionalInt(item, "data-label-line", int.MaxValue))
+            .Select(item => item.Value)
+            .ToArray() ?? [];
+        return lines.Length == 0 ? null : string.Concat(lines);
     }
 
     private static byte[] RenderPng(XDocument document, int width, int height)
@@ -433,6 +450,15 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
     {
         var value = (string?)element.Attribute(attributeName);
         return value is null ? fallback : Parse(value);
+    }
+
+    private static int OptionalInt(XElement element, string attributeName, int fallback)
+    {
+        var value = (string?)element.Attribute(attributeName);
+        return value is not null
+            && int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var parsed)
+                ? parsed
+                : fallback;
     }
 
     private static float Parse(string value)

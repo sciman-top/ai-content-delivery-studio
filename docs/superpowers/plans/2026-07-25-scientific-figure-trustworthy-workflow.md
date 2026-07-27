@@ -925,6 +925,12 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Description:** After explicit user approval for paid calls, run three representative sources through understanding, rendering, review, both human gates, and evidence export.
 
+**Current status (2026-07-27):** The authorized run `20260727-150622`
+completed the machine path for the mechanism, concept-comparison, and
+graphical-abstract samples. All three are ready for review, but Gate 2 remains
+`pending-human-review`; Task 29, Task 30, and Checkpoint 5 are not accepted.
+See `docs/change-evidence/20260725-scientific-figure-live-acceptance.md`.
+
 **Acceptance criteria:**
 
 - [ ] One mechanism, one concept, and one graphical-abstract source complete the intended live path.

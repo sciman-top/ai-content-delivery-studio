@@ -278,7 +278,7 @@ public sealed class ScientificFigureCorpusRunner
             plan.StyleTokens);
     }
 
-    private static CorpusScientificModel BuildModel(ScientificFigureCorpusDefinitionItem item)
+    internal static CorpusScientificModel BuildModel(ScientificFigureCorpusDefinitionItem item)
     {
         var baseline = item.Baseline;
         var sourceAssetId = StableGuid(item.ItemId, "source");
@@ -401,7 +401,7 @@ public sealed class ScientificFigureCorpusRunner
         var allMapped = baseline.Elements.SelectMany(element => element.AnchorIds)
             .Concat(baseline.Relations.SelectMany(relation => relation.AnchorIds))
             .All(claimAnchorIds.Contains);
-        return new CorpusScientificModel(understanding, specification, allMapped);
+        return new CorpusScientificModel(extraction, understanding, specification, allMapped);
     }
 
     private static (FigureRelationKind Kind, FigureRelationDirection Direction) MapRelation(
@@ -432,7 +432,8 @@ public sealed class ScientificFigureCorpusRunner
         return new Guid(hash.AsSpan(0, 16));
     }
 
-    private sealed record CorpusScientificModel(
+    internal sealed record CorpusScientificModel(
+        ScientificDocumentExtraction Extraction,
         ScientificDocumentUnderstanding Understanding,
         ScientificFigureSpec Specification,
         bool AllMapped);
