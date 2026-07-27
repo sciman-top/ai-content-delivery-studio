@@ -98,7 +98,14 @@
             </Grid.ColumnDefinitions>
             <views:ScientificSourceWorkspaceView Grid.Column="0" />
             <views:ScientificUnderstandingWorkspaceView Grid.Column="1" />
-            <views:ScientificFigureSpecWorkspaceView Grid.Column="2" />
+            <TabControl Grid.Column="2" Margin="6,12,0,0">
+                <TabItem Header="{Binding ScientificWorkspace.Workspaces[2].Title}">
+                    <views:ScientificFigureSpecWorkspaceView />
+                </TabItem>
+                <TabItem Header="{Binding ScientificWorkspace.Workspaces[3].Title}">
+                    <views:ScientificRenderReviewWorkspaceView />
+                </TabItem>
+            </TabControl>
         </Grid>
     </Grid>
 </UserControl>

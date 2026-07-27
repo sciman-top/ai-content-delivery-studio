@@ -23,6 +23,7 @@ public sealed class ScientificFigureWorkspaceLayoutTests
         Assert.Contains("<views:ScientificSourceWorkspaceView", xaml);
         Assert.Contains("<views:ScientificUnderstandingWorkspaceView", xaml);
         Assert.Contains("<views:ScientificFigureSpecWorkspaceView", xaml);
+        Assert.Contains("<views:ScientificRenderReviewWorkspaceView", xaml);
         Assert.DoesNotContain("Prompt", xaml, StringComparison.OrdinalIgnoreCase);
     }
 

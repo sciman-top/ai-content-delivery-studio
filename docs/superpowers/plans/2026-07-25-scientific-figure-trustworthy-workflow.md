@@ -775,14 +775,14 @@ state is part of the Checkpoint 0 corpus authority.
 
 **Acceptance criteria:**
 
-- [ ] Selecting an SVG element traces to specification, claim, and source evidence.
-- [ ] Scientific and visual findings are separated and hard failures remain prominent.
-- [ ] UI only enables automatic actions for presentation-authorized repairs.
+- [x] Selecting an SVG element traces to specification, claim, and source evidence.
+- [x] Scientific and visual findings are separated and hard failures remain prominent.
+- [x] UI only enables automatic actions for presentation-authorized repairs.
 
 **Verification:**
 
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificRenderReviewViewModelTests`
-- [ ] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkspaceLayoutTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificRenderReviewViewModelTests`
+- [x] `dotnet test ContentDeliveryStudio.sln --filter ScientificFigureWorkspaceLayoutTests`
 
 **Dependencies:** Task 23
 

@@ -230,3 +230,17 @@ The exact understanding and Figure Spec versions recorded by an affirmative
 human Gate 1 decision. Pending or accepted proposal diffs block approval of the
 current version until they are rejected or incorporated into a new revision.
 _Avoid_: Current draft version, display-only status, provider approval
+
+**Scientific SVG Authority Selection**:
+The WPF selection that maps one deterministic SVG render id through its source
+Figure Spec item to the approved claim and exact source evidence or convention.
+The preview validates matching understanding, spec, plan, SVG identity, hash,
+and deterministic markup before display.
+_Avoid_: Pixel hit guess, generated caption, unvalidated browser markup
+
+**Scientific Repair UI Authorization**:
+The presentation-layer projection of a domain `ScientificRepairAction`. An
+automatic command is enabled only for `LayoutStyle` or `NonEvidentiaryAsset`,
+requires an actual execution callback, and restores the three-attempt limit
+from continuous audit history.
+_Avoid_: UI-inferred repair layer, scientific auto-fix, reset attempt counter
