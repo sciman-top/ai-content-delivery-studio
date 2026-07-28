@@ -23,11 +23,20 @@ internal sealed class IllustrationPlanConfiguration : IEntityTypeConfiguration<I
             .HasForeignKey(plan => plan.DocumentBriefId)
             .OnDelete(DeleteBehavior.Restrict);
         entity.Property(plan => plan.Targets)
-            .HasConversion(targets => SerializeTargets(targets), json => DeserializeTargets(json));
+            .HasConversion(
+                targets => SerializeTargets(targets),
+                json => DeserializeTargets(json),
+                new JsonValueComparer<IReadOnlyList<IllustrationTarget>>(SerializeTargets, DeserializeTargets));
         entity.Property(plan => plan.CoverageNotes)
-            .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            .HasConversion(
+                values => SerializeStringList(values),
+                json => DeserializeStringList(json),
+                new JsonValueComparer<IReadOnlyList<string>>(SerializeStringList, DeserializeStringList));
         entity.Property(plan => plan.RiskNotes)
-            .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            .HasConversion(
+                values => SerializeStringList(values),
+                json => DeserializeStringList(json),
+                new JsonValueComparer<IReadOnlyList<string>>(SerializeStringList, DeserializeStringList));
     }
 
     private static string SerializeTargets(IReadOnlyList<IllustrationTarget> targets)

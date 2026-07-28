@@ -13,9 +13,15 @@ internal sealed class ReviewResultConfiguration : IEntityTypeConfiguration<Revie
     {
         entity.HasKey(review => review.Id);
         entity.Property(review => review.Scores)
-            .HasConversion(scores => SerializeScores(scores), json => DeserializeScores(json));
+            .HasConversion(
+                scores => SerializeScores(scores),
+                json => DeserializeScores(json),
+                new JsonValueComparer<IReadOnlyDictionary<string, int>>(SerializeScores, DeserializeScores));
         entity.Property(review => review.HardFailures)
-            .HasConversion(failures => SerializeHardFailures(failures), json => DeserializeHardFailures(json));
+            .HasConversion(
+                failures => SerializeHardFailures(failures),
+                json => DeserializeHardFailures(json),
+                new JsonValueComparer<IReadOnlyList<string>>(SerializeHardFailures, DeserializeHardFailures));
     }
 
     private static string SerializeScores(IReadOnlyDictionary<string, int> scores)

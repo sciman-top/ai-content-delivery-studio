@@ -21,13 +21,25 @@ internal sealed class DocumentBriefConfiguration : IEntityTypeConfiguration<Docu
         entity.Property(brief => brief.StrictnessLevel);
         entity.Property(brief => brief.CreatedAt);
         entity.Property(brief => brief.Sections)
-            .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            .HasConversion(
+                values => SerializeStringList(values),
+                json => DeserializeStringList(json),
+                new JsonValueComparer<IReadOnlyList<string>>(SerializeStringList, DeserializeStringList));
         entity.Property(brief => brief.KeyClaims)
-            .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            .HasConversion(
+                values => SerializeStringList(values),
+                json => DeserializeStringList(json),
+                new JsonValueComparer<IReadOnlyList<string>>(SerializeStringList, DeserializeStringList));
         entity.Property(brief => brief.VisualOpportunities)
-            .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            .HasConversion(
+                values => SerializeStringList(values),
+                json => DeserializeStringList(json),
+                new JsonValueComparer<IReadOnlyList<string>>(SerializeStringList, DeserializeStringList));
         entity.Property(brief => brief.KnownConstraints)
-            .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            .HasConversion(
+                values => SerializeStringList(values),
+                json => DeserializeStringList(json),
+                new JsonValueComparer<IReadOnlyList<string>>(SerializeStringList, DeserializeStringList));
     }
 
     private static string SerializeStringList(IReadOnlyList<string> values)

@@ -22,9 +22,19 @@ internal sealed class SourceAssetConfiguration : IEntityTypeConfiguration<Source
         entity.Property(asset => asset.CreatedAt);
         entity.Property(asset => asset.UpdatedAt);
         entity.Property(asset => asset.ExtractedContents)
-            .HasConversion(contents => SerializeExtractedContents(contents), json => DeserializeExtractedContents(json));
+            .HasConversion(
+                contents => SerializeExtractedContents(contents),
+                json => DeserializeExtractedContents(json),
+                new JsonValueComparer<IReadOnlyCollection<ExtractedContent>>(
+                    SerializeExtractedContents,
+                    DeserializeExtractedContents));
         entity.Property(asset => asset.EvidenceAnchors)
-            .HasConversion(anchors => SerializeEvidenceAnchors(anchors), json => DeserializeEvidenceAnchors(json));
+            .HasConversion(
+                anchors => SerializeEvidenceAnchors(anchors),
+                json => DeserializeEvidenceAnchors(json),
+                new JsonValueComparer<IReadOnlyCollection<EvidenceAnchor>>(
+                    SerializeEvidenceAnchors,
+                    DeserializeEvidenceAnchors));
     }
 
     private static string SerializeExtractedContents(IReadOnlyCollection<ExtractedContent> contents)

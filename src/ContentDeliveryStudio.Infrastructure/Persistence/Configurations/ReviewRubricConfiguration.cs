@@ -14,7 +14,12 @@ internal sealed class ReviewRubricConfiguration : IEntityTypeConfiguration<Revie
         entity.HasKey(rubric => rubric.Id);
         entity.Property(rubric => rubric.Name).IsRequired();
         entity.Property(rubric => rubric.Dimensions)
-            .HasConversion(dimensions => SerializeDimensions(dimensions), json => DeserializeDimensions(json));
+            .HasConversion(
+                dimensions => SerializeDimensions(dimensions),
+                json => DeserializeDimensions(json),
+                new JsonValueComparer<IReadOnlyList<ReviewRubricDimension>>(
+                    SerializeDimensions,
+                    DeserializeDimensions));
     }
 
     private static string SerializeDimensions(IReadOnlyList<ReviewRubricDimension> dimensions)

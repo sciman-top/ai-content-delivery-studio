@@ -14,7 +14,10 @@ internal sealed class RoutedRepairPatchConfiguration : IEntityTypeConfiguration<
         entity.HasKey(patch => patch.Id);
         entity.Property(patch => patch.ProjectId);
         entity.Property(patch => patch.Items)
-            .HasConversion(items => SerializeItems(items), json => DeserializeItems(json));
+            .HasConversion(
+                items => SerializeItems(items),
+                json => DeserializeItems(json),
+                new JsonValueComparer<IReadOnlyList<RoutedRepairPatchItem>>(SerializeItems, DeserializeItems));
     }
 
     private static string SerializeItems(IReadOnlyList<RoutedRepairPatchItem> items)

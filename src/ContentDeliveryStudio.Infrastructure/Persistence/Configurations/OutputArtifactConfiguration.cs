@@ -22,11 +22,22 @@ internal sealed class OutputArtifactConfiguration : IEntityTypeConfiguration<Out
         entity.Property(artifact => artifact.CreatedAt);
         entity.Property(artifact => artifact.UpdatedAt);
         entity.Property(artifact => artifact.SourceAssetIds)
-            .HasConversion(values => SerializeGuidList(values), json => DeserializeGuidList(json));
+            .HasConversion(
+                values => SerializeGuidList(values),
+                json => DeserializeGuidList(json),
+                new JsonValueComparer<IReadOnlyList<Guid>>(SerializeGuidList, DeserializeGuidList));
         entity.Property(artifact => artifact.EvidenceAnchorIds)
-            .HasConversion(values => SerializeGuidList(values), json => DeserializeGuidList(json));
+            .HasConversion(
+                values => SerializeGuidList(values),
+                json => DeserializeGuidList(json),
+                new JsonValueComparer<IReadOnlyList<Guid>>(SerializeGuidList, DeserializeGuidList));
         entity.Property(artifact => artifact.Metadata)
-            .HasConversion(values => SerializeStringDictionary(values), json => DeserializeStringDictionary(json));
+            .HasConversion(
+                values => SerializeStringDictionary(values),
+                json => DeserializeStringDictionary(json),
+                new JsonValueComparer<IReadOnlyDictionary<string, string>>(
+                    SerializeStringDictionary,
+                    DeserializeStringDictionary));
     }
 
     private static string SerializeGuidList(IReadOnlyList<Guid> values)

@@ -16,13 +16,29 @@ internal sealed class CreativeBriefConfiguration : IEntityTypeConfiguration<Crea
         entity.Property(brief => brief.Audience).IsRequired();
         entity.Property(brief => brief.StyleIntent).IsRequired();
         entity.Property(brief => brief.MustInclude)
-            .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            .HasConversion(
+                values => SerializeStringList(values),
+                json => DeserializeStringList(json),
+                new JsonValueComparer<IReadOnlyList<string>>(SerializeStringList, DeserializeStringList));
         entity.Property(brief => brief.MustAvoid)
-            .HasConversion(values => SerializeStringList(values), json => DeserializeStringList(json));
+            .HasConversion(
+                values => SerializeStringList(values),
+                json => DeserializeStringList(json),
+                new JsonValueComparer<IReadOnlyList<string>>(SerializeStringList, DeserializeStringList));
         entity.Property(brief => brief.PromptDirections)
-            .HasConversion(directions => SerializePromptDirections(directions), json => DeserializePromptDirections(json));
+            .HasConversion(
+                directions => SerializePromptDirections(directions),
+                json => DeserializePromptDirections(json),
+                new JsonValueComparer<IReadOnlyCollection<PromptDirection>>(
+                    SerializePromptDirections,
+                    DeserializePromptDirections));
         entity.Property(brief => brief.DesignBlueprints)
-            .HasConversion(blueprints => SerializeDesignBlueprints(blueprints), json => DeserializeDesignBlueprints(json));
+            .HasConversion(
+                blueprints => SerializeDesignBlueprints(blueprints),
+                json => DeserializeDesignBlueprints(json),
+                new JsonValueComparer<IReadOnlyCollection<DesignBlueprint>>(
+                    SerializeDesignBlueprints,
+                    DeserializeDesignBlueprints));
         entity.Property(brief => brief.RepairNotesJson);
     }
 
