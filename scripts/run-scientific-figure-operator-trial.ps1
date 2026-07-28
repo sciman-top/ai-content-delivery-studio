@@ -37,9 +37,9 @@ $requiredWorkspaces = @(
 )
 
 function Resolve-RepositoryRoot {
-    $root = (& git rev-parse --show-toplevel 2>$null)
+    $root = (& git -C $PSScriptRoot rev-parse --show-toplevel 2>$null)
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($root)) {
-        throw "Failed to resolve repository root with git rev-parse --show-toplevel."
+        throw "Failed to resolve repository root from script directory $PSScriptRoot."
     }
 
     return [System.IO.Path]::GetFullPath($root.Trim())

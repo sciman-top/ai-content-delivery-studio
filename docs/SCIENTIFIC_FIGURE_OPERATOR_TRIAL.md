@@ -32,6 +32,19 @@ From the repository root:
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 -Mode Run
 ```
 
+From any other directory, point to the checkout that contains this script. The
+script resolves the repository root from its own location:
+
+```powershell
+$RepoRoot = "C:\path\to\ai-content-delivery-studio"
+pwsh -NoProfile -ExecutionPolicy Bypass `
+  -File (Join-Path $RepoRoot "scripts\run-scientific-figure-operator-trial.ps1") `
+  -Mode Run
+```
+
+Do not run the relative `scripts\...` path from a home directory such as
+`C:\Users\<name>`; that path exists only below the repository root.
+
 The script creates a unique ignored session under
 `outputs/scientific-figure-operator-trials/`, forces `PROVIDER_MODE=fake`,
 redirects the app database and local files into that session, and starts the
@@ -80,6 +93,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-oper
   -Notes "<what was inspected and why it is acceptable>" `
   -ConfirmFiveWorkspaces
 ```
+
+When finalizing from outside the repository, reuse the absolute `-File` form
+above and pass the absolute session path printed by the Run command.
 
 Accepted finalization validates the ZIP entry contract, safe relative entry
 paths, the Gate 2 reviewer, and SVG/PNG/PDF hashes. It then records

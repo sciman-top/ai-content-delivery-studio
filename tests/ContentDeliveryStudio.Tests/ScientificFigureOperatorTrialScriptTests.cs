@@ -36,6 +36,31 @@ public sealed class ScientificFigureOperatorTrialScriptTests
     }
 
     [Fact]
+    public async Task Prepare_FromOutsideRepository_ResolvesRootFromScriptLocation()
+    {
+        var fixture = CreateFixture();
+        try
+        {
+            var result = await RunScriptFromWorkingDirectoryAsync(
+                fixture.RepositoryRoot,
+                Path.GetTempPath(),
+                "-Mode", "Prepare",
+                "-RunId", fixture.RunId,
+                "-SessionPath", fixture.RelativeSessionPath);
+
+            Assert.Equal(0, result.ExitCode);
+            using var trial = ReadTrial(fixture.TrialPath);
+            Assert.Equal(
+                Path.GetFullPath(fixture.SessionPath),
+                Path.GetFullPath(trial.RootElement.GetProperty("sessionPath").GetString()!));
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task FinalizeAccepted_ValidatesPackageAndRecordsManualEvidence()
     {
         var fixture = CreateFixture();
@@ -262,10 +287,21 @@ public sealed class ScientificFigureOperatorTrialScriptTests
         string repositoryRoot,
         params string[] arguments)
     {
+        return await RunScriptFromWorkingDirectoryAsync(
+            repositoryRoot,
+            repositoryRoot,
+            arguments);
+    }
+
+    private static async Task<ProcessResult> RunScriptFromWorkingDirectoryAsync(
+        string repositoryRoot,
+        string workingDirectory,
+        params string[] arguments)
+    {
         var startInfo = new ProcessStartInfo
         {
             FileName = "pwsh.exe",
-            WorkingDirectory = repositoryRoot,
+            WorkingDirectory = workingDirectory,
             UseShellExecute = false,
             RedirectStandardOutput = true,
             RedirectStandardError = true,

@@ -29,6 +29,17 @@
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 -Mode Run
 ```
 
+如果当前提示符不在仓库根目录，必须指向实际包含该脚本的 checkout。脚本会从自身位置解析仓库根，因此可以从任意目录启动：
+
+```powershell
+$RepoRoot = "C:\path\to\ai-content-delivery-studio"
+pwsh -NoProfile -ExecutionPolicy Bypass `
+  -File (Join-Path $RepoRoot "scripts\run-scientific-figure-operator-trial.ps1") `
+  -Mode Run
+```
+
+不要在 `C:\Users\<用户名>` 之类的主目录中直接使用相对路径 `scripts\...`；该相对路径只存在于仓库根目录下。
+
 脚本会在 `outputs/scientific-figure-operator-trials/` 下创建唯一且被 Git 忽略的会话，强制设置 `PROVIDER_MODE=fake`，把数据库和应用本地文件重定向到该会话，并启动 WPF 应用。应用退出后，调用者原有环境变量会恢复。
 
 如果只想准备会话文件而不打开 WPF：
@@ -68,6 +79,8 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-oper
   -Notes "<检查内容和批准理由>" `
   -ConfirmFiveWorkspaces
 ```
+
+如果从仓库外执行 finalize，请继续使用上面的绝对 `-File` 写法，并把 Run 命令输出的绝对会话路径传给 `-SessionPath`。
 
 accepted finalize 会校验 ZIP 必需条目、安全相对路径、Gate 2 reviewer 以及 SVG/PNG/PDF hash，随后在会话本地 `trial.json` 中记录 `operator/manual evidence`。
 

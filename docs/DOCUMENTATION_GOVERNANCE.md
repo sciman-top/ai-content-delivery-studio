@@ -37,6 +37,7 @@ The repository now carries a bounded Chinese companion layer for core explanator
 - [./zh-CN/PRD_V1.md](./zh-CN/PRD_V1.md)
 - [./zh-CN/PRODUCT_DESIGN.md](./zh-CN/PRODUCT_DESIGN.md)
 - [./zh-CN/V1_LAUNCH_EVIDENCE.md](./zh-CN/V1_LAUNCH_EVIDENCE.md)
+- [./zh-CN/SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md](./zh-CN/SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md)
 
 These companion docs are for Chinese-first reading and onboarding. If wording drifts, repository truth still resolves in this order:
 
