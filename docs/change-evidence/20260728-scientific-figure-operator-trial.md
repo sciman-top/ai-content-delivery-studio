@@ -4,7 +4,7 @@ Date: 2026-07-28
 
 ## Status
 
-`implementation in progress / operator trial pending`
+`repo-side complete / operator trial pending`
 
 ## Scope
 
@@ -34,7 +34,7 @@ automation is a human onsite acceptance.
 
 ## Evidence Boundary
 
-- Repo-side implementation: pending fixed-order repository gates.
+- Repo-side implementation: complete with fixed-order repository gates.
 - Prepared probe: `pending_operator`; it is ignored local output and not human
   evidence.
 - Human operator trial: pending. No agent-authored record is represented as a
@@ -72,5 +72,15 @@ separately according to operator evidence needs.
 
 ## Repository Gates
 
-Fixed-order closeout evidence will be appended only after the submitted tree
-passes build, test, contract/invariant, and hotspot gates.
+The first fixed-order closeout run passed on 2026-07-28:
+
+1. build: exit `0`, `0` warnings, `0` errors
+2. test: exit `0`, `672 / 672` passed
+3. contract/invariant: reference evidence and format passed
+4. hotspot: release preflight, nested repository verification, publish WhatIf,
+   placeholder/conflict scans, and diff hygiene passed; the nested suite also
+   passed `672 / 672`
+
+After this evidence update, the same fixed order is rerun so the final submitted
+tree, rather than only the pre-evidence tree, is covered. The manual WPF trial
+remains pending regardless of repository gate success.

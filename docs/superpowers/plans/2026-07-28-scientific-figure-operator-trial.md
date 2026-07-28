@@ -15,11 +15,11 @@ explicit and separate from repository automation.
 
 **Acceptance criteria:**
 
-- [ ] `CONTENT_DELIVERY_STUDIO_DATA_ROOT` selects an absolute app data root only
+- [x] `CONTENT_DELIVERY_STUDIO_DATA_ROOT` selects an absolute app data root only
   when non-empty.
-- [ ] Existing current/legacy LocalAppData selection is unchanged without the
+- [x] Existing current/legacy LocalAppData selection is unchanged without the
   variable.
-- [ ] Focused path tests cover override normalization and default compatibility.
+- [x] Focused path tests cover override normalization and default compatibility.
 
 **Dependencies:** None
 
@@ -36,14 +36,14 @@ explicit and separate from repository automation.
 
 **Acceptance criteria:**
 
-- [ ] `Prepare` creates a unique `pending_operator` session and checklist.
-- [ ] `Run` starts the current WPF app with fake mode and the isolated data root,
+- [x] `Prepare` creates a unique `pending_operator` session and checklist.
+- [x] `Run` starts the current WPF app with fake mode and the isolated data root,
   restoring the caller environment after exit.
-- [ ] `Finalize` supports accepted and rejected human outcomes, requires all five
+- [x] `Finalize` supports accepted and rejected human outcomes, requires all five
   stage attestations, and never upgrades an automated result by itself.
-- [ ] Accepted finalization validates required ZIP entries, safe unique paths,
+- [x] Accepted finalization validates required ZIP entries, safe unique paths,
   matching reviewer, Gate 2 approval, and SVG/PNG/PDF SHA-256 values.
-- [ ] Existing sessions and finalized records are protected from overwrite.
+- [x] Existing sessions and finalized records are protected from overwrite.
 
 **Dependencies:** Task 1
 
@@ -59,20 +59,20 @@ explicit and separate from repository automation.
 
 ## Checkpoint: Executable Trial Boundary
 
-- [ ] The isolated-root and script test sets pass.
-- [ ] A fresh no-launch session remains `pending_operator`.
-- [ ] No provider call, accepted artifact mutation, or non-ignored generated file
+- [x] The isolated-root and script test sets pass.
+- [x] A fresh no-launch session remains `pending_operator`.
+- [x] No provider call, accepted artifact mutation, or non-ignored generated file
   occurs.
 
 ## Task 3: Add Operator Guidance And Repository Evidence
 
 **Acceptance criteria:**
 
-- [ ] English and Chinese runbooks describe the exact five-workspace path,
+- [x] English and Chinese runbooks describe the exact five-workspace path,
   accepted/rejected finalization, evidence levels, exclusions, and cleanup.
-- [ ] Change evidence records repository implementation separately from any
+- [x] Change evidence records repository implementation separately from any
   future manual trial result.
-- [ ] Documentation does not reopen Tasks 1-30, refresh live evidence, or claim
+- [x] Documentation does not reopen Tasks 1-30, refresh live evidence, or claim
   that the harness itself is manual acceptance.
 
 **Dependencies:** Task 2
@@ -95,14 +95,14 @@ explicit and separate from repository automation.
 
 ## Checkpoint: Fixed-Order Repository Closeout
 
-- [ ] Build: `dotnet build ContentDeliveryStudio.sln`
-- [ ] Test: `dotnet test ContentDeliveryStudio.sln --no-build`
-- [ ] Contract/invariant:
+- [x] Build: `dotnet build ContentDeliveryStudio.sln`
+- [x] Test: `dotnet test ContentDeliveryStudio.sln --no-build`
+- [x] Contract/invariant:
   `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1`
-- [ ] Contract/invariant: `dotnet format --verify-no-changes`
-- [ ] Hotspot:
+- [x] Contract/invariant: `dotnet format --verify-no-changes`
+- [x] Hotspot:
   `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`
-- [ ] Confirm `git status` contains no `.env`, accepted artifacts, SQLite,
+- [x] Confirm `git status` contains no `.env`, accepted artifacts, SQLite,
   workspace, outputs, or generated ZIP files.
 
 ## Risks And Mitigations
