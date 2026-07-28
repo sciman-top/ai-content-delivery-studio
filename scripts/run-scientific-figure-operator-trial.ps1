@@ -425,12 +425,64 @@ function Complete-Trial {
     Write-Host "     $trialPath"
 }
 
+function Write-FinalizeFailure {
+    param(
+        [Parameter(Mandatory)]
+        [string]$RepositoryRoot,
+        [Parameter(Mandatory)]
+        [string]$OutputsRoot,
+        [Parameter(Mandatory)]
+        [string]$FailureMessage
+    )
+
+    if ([string]::IsNullOrWhiteSpace($SessionPath)) {
+        return
+    }
+
+    try {
+        $candidateSessionPath = if ([System.IO.Path]::IsPathRooted($SessionPath)) {
+            $SessionPath
+        } else {
+            Join-Path $RepositoryRoot $SessionPath
+        }
+        $resolvedSessionPath = Assert-PathWithinRoot `
+            -Path $candidateSessionPath `
+            -Root $OutputsRoot `
+            -Description "Operator trial session"
+        $trialPath = Join-Path $resolvedSessionPath "trial.json"
+        if (-not (Test-Path -LiteralPath $trialPath -PathType Leaf)) {
+            return
+        }
+
+        $trial = Get-Content -Raw -LiteralPath $trialPath | ConvertFrom-Json
+        if ($trial.status -in @("accepted", "rejected")) {
+            return
+        }
+
+        $trial.error = $FailureMessage
+        $trial.updatedAt = [DateTimeOffset]::Now.ToString("O")
+        Write-TrialRecord -Trial $trial -Path $trialPath
+    } catch {
+        Write-Warning "Could not append the finalize failure to the trial record: $($_.Exception.Message)"
+    }
+}
+
 $repoRoot = Resolve-RepositoryRoot
 $outputsRoot = Join-Path $repoRoot "outputs"
 New-Item -ItemType Directory -Path $outputsRoot -Force | Out-Null
 
 if ($Mode -eq "Finalize") {
-    Complete-Trial -RepositoryRoot $repoRoot -OutputsRoot $outputsRoot
+    try {
+        Complete-Trial -RepositoryRoot $repoRoot -OutputsRoot $outputsRoot
+    } catch {
+        $failure = $_
+        Write-FinalizeFailure `
+            -RepositoryRoot $repoRoot `
+            -OutputsRoot $outputsRoot `
+            -FailureMessage $failure.Exception.Message
+        throw $failure
+    }
+
     exit 0
 }
 

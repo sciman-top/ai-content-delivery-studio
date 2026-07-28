@@ -116,6 +116,13 @@ public sealed class ScientificFigureOperatorTrialScriptTests
 
             Assert.NotEqual(0, reviewerResult.ExitCode);
             Assert.Contains("reviewer does not match", reviewerResult.AllOutput, StringComparison.OrdinalIgnoreCase);
+            using (var failedTrial = ReadTrial(fixture.TrialPath))
+            {
+                Assert.Contains(
+                    "reviewer does not match",
+                    failedTrial.RootElement.GetProperty("error").GetString(),
+                    StringComparison.OrdinalIgnoreCase);
+            }
 
             WritePackage(fixture.PackagePath, "operator-reviewer", corruptPngHash: true);
             var hashResult = await FinalizeAsync(
@@ -129,6 +136,37 @@ public sealed class ScientificFigureOperatorTrialScriptTests
             Assert.Contains("png hash does not match", hashResult.AllOutput, StringComparison.OrdinalIgnoreCase);
             using var trial = ReadTrial(fixture.TrialPath);
             Assert.Equal("pending_operator", trial.RootElement.GetProperty("status").GetString());
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task Finalize_RequiresExplicitFiveWorkspaceConfirmation()
+    {
+        var fixture = CreateFixture();
+        try
+        {
+            Assert.Equal(0, (await PrepareAsync(fixture)).ExitCode);
+
+            var result = await FinalizeAsync(
+                fixture,
+                "rejected",
+                "operator-reviewer",
+                "This must not finalize without explicit stage confirmation.",
+                includePackage: false,
+                confirmWorkspaces: false);
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains("confirmation of all five", result.AllOutput, StringComparison.OrdinalIgnoreCase);
+            using var trial = ReadTrial(fixture.TrialPath);
+            Assert.Equal("pending_operator", trial.RootElement.GetProperty("status").GetString());
+            Assert.Contains(
+                "confirmation of all five",
+                trial.RootElement.GetProperty("error").GetString(),
+                StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -196,7 +234,8 @@ public sealed class ScientificFigureOperatorTrialScriptTests
         string outcome,
         string reviewer,
         string notes,
-        bool includePackage)
+        bool includePackage,
+        bool confirmWorkspaces = true)
     {
         var arguments = new List<string>
         {
@@ -205,8 +244,11 @@ public sealed class ScientificFigureOperatorTrialScriptTests
             "-Outcome", outcome,
             "-Reviewer", reviewer,
             "-Notes", notes,
-            "-ConfirmFiveWorkspaces",
         };
+        if (confirmWorkspaces)
+        {
+            arguments.Add("-ConfirmFiveWorkspaces");
+        }
         if (includePackage)
         {
             arguments.Add("-PackagePath");
