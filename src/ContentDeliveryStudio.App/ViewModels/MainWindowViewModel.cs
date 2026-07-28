@@ -216,7 +216,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ProviderCenterViewModel providerCenter,
         GalleryThumbnailWarmupService galleryThumbnailWarmupService,
         IDocumentSourceFilePickerService? documentSourceFilePickerService = null,
-        IScientificDeliveryPackageSaveService? scientificDeliveryPackageSaveService = null)
+        IScientificDeliveryPackageSaveService? scientificDeliveryPackageSaveService = null,
+        DiagnosticsPanelViewModel? diagnostics = null)
     {
         _localizationService = localizationService;
         _projectService = projectService;
@@ -247,6 +248,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _mainWindowSelectionSummaryCoordinator = new MainWindowSelectionSummaryCoordinator();
         _operationGate = new MainWindowOperationGate(SetExclusiveBusyState);
         ProviderCenter = providerCenter;
+        Diagnostics = diagnostics;
         RefreshLocalizedText();
         SelectedLanguageOption = LanguageOptions.First(option => option.Preference == _localizationService.Preference);
         NewProjectName = NewProjectNamePlaceholder;
@@ -256,6 +258,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     public ProviderCenterViewModel ProviderCenter { get; }
+
+    public DiagnosticsPanelViewModel? Diagnostics { get; }
 
     public string AppTitle
     {
@@ -1573,6 +1577,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private void RefreshLocalizedText()
     {
+        Diagnostics?.RefreshLocalizedText();
         var previousPreference = SelectedLanguageOption?.Preference ?? _localizationService.Preference;
         var previousDefaultDocumentSourceText = _defaultDocumentSourceText;
         var previousDefaultDocumentAudience = _defaultDocumentAudience;

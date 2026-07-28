@@ -1,0 +1,38 @@
+<UserControl x:Class="ContentDeliveryStudio.App.Views.DiagnosticsPanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
+             mc:Ignorable="d">
+    <StackPanel>
+        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <TextBlock Text="{Binding PrivacySummary}"
+                   TextWrapping="Wrap"
+                   Foreground="#4B5563"
+                   Margin="0,0,0,10" />
+        <TextBlock Text="{Binding OutputDirectoryLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding OutputParentDirectory, Mode=OneWay}"
+                 IsReadOnly="True"
+                 MinHeight="28"
+                 TextWrapping="Wrap"
+                 automation:AutomationProperties.AutomationId="DiagnosticsOutputDirectory"
+                 Margin="0,0,0,8" />
+        <UniformGrid Columns="2" Margin="0,0,0,8">
+            <Button Content="{Binding BrowseText}"
+                    Command="{Binding BrowseCommand}"
+                    MinHeight="30"
+                    automation:AutomationProperties.AutomationId="BrowseDiagnosticsDirectory"
+                    Margin="0,0,4,0" />
+            <Button Content="{Binding ExportText}"
+                    Command="{Binding ExportCommand}"
+                    MinHeight="30"
+                    automation:AutomationProperties.AutomationId="ExportDiagnosticsPackage"
+                    Margin="4,0,0,0" />
+        </UniformGrid>
+        <TextBlock Text="{Binding StatusText}"
+                   TextWrapping="Wrap"
+                   Foreground="#4B5563"
+                   automation:AutomationProperties.AutomationId="DiagnosticsExportStatus" />
+    </StackPanel>
+</UserControl>

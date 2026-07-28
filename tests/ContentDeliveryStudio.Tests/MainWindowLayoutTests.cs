@@ -5,6 +5,22 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class MainWindowLayoutTests
 {
     [Fact]
+    public void WorkbenchInspector_ExposesLocalDiagnosticsPanelWithStableAutomationIds()
+    {
+        var inspectorXaml = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "WorkbenchInspectorView.xaml");
+        var diagnosticsXaml = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "DiagnosticsPanelView.xaml");
+        var appStartup = ReadRepoFile("src", "ContentDeliveryStudio.App", "App.xaml.cs");
+
+        Assert.Contains("<views:DiagnosticsPanelView DataContext=\"{Binding Diagnostics}\" />", inspectorXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"DiagnosticsOutputDirectory\"", diagnosticsXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"BrowseDiagnosticsDirectory\"", diagnosticsXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"ExportDiagnosticsPackage\"", diagnosticsXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"DiagnosticsExportStatus\"", diagnosticsXaml);
+        Assert.Contains("AddSingleton<IDiagnosticsPackageWriter, DiagnosticsPackageWriter>()", appStartup);
+        Assert.Contains("AddTransient<DiagnosticsPanelViewModel>()", appStartup);
+    }
+
+    [Fact]
     public void MainWindowXaml_UsesBriefWorkflowUserControl()
     {
         var mainWindowXaml = ReadRepoFile("src/ContentDeliveryStudio.App", "MainWindow.xaml");

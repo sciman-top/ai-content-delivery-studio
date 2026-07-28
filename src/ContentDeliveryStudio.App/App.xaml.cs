@@ -9,10 +9,12 @@ using ContentDeliveryStudio.App.Services;
 using ContentDeliveryStudio.App.ViewModels;
 using ContentDeliveryStudio.App.Telemetry;
 using ContentDeliveryStudio.Application.Localization;
+using ContentDeliveryStudio.Application.Diagnostics;
 using ContentDeliveryStudio.Application.Sources;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Infrastructure.Composition;
 using ContentDeliveryStudio.Infrastructure.Delivery;
+using ContentDeliveryStudio.Infrastructure.Diagnostics;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
 using ContentDeliveryStudio.Infrastructure.Persistence;
 using ContentDeliveryStudio.Infrastructure.RemoteWorkflows;
@@ -57,6 +59,8 @@ public partial class App : System.Windows.Application
             serviceProvider.GetRequiredService<IOpenAiSecretStore>()));
         builder.Services.AddSingleton<IProviderCenterHealthCheckService, DotEnvProviderCenterHealthCheckService>();
         builder.Services.AddSingleton<IDocumentSourceFilePickerService, DocumentSourceFilePickerService>();
+        builder.Services.AddSingleton<IDiagnosticsDirectoryPickerService, DiagnosticsDirectoryPickerService>();
+        builder.Services.AddTransient<IDesktopDiagnosticsSnapshotFactory, DesktopDiagnosticsSnapshotFactory>();
         builder.Services.AddSingleton<IScientificDeliveryPackageSaveService, ScientificDeliveryPackageSaveService>();
         builder.Services.AddContentDeliveryStudioProviderRuntime(new ProviderRuntimeRegistrationOptions());
         builder.Services.AddSingleton<IDocumentExtractionProvider, LocalBinaryDocumentExtractionProvider>();
@@ -72,8 +76,11 @@ public partial class App : System.Windows.Application
         builder.Services.AddBuiltInLocalToolAdapters();
         builder.Services.AddBuiltInRemoteWorkflowEngineAdapters();
         builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
+        builder.Services.AddSingleton<IDiagnosticsPackageWriter, DiagnosticsPackageWriter>();
+        builder.Services.AddTransient<DiagnosticsPackageApplicationService>();
         builder.Services.AddSingleton<GalleryThumbnailWarmupService>();
         builder.Services.AddTransient<ProviderCenterViewModel>();
+        builder.Services.AddTransient<DiagnosticsPanelViewModel>();
         builder.Services.AddTransient<MainWindowViewModel>();
         builder.Services.AddTransient<MainWindow>();
 

@@ -16,6 +16,10 @@
 
             <Separator Margin="0,12,0,14" />
 
+            <views:DiagnosticsPanelView DataContext="{Binding Diagnostics}" />
+
+            <Separator Margin="0,12,0,14" />
+
             <views:ProjectSetupPanelView />
 
             <views:StyleRecipeInspectorPanelView />

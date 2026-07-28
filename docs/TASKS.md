@@ -75,6 +75,14 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Record focused automated coverage and an [agent-operated native WPF fake-first reload probe](./change-evidence/20260728-crash-safe-generation-queue.md) without refreshing live-provider evidence.
 - [ ] Add explicit per-item retry, resume, pause, or reorder controls only through a future repo-owned operator-workflow slice.
 
+## Completed Post-Acceptance Local Diagnostics Slice
+
+- [x] Register the existing redacting diagnostics writer and expose it through a read-only application export service.
+- [x] Snapshot resolved fake-first provider capabilities and generic secret-presence booleans without reading secret values, making network calls, or emitting configured secret identifiers.
+- [x] Add a localized Workbench Inspector panel with a native folder picker, unique local export directory, stable AutomationIds, busy state, and bounded status reporting.
+- [x] Run automated diagnostics coverage plus an `authorized_agent` native WPF Browse -> Export probe and verify both output files and redaction boundaries.
+- [ ] Add structured log ingestion only through a future repo-owned observability slice; this diagnostics export does not complete that lane.
+
 ## Near-Term Hardening (Not Current Release Blockers)
 
 These items are still valuable, but they are not the same thing as the current V1 release gap.

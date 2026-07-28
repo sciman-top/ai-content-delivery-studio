@@ -21,6 +21,20 @@ public sealed class LocalizationTests
     }
 
     [Fact]
+    public void LocalizationService_ReturnsDiagnosticsExportTextForBothLanguages()
+    {
+        var service = new LocalizationService();
+
+        service.SetLanguage(LanguagePreference.English);
+        Assert.Equal("Local diagnostics", service.GetText(LocalizationKey.DiagnosticsExportTitle));
+        Assert.Equal("Export", service.GetText(LocalizationKey.DiagnosticsExport));
+
+        service.SetLanguage(LanguagePreference.Chinese);
+        Assert.Equal("本地诊断", service.GetText(LocalizationKey.DiagnosticsExportTitle));
+        Assert.Equal("导出", service.GetText(LocalizationKey.DiagnosticsExport));
+    }
+
+    [Fact]
     public void LocalizationService_ReturnsDocumentIllustrationEntryTextForBothLanguages()
     {
         var service = new LocalizationService();

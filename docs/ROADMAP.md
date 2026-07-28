@@ -420,7 +420,7 @@ Deliverables:
 - Backup and restore.
 - Accessibility pass.
 - Performance pass for large galleries.
-- Structured logs and diagnostics bundle.
+- User-exported local diagnostics bundle (completed with redacted project/provider snapshots and a native WPF export path); structured log ingestion remains open.
 - Documentation and sample projects.
 
 ## Long-Term Best Engineering End State
