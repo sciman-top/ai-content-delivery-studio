@@ -360,20 +360,20 @@ public sealed class ScientificFigureOperatorTrialScriptTests
             "approvals.json",
             new
             {
-                GateOne = new { Approved = true, Reviewer = "fake-gate-one" },
-                GateTwo = new { Approved = true, Reviewer = reviewer },
+                GateOne = new { Reviewer = "fake-gate-one" },
+                GateTwo = new { Reviewer = reviewer },
             });
         WriteJson(
             archive,
             "manifest.json",
             new
             {
-                SvgSha256 = Hash(svg),
-                SemanticSha256 = Hash(svg),
+                SvgSha256 = $"sha256:{Hash(svg)}",
+                SemanticSha256 = $"sha256:{Hash(svg)}",
                 ArtifactSha256 = new Dictionary<string, string>
                 {
-                    ["png"] = corruptPngHash ? new string('0', 64) : Hash(png),
-                    ["pdf"] = Hash(pdf),
+                    ["png"] = $"sha256:{(corruptPngHash ? new string('0', 64) : Hash(png))}",
+                    ["pdf"] = $"sha256:{Hash(pdf)}",
                 },
             });
     }

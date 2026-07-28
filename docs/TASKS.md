@@ -63,6 +63,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Keep generated sessions under ignored `outputs/` and preserve existing accepted corpus/live artifacts.
 - [x] Run an [agent-operated native WPF fake-first probe](./change-evidence/20260728-scientific-figure-agent-operated-trial.md) across all five workspaces, export and inspect an isolated delivery ZIP, and keep the session unfinalized so it cannot be mistaken for human `operator/manual evidence`.
 - [x] Make the operator-trial script resolve its repository from the script location so the bilingual runbook commands work from any PowerShell directory.
+- [x] Align accepted-package validation with the real WPF export contract: Gate 2 approval records do not carry a synthetic `Approved` field, and manifest hashes use the `sha256:` prefix.
 - [ ] Complete and sign a new human WPF operator trial. This remains `operator/manual evidence` work and is not satisfied by repository tests, UI Automation, or the no-launch preparation probe.
 
 ## Near-Term Hardening (Not Current Release Blockers)

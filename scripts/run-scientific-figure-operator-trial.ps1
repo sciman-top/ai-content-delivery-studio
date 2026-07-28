@@ -190,6 +190,21 @@ function Get-Sha256 {
     return [Convert]::ToHexString([System.Security.Cryptography.SHA256]::HashData($Bytes)).ToLowerInvariant()
 }
 
+function Normalize-Sha256 {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Value,
+        [Parameter(Mandatory)]
+        [string]$Description
+    )
+
+    if ($Value -notmatch '^(?:sha256:)?([0-9a-fA-F]{64})$') {
+        throw "$Description must be a valid SHA-256 value."
+    }
+
+    return $Matches[1].ToLowerInvariant()
+}
+
 function Read-ZipEntryBytes {
     param(
         [Parameter(Mandatory)]
@@ -282,7 +297,6 @@ function Test-ScientificDeliveryPackage {
 
             $approvals = Read-ZipEntryJson -Archive $archive -Name "approvals.json"
             if ($null -eq $approvals.GateTwo `
-                -or -not [bool]$approvals.GateTwo.Approved `
                 -or [string]::IsNullOrWhiteSpace([string]$approvals.GateTwo.Reviewer)) {
                 throw "Scientific delivery package does not contain an approved Gate 2 decision."
             }
@@ -296,9 +310,12 @@ function Test-ScientificDeliveryPackage {
 
             $manifest = Read-ZipEntryJson -Archive $archive -Name "manifest.json"
             $svgHash = Get-Sha256 (Read-ZipEntryBytes -Archive $archive -Name "figure.svg")
+            $manifestSvgHash = Normalize-Sha256 `
+                -Value ([string]$manifest.SvgSha256) `
+                -Description "Scientific delivery package SVG hash"
             if (-not [string]::Equals(
                     $svgHash,
-                    [string]$manifest.SvgSha256,
+                    $manifestSvgHash,
                     [System.StringComparison]::OrdinalIgnoreCase)) {
                 throw "Scientific delivery package SVG hash does not match manifest.json."
             }
@@ -311,9 +328,12 @@ function Test-ScientificDeliveryPackage {
 
                 $artifactHash = Get-Sha256 (
                     Read-ZipEntryBytes -Archive $archive -Name "figure.$format")
+                $manifestArtifactHash = Normalize-Sha256 `
+                    -Value ([string]$hashProperty.Value) `
+                    -Description "Scientific delivery package $format hash"
                 if (-not [string]::Equals(
                         $artifactHash,
-                        [string]$hashProperty.Value,
+                        $manifestArtifactHash,
                         [System.StringComparison]::OrdinalIgnoreCase)) {
                     throw "Scientific delivery package $format hash does not match manifest.json."
                 }

@@ -21,6 +21,7 @@
 - 同步更新英文和中文 runbook，提供可直接复制的绝对路径写法。
 - 把科研绘图操作员试运行加入中文文档中心和双语治理清单。
 - 为 agent-operated native WPF 证据补充中文伴随页，但不扩大英文 canonical evidence 的结论。
+- 让 finalization validator 及其测试夹具与真实 WPF 交付包契约一致：Gate 2 是 approval record，不包含虚构的 `Approved` 字段；manifest hash 使用 `sha256:` 前缀。
 
 ## 聚焦证据
 
@@ -31,6 +32,8 @@
 `outputs/scientific-figure-operator-trials/external-cwd-probe-20260728-01`
 
 该探针保持 `pending_operator`，没有启动 WPF、调用 provider 或制造人工证据。
+
+后续一次经用户授权的 agent-operated WPF 探针导出了真实应用格式的交付包。只读核验发现了上述 validator/fixture 漂移：测试夹具对齐真实格式后，accepted-finalization 测试先以 exit code `1` 失败；修复 validator 后通过，操作员脚本聚焦测试为 `7 / 7`。该探针仍为 `awaiting_finalize / pending_operator`，不是人工证据。
 
 ## 真值边界
 

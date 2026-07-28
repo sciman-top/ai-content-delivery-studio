@@ -33,6 +33,9 @@ therefore failed after PowerShell found the file.
   governance surface.
 - Add a Chinese companion for the agent-operated native WPF evidence without
   changing the canonical evidence claims.
+- Align the finalization validator and its fixture with the package emitted by
+  the real WPF delivery workspace. Gate 2 is represented by an approval record,
+  not a synthetic `Approved` field, and manifest hashes use a `sha256:` prefix.
 
 ## Focused Evidence
 
@@ -46,6 +49,13 @@ absolute script path. It exited `0` and created:
 
 The probe remained `pending_operator`; it used `Mode Prepare`, did not launch
 WPF, did not call a provider, and did not create human evidence.
+
+A later user-authorized agent-operated WPF probe exported a package with the
+real application schema. That read-only inspection exposed the validator/fixture
+drift above. The accepted-finalization test failed with exit code `1` after the
+fixture was aligned, then passed after the validator fix; all operator-trial
+script tests passed `7 / 7`. The probe remains `awaiting_finalize` with
+`evidenceLevel=pending_operator` and is not human evidence.
 
 ## Truth Boundary
 
