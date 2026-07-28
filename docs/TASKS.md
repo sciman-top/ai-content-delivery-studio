@@ -61,6 +61,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 
 - [x] Add a repo-owned fake-first scientific-figure operator-trial kit with an isolated local data root, five-workspace checklist, accepted/rejected finalization, and delivery ZIP validation.
 - [x] Keep generated sessions under ignored `outputs/` and preserve existing accepted corpus/live artifacts.
+- [x] Run an [agent-operated native WPF fake-first probe](./change-evidence/20260728-scientific-figure-agent-operated-trial.md) across all five workspaces, export and inspect an isolated delivery ZIP, and keep the session unfinalized so it cannot be mistaken for human `operator/manual evidence`.
 - [ ] Complete and sign a new human WPF operator trial. This remains `operator/manual evidence` work and is not satisfied by repository tests, UI Automation, or the no-launch preparation probe.
 
 ## Near-Term Hardening (Not Current Release Blockers)
