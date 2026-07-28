@@ -644,7 +644,8 @@ public sealed class GenerationTask
         int attemptCount,
         int maxRetries,
         DateTimeOffset createdAt,
-        DateTimeOffset updatedAt)
+        DateTimeOffset updatedAt,
+        string? errorMessage = null)
     {
         Id = id;
         SeriesItemId = seriesItemId;
@@ -655,6 +656,7 @@ public sealed class GenerationTask
         MaxRetries = maxRetries;
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
+        ErrorMessage = errorMessage;
     }
 
     public Guid Id { get; private set; }
@@ -674,6 +676,98 @@ public sealed class GenerationTask
     public DateTimeOffset CreatedAt { get; private set; }
 
     public DateTimeOffset UpdatedAt { get; private set; }
+
+    public string? ErrorMessage { get; private set; }
+
+    public void Start(DateTimeOffset timestamp)
+    {
+        RequireStatus(GenerationTaskStatus.Queued);
+        RequireNonDecreasingTimestamp(timestamp);
+
+        Status = GenerationTaskStatus.Running;
+        AttemptCount++;
+        ErrorMessage = null;
+        UpdatedAt = timestamp;
+    }
+
+    public void Succeed(DateTimeOffset timestamp)
+    {
+        Complete(GenerationTaskStatus.Succeeded, errorMessage: null, timestamp);
+    }
+
+    public void Fail(string errorMessage, DateTimeOffset timestamp)
+    {
+        Complete(GenerationTaskStatus.Failed, RequireReason(errorMessage), timestamp);
+    }
+
+    public void Cancel(string reason, DateTimeOffset timestamp)
+    {
+        if (Status is not (GenerationTaskStatus.Queued or GenerationTaskStatus.Running))
+        {
+            throw new InvalidOperationException($"Cannot cancel a generation task in status {Status}.");
+        }
+
+        RequireNonDecreasingTimestamp(timestamp);
+        Status = GenerationTaskStatus.Cancelled;
+        ErrorMessage = RequireReason(reason);
+        UpdatedAt = timestamp;
+    }
+
+    public bool RecoverInterrupted(DateTimeOffset timestamp)
+    {
+        if (Status is GenerationTaskStatus.Running)
+        {
+            Fail("Generation was interrupted before a terminal checkpoint was persisted.", timestamp);
+            return true;
+        }
+
+        if (Status is GenerationTaskStatus.Queued)
+        {
+            Cancel("Generation was not dispatched before the previous queue run ended.", timestamp);
+            return true;
+        }
+
+        return false;
+    }
+
+    private void Complete(
+        GenerationTaskStatus terminalStatus,
+        string? errorMessage,
+        DateTimeOffset timestamp)
+    {
+        RequireStatus(GenerationTaskStatus.Running);
+        RequireNonDecreasingTimestamp(timestamp);
+
+        Status = terminalStatus;
+        ErrorMessage = errorMessage;
+        UpdatedAt = timestamp;
+    }
+
+    private void RequireStatus(GenerationTaskStatus requiredStatus)
+    {
+        if (Status != requiredStatus)
+        {
+            throw new InvalidOperationException(
+                $"Generation task must be {requiredStatus} but is {Status}.");
+        }
+    }
+
+    private void RequireNonDecreasingTimestamp(DateTimeOffset timestamp)
+    {
+        if (timestamp < UpdatedAt)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(timestamp),
+                "Generation task timestamps cannot move backwards.");
+        }
+    }
+
+    private static string RequireReason(string reason)
+    {
+        return string.IsNullOrWhiteSpace(reason)
+            ? throw new ArgumentException("A generation task reason is required.", nameof(reason))
+            : reason.Trim();
+    }
 }
 
 public enum GenerationTaskStatus

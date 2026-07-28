@@ -81,6 +81,7 @@ The current recorded answer is "yes" for the `2026-06-23` snapshot in [V1_LAUNCH
 - The official OpenAI .NET SDK Images path is the stable default, with raw `HttpClient` limited to lagging Responses surfaces; the opt-in Responses image path currently covers stateful revision metadata only.
 - The first low-risk operator execution slice is already bounded and auditable.
 - The external reference system is machine-readable and in parity through `REFERENCE_BASIS.md`, `scripts/reference-basis.json`, and the repo-side external-shelf snapshot.
+- Generation queue execution now persists `Queued`, `Running`, and terminal checkpoints, fails closed on interrupted project reload without replaying provider calls, upgrades legacy SQLite databases additively, and restores durable Queue rows in WPF.
 
 ## Accepted Post-V1 Flagship Slice
 
@@ -101,6 +102,7 @@ Trustworthy scientific figures have reached the accepted implementation boundary
 - Keep the current built-in starter scenarios on the stronger pack/policy contract, and open a new scenario-specific slice only when a real additional scenario has a repo-owned spec and a bounded implementation plan.
 - Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
 - Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.
+- Open per-item retry, resume, pause, or reorder controls only when an operator workflow has a repo-owned spec and explicit provider-cost semantics.
 
 ## Longer-Term Lanes
 
@@ -414,7 +416,7 @@ Status: partially complete through release-readiness work. Remaining hardening c
 Deliverables:
 
 - Installer or packaged release.
-- Crash-safe queue recovery.
+- Crash-safe queue recovery (completed with durable checkpoints, fail-closed reload reconciliation, and WPF Queue restoration).
 - Backup and restore.
 - Accessibility pass.
 - Performance pass for large galleries.

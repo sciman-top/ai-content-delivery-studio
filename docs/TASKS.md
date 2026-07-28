@@ -66,6 +66,15 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Align accepted-package validation with the real WPF export contract: Gate 2 approval records do not carry a synthetic `Approved` field, and manifest hashes use the `sha256:` prefix.
 - [x] Accept and finalize the complete native WPF trial through the [authorized-agent equivalent operator contract](./change-evidence/20260728-scientific-figure-authorized-agent-acceptance.md): the actor remains `authorized_agent`, explicit user authority is recorded, and the same five-workspace, Gate 2, ZIP, and hash gates produce `operator/manual evidence`. Automated tests and the incomplete no-ZIP probe still do not count.
 
+## Completed Post-Acceptance Reliability Slice
+
+- [x] Persist generation tasks as `Queued` before dispatch, `Running` before the provider call, and terminal after the call.
+- [x] Recover orphaned `Running` tasks as `Failed` and orphaned `Queued` tasks as `Cancelled` without replaying provider calls.
+- [x] Add the nullable SQLite `GenerationTasks.ErrorMessage` compatibility column through idempotent additive initialization.
+- [x] Restore Queue rows, attempts, output paths, and failure reasons from persisted project state after WPF reload.
+- [x] Record focused automated coverage and an [agent-operated native WPF fake-first reload probe](./change-evidence/20260728-crash-safe-generation-queue.md) without refreshing live-provider evidence.
+- [ ] Add explicit per-item retry, resume, pause, or reorder controls only through a future repo-owned operator-workflow slice.
+
 ## Near-Term Hardening (Not Current Release Blockers)
 
 These items are still valuable, but they are not the same thing as the current V1 release gap.

@@ -63,6 +63,26 @@ public sealed class ProjectWorkbenchProjectionCoordinator
             .ToArray();
     }
 
+    public IReadOnlyList<QueueRowViewModel> BuildQueueRows(ImageProject project)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+
+        return project.Series
+            .SelectMany(series => series.Items)
+            .SelectMany(item => item.GenerationTasks.Select(task => new { Item = item, Task = task }))
+            .OrderBy(entry => entry.Task.CreatedAt)
+            .ThenBy(entry => entry.Task.Id)
+            .Select(entry => new QueueRowViewModel(
+                entry.Item.Title,
+                entry.Task.Status.ToString(),
+                entry.Task.AttemptCount.ToString(),
+                entry.Item.CandidateImages
+                    .FirstOrDefault(candidate => candidate.GenerationTaskId == entry.Task.Id)?.AssetPath
+                    ?? string.Empty,
+                entry.Task.ErrorMessage ?? string.Empty))
+            .ToArray();
+    }
+
     public IReadOnlyList<ReviewRowViewModel> BuildReviewRows(ImageProject project)
     {
         ArgumentNullException.ThrowIfNull(project);

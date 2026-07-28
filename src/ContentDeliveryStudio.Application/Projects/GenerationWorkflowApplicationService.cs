@@ -40,12 +40,39 @@ public sealed class GenerationWorkflowApplicationService
         var queue = new GenerationQueue(
             _imageGenerationProvider,
             new GenerationQueueOptions(MaxConcurrency: 1, MaxRetries: 0));
-
-        var run = await queue.RunAsync(requests, cancellationToken);
-        PersistGenerationRun(project, run, DateTimeOffset.UtcNow);
+        var workItems = CreateDurableWorkItems(project, requests, DateTimeOffset.UtcNow);
         await _repository.SaveAsync(project, cancellationToken);
 
-        return run;
+        var taskResults = new List<GenerationQueueTaskResult>(workItems.Count);
+        var images = new List<ImageGenerationResult>(workItems.Count);
+
+        foreach (var workItem in workItems)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                CancelUndispatchedTasks(workItems, taskResults, DateTimeOffset.UtcNow);
+                await _repository.SaveAsync(project, CancellationToken.None);
+                break;
+            }
+
+            workItem.Task.Start(GetCheckpointTimestamp(workItem.Task));
+            await _repository.SaveAsync(project, cancellationToken);
+
+            var itemRun = await queue.RunAsync([workItem.Request], cancellationToken);
+            var queueResult = itemRun.Tasks.Single();
+            var result = queueResult with { Id = workItem.Task.Id };
+            PersistTerminalResult(
+                workItem,
+                result,
+                itemRun.Images.SingleOrDefault(),
+                GetCheckpointTimestamp(workItem.Task));
+            await _repository.SaveAsync(project, CancellationToken.None);
+
+            taskResults.Add(result);
+            images.AddRange(itemRun.Images);
+        }
+
+        return new GenerationQueueRun(taskResults, images);
     }
 
     public async Task<ImageGenerationResult> RunImageEditAsync(
@@ -116,69 +143,124 @@ public sealed class GenerationWorkflowApplicationService
             .ToArray();
     }
 
-    private static void PersistGenerationRun(
+    private static IReadOnlyList<DurableGenerationWorkItem> CreateDurableWorkItems(
         ImageProject project,
-        GenerationQueueRun run,
-        DateTimeOffset persistedAt)
+        IReadOnlyList<ImageGenerationRequest> requests,
+        DateTimeOffset queuedAt)
     {
-        var succeededTasks = run.Tasks
-            .Where(task => task.Status is GenerationTaskStatus.Succeeded)
-            .ToArray();
-        var imagesByTaskId = succeededTasks
-            .Zip(run.Images, (task, image) => new { task.Id, Image = image })
-            .ToDictionary(entry => entry.Id, entry => entry.Image);
         var itemsById = project.Series
             .SelectMany(series => series.Items)
             .ToDictionary(item => item.Id);
+        var workItems = new List<DurableGenerationWorkItem>(requests.Count);
 
-        foreach (var taskResult in run.Tasks)
+        foreach (var request in requests)
         {
-            if (!itemsById.TryGetValue(taskResult.SeriesItemId, out var item))
+            if (!itemsById.TryGetValue(request.SeriesItemId, out var item))
             {
                 continue;
             }
 
-            var prompt = item.PromptVersions.SingleOrDefault(existing => existing.Id == taskResult.PromptVersionId);
+            var prompt = item.PromptVersions.SingleOrDefault(existing => existing.Id == request.PromptVersionId);
             if (prompt is null)
             {
                 continue;
             }
 
-            var timestamp = imagesByTaskId.TryGetValue(taskResult.Id, out var generatedImage)
-                ? generatedImage.GeneratedAt
-                : persistedAt;
-
-            item.AddGenerationTask(
+            var taskQueuedAt = queuedAt.AddTicks(workItems.Count);
+            var task = item.AddGenerationTask(
                 new GenerationTask(
-                    taskResult.Id,
+                    Guid.NewGuid(),
                     item.Id,
                     prompt.Id,
                     prompt.ProviderProfileId,
-                    taskResult.Status,
-                    taskResult.AttemptCount,
+                    GenerationTaskStatus.Queued,
+                    attemptCount: 0,
                     maxRetries: 0,
-                    timestamp,
-                    timestamp),
-                timestamp);
+                    taskQueuedAt,
+                    taskQueuedAt),
+                taskQueuedAt);
+            workItems.Add(new DurableGenerationWorkItem(request, task, item, prompt));
+        }
 
-            if (generatedImage is null)
-            {
-                continue;
-            }
+        return workItems;
+    }
 
-            item.AddCandidateImage(
+    private static void PersistTerminalResult(
+        DurableGenerationWorkItem workItem,
+        GenerationQueueTaskResult result,
+        ImageGenerationResult? generatedImage,
+        DateTimeOffset persistedAt)
+    {
+        if (result.Status is GenerationTaskStatus.Succeeded && generatedImage is null)
+        {
+            throw new InvalidOperationException("A succeeded queue result must include a generated image.");
+        }
+
+        if (result.Status is not GenerationTaskStatus.Succeeded && generatedImage is not null)
+        {
+            throw new InvalidOperationException("Only a succeeded queue result may include a generated image.");
+        }
+
+        switch (result.Status)
+        {
+            case GenerationTaskStatus.Succeeded:
+                workItem.Task.Succeed(persistedAt);
+                break;
+            case GenerationTaskStatus.Failed:
+                workItem.Task.Fail(result.ErrorMessage ?? "Generation failed.", persistedAt);
+                break;
+            case GenerationTaskStatus.Cancelled:
+                workItem.Task.Cancel(result.ErrorMessage ?? "Generation cancelled.", persistedAt);
+                break;
+            default:
+                throw new InvalidOperationException($"Queue returned non-terminal status {result.Status}.");
+        }
+
+        if (generatedImage is null)
+        {
+            return;
+        }
+
+        workItem.Item.AddCandidateImage(
                 new CandidateImage(
                     generatedImage.CandidateImageId,
-                    item.Id,
-                    prompt.Id,
-                    taskResult.Id,
-                    prompt.ProviderProfileId,
+                    workItem.Item.Id,
+                    workItem.Prompt.Id,
+                    workItem.Task.Id,
+                    workItem.Prompt.ProviderProfileId,
                     CandidateImageStatus.ReviewPending,
                     generatedImage.AssetPath,
                     generatedImage.MetadataPath,
                     generatedImage.GeneratedAt),
                 generatedImage.GeneratedAt);
+    }
+
+    private static void CancelUndispatchedTasks(
+        IReadOnlyList<DurableGenerationWorkItem> workItems,
+        ICollection<GenerationQueueTaskResult> results,
+        DateTimeOffset timestamp)
+    {
+        foreach (var workItem in workItems.Where(item => item.Task.Status is GenerationTaskStatus.Queued))
+        {
+            const string reason = "Generation was cancelled before provider dispatch.";
+            var cancellationTimestamp = timestamp < workItem.Task.UpdatedAt
+                ? workItem.Task.UpdatedAt
+                : timestamp;
+            workItem.Task.Cancel(reason, cancellationTimestamp);
+            results.Add(new GenerationQueueTaskResult(
+                workItem.Task.Id,
+                workItem.Item.Id,
+                workItem.Prompt.Id,
+                GenerationTaskStatus.Cancelled,
+                workItem.Task.AttemptCount,
+                reason));
         }
+    }
+
+    private static DateTimeOffset GetCheckpointTimestamp(GenerationTask task)
+    {
+        var timestamp = DateTimeOffset.UtcNow;
+        return timestamp < task.UpdatedAt ? task.UpdatedAt : timestamp;
     }
 
     private static string SanitizeFileName(string value)
@@ -187,4 +269,10 @@ public sealed class GenerationWorkflowApplicationService
         var sanitized = new string(value.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
         return string.IsNullOrWhiteSpace(sanitized) ? "image" : sanitized.Trim();
     }
+
+    private sealed record DurableGenerationWorkItem(
+        ImageGenerationRequest Request,
+        GenerationTask Task,
+        SeriesItem Item,
+        PromptVersion Prompt);
 }

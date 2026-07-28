@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace ContentDeliveryStudio.Infrastructure.Persistence;
 
@@ -10,6 +11,8 @@ public static class AppDatabaseInitializer
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+
+        await EnsureGenerationTaskErrorMessageColumnAsync(dbContext, cancellationToken);
 
         // EnsureCreated does not update an existing database. This additive DDL is
         // intentionally idempotent so pre-scientific-workflow databases gain only
@@ -50,5 +53,52 @@ public static class AppDatabaseInitializer
                 ("ProjectId", "SpecificationId", "SpecificationVersion");
             """,
             cancellationToken);
+    }
+
+    private static async Task EnsureGenerationTaskErrorMessageColumnAsync(
+        AppDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var connection = dbContext.Database.GetDbConnection();
+        var shouldClose = connection.State is not ConnectionState.Open;
+        if (shouldClose)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        try
+        {
+            var hasErrorMessageColumn = false;
+            await using (var inspect = connection.CreateCommand())
+            {
+                inspect.CommandText = "PRAGMA table_info('GenerationTasks');";
+                await using var reader = await inspect.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    if (string.Equals(reader.GetString(1), "ErrorMessage", StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasErrorMessageColumn = true;
+                        break;
+                    }
+                }
+            }
+
+            if (hasErrorMessageColumn)
+            {
+                return;
+            }
+
+            await using var addColumn = connection.CreateCommand();
+            addColumn.CommandText =
+                "ALTER TABLE \"GenerationTasks\" ADD COLUMN \"ErrorMessage\" TEXT NULL;";
+            await addColumn.ExecuteNonQueryAsync(cancellationToken);
+        }
+        finally
+        {
+            if (shouldClose)
+            {
+                await connection.CloseAsync();
+            }
+        }
     }
 }

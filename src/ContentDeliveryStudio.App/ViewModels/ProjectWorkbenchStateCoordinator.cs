@@ -53,6 +53,7 @@ public sealed class ProjectWorkbenchStateCoordinator
             [],
             [],
             [],
+            [],
             []);
     }
 
@@ -89,6 +90,7 @@ public sealed class ProjectWorkbenchStateCoordinator
                 activeCreativeBriefId is null || row.CreativeBriefId == activeCreativeBriefId),
             _projectWorkbenchProjectionCoordinator.BuildPlanRows(series, noItemsInSeriesText),
             _projectWorkbenchProjectionCoordinator.BuildPromptRows(series),
+            _projectWorkbenchProjectionCoordinator.BuildQueueRows(project),
             _projectWorkbenchProjectionCoordinator.BuildGalleryRows(project),
             _projectWorkbenchProjectionCoordinator.BuildReviewRows(project),
             []);
@@ -110,6 +112,7 @@ public sealed record ProjectWorkbenchStateResult(
     PromptDirectionRowViewModel? SelectedPromptDirection,
     IReadOnlyList<PlanRowViewModel> PlanRows,
     IReadOnlyList<PromptRowViewModel> PromptRows,
+    IReadOnlyList<QueueRowViewModel> QueueRows,
     IReadOnlyList<GalleryRowViewModel> GalleryRows,
     IReadOnlyList<ReviewRowViewModel> ReviewRows,
     IReadOnlyList<DeliveryRowViewModel> DeliveryRows);

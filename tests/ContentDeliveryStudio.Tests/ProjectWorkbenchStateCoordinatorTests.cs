@@ -125,6 +125,7 @@ public sealed class ProjectWorkbenchStateCoordinatorTests
         Assert.Empty(state.Series);
         Assert.Empty(state.PlanRows);
         Assert.Empty(state.PromptRows);
+        Assert.Empty(state.QueueRows);
         Assert.Empty(state.GalleryRows);
         Assert.Empty(state.ReviewRows);
         Assert.Empty(state.DeliveryRows);
@@ -132,6 +133,89 @@ public sealed class ProjectWorkbenchStateCoordinatorTests
         Assert.Null(state.SelectedSeriesItem);
         Assert.Null(state.SelectedDesignBlueprint);
         Assert.Null(state.SelectedPromptDirection);
+    }
+
+    [Fact]
+    public async Task LoadAsync_RestoresPersistedQueueRowsAndCandidatePath()
+    {
+        var repository = new InMemoryProjectRepository();
+        var localizationService = new LocalizationService(() => new CultureInfo("en-US"));
+        var projectService = new ProjectApplicationService(repository, new FakeTextPlanningProvider());
+        var projectionCoordinator = new ProjectWorkbenchProjectionCoordinator(localizationService, projectService);
+        var coordinator = new ProjectWorkbenchStateCoordinator(localizationService, projectService, projectionCoordinator);
+        var timestamp = DateTimeOffset.Parse("2026-07-28T18:00:00Z");
+        var project = ImageProject.Create("Queue projection", timestamp);
+        var series = project.AddSeries("Series", "Queue projection", timestamp.AddMinutes(1));
+        var item = series.AddItem("Opening", "Opening", timestamp.AddMinutes(2));
+        var profile = project.AddProviderProfile("Fake provider", ProviderKind.Fake, timestamp.AddMinutes(3));
+        var prompt = item.AddPromptVersion(
+            "Queue prompt",
+            new GenerationSettings(1024, 1024, "standard", "png"),
+            profile.Id,
+            timestamp.AddMinutes(4));
+        var laterItem = series.AddItem("Closing", "Closing", timestamp.AddMinutes(5));
+        var laterPrompt = laterItem.AddPromptVersion(
+            "Closing prompt",
+            new GenerationSettings(1024, 1024, "standard", "png"),
+            profile.Id,
+            timestamp.AddMinutes(6));
+        laterItem.AddGenerationTask(
+            new GenerationTask(
+                Guid.NewGuid(), laterItem.Id, laterPrompt.Id, profile.Id,
+                GenerationTaskStatus.Cancelled, 0, 0,
+                timestamp.AddMinutes(7), timestamp.AddMinutes(7),
+                "Cancelled before dispatch."),
+            timestamp.AddMinutes(7));
+        var succeeded = item.AddGenerationTask(
+            new GenerationTask(
+                Guid.NewGuid(), item.Id, prompt.Id, profile.Id,
+                GenerationTaskStatus.Succeeded, 1, 0,
+                timestamp.AddMinutes(8), timestamp.AddMinutes(8)),
+            timestamp.AddMinutes(8));
+        item.AddCandidateImage(
+            new CandidateImage(
+                Guid.NewGuid(), item.Id, prompt.Id, succeeded.Id, profile.Id,
+                CandidateImageStatus.ReviewPending,
+                "outputs/queue/succeeded.png",
+                "outputs/queue/succeeded.json",
+                timestamp.AddMinutes(8)),
+            timestamp.AddMinutes(8));
+        item.AddGenerationTask(
+            new GenerationTask(
+                Guid.NewGuid(), item.Id, prompt.Id, profile.Id,
+                GenerationTaskStatus.Failed, 1, 0,
+                timestamp.AddMinutes(9), timestamp.AddMinutes(9),
+                "Provider failed."),
+            timestamp.AddMinutes(9));
+        await repository.SaveAsync(project, CancellationToken.None);
+
+        var state = await coordinator.LoadAsync(
+            project.Id,
+            series.Id,
+            item.Id,
+            activeCreativeBriefId: null,
+            noItemsInSeriesText: "No items",
+            CancellationToken.None);
+
+        Assert.Collection(
+            state.QueueRows,
+            row =>
+            {
+                Assert.Equal("Closing", row.ItemTitle);
+                Assert.Equal("Cancelled", row.Status);
+            },
+            row =>
+            {
+                Assert.Equal("Succeeded", row.Status);
+                Assert.Equal("outputs/queue/succeeded.png", row.OutputPath);
+                Assert.Empty(row.ErrorMessage);
+            },
+            row =>
+            {
+                Assert.Equal("Failed", row.Status);
+                Assert.Equal("Provider failed.", row.ErrorMessage);
+                Assert.Empty(row.OutputPath);
+            });
     }
 
     private sealed class InMemoryProjectRepository : IProjectRepository

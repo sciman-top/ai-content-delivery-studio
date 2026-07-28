@@ -1821,6 +1821,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PromptDirectionRows = state.PromptDirectionRows;
         PlanRows = state.PlanRows;
         PromptRows = state.PromptRows;
+        QueueRows = state.QueueRows;
         GalleryRows = state.GalleryRows;
         ReviewRows = state.ReviewRows;
         DeliveryRows = state.DeliveryRows;

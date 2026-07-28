@@ -60,12 +60,15 @@ The existing SQLite bootstrap uses `EnsureCreated` plus additive, idempotent DDL
 Project reload will build Queue rows from persisted tasks instead of returning an empty queue. The existing Queue table and bindings remain unchanged. Recovered rows show their terminal status and reason; successful rows recover their candidate asset path when available.
 
 No new controls, dialogs, tabs, or provider commands are introduced.
+The existing DataGrid/`ItemsSource` boundary remains the WPF presentation
+contract; only the project-owned `QueueRows` projection is restored after load.
 
 ## External Reference Decision
 
 - ComfyUI revision `806e092ed42772e4ce7abf44c97c50021cc4bd10` distinguishes queued, running, interrupted, failed, and cancelled work. Adopt only the explicit lifecycle separation.
 - InvokeAI revision `68b90174aafebbbba45d14b049fb6852271c76a8` persists pending, in-progress, and terminal queue states. Adopt only the durable-state principle.
 - EF Core documentation revision `c5931286c90444b8220b14d0c2420f1811b7d2df` confirms `EnsureCreated` does not update an existing schema and SQLite schema changes need explicit handling. Adapt with an additive column-presence check.
+- Microsoft WPF Samples revision `ecd9529fb6941272eff1ee1e7e2554e3ecb2f1e4` demonstrates the direct DataGrid `ItemsSource` binding used by the existing shell. Retain that binding boundary and rebuild its queue-row collection from persisted project state; reject a new view, control, or UI framework abstraction for this slice.
 
 No external source is copied. Automatic resumption and broad queue infrastructure are rejected for this bounded slice.
 
