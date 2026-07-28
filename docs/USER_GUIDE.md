@@ -100,6 +100,11 @@ is under `artifacts/scientific-figure-live-acceptance/20260727-150622`; that
 directory and provider secrets stay outside Git. The committed summary is
 [20260725-scientific-figure-live-acceptance.md](./change-evidence/20260725-scientific-figure-live-acceptance.md).
 
+For a repeatable local manual trial that does not call a paid provider, use the
+[scientific figure fake-first operator trial](./SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md).
+The prepared harness remains `pending_operator`; automated checks do not count
+as the human trial outcome.
+
 Scientific delivery packages preserve SVG, PNG, PDF, the approved
 specification, provenance map, review and repair records, provider metadata,
 and both human approvals. Treat every package as an immutable snapshot.

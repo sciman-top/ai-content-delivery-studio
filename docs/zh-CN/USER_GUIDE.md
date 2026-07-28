@@ -83,6 +83,8 @@ post-V1 科研绘图工作流已经在受控范围内通过验收。状态必须
 
 科研交付包保留 SVG、PNG、PDF、已批准 specification、provenance map、review/repair 记录、provider metadata 和两个人类批准。每个包都应视为不可变快照。
 
+如需在不调用付费 provider 的前提下进行可重复的本地人工试运行，请使用[可信科研绘图 Fake-First 操作员试运行](./SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md)。仅准备好的 harness 仍是 `pending_operator`；自动化检查不能算作真人试运行结果。
+
 迁移与回滚边界：
 
 - 现有图像序列项目无需手工迁移；科研工作流持久化是增量式的，旧 workspace 仍可读取。

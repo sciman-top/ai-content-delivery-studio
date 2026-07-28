@@ -57,6 +57,12 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] After explicit paid-call approval, record live-provider and human acceptance evidence.
 - [x] Synchronize user guidance, roadmap status, launch evidence, migration, rollback, and closeout truth.
 
+## Post-Acceptance Operator Evidence Support
+
+- [x] Add a repo-owned fake-first scientific-figure operator-trial kit with an isolated local data root, five-workspace checklist, accepted/rejected finalization, and delivery ZIP validation.
+- [x] Keep generated sessions under ignored `outputs/` and preserve existing accepted corpus/live artifacts.
+- [ ] Complete and sign a new human WPF operator trial. This remains `operator/manual evidence` work and is not satisfied by repository tests, UI Automation, or the no-launch preparation probe.
+
 ## Near-Term Hardening (Not Current Release Blockers)
 
 These items are still valuable, but they are not the same thing as the current V1 release gap.

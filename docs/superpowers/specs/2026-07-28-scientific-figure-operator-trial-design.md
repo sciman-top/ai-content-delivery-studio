@@ -142,6 +142,9 @@ human gate.
 - `tests/ContentDeliveryStudio.Tests/ScientificFigureOperatorTrialScriptTests.cs`
 - `docs/SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md`
 - `docs/zh-CN/SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md`
+- `docs/USER_GUIDE.md`
+- `docs/zh-CN/USER_GUIDE.md`
+- `docs/TASKS.md`
 - `docs/change-evidence/20260728-scientific-figure-operator-trial.md`
 - this spec and its implementation plan
 
