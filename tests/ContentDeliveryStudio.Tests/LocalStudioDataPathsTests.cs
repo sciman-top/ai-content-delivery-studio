@@ -66,6 +66,46 @@ public sealed class LocalStudioDataPathsTests
     }
 
     [Fact]
+    public void ResolveStudioRoot_UsesNormalizedEnvironmentOverride()
+    {
+        var baseRoot = CreateTempRoot();
+
+        try
+        {
+            var relativeRoot = Path.GetRelativePath(Environment.CurrentDirectory, baseRoot);
+
+            var resolved = LocalStudioDataPaths.ResolveStudioRoot(relativeRoot);
+
+            Assert.Equal(Path.GetFullPath(baseRoot), resolved);
+        }
+        finally
+        {
+            Cleanup(baseRoot);
+        }
+    }
+
+    [Fact]
+    public void ResolveStudioRoot_ExplicitScopeOverridesEnvironmentOverride()
+    {
+        var environmentRoot = CreateTempRoot();
+        var scopedRoot = CreateTempRoot();
+
+        try
+        {
+            using var scope = LocalStudioDataPaths.PushRootOverride(scopedRoot);
+
+            var resolved = LocalStudioDataPaths.ResolveStudioRoot(environmentRoot);
+
+            Assert.Equal(Path.GetFullPath(scopedRoot), resolved);
+        }
+        finally
+        {
+            Cleanup(environmentRoot);
+            Cleanup(scopedRoot);
+        }
+    }
+
+    [Fact]
     public void ResolveProjectDirectory_RejectsUnsafeAreaName()
     {
         var exception = Assert.Throws<ArgumentException>(() =>

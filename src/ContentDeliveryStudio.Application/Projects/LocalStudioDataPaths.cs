@@ -2,13 +2,24 @@ namespace ContentDeliveryStudio.Application.Projects;
 
 public static class LocalStudioDataPaths
 {
+    public const string DataRootEnvironmentVariable = "CONTENT_DELIVERY_STUDIO_DATA_ROOT";
     internal const string CurrentStudioFolderName = "ContentDeliveryStudio";
     internal const string LegacyStudioFolderName = "ImageSeriesStudio";
     private static readonly AsyncLocal<string?> RootOverride = new();
 
     public static string ResolveStudioRoot()
     {
+        return ResolveStudioRoot(Environment.GetEnvironmentVariable(DataRootEnvironmentVariable));
+    }
+
+    internal static string ResolveStudioRoot(string? environmentRootOverride)
+    {
         var overrideRoot = RootOverride.Value;
+        if (string.IsNullOrWhiteSpace(overrideRoot))
+        {
+            overrideRoot = environmentRootOverride;
+        }
+
         var root = string.IsNullOrWhiteSpace(overrideRoot)
             ? ResolveStudioRootPath(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData))
             : Path.GetFullPath(overrideRoot);
