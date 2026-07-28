@@ -61,6 +61,7 @@
 | Fake-first verified | 已验收 | `artifacts/scientific-figure-corpus-acceptance/report.json` 记录 12 项人类批准 baseline 全部通过，40 项声明的阻断 mutation 全部被拒绝。 |
 | Live verified | 已验收 | `artifacts/scientific-figure-live-acceptance/20260727-150622/report.json` 记录一项机制图、一项概念比较图和一项图形摘要完成 OpenAI 理解、语义审查、视觉审查、确定性 contract review 和导出。 |
 | Human accepted | 已验收 | 审查人 `sciman` 于 `2026-07-27T23:57:09.9758439+08:00` 批准全部三项 Gate 2，纠正记录为空；提交到仓库的摘要见 [20260725-scientific-figure-live-acceptance.md](../change-evidence/20260725-scientific-figure-live-acceptance.md)。 |
+| 授权操作员试运行 | 已验收 | Native WPF run `20260728-204423-261` 已检查全部五个工作区，并由 reviewer `codex-agent-authorized-by-sciman` 在明确用户授权下 finalize。schema v2 记录如实保存 `operatorKind=authorized_agent`、`decisionAuthority=equivalent_operator_acceptance`、`liveAccepted=false` 以及 reviewer/package/hash 校验；提交摘要见 [20260728-scientific-figure-authorized-agent-acceptance.md](../change-evidence/20260728-scientific-figure-authorized-agent-acceptance.md)。 |
 | 最终文档收口 | 已验收 | Task 30 已同步用户指南、路线图、迁移、回滚、排除边界和中英文 companion。固定顺序收口通过无警告/错误 build、`664 / 664` tests、reference evidence、format 和 release preflight。 |
 
 已验收边界不包括 OCR-heavy 来源、实测或伪造数据图、显微镜式观测、自动改变科学含义，或把生成图像表述为真实观测证据。provider 凭据、本地 SQLite 数据、workspace 与已批准 live artifact 均保持在 Git 外。

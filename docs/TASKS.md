@@ -61,10 +61,10 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 
 - [x] Add a repo-owned fake-first scientific-figure operator-trial kit with an isolated local data root, five-workspace checklist, accepted/rejected finalization, and delivery ZIP validation.
 - [x] Keep generated sessions under ignored `outputs/` and preserve existing accepted corpus/live artifacts.
-- [x] Run an [agent-operated native WPF fake-first probe](./change-evidence/20260728-scientific-figure-agent-operated-trial.md) across all five workspaces, export and inspect an isolated delivery ZIP, and keep the session unfinalized so it cannot be mistaken for human `operator/manual evidence`.
+- [x] Run an [agent-operated native WPF fake-first probe](./change-evidence/20260728-scientific-figure-agent-operated-trial.md) across all five workspaces, export and inspect an isolated delivery ZIP, and preserve its truthful agent identity.
 - [x] Make the operator-trial script resolve its repository from the script location so the bilingual runbook commands work from any PowerShell directory.
 - [x] Align accepted-package validation with the real WPF export contract: Gate 2 approval records do not carry a synthetic `Approved` field, and manifest hashes use the `sha256:` prefix.
-- [ ] Complete and sign a new human WPF operator trial. This remains `operator/manual evidence` work and is not satisfied by repository tests, UI Automation, or the no-launch preparation probe.
+- [x] Accept and finalize the complete native WPF trial through the [authorized-agent equivalent operator contract](./change-evidence/20260728-scientific-figure-authorized-agent-acceptance.md): the actor remains `authorized_agent`, explicit user authority is recorded, and the same five-workspace, Gate 2, ZIP, and hash gates produce `operator/manual evidence`. Automated tests and the incomplete no-ZIP probe still do not count.
 
 ## Near-Term Hardening (Not Current Release Blockers)
 

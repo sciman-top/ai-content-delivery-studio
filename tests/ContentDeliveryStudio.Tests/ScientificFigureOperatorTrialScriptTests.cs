@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -22,6 +23,8 @@ public sealed class ScientificFigureOperatorTrialScriptTests
 
             Assert.Equal(0, result.ExitCode);
             using var trial = ReadTrial(fixture.TrialPath);
+            Assert.Equal(2, trial.RootElement.GetProperty("schemaVersion").GetInt32());
+            Assert.Equal("authorized_operator_v1", trial.RootElement.GetProperty("acceptancePolicy").GetString());
             Assert.Equal("pending_operator", trial.RootElement.GetProperty("status").GetString());
             Assert.Equal("pending_operator", trial.RootElement.GetProperty("evidenceLevel").GetString());
             Assert.Equal("fake", trial.RootElement.GetProperty("providerMode").GetString());
@@ -86,6 +89,84 @@ public sealed class ScientificFigureOperatorTrialScriptTests
             Assert.Equal(
                 "operator-reviewer",
                 trial.RootElement.GetProperty("operator").GetProperty("reviewer").GetString());
+            Assert.Equal(
+                "human",
+                trial.RootElement.GetProperty("operator").GetProperty("operatorKind").GetString());
+            Assert.Equal(
+                JsonValueKind.Null,
+                trial.RootElement.GetProperty("operator").GetProperty("authorizationReference").ValueKind);
+            Assert.Equal(
+                "equivalent_operator_acceptance",
+                trial.RootElement.GetProperty("operator").GetProperty("decisionAuthority").GetString());
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task FinalizeAccepted_AuthorizedAgentMigratesLegacySessionAndRecordsEquivalentAuthority()
+    {
+        var fixture = CreateFixture();
+        try
+        {
+            Assert.Equal(0, (await PrepareAsync(fixture)).ExitCode);
+            DowngradeTrialToSchemaOne(fixture.TrialPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(fixture.PackagePath)!);
+            WritePackage(fixture.PackagePath, "authorized-agent-reviewer");
+
+            var result = await FinalizeAsync(
+                fixture,
+                "accepted",
+                "authorized-agent-reviewer",
+                "Inspected all five native WPF workspaces under explicit user authority.",
+                includePackage: true,
+                operatorKind: "authorized_agent",
+                authorizationReference: "user-explicit-authorization-2026-07-28");
+
+            Assert.Equal(0, result.ExitCode);
+            using var trial = ReadTrial(fixture.TrialPath);
+            Assert.Equal(2, trial.RootElement.GetProperty("schemaVersion").GetInt32());
+            Assert.Equal("authorized_operator_v1", trial.RootElement.GetProperty("acceptancePolicy").GetString());
+            Assert.Equal("operator/manual evidence", trial.RootElement.GetProperty("evidenceLevel").GetString());
+            var operatorRecord = trial.RootElement.GetProperty("operator");
+            Assert.Equal("authorized_agent", operatorRecord.GetProperty("operatorKind").GetString());
+            Assert.Equal(
+                "user-explicit-authorization-2026-07-28",
+                operatorRecord.GetProperty("authorizationReference").GetString());
+            Assert.Equal(
+                "equivalent_operator_acceptance",
+                operatorRecord.GetProperty("decisionAuthority").GetString());
+        }
+        finally
+        {
+            fixture.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task FinalizeAuthorizedAgent_RequiresAuthorizationReference()
+    {
+        var fixture = CreateFixture();
+        try
+        {
+            Assert.Equal(0, (await PrepareAsync(fixture)).ExitCode);
+
+            var result = await FinalizeAsync(
+                fixture,
+                "rejected",
+                "unauthorized-agent-reviewer",
+                "This attempt must remain pending without traceable authority.",
+                includePackage: false,
+                operatorKind: "authorized_agent");
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains("authorization reference", result.AllOutput, StringComparison.OrdinalIgnoreCase);
+            using var trial = ReadTrial(fixture.TrialPath);
+            Assert.Equal(2, trial.RootElement.GetProperty("schemaVersion").GetInt32());
+            Assert.Equal("authorized_operator_v1", trial.RootElement.GetProperty("acceptancePolicy").GetString());
+            Assert.Equal("pending_operator", trial.RootElement.GetProperty("status").GetString());
         }
         finally
         {
@@ -260,7 +341,9 @@ public sealed class ScientificFigureOperatorTrialScriptTests
         string reviewer,
         string notes,
         bool includePackage,
-        bool confirmWorkspaces = true)
+        bool confirmWorkspaces = true,
+        string operatorKind = "human",
+        string? authorizationReference = null)
     {
         var arguments = new List<string>
         {
@@ -269,7 +352,13 @@ public sealed class ScientificFigureOperatorTrialScriptTests
             "-Outcome", outcome,
             "-Reviewer", reviewer,
             "-Notes", notes,
+            "-OperatorKind", operatorKind,
         };
+        if (authorizationReference is not null)
+        {
+            arguments.Add("-AuthorizationReference");
+            arguments.Add(authorizationReference);
+        }
         if (confirmWorkspaces)
         {
             arguments.Add("-ConfirmFiveWorkspaces");
@@ -334,6 +423,14 @@ public sealed class ScientificFigureOperatorTrialScriptTests
     private static JsonDocument ReadTrial(string path)
     {
         return JsonDocument.Parse(File.ReadAllBytes(path));
+    }
+
+    private static void DowngradeTrialToSchemaOne(string path)
+    {
+        var trial = JsonNode.Parse(File.ReadAllBytes(path))!.AsObject();
+        trial["schemaVersion"] = 1;
+        trial.Remove("acceptancePolicy");
+        File.WriteAllText(path, trial.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
     }
 
     private static void WritePackage(

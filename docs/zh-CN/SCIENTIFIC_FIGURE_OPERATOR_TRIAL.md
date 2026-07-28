@@ -10,10 +10,13 @@
 
 - 仓库实现和固定门禁通过属于 `repo-side done`。
 - 仅准备或启动的会话属于 `pending_operator`。
-- 由真人显式完成并 finalize 的会话才属于 `operator/manual evidence`。
+- 由授权操作员显式完成并 finalize 的会话属于 `operator/manual evidence`；
+  操作员可以是 `human` 或 `authorized_agent`，两者通过同一门禁后具有
+  等效决策权。
 - 本流程不会刷新或替换既有 `live accepted` 证据。
 
-自动化测试、UI Automation 和交付包校验都不能等同于人工操作员试运行。
+自动化测试、无人值守 UI Automation 和交付包校验本身不能构成操作员
+决定。agent 只有在真实完成可见检查并持有明确、可追溯的用户授权时才可计入。
 
 ## 前置条件
 
@@ -50,7 +53,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-oper
 
 这种会话保持 `pending_operator`，不是人工证据。
 
-## 人工检查清单
+## 授权操作员检查清单
 
 以会话内生成的 `operator-checklist.md` 为准：
 
@@ -59,16 +62,18 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-oper
 3. 检查 Understanding 的主张、精确证据、冲突和限制。
 4. 检查 Figure Spec 的元素、关系、provenance 和 Gate 1 权威。
 5. 检查 Render & Review 的 SVG/PNG/PDF 预览和 contract、semantic、visual 三层审查。
-6. 检查 Delivery 的格式、provider、repair、证据映射和两个人类门禁。
-7. 输入真实 reviewer 和非空 notes，然后批准或拒绝 Gate 2。
+6. 检查 Delivery 的格式、provider、repair、证据映射和两个审批门禁。
+7. 输入真实操作员 reviewer 和非空 notes，然后批准或拒绝 Gate 2。
 8. 如果批准，把 ZIP 导出到 `trial.json` 中的精确 `expectedPackagePath`。
 9. 关闭应用后再执行 finalize。
 
-不要仅因为确定性 fixture 通过了自动化检查就批准。真人 reviewer 仍需对可见的科学含义、provenance、可读性和最终交付决定负责。
+不要仅因为确定性 fixture 通过了自动化检查就批准。授权操作员仍需对
+可见的科学含义、provenance、可读性和最终交付决定负责。必须如实记录
+主体：真人使用 `human`，经用户授权的 agent 使用 `authorized_agent`。
 
 ## 完成一个批准结果
 
-把会话路径和人工字段替换为本次试运行的真实值：
+真人操作员使用下列命令；`OperatorKind` 默认值为 `human`：
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
@@ -80,9 +85,28 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-oper
   -ConfirmFiveWorkspaces
 ```
 
+经用户明确授权、可以作出等效操作员决定的 agent，必须记录真实 agent
+reviewer 和可追溯授权依据：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
+  -Mode Finalize `
+  -SessionPath outputs/scientific-figure-operator-trials/<run-id> `
+  -Outcome accepted `
+  -Reviewer "<授权 agent reviewer>" `
+  -Notes "<实际检查内容和批准理由>" `
+  -OperatorKind authorized_agent `
+  -AuthorizationReference "<授权人、时间和授权位置>" `
+  -ConfirmFiveWorkspaces
+```
+
 如果从仓库外执行 finalize，请继续使用上面的绝对 `-File` 写法，并把 Run 命令输出的绝对会话路径传给 `-SessionPath`。
 
-accepted finalize 会校验 ZIP 必需条目、安全相对路径、Gate 2 reviewer 以及 SVG/PNG/PDF hash，随后在会话本地 `trial.json` 中记录 `operator/manual evidence`。
+accepted finalize 会校验 ZIP 必需条目、安全相对路径、Gate 2 reviewer 以及
+SVG/PNG/PDF hash，随后在会话本地 `trial.json` 中记录 schema v2
+`operator/manual evidence`、真实 `operatorKind`、授权依据和
+`equivalent_operator_acceptance` 决策权。`authorized_agent` 缺少
+`AuthorizationReference` 时会 fail closed。
 
 ## 完成一个拒绝结果
 
@@ -103,7 +127,7 @@ rejected 试运行不会制造 accepted package。它是一次有效的人工拒
 每个会话包含：
 
 - `trial.json`：生命周期、声明路径、人工结果和校验摘要
-- `operator-checklist.md`：人工操作步骤
+- `operator-checklist.md`：授权操作员步骤
 - `data/`：隔离的 SQLite 和应用本地状态
 - `delivery/`：操作员选择的 ZIP 目标目录
 

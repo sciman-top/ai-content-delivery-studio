@@ -102,8 +102,11 @@ directory and provider secrets stay outside Git. The committed summary is
 
 For a repeatable local manual trial that does not call a paid provider, use the
 [scientific figure fake-first operator trial](./SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md).
-The prepared harness remains `pending_operator`; automated checks do not count
-as the human trial outcome.
+The prepared harness remains `pending_operator`; automated checks alone do not
+count as an outcome. A human or explicitly user-authorized agent may finalize
+the same `operator/manual evidence` after the five visible workspaces and
+delivery package gates pass. Agent identity and its authorization reference are
+recorded explicitly.
 
 Scientific delivery packages preserve SVG, PNG, PDF, the approved
 specification, provenance map, review and repair records, provider metadata,

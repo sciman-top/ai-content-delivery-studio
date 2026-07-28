@@ -83,7 +83,12 @@ post-V1 科研绘图工作流已经在受控范围内通过验收。状态必须
 
 科研交付包保留 SVG、PNG、PDF、已批准 specification、provenance map、review/repair 记录、provider metadata 和两个人类批准。每个包都应视为不可变快照。
 
-如需在不调用付费 provider 的前提下进行可重复的本地人工试运行，请使用[可信科研绘图 Fake-First 操作员试运行](./SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md)。仅准备好的 harness 仍是 `pending_operator`；自动化检查不能算作真人试运行结果。
+如需在不调用付费 provider 的前提下进行可重复的本地操作员试运行，请使用
+[可信科研绘图 Fake-First 操作员试运行](./SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md)。
+仅准备好的 harness 仍是 `pending_operator`；自动化检查本身不能构成结果。
+真人或经用户明确授权的 agent 在检查五个可见工作区并通过交付包门禁后，
+都可以 finalize 为等效的 `operator/manual evidence`；agent 身份和授权依据
+必须显式记录。
 
 迁移与回滚边界：
 

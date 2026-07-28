@@ -12,11 +12,14 @@ The evidence levels remain separate:
 
 - The repository implementation and passing gates are `repo-side done`.
 - A prepared or launched session is `pending_operator`.
-- A human-finalized session is `operator/manual evidence`.
+- A finalized session from an authorized operator is `operator/manual evidence`.
+  The operator may be `human` or `authorized_agent`; both have equivalent
+  decision authority after the same gates.
 - This workflow does not refresh or replace existing `live accepted` evidence.
 
-Automated tests, UI Automation, and package validation do not count as a human
-operator trial.
+Automated tests, unattended UI Automation, and package validation alone do not
+count as an operator decision. An agent counts only when it actually performs
+the visible inspection and carries an explicit, traceable user authorization.
 
 ## Prerequisites
 
@@ -58,7 +61,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-oper
 
 A prepared session remains `pending_operator` and is not manual evidence.
 
-## Human Checklist
+## Authorized Operator Checklist
 
 Use the generated `operator-checklist.md` as the session authority.
 
@@ -70,19 +73,22 @@ Use the generated `operator-checklist.md` as the session authority.
    visual review layers.
 6. Inspect Delivery formats, providers, repairs, evidence mapping, and both
    gates.
-7. Enter the real reviewer and non-empty notes, then approve or reject Gate 2.
+7. Enter the real operator reviewer and non-empty notes, then approve or reject
+   Gate 2.
 8. If approved, export the ZIP to the exact `expectedPackagePath` in
    `trial.json`.
 9. Close the app before finalizing.
 
 Do not approve merely because the deterministic fixture passes automated
-checks. The reviewer remains responsible for the visible scientific meaning,
-provenance, readability, and delivery decision.
+checks. The authorized operator remains responsible for the visible scientific
+meaning, provenance, readability, and delivery decision. Record the actor
+truthfully: `human` for a person or `authorized_agent` for a user-authorized
+agent.
 
 ## Finalize An Accepted Trial
 
-Replace the session path and human fields with the values from the completed
-trial:
+For a human operator, replace the session path and fields with the values from
+the completed trial. `OperatorKind` defaults to `human`:
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
@@ -94,12 +100,31 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-oper
   -ConfirmFiveWorkspaces
 ```
 
+For an agent that the user explicitly authorizes to make the equivalent
+operator decision, record the real agent reviewer and a traceable authorization
+reference:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
+  -Mode Finalize `
+  -SessionPath outputs/scientific-figure-operator-trials/<run-id> `
+  -Outcome accepted `
+  -Reviewer "<authorized agent reviewer>" `
+  -Notes "<what was visibly inspected and why it is acceptable>" `
+  -OperatorKind authorized_agent `
+  -AuthorizationReference "<who authorized the agent, when, and where>" `
+  -ConfirmFiveWorkspaces
+```
+
 When finalizing from outside the repository, reuse the absolute `-File` form
 above and pass the absolute session path printed by the Run command.
 
 Accepted finalization validates the ZIP entry contract, safe relative entry
-paths, the Gate 2 reviewer, and SVG/PNG/PDF hashes. It then records
-`operator/manual evidence` in the session-local `trial.json`.
+paths, the Gate 2 reviewer, and SVG/PNG/PDF hashes. It then records schema v2
+`operator/manual evidence`, the truthful `operatorKind`, authorization
+provenance, and `equivalent_operator_acceptance` authority in the session-local
+`trial.json`. An `authorized_agent` attempt without `AuthorizationReference`
+fails closed.
 
 ## Finalize A Rejected Trial
 
@@ -121,7 +146,7 @@ evidence of a rejection, not delivery acceptance.
 Each session contains:
 
 - `trial.json`: lifecycle, declared paths, reviewer outcome, and validation
-- `operator-checklist.md`: human operation steps
+- `operator-checklist.md`: authorized operator steps
 - `data/`: isolated SQLite and app-local state
 - `delivery/`: the operator-selected ZIP destination
 

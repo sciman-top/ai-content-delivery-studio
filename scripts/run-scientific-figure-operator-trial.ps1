@@ -8,6 +8,9 @@ param(
     [string]$Outcome,
     [string]$Reviewer,
     [string]$Notes,
+    [ValidateSet("human", "authorized_agent")]
+    [string]$OperatorKind = "human",
+    [string]$AuthorizationReference,
     [switch]$ConfirmFiveWorkspaces,
     [switch]$NoBuild,
     [switch]$NoLaunch
@@ -97,7 +100,8 @@ function Write-OperatorChecklist {
     @"
 # Scientific Figure Fake-First Operator Trial
 
-This checklist is a human operation record. Automated tests do not complete it.
+This checklist is an authorized operator record. The operator may be human or a
+user-authorized agent; automated tests do not complete it.
 
 1. Confirm the title bar shows fake provider mode.
 2. Open Scientific Figures and inspect Source evidence and extraction status.
@@ -105,7 +109,7 @@ This checklist is a human operation record. Automated tests do not complete it.
 4. Inspect Figure Spec elements, relations, provenance, and Gate 1 authority.
 5. Inspect Render & Review SVG/PNG/PDF previews and all three review layers.
 6. In Delivery, compare formats, provider metadata, repairs, and both gates.
-7. Enter the human reviewer and non-empty notes, then approve or reject Gate 2.
+7. Enter the real operator reviewer and non-empty notes, then approve or reject Gate 2.
 8. If approved, export the package to: $ExpectedPackagePath
 9. Close the app and run Finalize with the same reviewer, outcome, and notes.
 
@@ -159,7 +163,8 @@ function New-TrialSession {
     New-Item -ItemType Directory -Path $deliveryRoot -Force | Out-Null
 
     $trial = [ordered]@{
-        schemaVersion = 1
+        schemaVersion = 2
+        acceptancePolicy = "authorized_operator_v1"
         runId = $RunId
         status = "pending_operator"
         evidenceLevel = "pending_operator"
@@ -397,6 +402,17 @@ function Complete-Trial {
         throw "Finalize requires -Outcome accepted or rejected."
     }
 
+    $normalizedAuthorizationReference = $null
+    if ($OperatorKind -eq "authorized_agent") {
+        if ([string]::IsNullOrWhiteSpace($AuthorizationReference)) {
+            throw "Finalize for an authorized agent requires a non-empty authorization reference."
+        }
+
+        $normalizedAuthorizationReference = $AuthorizationReference.Trim()
+    } elseif (-not [string]::IsNullOrWhiteSpace($AuthorizationReference)) {
+        $normalizedAuthorizationReference = $AuthorizationReference.Trim()
+    }
+
     $validation = $null
     $resolvedPackagePath = $null
     if ($Outcome -eq "accepted") {
@@ -427,11 +443,23 @@ function Complete-Trial {
     }
 
     $now = [DateTimeOffset]::Now.ToString("O")
+    $trial.schemaVersion = 2
+    if ($null -eq $trial.PSObject.Properties["acceptancePolicy"]) {
+        $trial | Add-Member -NotePropertyName acceptancePolicy -NotePropertyValue "authorized_operator_v1"
+    } else {
+        $trial.acceptancePolicy = "authorized_operator_v1"
+    }
     $trial.status = $Outcome
     $trial.evidenceLevel = "operator/manual evidence"
     $trial.updatedAt = $now
+    $trial.sessionPath = $resolvedSessionPath
+    $trial.dataRoot = Join-Path $resolvedSessionPath "data"
+    $trial.expectedPackagePath = Join-Path $resolvedSessionPath "delivery/scientific-figure.zip"
     $trial.operator = [ordered]@{
         reviewer = $Reviewer.Trim()
+        operatorKind = $OperatorKind
+        authorizationReference = $normalizedAuthorizationReference
+        decisionAuthority = "equivalent_operator_acceptance"
         notes = $Notes.Trim()
         outcome = $Outcome
         completedAt = $now
