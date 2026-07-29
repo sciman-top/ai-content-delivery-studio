@@ -62,6 +62,7 @@ The Diagnostics status and activity collection receive `AutomationProperties.Liv
 - WPF official sample `02-dotnet-wpf/WPF-Samples/Elements/FocusVisualStyle/MainWindow.xaml` at `ecd9529fb6941272eff1ee1e7e2554e3ecb2f1e4`; adopt the `FocusVisualStyle` adorner pattern, replacing fixed sample colors with dynamic Windows system brushes.
 - WPF official sample `02-dotnet-wpf/WPF-Samples/Accessibility/SelectionPattern/SelectionPatternSample/MainWindow.xaml` at the same revision; adapt standard tab-stop and keyboard-navigation semantics while keeping native list/tab selection patterns.
 - WPF official sample application accessible-name patterns under `02-dotnet-wpf/WPF-Samples/Sample Applications/WPFGallery` at the same revision; adopt localized `AutomationProperties.Name` on interactive controls and collections.
+- WPF official `02-dotnet-wpf/WPF-Samples/Sample Applications/CustomComboBox/MainWindow.xaml(.cs)` at the same revision; adapt `NotifyOnTargetUpdated` plus AutomationPeer notification so the long-lived language selector invalidates a UIA client's localized Name cache.
 - WPF official documentation source `02-dotnet-wpf/docs-desktop` at `3ed3bb19178883827aa0a81427576797db141862`; retain as framework behavior authority. No external source is copied or executed.
 
 ## Acceptance Criteria

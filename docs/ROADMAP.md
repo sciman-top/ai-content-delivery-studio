@@ -103,6 +103,7 @@ Trustworthy scientific figures have reached the accepted implementation boundary
 - Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
 - Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.
 - Open per-item retry, resume, pause, or reorder controls only when an operator workflow has a repo-owned spec and explicit provider-cost semantics.
+- Extend the completed native shell/Diagnostics accessibility baseline only through bounded slices for Narrator, system high contrast, non-default DPI, full-form controls, virtualized gallery/grid focus, touch/pen, or packaged-app behavior.
 
 ## Longer-Term Lanes
 
@@ -418,7 +419,7 @@ Deliverables:
 - Installer or packaged release.
 - Crash-safe queue recovery (completed with durable checkpoints, fail-closed reload reconciliation, and WPF Queue restoration).
 - Backup and restore.
-- Accessibility pass.
+- Accessibility pass (native shell and Diagnostics baseline completed with automated contracts and authorized-agent UIA/keyboard acceptance; Narrator, system high contrast, non-default DPI, full-form, virtualized gallery/grid, touch/pen, and packaged-app lanes remain open).
 - Performance pass for large galleries.
 - User-exported local diagnostics bundle (completed with redacted project/provider snapshots and a native WPF export path); structured log ingestion remains open.
 - Documentation and sample projects.

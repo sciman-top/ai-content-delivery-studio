@@ -2,10 +2,16 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:views="clr-namespace:ContentDeliveryStudio.App.Views"
              mc:Ignorable="d">
-    <TabControl Margin="12" ItemsSource="{Binding WorkbenchTabs}">
+    <TabControl Margin="12"
+                ItemsSource="{Binding WorkbenchTabs}"
+                automation:AutomationProperties.AutomationId="WorkbenchTabs"
+                automation:AutomationProperties.Name="{Binding WorkspaceHeader}"
+                KeyboardNavigation.TabNavigation="Continue"
+                FocusVisualStyle="{StaticResource AccessibleKeyboardFocusVisual}">
         <TabControl.ItemTemplate>
             <DataTemplate>
                 <TextBlock Text="{Binding Title}" />

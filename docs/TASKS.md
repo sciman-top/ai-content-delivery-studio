@@ -14,6 +14,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
 - The post-V1 trustworthy-scientific-figure flagship is accepted through Task 30 and Checkpoint 5. Tasks 6-20 and Checkpoint 3 establish the machine-trust loop; Tasks 21-25 and Checkpoint 4 provide the user-visible fake-first five-workspace flow; Task 26 accepts all 12 baselines plus 40 blocking mutations; Tasks 27-28 add opt-in OpenAI understanding and independent review; Task 29 records three live samples and their human Gate 2 approvals; Task 30 synchronizes documentation and final repository evidence. No scientific-figure implementation task remains open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
+- The post-acceptance native WPF shell/Diagnostics accessibility baseline is repo-side complete with XAML contracts and `authorized_agent` equivalent-operator acceptance. This does not reopen Tasks 1-30 or Checkpoints 0-5 and does not close Narrator, high-contrast, DPI, full-form, virtualized gallery/grid, touch/pen, or packaged-app trigger lanes.
 
 ## Accepted Post-V1 Flagship Slice: Trustworthy Scientific Figures
 

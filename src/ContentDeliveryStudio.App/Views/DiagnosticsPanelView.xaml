@@ -17,22 +17,33 @@
                  MinHeight="28"
                  TextWrapping="Wrap"
                  automation:AutomationProperties.AutomationId="DiagnosticsOutputDirectory"
+                 automation:AutomationProperties.Name="{Binding OutputDirectoryLabel}"
+                 automation:AutomationProperties.HelpText="{Binding PrivacySummary}"
+                 FocusVisualStyle="{StaticResource AccessibleKeyboardFocusVisual}"
                  Margin="0,0,0,8" />
         <UniformGrid Columns="2" Margin="0,0,0,8">
             <Button Content="{Binding BrowseText}"
                     Command="{Binding BrowseCommand}"
                     MinHeight="30"
                     automation:AutomationProperties.AutomationId="BrowseDiagnosticsDirectory"
+                    automation:AutomationProperties.Name="{Binding BrowseText}"
+                    FocusVisualStyle="{StaticResource AccessibleKeyboardFocusVisual}"
                     Margin="0,0,4,0" />
             <Button Content="{Binding ExportText}"
                     Command="{Binding ExportCommand}"
                     MinHeight="30"
                     automation:AutomationProperties.AutomationId="ExportDiagnosticsPackage"
+                    automation:AutomationProperties.Name="{Binding ExportText}"
+                    FocusVisualStyle="{StaticResource AccessibleKeyboardFocusVisual}"
                     Margin="4,0,0,0" />
         </UniformGrid>
         <TextBlock Text="{Binding StatusText}"
                    TextWrapping="Wrap"
                    Foreground="#4B5563"
-                   automation:AutomationProperties.AutomationId="DiagnosticsExportStatus" />
+                   automation:AutomationProperties.AutomationId="DiagnosticsExportStatus"
+                   automation:AutomationProperties.Name="{Binding StatusText}"
+                   automation:AutomationProperties.LiveSetting="Polite"
+                   KeyboardNavigation.IsTabStop="False"
+                   Focusable="False" />
     </StackPanel>
 </UserControl>

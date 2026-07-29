@@ -1,5 +1,7 @@
 # WPF Shell Accessibility Baseline Implementation Plan
 
+**Implementation status:** Completed on 2026-07-29. Automated contract, native `authorized_agent` equivalent-operator acceptance, fixed repository gates, and truth boundaries are recorded in `docs/change-evidence/20260729-wpf-shell-accessibility-baseline.md`.
+
 **Goal:** Establish a localized, keyboard-visible, UI Automation-readable accessibility baseline for the native WPF shell and Diagnostics panel.
 
 **Architecture:** Keep accessibility state in the WPF presentation layer. Reuse existing localized ViewModel labels, add a system-brush focus adorner, declare shell-region keyboard traversal, and expose status updates through polite UI Automation live regions.

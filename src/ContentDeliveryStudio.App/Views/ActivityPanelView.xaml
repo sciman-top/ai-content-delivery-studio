@@ -2,11 +2,17 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <DockPanel Margin="16,12">
         <TextBlock DockPanel.Dock="Top" Text="{Binding ActivityTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
-        <ItemsControl ItemsSource="{Binding ActivityItems}">
+        <ItemsControl ItemsSource="{Binding ActivityItems}"
+                      automation:AutomationProperties.AutomationId="ActivityStatus"
+                      automation:AutomationProperties.Name="{Binding ActivityTitle}"
+                      automation:AutomationProperties.LiveSetting="Polite"
+                      KeyboardNavigation.IsTabStop="False"
+                      Focusable="False">
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
                     <TextBlock Text="{Binding}" Foreground="#4B5563" Margin="0,0,0,4" />

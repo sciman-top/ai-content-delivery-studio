@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:views="clr-namespace:ContentDeliveryStudio.App.Views"
+        xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="{Binding AppTitle}"
@@ -10,6 +11,7 @@
         Width="1180"
         MinHeight="640"
         MinWidth="980"
+        KeyboardNavigation.TabNavigation="Continue"
         Background="#F6F7F9">
     <Grid>
         <Grid.RowDefinitions>
@@ -33,6 +35,10 @@
                     <ComboBox ItemsSource="{Binding LanguageOptions}"
                               SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
                               DisplayMemberPath="DisplayName"
+                              automation:AutomationProperties.AutomationId="LanguageSelector"
+                              automation:AutomationProperties.Name="{Binding LanguageLabel, NotifyOnTargetUpdated=True}"
+                              TargetUpdated="LanguageSelectorAutomationName_TargetUpdated"
+                              FocusVisualStyle="{StaticResource AccessibleKeyboardFocusVisual}"
                               MinWidth="112"
                               Height="28"
                               Margin="0,0,16,0" />
