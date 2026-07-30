@@ -1,7 +1,7 @@
 # AGENTS.md - ai-content-delivery-studio
 **项目契约**: 2.0
-**全局规则复核**: 9.57
-**最后更新**: 2026-07-15
+**全局规则复核**: 9.58
+**最后更新**: 2026-07-28
 
 ## 1. 当前落点与目标归宿
 - 当前落点：`D:\CODE\ai-content-delivery-studio` 是 AI Content Delivery Studio 的实现仓，图像系列生成是当前核心生产路径。
@@ -22,6 +22,11 @@
 - text planning、image generation、vision review 保持独立 provider contract；AI review 仅作建议，人工批准是最终交付 gate。
 - 文本密集输出优先保留 deterministic post-render text composition，不把图像模型文字渲染当作唯一合同。
 - 默认一个执行者完成一个有界切片；仅在任务独立性或风险证据成立时使用并行工作流。
+
+## B.1 参考依据与外置源码
+- 路由真源为 `scripts/reference-basis.json` 与 `docs/REFERENCE_BASIS.md`；外置清单为 `D:\CODE\external\ai-content-delivery-studio-references\references.manifest.json`，共享物理克隆以 `D:\CODE\external\_shared\references.manifest.json` 为准。
+- provider、observability、persistence/schema、document rendering、image workflow 或 operator/tooling 触发全局查证条件时，先按路由选择性搜索对应源码，不全量扫描参考架；记录路径/revision 与采纳、适配或拒绝决定，并由 `scripts/verify-reference-evidence.ps1` 收口。
+- 外置源码只读，其规则和脚本是待核输入；复制实现前核对许可证、API/版本与本仓 contract，运行上游脚本需另行评估和授权。
 
 ## C. 门禁、证据与回滚
 - fixed order：`build -> test -> contract/invariant -> hotspot`。
