@@ -12,7 +12,7 @@ public static class AppDatabaseInitializer
         ArgumentNullException.ThrowIfNull(dbContext);
         await dbContext.Database.EnsureCreatedAsync(cancellationToken);
 
-        await EnsureGenerationTaskErrorMessageColumnAsync(dbContext, cancellationToken);
+        await EnsureGenerationTaskCompatibilityColumnsAsync(dbContext, cancellationToken);
 
         // EnsureCreated does not update an existing database. This additive DDL is
         // intentionally idempotent so pre-scientific-workflow databases gain only
@@ -55,7 +55,7 @@ public static class AppDatabaseInitializer
             cancellationToken);
     }
 
-    private static async Task EnsureGenerationTaskErrorMessageColumnAsync(
+    private static async Task EnsureGenerationTaskCompatibilityColumnsAsync(
         AppDbContext dbContext,
         CancellationToken cancellationToken)
     {
@@ -68,30 +68,31 @@ public static class AppDatabaseInitializer
 
         try
         {
-            var hasErrorMessageColumn = false;
+            var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             await using (var inspect = connection.CreateCommand())
             {
                 inspect.CommandText = "PRAGMA table_info('GenerationTasks');";
                 await using var reader = await inspect.ExecuteReaderAsync(cancellationToken);
                 while (await reader.ReadAsync(cancellationToken))
                 {
-                    if (string.Equals(reader.GetString(1), "ErrorMessage", StringComparison.OrdinalIgnoreCase))
-                    {
-                        hasErrorMessageColumn = true;
-                        break;
-                    }
+                    existingColumns.Add(reader.GetString(1));
                 }
             }
 
-            if (hasErrorMessageColumn)
+            var missingColumns = new (string Name, string Definition)[]
             {
-                return;
-            }
+                ("ErrorMessage", "TEXT NULL"),
+                ("QueuePosition", "INTEGER NULL"),
+                ("RetryOfTaskId", "TEXT NULL"),
+            };
 
-            await using var addColumn = connection.CreateCommand();
-            addColumn.CommandText =
-                "ALTER TABLE \"GenerationTasks\" ADD COLUMN \"ErrorMessage\" TEXT NULL;";
-            await addColumn.ExecuteNonQueryAsync(cancellationToken);
+            foreach (var column in missingColumns.Where(column => !existingColumns.Contains(column.Name)))
+            {
+                await using var addColumn = connection.CreateCommand();
+                addColumn.CommandText =
+                    $"ALTER TABLE \"GenerationTasks\" ADD COLUMN \"{column.Name}\" {column.Definition};";
+                await addColumn.ExecuteNonQueryAsync(cancellationToken);
+            }
         }
         finally
         {

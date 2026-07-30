@@ -32,6 +32,45 @@ public sealed class GenerationWorkflowCoordinator
             BuildGalleryRows(run, series));
     }
 
+    public Task<GenerationQueuePreparation> PrepareFakeGenerationQueueAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        return _projectService.PrepareGenerationQueueAsync(projectId, cancellationToken);
+    }
+
+    public Task<GenerationQueueRun> ExecuteFakeGenerationQueueAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        var outputDirectory = LocalStudioDataPaths.ResolveProjectDirectory("generated", projectId);
+        return _projectService.ExecutePreparedGenerationQueueAsync(projectId, outputDirectory, cancellationToken);
+    }
+
+    public Task PauseGenerationTaskAsync(Guid projectId, Guid taskId, CancellationToken cancellationToken)
+    {
+        return _projectService.PauseGenerationTaskAsync(projectId, taskId, cancellationToken);
+    }
+
+    public Task ResumeGenerationTaskAsync(Guid projectId, Guid taskId, CancellationToken cancellationToken)
+    {
+        return _projectService.ResumeGenerationTaskAsync(projectId, taskId, cancellationToken);
+    }
+
+    public Task RetryGenerationTaskAsync(Guid projectId, Guid taskId, CancellationToken cancellationToken)
+    {
+        return _projectService.RetryGenerationTaskAsync(projectId, taskId, cancellationToken);
+    }
+
+    public Task MoveGenerationTaskAsync(
+        Guid projectId,
+        Guid taskId,
+        GenerationTaskMoveDirection direction,
+        CancellationToken cancellationToken)
+    {
+        return _projectService.MoveGenerationTaskAsync(projectId, taskId, direction, cancellationToken);
+    }
+
     public async Task<GalleryRowViewModel> RunFakeImageEditAsync(
         Guid projectId,
         GalleryRowViewModel selectedRow,
@@ -85,11 +124,14 @@ public sealed class GenerationWorkflowCoordinator
             }
 
             return new QueueRowViewModel(
+                task.Id,
                 itemTitles.GetValueOrDefault(task.SeriesItemId, task.SeriesItemId.ToString("N")),
-                task.Status.ToString(),
+                task.Status,
+                null,
                 task.AttemptCount.ToString(),
                 outputPath,
-                task.ErrorMessage ?? string.Empty);
+                task.ErrorMessage ?? string.Empty,
+                null);
         }).ToArray();
     }
 

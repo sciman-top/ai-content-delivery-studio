@@ -82,6 +82,8 @@ The current recorded answer is "yes" for the `2026-06-23` snapshot in [V1_LAUNCH
 - The first low-risk operator execution slice is already bounded and auditable.
 - The external reference system is machine-readable and in parity through `REFERENCE_BASIS.md`, `scripts/reference-basis.json`, and the repo-side external-shelf snapshot.
 - Generation queue execution now persists `Queued`, `Running`, and terminal checkpoints, fails closed on interrupted project reload without replaying provider calls, upgrades legacy SQLite databases additively, and restores durable Queue rows in WPF.
+- The approved operator queue slice adds a two-stage Prepare/Execute path, durable pause/resume/reorder, linked retries that preserve terminal history, and localized AutomationId-addressable WPF controls. All mutations except Execute make zero provider calls; Execute remains fake-only and explicit.
+- Main-window coordination uses one explicit operation gate: read flows are `latest-wins`, mutating flows are `exclusive`, stale completions are blocked, and auxiliary/generated directories are pruned before rename-guard file reads. Reliability Hardening Wave 2 is closed; later modular splits remain touch-driven rather than an open Wave 2 task.
 
 ## Accepted Post-V1 Flagship Slice
 
@@ -102,7 +104,7 @@ Trustworthy scientific figures have reached the accepted implementation boundary
 - Keep the current built-in starter scenarios on the stronger pack/policy contract, and open a new scenario-specific slice only when a real additional scenario has a repo-owned spec and a bounded implementation plan.
 - Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
 - Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.
-- Open per-item retry, resume, pause, or reorder controls only when an operator workflow has a repo-owned spec and explicit provider-cost semantics.
+- Extend the completed per-item queue controls to live providers only through a separate approval-receipt and cost-summary slice; background workers and automatic replay remain excluded.
 - Extend the completed native shell/Diagnostics accessibility baseline only through bounded slices for Narrator, system high contrast, non-default DPI, full-form controls, virtualized gallery/grid focus, touch/pen, or packaged-app behavior.
 
 ## Longer-Term Lanes
@@ -412,17 +414,17 @@ Exit gate:
 
 Goal: make it reliable as a daily Windows tool.
 
-Status: partially complete through release-readiness work. Remaining hardening continues alongside active feature slices instead of after every other phase is finished.
+Status: repository-owned implementation is complete. The verified Windows ZIP, safe backup/restore, durable queue, local diagnostics, budgeted 1,000-row gallery benchmark, principal-form accessibility contract, PerMonitorV2 declaration, and packaged-app UIA probe are implemented. Manual/live acceptance remains for Narrator, actual high-contrast switching, non-default-DPI hardware, touch/pen, subjective scroll quality, and real low-memory machines.
 
 Deliverables:
 
-- Installer or packaged release.
+- Verified framework-dependent `win-x64` ZIP with portable payload hashes, archive SHA-256, independent verification, and actual publish preflight. MSI/MSIX installation, signing, and Store registration are not claimed.
 - Crash-safe queue recovery (completed with durable checkpoints, fail-closed reload reconciliation, and WPF Queue restoration).
-- Backup and restore.
-- Accessibility pass (native shell and Diagnostics baseline completed with automated contracts and authorized-agent UIA/keyboard acceptance; Narrator, system high contrast, non-default DPI, full-form, virtualized gallery/grid, touch/pen, and packaged-app lanes remain open).
-- Performance pass for large galleries.
-- User-exported local diagnostics bundle (completed with redacted project/provider snapshots and a native WPF export path); structured log ingestion remains open.
-- Documentation and sample projects.
+- Safe backup and separate-folder restore with versioned SHA-256 manifests, bounded fail-before-write validation, and localized WPF controls. Full-state backup remains an explicit future product decision.
+- Accessibility repo pass: shell/Diagnostics, principal inspector forms, virtualized gallery focus/selection, system-brush focus, PerMonitorV2, and verified-ZIP UIA/current-DPI launch evidence are complete. Narrator, real system high contrast, non-default-DPI hardware matrix, touch/pen, and assistive-technology acceptance remain manual/live.
+- Large-gallery repo performance pass: virtualization, asynchronous disk-cached thumbnails, deferred scrolling, explicit 1,000-row time/memory budgets, cache-benefit assertion, streamed delivery export, and bounded import are complete. Subjective frame responsiveness and real low-memory devices remain manual/live.
+- User-exported local diagnostics bundle (completed with redacted project/provider snapshots, a native WPF export path, and bounded ingestion of repo-owned generation-queue/provider-call JSONL events).
+- Documentation and sample workflows: user/operator guidance is synchronized and the existing physics-poster plus scientific-figure trial assets remain the canonical samples; no duplicate sample was added.
 
 ## Long-Term Best Engineering End State
 

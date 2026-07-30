@@ -70,6 +70,13 @@ public sealed partial class MainWindowViewModel
         PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
         PromotePromptDirectionCommand.NotifyCanExecuteChanged();
         RunFakeGenerationCommand.NotifyCanExecuteChanged();
+        PrepareGenerationQueueCommand.NotifyCanExecuteChanged();
+        ExecutePreparedGenerationQueueCommand.NotifyCanExecuteChanged();
+        PauseSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
+        ResumeSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
+        RetrySelectedGenerationTaskCommand.NotifyCanExecuteChanged();
+        MoveSelectedGenerationTaskUpCommand.NotifyCanExecuteChanged();
+        MoveSelectedGenerationTaskDownCommand.NotifyCanExecuteChanged();
         RunFakeImageEditCommand.NotifyCanExecuteChanged();
         RunFakeReviewCommand.NotifyCanExecuteChanged();
         ApproveSelectedReviewCommand.NotifyCanExecuteChanged();

@@ -9,5 +9,7 @@ internal sealed class GenerationTaskConfiguration : IEntityTypeConfiguration<Gen
     public void Configure(EntityTypeBuilder<GenerationTask> entity)
     {
         entity.HasKey(task => task.Id);
+        entity.Property(task => task.QueuePosition).IsRequired(false);
+        entity.Property(task => task.RetryOfTaskId).IsRequired(false);
     }
 }

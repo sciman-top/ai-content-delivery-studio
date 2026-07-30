@@ -1,3 +1,4 @@
+using ContentDeliveryStudio.Application.Diagnostics;
 using ContentDeliveryStudio.Core.Generation;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Providers;
@@ -9,15 +10,18 @@ public sealed class GenerationWorkflowApplicationService
     private readonly IProjectRepository _repository;
     private readonly IImageGenerationProvider? _imageGenerationProvider;
     private readonly IImageEditProvider? _imageEditProvider;
+    private readonly IDiagnosticsEventJournal _eventJournal;
 
     public GenerationWorkflowApplicationService(
         IProjectRepository repository,
         IImageGenerationProvider? imageGenerationProvider,
-        IImageEditProvider? imageEditProvider)
+        IImageEditProvider? imageEditProvider,
+        IDiagnosticsEventJournal? eventJournal = null)
     {
         _repository = repository;
         _imageGenerationProvider = imageGenerationProvider;
         _imageEditProvider = imageEditProvider;
+        _eventJournal = eventJournal ?? NullDiagnosticsEventJournal.Instance;
     }
 
     public async Task<GenerationQueueRun> RunGenerationQueueAsync(
@@ -25,38 +29,237 @@ public sealed class GenerationWorkflowApplicationService
         string outputDirectory,
         CancellationToken cancellationToken)
     {
-        if (_imageGenerationProvider is null)
+        RequireFakeImageGenerationProvider();
+        await PrepareGenerationQueueAsync(projectId, cancellationToken);
+        return await ExecutePreparedGenerationQueueAsync(projectId, outputDirectory, cancellationToken);
+    }
+
+    public async Task<GenerationQueuePreparation> PrepareGenerationQueueAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var existingTasks = GetTaskEntries(project).Select(entry => entry.Task).ToArray();
+        if (existingTasks.Any(task => task.Status is GenerationTaskStatus.Queued
+                or GenerationTaskStatus.Paused
+                or GenerationTaskStatus.Running))
         {
-            throw new InvalidOperationException("Image generation provider is not registered.");
+            throw new InvalidOperationException("The project already has active generation work.");
         }
 
-        if (!_imageGenerationProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
+        var nextPosition = existingTasks.Select(task => task.QueuePosition ?? 0).DefaultIfEmpty().Max() + 1;
+        var queuedAt = DateTimeOffset.UtcNow;
+        var taskIds = new List<Guid>();
+
+        foreach (var item in project.Series.SelectMany(series => series.Items))
         {
-            throw new InvalidOperationException("Real image generation requires explicit approval.");
+            var prompt = item.PromptVersions.OrderByDescending(value => value.VersionNumber).FirstOrDefault();
+            if (prompt is null)
+            {
+                continue;
+            }
+
+            var taskQueuedAt = queuedAt.AddTicks(taskIds.Count);
+            var task = item.AddGenerationTask(
+                new GenerationTask(
+                    Guid.NewGuid(),
+                    item.Id,
+                    prompt.Id,
+                    prompt.ProviderProfileId,
+                    GenerationTaskStatus.Queued,
+                    attemptCount: 0,
+                    maxRetries: 0,
+                    taskQueuedAt,
+                    taskQueuedAt,
+                    queuePosition: nextPosition++),
+                taskQueuedAt);
+            taskIds.Add(task.Id);
         }
+
+        if (taskIds.Count == 0)
+        {
+            throw new InvalidOperationException("No prompt versions are available for queue preparation.");
+        }
+
+        await _repository.SaveAsync(project, cancellationToken);
+        SafeRecord(new GenerationQueueDiagnosticsEvent(
+            queuedAt,
+            GenerationQueueDiagnosticsEventName.Prepared,
+            projectId,
+            ItemCount: taskIds.Count));
+        return new GenerationQueuePreparation(taskIds);
+    }
+
+    public Task PauseGenerationTaskAsync(
+        Guid projectId,
+        Guid taskId,
+        CancellationToken cancellationToken)
+    {
+        return MutateTaskAsync(
+            projectId,
+            taskId,
+            task => task.Pause(GetCheckpointTimestamp(task)),
+            GenerationQueueDiagnosticsEventName.Paused,
+            cancellationToken);
+    }
+
+    public Task ResumeGenerationTaskAsync(
+        Guid projectId,
+        Guid taskId,
+        CancellationToken cancellationToken)
+    {
+        return MutateTaskAsync(
+            projectId,
+            taskId,
+            task => task.Resume(GetCheckpointTimestamp(task)),
+            GenerationQueueDiagnosticsEventName.Resumed,
+            cancellationToken);
+    }
+
+    public async Task MoveGenerationTaskAsync(
+        Guid projectId,
+        Guid taskId,
+        GenerationTaskMoveDirection direction,
+        CancellationToken cancellationToken)
+    {
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var allEntries = GetTaskEntries(project);
+        var activeEntries = allEntries
+            .Where(entry => entry.Task.Status is GenerationTaskStatus.Queued or GenerationTaskStatus.Paused)
+            .OrderBy(entry => entry.Task.QueuePosition ?? int.MaxValue)
+            .ThenBy(entry => entry.Task.CreatedAt)
+            .ThenBy(entry => entry.Task.Id)
+            .ToArray();
+        var currentIndex = Array.FindIndex(activeEntries, entry => entry.Task.Id == taskId);
+        if (currentIndex < 0)
+        {
+            throw new InvalidOperationException($"Active generation task not found: {taskId}");
+        }
+
+        var targetIndex = direction switch
+        {
+            GenerationTaskMoveDirection.Up => currentIndex - 1,
+            GenerationTaskMoveDirection.Down => currentIndex + 1,
+            _ => throw new ArgumentOutOfRangeException(nameof(direction)),
+        };
+        if (targetIndex < 0 || targetIndex >= activeEntries.Length)
+        {
+            throw new InvalidOperationException("The generation task cannot move beyond the active queue boundary.");
+        }
+
+        var nextPosition = allEntries.Select(entry => entry.Task.QueuePosition ?? 0).DefaultIfEmpty().Max() + 1;
+        var timestamp = DateTimeOffset.UtcNow;
+        foreach (var entry in activeEntries.Where(entry => entry.Task.QueuePosition is null))
+        {
+            entry.Task.MoveTo(nextPosition++, GetNonDecreasingTimestamp(entry.Task, timestamp));
+        }
+
+        var current = activeEntries[currentIndex].Task;
+        var target = activeEntries[targetIndex].Task;
+        var currentPosition = current.QueuePosition!.Value;
+        current.MoveTo(target.QueuePosition!.Value, GetNonDecreasingTimestamp(current, timestamp));
+        target.MoveTo(currentPosition, GetNonDecreasingTimestamp(target, timestamp));
+
+        await _repository.SaveAsync(project, cancellationToken);
+        SafeRecord(new GenerationQueueDiagnosticsEvent(
+            current.UpdatedAt,
+            GenerationQueueDiagnosticsEventName.Moved,
+            projectId,
+            current.Id,
+            current.Status.ToString(),
+            current.QueuePosition,
+            Direction: direction.ToString()));
+    }
+
+    public async Task<Guid> RetryGenerationTaskAsync(
+        Guid projectId,
+        Guid taskId,
+        CancellationToken cancellationToken)
+    {
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var original = RequireTaskEntry(project, taskId);
+        if (original.Task.Status is not (GenerationTaskStatus.Failed or GenerationTaskStatus.Cancelled))
+        {
+            throw new InvalidOperationException("Only failed or cancelled generation tasks can be retried.");
+        }
+
+        var queuedAt = DateTimeOffset.UtcNow;
+        var nextPosition = GetTaskEntries(project)
+            .Select(entry => entry.Task.QueuePosition ?? 0)
+            .DefaultIfEmpty()
+            .Max() + 1;
+        var retry = original.Item.AddGenerationTask(
+            new GenerationTask(
+                Guid.NewGuid(),
+                original.Item.Id,
+                original.Prompt.Id,
+                original.Task.ProviderProfileId,
+                GenerationTaskStatus.Queued,
+                attemptCount: 0,
+                original.Task.MaxRetries,
+                queuedAt,
+                queuedAt,
+                queuePosition: nextPosition,
+                retryOfTaskId: original.Task.Id),
+            queuedAt);
+
+        await _repository.SaveAsync(project, cancellationToken);
+        SafeRecord(new GenerationQueueDiagnosticsEvent(
+            retry.UpdatedAt,
+            GenerationQueueDiagnosticsEventName.Retried,
+            projectId,
+            retry.Id,
+            retry.Status.ToString(),
+            retry.QueuePosition,
+            RetryOfTaskId: original.Task.Id));
+        return retry.Id;
+    }
+
+    public async Task<GenerationQueueRun> ExecutePreparedGenerationQueueAsync(
+        Guid projectId,
+        string outputDirectory,
+        CancellationToken cancellationToken)
+    {
+        var imageGenerationProvider = RequireFakeImageGenerationProvider();
 
         var project = await RequireProjectAsync(projectId, cancellationToken);
-        var requests = CreateGenerationRequests(project, outputDirectory);
         var queue = new GenerationQueue(
-            _imageGenerationProvider,
+            imageGenerationProvider,
             new GenerationQueueOptions(MaxConcurrency: 1, MaxRetries: 0));
-        var workItems = CreateDurableWorkItems(project, requests, DateTimeOffset.UtcNow);
-        await _repository.SaveAsync(project, cancellationToken);
+        var workItems = GetTaskEntries(project)
+            .Where(entry => entry.Task.Status is GenerationTaskStatus.Queued)
+            .OrderBy(entry => entry.Task.QueuePosition ?? int.MaxValue)
+            .ThenBy(entry => entry.Task.CreatedAt)
+            .ThenBy(entry => entry.Task.Id)
+            .Select((entry, index) => new DurableGenerationWorkItem(
+                CreateGenerationRequest(
+                    entry,
+                    outputDirectory,
+                    entry.Task.QueuePosition ?? index + 1),
+                entry.Task,
+                entry.Item,
+                entry.Prompt))
+            .ToArray();
 
-        var taskResults = new List<GenerationQueueTaskResult>(workItems.Count);
-        var images = new List<ImageGenerationResult>(workItems.Count);
+        var taskResults = new List<GenerationQueueTaskResult>(workItems.Length);
+        var images = new List<ImageGenerationResult>(workItems.Length);
 
         foreach (var workItem in workItems)
         {
             if (cancellationToken.IsCancellationRequested)
             {
-                CancelUndispatchedTasks(workItems, taskResults, DateTimeOffset.UtcNow);
-                await _repository.SaveAsync(project, CancellationToken.None);
                 break;
             }
 
             workItem.Task.Start(GetCheckpointTimestamp(workItem.Task));
             await _repository.SaveAsync(project, cancellationToken);
+            SafeRecord(new GenerationQueueDiagnosticsEvent(
+                workItem.Task.UpdatedAt,
+                GenerationQueueDiagnosticsEventName.ExecutionStarted,
+                projectId,
+                workItem.Task.Id,
+                workItem.Task.Status.ToString(),
+                workItem.Task.QueuePosition));
 
             var itemRun = await queue.RunAsync([workItem.Request], cancellationToken);
             var queueResult = itemRun.Tasks.Single();
@@ -67,6 +270,13 @@ public sealed class GenerationWorkflowApplicationService
                 itemRun.Images.SingleOrDefault(),
                 GetCheckpointTimestamp(workItem.Task));
             await _repository.SaveAsync(project, CancellationToken.None);
+            SafeRecord(new GenerationQueueDiagnosticsEvent(
+                workItem.Task.UpdatedAt,
+                ToTerminalEventName(workItem.Task.Status),
+                projectId,
+                workItem.Task.Id,
+                workItem.Task.Status.ToString(),
+                workItem.Task.QueuePosition));
 
             taskResults.Add(result);
             images.AddRange(itemRun.Images);
@@ -116,73 +326,94 @@ public sealed class GenerationWorkflowApplicationService
             ?? throw new InvalidOperationException($"Project not found: {projectId}");
     }
 
-    private static IReadOnlyList<ImageGenerationRequest> CreateGenerationRequests(
-        ImageProject project,
-        string outputDirectory)
+    private async Task MutateTaskAsync(
+        Guid projectId,
+        Guid taskId,
+        Action<GenerationTask> mutation,
+        GenerationQueueDiagnosticsEventName eventName,
+        CancellationToken cancellationToken)
     {
-        var index = 0;
+        ArgumentNullException.ThrowIfNull(mutation);
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var entry = RequireTaskEntry(project, taskId);
+        mutation(entry.Task);
+        await _repository.SaveAsync(project, cancellationToken);
+        SafeRecord(new GenerationQueueDiagnosticsEvent(
+            entry.Task.UpdatedAt,
+            eventName,
+            projectId,
+            entry.Task.Id,
+            entry.Task.Status.ToString(),
+            entry.Task.QueuePosition));
+    }
+
+    private void SafeRecord(GenerationQueueDiagnosticsEvent value)
+    {
+        try
+        {
+            _eventJournal.Record(value);
+        }
+        catch (Exception exception) when (exception is not StackOverflowException)
+        {
+            // Diagnostics must never change queue behavior or provider authorization.
+        }
+    }
+
+    private static GenerationQueueDiagnosticsEventName ToTerminalEventName(GenerationTaskStatus status)
+    {
+        return status switch
+        {
+            GenerationTaskStatus.Succeeded => GenerationQueueDiagnosticsEventName.ExecutionSucceeded,
+            GenerationTaskStatus.Failed => GenerationQueueDiagnosticsEventName.ExecutionFailed,
+            GenerationTaskStatus.Cancelled => GenerationQueueDiagnosticsEventName.ExecutionCancelled,
+            _ => throw new InvalidOperationException($"Generation status {status} is not terminal."),
+        };
+    }
+
+    private IImageGenerationProvider RequireFakeImageGenerationProvider()
+    {
+        if (_imageGenerationProvider is null)
+        {
+            throw new InvalidOperationException("Image generation provider is not registered.");
+        }
+
+        if (!_imageGenerationProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Real image generation requires explicit approval.");
+        }
+
+        return _imageGenerationProvider;
+    }
+
+    private static IReadOnlyList<GenerationTaskEntry> GetTaskEntries(ImageProject project)
+    {
         return project.Series
             .SelectMany(series => series.Items)
-            .Select(item => new
-            {
-                Item = item,
-                Prompt = item.PromptVersions.OrderByDescending(prompt => prompt.VersionNumber).FirstOrDefault(),
-            })
-            .Where(value => value.Prompt is not null)
-            .Select(value =>
-            {
-                index++;
-                return new ImageGenerationRequest(
-                    value.Item.Id,
-                    value.Prompt!.Id,
-                    value.Prompt.PromptText,
-                    value.Prompt.Settings,
-                    outputDirectory,
-                    $"{index:000}-{SanitizeFileName(value.Item.Title)}.png");
-            })
+            .SelectMany(item => item.GenerationTasks.Select(task => new GenerationTaskEntry(
+                task,
+                item,
+                item.PromptVersions.Single(prompt => prompt.Id == task.PromptVersionId))))
             .ToArray();
     }
 
-    private static IReadOnlyList<DurableGenerationWorkItem> CreateDurableWorkItems(
-        ImageProject project,
-        IReadOnlyList<ImageGenerationRequest> requests,
-        DateTimeOffset queuedAt)
+    private static GenerationTaskEntry RequireTaskEntry(ImageProject project, Guid taskId)
     {
-        var itemsById = project.Series
-            .SelectMany(series => series.Items)
-            .ToDictionary(item => item.Id);
-        var workItems = new List<DurableGenerationWorkItem>(requests.Count);
+        return GetTaskEntries(project).SingleOrDefault(entry => entry.Task.Id == taskId)
+            ?? throw new InvalidOperationException($"Generation task not found: {taskId}");
+    }
 
-        foreach (var request in requests)
-        {
-            if (!itemsById.TryGetValue(request.SeriesItemId, out var item))
-            {
-                continue;
-            }
-
-            var prompt = item.PromptVersions.SingleOrDefault(existing => existing.Id == request.PromptVersionId);
-            if (prompt is null)
-            {
-                continue;
-            }
-
-            var taskQueuedAt = queuedAt.AddTicks(workItems.Count);
-            var task = item.AddGenerationTask(
-                new GenerationTask(
-                    Guid.NewGuid(),
-                    item.Id,
-                    prompt.Id,
-                    prompt.ProviderProfileId,
-                    GenerationTaskStatus.Queued,
-                    attemptCount: 0,
-                    maxRetries: 0,
-                    taskQueuedAt,
-                    taskQueuedAt),
-                taskQueuedAt);
-            workItems.Add(new DurableGenerationWorkItem(request, task, item, prompt));
-        }
-
-        return workItems;
+    private static ImageGenerationRequest CreateGenerationRequest(
+        GenerationTaskEntry entry,
+        string outputDirectory,
+        int executionIndex)
+    {
+        return new ImageGenerationRequest(
+            entry.Item.Id,
+            entry.Prompt.Id,
+            entry.Prompt.PromptText,
+            entry.Prompt.Settings,
+            outputDirectory,
+            $"{executionIndex:000}-{SanitizeFileName(entry.Item.Title)}.png");
     }
 
     private static void PersistTerminalResult(
@@ -235,31 +466,14 @@ public sealed class GenerationWorkflowApplicationService
                 generatedImage.GeneratedAt);
     }
 
-    private static void CancelUndispatchedTasks(
-        IReadOnlyList<DurableGenerationWorkItem> workItems,
-        ICollection<GenerationQueueTaskResult> results,
-        DateTimeOffset timestamp)
-    {
-        foreach (var workItem in workItems.Where(item => item.Task.Status is GenerationTaskStatus.Queued))
-        {
-            const string reason = "Generation was cancelled before provider dispatch.";
-            var cancellationTimestamp = timestamp < workItem.Task.UpdatedAt
-                ? workItem.Task.UpdatedAt
-                : timestamp;
-            workItem.Task.Cancel(reason, cancellationTimestamp);
-            results.Add(new GenerationQueueTaskResult(
-                workItem.Task.Id,
-                workItem.Item.Id,
-                workItem.Prompt.Id,
-                GenerationTaskStatus.Cancelled,
-                workItem.Task.AttemptCount,
-                reason));
-        }
-    }
-
     private static DateTimeOffset GetCheckpointTimestamp(GenerationTask task)
     {
         var timestamp = DateTimeOffset.UtcNow;
+        return timestamp < task.UpdatedAt ? task.UpdatedAt : timestamp;
+    }
+
+    private static DateTimeOffset GetNonDecreasingTimestamp(GenerationTask task, DateTimeOffset timestamp)
+    {
         return timestamp < task.UpdatedAt ? task.UpdatedAt : timestamp;
     }
 
@@ -275,4 +489,17 @@ public sealed class GenerationWorkflowApplicationService
         GenerationTask Task,
         SeriesItem Item,
         PromptVersion Prompt);
+
+    private sealed record GenerationTaskEntry(
+        GenerationTask Task,
+        SeriesItem Item,
+        PromptVersion Prompt);
+}
+
+public sealed record GenerationQueuePreparation(IReadOnlyList<Guid> TaskIds);
+
+public enum GenerationTaskMoveDirection
+{
+    Up = 0,
+    Down = 1,
 }

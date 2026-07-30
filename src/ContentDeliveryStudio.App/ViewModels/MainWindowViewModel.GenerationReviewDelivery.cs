@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using ContentDeliveryStudio.Application.Projects;
 using ContentDeliveryStudio.Core.Projects;
 
 namespace ContentDeliveryStudio.App.ViewModels;
@@ -8,51 +9,192 @@ public sealed partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(CanRunFakeGeneration))]
     private async Task RunFakeGenerationAsync()
     {
-        if (SelectedProject is null)
+        await RunQueueProjectMutationAsync(async (projectId, ignoredTaskId, cancellationToken) =>
         {
-            return;
-        }
-
-        var projectId = SelectedProject.Id;
-        var selectedSeriesId = SelectedSeries?.Id;
-        var selectedItemId = SelectedSeriesItem?.Id;
-        var result = await _operationGate.RunExclusiveAsync(
-            async cancellationToken =>
-            {
-                var generationResult = await _generationWorkflowCoordinator.RunFakeGenerationAsync(
-                    projectId,
-                    Series,
-                    cancellationToken);
-                var snapshot = await CaptureProjectReloadSnapshotAsync(
-                    projectId,
-                    selectedSeriesId,
-                    selectedItemId,
-                    cancellationToken);
-
-                return new GenerationReloadResult(generationResult.QueueRows, snapshot);
-            });
-
-        if (!result.Executed || result.Value is null)
-        {
-            return;
-        }
-
-        if (!TryApplyProjectReloadSnapshot(result.Value.Snapshot))
-        {
-            return;
-        }
-
-        QueueRows = result.Value.QueueRows;
-        ReviewRows = [];
-        DeliveryRows = [];
-        RunFakeReviewCommand.NotifyCanExecuteChanged();
+            await _generationWorkflowCoordinator.RunFakeGenerationAsync(projectId, Series, cancellationToken);
+        });
     }
 
     private bool CanRunFakeGeneration()
     {
         return CanRunMutation()
             && SelectedProject is not null
-            && PromptRows.Count > 0;
+            && PromptRows.Count > 0
+            && QueueRows.All(row => row.TaskStatus is not (
+                GenerationTaskStatus.Queued
+                or GenerationTaskStatus.Paused
+                or GenerationTaskStatus.Running));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunFakeGeneration))]
+    private async Task PrepareGenerationQueueAsync()
+    {
+        await RunQueueProjectMutationAsync((projectId, ignoredTaskId, cancellationToken) =>
+            _generationWorkflowCoordinator.PrepareFakeGenerationQueueAsync(projectId, cancellationToken));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanExecutePreparedGenerationQueue))]
+    private async Task ExecutePreparedGenerationQueueAsync()
+    {
+        await RunQueueProjectMutationAsync(async (projectId, ignoredTaskId, cancellationToken) =>
+        {
+            await _generationWorkflowCoordinator.ExecuteFakeGenerationQueueAsync(projectId, cancellationToken);
+        });
+    }
+
+    private bool CanExecutePreparedGenerationQueue()
+    {
+        return CanRunMutation()
+            && SelectedProject is not null
+            && QueueRows.Any(row => row.TaskStatus is GenerationTaskStatus.Queued);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPauseSelectedGenerationTask))]
+    private Task PauseSelectedGenerationTaskAsync()
+    {
+        return RunSelectedQueueTaskMutationAsync((projectId, taskId, cancellationToken) =>
+            _generationWorkflowCoordinator.PauseGenerationTaskAsync(projectId, taskId, cancellationToken));
+    }
+
+    private bool CanPauseSelectedGenerationTask()
+    {
+        return CanRunMutation() && SelectedProject is not null && SelectedQueueRow?.CanPause is true;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanResumeSelectedGenerationTask))]
+    private Task ResumeSelectedGenerationTaskAsync()
+    {
+        return RunSelectedQueueTaskMutationAsync((projectId, taskId, cancellationToken) =>
+            _generationWorkflowCoordinator.ResumeGenerationTaskAsync(projectId, taskId, cancellationToken));
+    }
+
+    private bool CanResumeSelectedGenerationTask()
+    {
+        return CanRunMutation() && SelectedProject is not null && SelectedQueueRow?.CanResume is true;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRetrySelectedGenerationTask))]
+    private Task RetrySelectedGenerationTaskAsync()
+    {
+        return RunSelectedQueueTaskMutationAsync(async (projectId, taskId, cancellationToken) =>
+        {
+            await _generationWorkflowCoordinator.RetryGenerationTaskAsync(projectId, taskId, cancellationToken);
+        });
+    }
+
+    private bool CanRetrySelectedGenerationTask()
+    {
+        return CanRunMutation() && SelectedProject is not null && SelectedQueueRow?.CanRetry is true;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanMoveSelectedGenerationTaskUp))]
+    private Task MoveSelectedGenerationTaskUpAsync()
+    {
+        return MoveSelectedGenerationTaskAsync(GenerationTaskMoveDirection.Up);
+    }
+
+    private bool CanMoveSelectedGenerationTaskUp()
+    {
+        return CanMoveSelectedGenerationTask(GenerationTaskMoveDirection.Up);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanMoveSelectedGenerationTaskDown))]
+    private Task MoveSelectedGenerationTaskDownAsync()
+    {
+        return MoveSelectedGenerationTaskAsync(GenerationTaskMoveDirection.Down);
+    }
+
+    private bool CanMoveSelectedGenerationTaskDown()
+    {
+        return CanMoveSelectedGenerationTask(GenerationTaskMoveDirection.Down);
+    }
+
+    private Task MoveSelectedGenerationTaskAsync(GenerationTaskMoveDirection direction)
+    {
+        return RunSelectedQueueTaskMutationAsync((projectId, taskId, cancellationToken) =>
+            _generationWorkflowCoordinator.MoveGenerationTaskAsync(
+                projectId,
+                taskId,
+                direction,
+                cancellationToken));
+    }
+
+    private bool CanMoveSelectedGenerationTask(GenerationTaskMoveDirection direction)
+    {
+        if (!CanRunMutation() || SelectedProject is null || SelectedQueueRow?.CanReorder is not true)
+        {
+            return false;
+        }
+
+        var activeRows = QueueRows
+            .Where(row => row.CanReorder)
+            .OrderBy(row => row.QueuePosition ?? int.MaxValue)
+            .ThenBy(row => row.TaskId)
+            .ToArray();
+        var index = Array.FindIndex(activeRows, row => row.TaskId == SelectedQueueRow.TaskId);
+        return direction is GenerationTaskMoveDirection.Up
+            ? index > 0
+            : index >= 0 && index < activeRows.Length - 1;
+    }
+
+    private Task RunSelectedQueueTaskMutationAsync(
+        Func<Guid, Guid, CancellationToken, Task> mutation)
+    {
+        if (SelectedQueueRow is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var taskId = SelectedQueueRow.TaskId;
+        return RunQueueProjectMutationAsync((projectId, _, cancellationToken) =>
+            mutation(projectId, taskId, cancellationToken));
+    }
+
+    private async Task RunQueueProjectMutationAsync(
+        Func<Guid, Guid?, CancellationToken, Task> mutation)
+    {
+        ArgumentNullException.ThrowIfNull(mutation);
+        if (SelectedProject is null)
+        {
+            return;
+        }
+
+        var projectId = SelectedProject.Id;
+        var selectedTaskId = SelectedQueueRow?.TaskId;
+        var selectedSeriesId = SelectedSeries?.Id;
+        var selectedItemId = SelectedSeriesItem?.Id;
+        var result = await _operationGate.RunExclusiveAsync(async cancellationToken =>
+        {
+            await mutation(projectId, selectedTaskId, cancellationToken);
+            return await CaptureProjectReloadSnapshotAsync(
+                projectId,
+                selectedSeriesId,
+                selectedItemId,
+                cancellationToken);
+        });
+
+        if (!result.Executed || result.Value is null || !TryApplyProjectReloadSnapshot(result.Value))
+        {
+            return;
+        }
+
+        SelectedQueueRow = QueueRows.FirstOrDefault(row => row.TaskId == selectedTaskId)
+            ?? QueueRows.FirstOrDefault();
+        ReviewRows = [];
+        DeliveryRows = [];
+        RunFakeReviewCommand.NotifyCanExecuteChanged();
+    }
+
+    private void NotifyQueueCommandStatesChanged()
+    {
+        RunFakeGenerationCommand.NotifyCanExecuteChanged();
+        PrepareGenerationQueueCommand.NotifyCanExecuteChanged();
+        ExecutePreparedGenerationQueueCommand.NotifyCanExecuteChanged();
+        PauseSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
+        ResumeSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
+        RetrySelectedGenerationTaskCommand.NotifyCanExecuteChanged();
+        MoveSelectedGenerationTaskUpCommand.NotifyCanExecuteChanged();
+        MoveSelectedGenerationTaskDownCommand.NotifyCanExecuteChanged();
     }
 
     [RelayCommand(CanExecute = nameof(CanRunFakeImageEdit))]
@@ -389,7 +531,4 @@ public sealed partial class MainWindowViewModel
 
     private sealed record FinalApprovalReloadResult(Guid CandidateImageId, ProjectReloadSnapshot Snapshot);
 
-    private sealed record GenerationReloadResult(
-        IReadOnlyList<QueueRowViewModel> QueueRows,
-        ProjectReloadSnapshot Snapshot);
 }

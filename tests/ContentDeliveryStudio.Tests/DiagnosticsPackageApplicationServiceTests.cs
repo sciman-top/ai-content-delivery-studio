@@ -13,9 +13,11 @@ public sealed class DiagnosticsPackageApplicationServiceTests
         var project = ImageProject.Create("Diagnostics project", timestamp.AddMinutes(-1));
         var repository = new RecordingRepository(project);
         var writer = new RecordingWriter();
+        var journal = new RecordingJournal();
         var service = new DiagnosticsPackageApplicationService(
             repository,
             writer,
+            journal,
             new FixedTimeProvider(timestamp));
 
         var request = new DiagnosticsPackageApplicationRequest(
@@ -38,6 +40,42 @@ public sealed class DiagnosticsPackageApplicationServiceTests
         Assert.Equal(0, repository.SaveCount);
         Assert.All(writer.Requests, item => Assert.Equal(timestamp, item.Application.CreatedAt));
         Assert.All(writer.Requests, item => Assert.Equal("Diagnostics project", Assert.Single(item.Projects).Name));
+        Assert.All(writer.Requests, item => Assert.Equal("prepared", Assert.Single(item.Logs!).EventName));
+        Assert.All(writer.Requests, item => Assert.Equal(2, item.DroppedLogCount));
+        Assert.All(writer.Requests, item => Assert.Equal(3, item.InvalidLogCount));
+        Assert.Equal(2, journal.ReadCount);
+    }
+
+    private sealed class RecordingJournal : IDiagnosticsEventJournal
+    {
+        public int ReadCount { get; private set; }
+
+        public void Record(GenerationQueueDiagnosticsEvent value)
+        {
+        }
+
+        public void Record(ProviderCallDiagnosticsEvent value)
+        {
+        }
+
+        public Task<DiagnosticsLogReadResult> ReadRecentAsync(int maxCount, CancellationToken cancellationToken)
+        {
+            ReadCount++;
+            Assert.Equal(500, maxCount);
+            return Task.FromResult(new DiagnosticsLogReadResult(
+                [
+                    new DiagnosticsLogEntry(
+                        1,
+                        DateTimeOffset.Parse("2026-07-28T13:00:00Z"),
+                        "information",
+                        "generation-queue",
+                        "prepared",
+                        Guid.Empty.ToString("N"),
+                        new DiagnosticsLogProperties(ProjectId: Guid.Empty.ToString("N"))),
+                ],
+                DroppedCount: 2,
+                InvalidCount: 3));
+        }
     }
 
     private sealed class RecordingWriter : IDiagnosticsPackageWriter

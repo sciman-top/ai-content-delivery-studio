@@ -15,6 +15,8 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - The post-V1 trustworthy-scientific-figure flagship is accepted through Task 30 and Checkpoint 5. Tasks 6-20 and Checkpoint 3 establish the machine-trust loop; Tasks 21-25 and Checkpoint 4 provide the user-visible fake-first five-workspace flow; Task 26 accepts all 12 baselines plus 40 blocking mutations; Tasks 27-28 add opt-in OpenAI understanding and independent review; Task 29 records three live samples and their human Gate 2 approvals; Task 30 synchronizes documentation and final repository evidence. No scientific-figure implementation task remains open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
 - The post-acceptance native WPF shell/Diagnostics accessibility baseline is repo-side complete with XAML contracts and `authorized_agent` equivalent-operator acceptance. This does not reopen Tasks 1-30 or Checkpoints 0-5 and does not close Narrator, high-contrast, DPI, full-form, virtualized gallery/grid, touch/pen, or packaged-app trigger lanes.
+- Phase 7 product hardening is repo-side closed through the verified Windows ZIP, safe backup/restore, budgeted 1,000-row gallery benchmark, principal-form accessibility contracts, PerMonitorV2 declaration, and packaged-app UIA probe. Narrator, real system high-contrast switching, a non-default-DPI hardware matrix, touch/pen, subjective scroll quality, and real low-memory devices remain manual/live acceptance rather than repository tasks.
+- Reliability Hardening Wave 2 is closed: the `latest-wins`/`exclusive` operation gate, responsibility-focused ViewModel partials, race/failure guardrail tests, and repository-scan pruning landed in `ab3e42d`; its previously stale checklist was reconciled with fresh evidence on `2026-07-29`.
 
 ## Accepted Post-V1 Flagship Slice: Trustworthy Scientific Figures
 
@@ -70,11 +72,12 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 ## Completed Post-Acceptance Reliability Slice
 
 - [x] Persist generation tasks as `Queued` before dispatch, `Running` before the provider call, and terminal after the call.
-- [x] Recover orphaned `Running` tasks as `Failed` and orphaned `Queued` tasks as `Cancelled` without replaying provider calls.
-- [x] Add the nullable SQLite `GenerationTasks.ErrorMessage` compatibility column through idempotent additive initialization.
+- [x] Recover orphaned `Running` tasks as `Failed` without replaying provider calls; preserve explicitly prepared `Queued` and `Paused` work across reload.
+- [x] Add nullable SQLite `GenerationTasks.ErrorMessage`, `QueuePosition`, and `RetryOfTaskId` compatibility columns through idempotent additive initialization.
 - [x] Restore Queue rows, attempts, output paths, and failure reasons from persisted project state after WPF reload.
 - [x] Record focused automated coverage and an [agent-operated native WPF fake-first reload probe](./change-evidence/20260728-crash-safe-generation-queue.md) without refreshing live-provider evidence.
-- [ ] Add explicit per-item retry, resume, pause, or reorder controls only through a future repo-owned operator-workflow slice.
+- [x] Add an approved two-stage operator workflow with separate Prepare and Execute, per-item pause/resume/reorder, provenance-preserving retry, localized WPF controls, and explicit zero-provider-call mutation boundaries.
+- [x] Keep the compatibility one-click fake generation route while requiring a separate future approval receipt and cost summary before any live-provider Execute path can exist.
 
 ## Completed Post-Acceptance Local Diagnostics Slice
 
@@ -82,7 +85,24 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - [x] Snapshot resolved fake-first provider capabilities and generic secret-presence booleans without reading secret values, making network calls, or emitting configured secret identifiers.
 - [x] Add a localized Workbench Inspector panel with a native folder picker, unique local export directory, stable AutomationIds, busy state, and bounded status reporting.
 - [x] Run automated diagnostics coverage plus an `authorized_agent` native WPF Browse -> Export probe and verify both output files and redaction boundaries.
-- [ ] Add structured log ingestion only through a future repo-owned observability slice; this diagnostics export does not complete that lane.
+- [x] Add repo-owned structured log ingestion through a local, strongly typed JSONL journal for generation-queue lifecycle and provider-call summaries.
+- [x] Rotate at 1 MiB with three-file retention, ingest at most 500 validated recent events, and expose dropped/invalid counts in diagnostics JSON and Markdown.
+- [x] Keep prompts, response bodies, material content, credentials, `.env`, full exceptions, endpoints, request IDs, and user file paths outside the event contract; preserve existing OTLP opt-in behavior.
+
+## Completed Phase 7 Product Hardening Closeout
+
+- [x] Version safe backup manifests with normalized paths, byte lengths, and SHA-256; create archives through a temporary file and replace only after success.
+- [x] Validate complete backup membership, path safety, duplicate paths, supported limits, target conflicts, sizes, and hashes before restore writes its first file.
+- [x] Expose localized safe backup and separate-folder restore in the WPF inspector while keeping secrets, databases, workspaces, outputs, and build files excluded.
+- [x] Produce a framework-dependent `win-x64` distributable ZIP with portable payload hashes and an archive SHA-256 sidecar; reject tampering through an independent verifier.
+- [x] Replace publish WhatIf with an actual isolated publish/package/verify/cleanup release preflight and declare the supported `win-x64` restore graph.
+- [x] Enforce broad non-flaky time/memory budgets for the existing 1,000-row gallery benchmark and retain row-limited import and cache-benefit assertions.
+- [x] Add virtualized gallery selection, keyboard focus, localized UI Automation, deferred scrolling, and system-color contracts.
+- [x] Add PerMonitorV2 declaration, global system-brush focus visuals, and stable names/IDs for all interactive controls in the principal inspector forms.
+- [x] Launch the verified ZIP under fake providers and record current-DPI minimum layout plus named shell/Diagnostics/backup UIA evidence.
+- [x] Reuse the existing physics-poster and scientific-figure operator samples instead of creating a duplicate sample solely for roadmap wording.
+
+Manual/live acceptance remains outside the checked repository queue: Narrator, actual system high-contrast switching, non-default-DPI hardware matrix, touch/pen ergonomics, subjective WPF scroll responsiveness, and real low-memory Windows behavior.
 
 ## Near-Term Hardening (Not Current Release Blockers)
 

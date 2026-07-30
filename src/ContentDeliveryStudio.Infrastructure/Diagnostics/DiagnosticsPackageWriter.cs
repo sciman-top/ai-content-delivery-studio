@@ -9,6 +9,11 @@ namespace ContentDeliveryStudio.Infrastructure.Diagnostics;
 
 public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
 {
+    private static readonly JsonSerializerOptions CompactJsonOptions = new(JsonSerializerDefaults.Web)
+    {
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+    };
+
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true,
@@ -33,7 +38,10 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
             request.Secrets,
             request.RepairPatches ?? [],
             request.OperatorRuns ?? [],
-            request.OpenAiLaunchPreflight);
+            request.OpenAiLaunchPreflight,
+            request.Logs ?? [],
+            request.DroppedLogCount,
+            request.InvalidLogCount);
 
         var jsonPath = Path.Combine(request.OutputDirectory, "diagnostics.json");
         var markdownPath = Path.Combine(request.OutputDirectory, "diagnostics.md");
@@ -138,6 +146,16 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
                 $"- {run.ToolAdapterId}: actionStatus={run.ActionStatus}, runStatus={run.RunStatus}, dryRun={run.DryRun}, summary={run.OutputSummary ?? string.Empty}");
         }
 
+        builder.AppendLine();
+        builder.AppendLine("## Structured Logs");
+        builder.AppendLine("- scope=local-only, redacted=true, arbitraryMessages=false");
+        builder.AppendLine($"- retained={package.Logs.Count}, dropped={package.DroppedLogCount}, invalid={package.InvalidLogCount}");
+        foreach (var entry in package.Logs)
+        {
+            builder.AppendLine(
+                $"- {entry.Timestamp:O} [{entry.Level}] {entry.Category}/{entry.EventName} correlation={entry.CorrelationId} properties={JsonSerializer.Serialize(entry.Properties, CompactJsonOptions)}");
+        }
+
         return builder.ToString();
     }
 
@@ -177,4 +195,7 @@ internal sealed record DiagnosticsPackage(
     IReadOnlyList<DiagnosticsSecretSnapshot> Secrets,
     IReadOnlyList<RepairPatchDiagnosticsSnapshot> RepairPatches,
     IReadOnlyList<OperatorAuditSnapshot> OperatorRuns,
-    OpenAiLaunchPreflightDiagnosticsSnapshot? OpenAiLaunchPreflight);
+    OpenAiLaunchPreflightDiagnosticsSnapshot? OpenAiLaunchPreflight,
+    IReadOnlyList<DiagnosticsLogEntry> Logs,
+    int DroppedLogCount,
+    int InvalidLogCount);

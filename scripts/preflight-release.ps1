@@ -154,8 +154,32 @@ Invoke-Step -Label "Repository verification" -Action {
 }
 
 if (-not $SkipPublishWhatIf) {
-    Invoke-Step -Label "Publish preflight (WhatIf)" -Action {
-        & ".\scripts\publish-app.ps1" -Configuration Release -Runtime win-x64 -WhatIfOnly
+    Invoke-Step -Label "Publish package preflight" -Action {
+        $preflightRoot = Join-Path $repoRoot 'publish/preflight'
+        $preflightOutput = Join-Path $preflightRoot 'ContentDeliveryStudio.App-win-x64-Release'
+        $preflightPackage = "$preflightOutput.zip"
+        try {
+            $publishParams = @{
+                Configuration = 'Release'
+                Runtime = 'win-x64'
+                OutputDirectory = $preflightOutput
+                PackagePath = $preflightPackage
+                Clean = $true
+            }
+            if ($NoRestore) {
+                $publishParams.NoRestore = $true
+            }
+            & ".\scripts\publish-app.ps1" @publishParams
+            if ($LASTEXITCODE -ne 0) {
+                throw 'Publish package creation failed.'
+            }
+            & ".\scripts\verify-publish-package.ps1" -PackagePath $preflightPackage
+        }
+        finally {
+            if (Test-Path -LiteralPath $preflightRoot) {
+                Remove-Item -LiteralPath $preflightRoot -Recurse -Force
+            }
+        }
     }
 }
 

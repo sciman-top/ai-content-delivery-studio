@@ -1,5 +1,7 @@
 # Local Diagnostics Export Evidence
 
+> Supersession note (2026-07-29): the structured-log future trigger named below is now closed by `20260729-structured-diagnostics-log-ingestion.md`. Automatic upload, ZIP creation, backup/restore, installer, broader accessibility, and performance lanes remain open.
+
 ## Scope And Truth Boundary
 
 - Slice: user-visible, local-only diagnostics export from the native WPF Workbench Inspector.

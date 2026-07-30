@@ -12,6 +12,14 @@ namespace ContentDeliveryStudio.Tests;
 
 public sealed class LargeGalleryPerformanceBenchmarkTests
 {
+    private static readonly GalleryBenchmarkBudgets Budgets = new(
+        RowPopulationMilliseconds: 1_000,
+        ThumbnailWarmupMilliseconds: 30_000,
+        CachedRevisitMilliseconds: 5_000,
+        DeliveryExportMilliseconds: 30_000,
+        RowLimitedImportMilliseconds: 5_000,
+        PeakManagedBytes: 512L * 1024 * 1024);
+
     [Fact]
     public async Task GalleryThumbnailBenchmark_RecordsRepeatableLocalMetrics()
     {
@@ -119,6 +127,7 @@ public sealed class LargeGalleryPerformanceBenchmarkTests
             importedRows.Count,
             importRowLimit,
             peakManagedBytes,
+            Budgets,
             benchmarkRoot);
 
         var reportPath = Path.Combine(benchmarkRoot, "large-gallery-benchmark.json");
@@ -137,6 +146,25 @@ public sealed class LargeGalleryPerformanceBenchmarkTests
         Assert.Equal(1000, rows.Length);
         Assert.Equal(importRowLimit, importedRows.Count);
         Assert.True(File.Exists(reportPath));
+        AssertWithinBudget("row population", populationStopwatch.ElapsedMilliseconds, Budgets.RowPopulationMilliseconds);
+        AssertWithinBudget("thumbnail warmup", warmupStopwatch.ElapsedMilliseconds, Budgets.ThumbnailWarmupMilliseconds);
+        AssertWithinBudget("cached revisit", revisitStopwatch.ElapsedMilliseconds, Budgets.CachedRevisitMilliseconds);
+        AssertWithinBudget("delivery export", exportStopwatch.ElapsedMilliseconds, Budgets.DeliveryExportMilliseconds);
+        AssertWithinBudget("row-limited import", importStopwatch.ElapsedMilliseconds, Budgets.RowLimitedImportMilliseconds);
+        Assert.True(
+            peakManagedBytes <= Budgets.PeakManagedBytes,
+            $"Peak managed memory {peakManagedBytes} bytes exceeded budget {Budgets.PeakManagedBytes} bytes.");
+        Assert.True(
+            revisitStopwatch.ElapsedTicks * 4 <= warmupStopwatch.ElapsedTicks * 3,
+            $"Cached thumbnail revisit ({revisitStopwatch.ElapsedMilliseconds} ms) was not at least 25% faster " +
+            $"than initial warmup ({warmupStopwatch.ElapsedMilliseconds} ms).");
+    }
+
+    private static void AssertWithinBudget(string metric, long actualMilliseconds, long budgetMilliseconds)
+    {
+        Assert.True(
+            actualMilliseconds <= budgetMilliseconds,
+            $"Large-gallery {metric} took {actualMilliseconds} ms and exceeded the {budgetMilliseconds} ms budget.");
     }
 
     private static void WritePng(string path, int width, int height)
@@ -204,5 +232,14 @@ public sealed class LargeGalleryPerformanceBenchmarkTests
         int RowLimitedImportCount,
         int RowLimitedImportLimit,
         long PeakManagedBytes,
+        GalleryBenchmarkBudgets Budgets,
         string BenchmarkRoot);
+
+    private sealed record GalleryBenchmarkBudgets(
+        long RowPopulationMilliseconds,
+        long ThumbnailWarmupMilliseconds,
+        long CachedRevisitMilliseconds,
+        long DeliveryExportMilliseconds,
+        long RowLimitedImportMilliseconds,
+        long PeakManagedBytes);
 }

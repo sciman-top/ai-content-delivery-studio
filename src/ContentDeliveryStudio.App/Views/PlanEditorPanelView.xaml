@@ -7,11 +7,19 @@
     <StackPanel>
         <TextBlock Text="{Binding PlanEditorTitle}" FontWeight="SemiBold" Margin="0,0,0,10" />
         <TextBlock Text="{Binding SeriesTitleLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewSeriesTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+        <TextBox Text="{Binding NewSeriesTitle, UpdateSourceTrigger=PropertyChanged}"
+                 AutomationProperties.AutomationId="SeriesTitleInput"
+                 AutomationProperties.Name="{Binding SeriesTitleLabel}"
+                 Margin="0,0,0,6" />
         <TextBlock Text="{Binding SeriesDescriptionLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewSeriesDescription, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+        <TextBox Text="{Binding NewSeriesDescription, UpdateSourceTrigger=PropertyChanged}"
+                 AutomationProperties.AutomationId="SeriesDescriptionInput"
+                 AutomationProperties.Name="{Binding SeriesDescriptionLabel}"
+                 Margin="0,0,0,8" />
         <Button Content="{Binding CreateSeriesText}"
                 Command="{Binding CreateSeriesCommand}"
+                AutomationProperties.AutomationId="CreateSeriesButton"
+                AutomationProperties.Name="{Binding CreateSeriesText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,12" />
 
@@ -19,15 +27,25 @@
         <ListBox ItemsSource="{Binding Series}"
                  SelectedItem="{Binding SelectedSeries, Mode=TwoWay}"
                  DisplayMemberPath="Title"
+                 AutomationProperties.AutomationId="AvailableSeriesList"
+                 AutomationProperties.Name="{Binding AvailableSeriesTitle}"
                  MinHeight="82"
                  Margin="0,0,0,12" />
 
         <TextBlock Text="{Binding ItemTitleLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewItemTitle, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,6" />
+        <TextBox Text="{Binding NewItemTitle, UpdateSourceTrigger=PropertyChanged}"
+                 AutomationProperties.AutomationId="SeriesItemTitleInput"
+                 AutomationProperties.Name="{Binding ItemTitleLabel}"
+                 Margin="0,0,0,6" />
         <TextBlock Text="{Binding ItemBriefLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewItemBrief, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,8" />
+        <TextBox Text="{Binding NewItemBrief, UpdateSourceTrigger=PropertyChanged}"
+                 AutomationProperties.AutomationId="SeriesItemBriefInput"
+                 AutomationProperties.Name="{Binding ItemBriefLabel}"
+                 Margin="0,0,0,8" />
         <Button Content="{Binding AddItemText}"
                 Command="{Binding AddItemCommand}"
+                AutomationProperties.AutomationId="AddSeriesItemButton"
+                AutomationProperties.Name="{Binding AddItemText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,12" />
 
@@ -35,6 +53,8 @@
         <ListBox ItemsSource="{Binding SeriesItems}"
                  SelectedItem="{Binding SelectedSeriesItem, Mode=TwoWay}"
                  DisplayMemberPath="Title"
+                 AutomationProperties.AutomationId="SeriesItemsList"
+                 AutomationProperties.Name="{Binding SeriesItemsTitle}"
                  MinHeight="82" />
     </StackPanel>
 </UserControl>

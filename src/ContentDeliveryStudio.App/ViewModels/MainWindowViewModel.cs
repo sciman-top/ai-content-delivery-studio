@@ -99,7 +99,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _noPromptDirectionRowsText = string.Empty;
     private string _runFakePlanningText = string.Empty;
     private string _runFakeGenerationText = string.Empty;
+    private string _prepareGenerationQueueText = string.Empty;
+    private string _executeGenerationQueueText = string.Empty;
+    private string _pauseGenerationTaskText = string.Empty;
+    private string _resumeGenerationTaskText = string.Empty;
+    private string _retryGenerationTaskText = string.Empty;
+    private string _moveGenerationTaskUpText = string.Empty;
+    private string _moveGenerationTaskDownText = string.Empty;
     private string _queueItemColumn = string.Empty;
+    private string _queuePositionColumn = string.Empty;
     private string _queueStatusColumn = string.Empty;
     private string _queueAttemptsColumn = string.Empty;
     private string _queueOutputColumn = string.Empty;
@@ -206,6 +214,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private GenerationRecipeOptionViewModel? _selectedGenerationRecipeOption;
     private DesignBlueprintRowViewModel? _selectedDesignBlueprint;
     private PromptDirectionRowViewModel? _selectedPromptDirection;
+    private QueueRowViewModel? _selectedQueueRow;
     private GalleryRowViewModel? _selectedGalleryRow;
     private ReviewRowViewModel? _selectedReviewRow;
     private Guid? _activeCreativeBriefId;
@@ -217,7 +226,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         GalleryThumbnailWarmupService galleryThumbnailWarmupService,
         IDocumentSourceFilePickerService? documentSourceFilePickerService = null,
         IScientificDeliveryPackageSaveService? scientificDeliveryPackageSaveService = null,
-        DiagnosticsPanelViewModel? diagnostics = null)
+        DiagnosticsPanelViewModel? diagnostics = null,
+        BackupRestorePanelViewModel? backupRestore = null)
     {
         _localizationService = localizationService;
         _projectService = projectService;
@@ -249,6 +259,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _operationGate = new MainWindowOperationGate(SetExclusiveBusyState);
         ProviderCenter = providerCenter;
         Diagnostics = diagnostics;
+        BackupRestore = backupRestore;
         RefreshLocalizedText();
         SelectedLanguageOption = LanguageOptions.First(option => option.Preference == _localizationService.Preference);
         NewProjectName = NewProjectNamePlaceholder;
@@ -260,6 +271,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public ProviderCenterViewModel ProviderCenter { get; }
 
     public DiagnosticsPanelViewModel? Diagnostics { get; }
+
+    public BackupRestorePanelViewModel? BackupRestore { get; }
 
     public string AppTitle
     {
@@ -628,10 +641,58 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _runFakeGenerationText, value);
     }
 
+    public string PrepareGenerationQueueText
+    {
+        get => _prepareGenerationQueueText;
+        private set => SetProperty(ref _prepareGenerationQueueText, value);
+    }
+
+    public string ExecuteGenerationQueueText
+    {
+        get => _executeGenerationQueueText;
+        private set => SetProperty(ref _executeGenerationQueueText, value);
+    }
+
+    public string PauseGenerationTaskText
+    {
+        get => _pauseGenerationTaskText;
+        private set => SetProperty(ref _pauseGenerationTaskText, value);
+    }
+
+    public string ResumeGenerationTaskText
+    {
+        get => _resumeGenerationTaskText;
+        private set => SetProperty(ref _resumeGenerationTaskText, value);
+    }
+
+    public string RetryGenerationTaskText
+    {
+        get => _retryGenerationTaskText;
+        private set => SetProperty(ref _retryGenerationTaskText, value);
+    }
+
+    public string MoveGenerationTaskUpText
+    {
+        get => _moveGenerationTaskUpText;
+        private set => SetProperty(ref _moveGenerationTaskUpText, value);
+    }
+
+    public string MoveGenerationTaskDownText
+    {
+        get => _moveGenerationTaskDownText;
+        private set => SetProperty(ref _moveGenerationTaskDownText, value);
+    }
+
     public string QueueItemColumn
     {
         get => _queueItemColumn;
         private set => SetProperty(ref _queueItemColumn, value);
+    }
+
+    public string QueuePositionColumn
+    {
+        get => _queuePositionColumn;
+        private set => SetProperty(ref _queuePositionColumn, value);
     }
 
     public string QueueStatusColumn
@@ -1450,14 +1511,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
         get => _queueRows;
         private set
         {
+            var selectedTaskId = SelectedQueueRow?.TaskId;
             if (SetProperty(ref _queueRows, value))
             {
                 OnPropertyChanged(nameof(HasQueueRows));
+                SelectedQueueRow = value.FirstOrDefault(row => row.TaskId == selectedTaskId)
+                    ?? value.FirstOrDefault();
+                NotifyQueueCommandStatesChanged();
             }
         }
     }
 
     public bool HasQueueRows => QueueRows.Count > 0;
+
+    public QueueRowViewModel? SelectedQueueRow
+    {
+        get => _selectedQueueRow;
+        set
+        {
+            if (SetProperty(ref _selectedQueueRow, value))
+            {
+                NotifyQueueCommandStatesChanged();
+            }
+        }
+    }
 
     public IReadOnlyList<GalleryRowViewModel> GalleryRows
     {
@@ -1578,6 +1655,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private void RefreshLocalizedText()
     {
         Diagnostics?.RefreshLocalizedText();
+        BackupRestore?.RefreshLocalizedText();
         var previousPreference = SelectedLanguageOption?.Preference ?? _localizationService.Preference;
         var previousDefaultDocumentSourceText = _defaultDocumentSourceText;
         var previousDefaultDocumentAudience = _defaultDocumentAudience;
@@ -1640,7 +1718,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
         NoPromptDirectionRowsText = payload.NoPromptDirectionRowsText;
         RunFakePlanningText = payload.RunFakePlanningText;
         RunFakeGenerationText = payload.RunFakeGenerationText;
+        PrepareGenerationQueueText = payload.PrepareGenerationQueueText;
+        ExecuteGenerationQueueText = payload.ExecuteGenerationQueueText;
+        PauseGenerationTaskText = payload.PauseGenerationTaskText;
+        ResumeGenerationTaskText = payload.ResumeGenerationTaskText;
+        RetryGenerationTaskText = payload.RetryGenerationTaskText;
+        MoveGenerationTaskUpText = payload.MoveGenerationTaskUpText;
+        MoveGenerationTaskDownText = payload.MoveGenerationTaskDownText;
         QueueItemColumn = payload.QueueItemColumn;
+        QueuePositionColumn = payload.QueuePositionColumn;
         QueueStatusColumn = payload.QueueStatusColumn;
         QueueAttemptsColumn = payload.QueueAttemptsColumn;
         QueueOutputColumn = payload.QueueOutputColumn;
@@ -1991,11 +2077,27 @@ public sealed record PromptRowViewModel(
     string CreatedAt);
 
 public sealed record QueueRowViewModel(
+    Guid TaskId,
     string ItemTitle,
-    string Status,
+    GenerationTaskStatus TaskStatus,
+    int? QueuePosition,
     string Attempts,
     string OutputPath,
-    string ErrorMessage);
+    string ErrorMessage,
+    Guid? RetryOfTaskId)
+{
+    public string Status => TaskStatus.ToString();
+
+    public string Position => QueuePosition?.ToString() ?? string.Empty;
+
+    public bool CanPause => TaskStatus is GenerationTaskStatus.Queued;
+
+    public bool CanResume => TaskStatus is GenerationTaskStatus.Paused;
+
+    public bool CanRetry => TaskStatus is GenerationTaskStatus.Failed or GenerationTaskStatus.Cancelled;
+
+    public bool CanReorder => TaskStatus is GenerationTaskStatus.Queued or GenerationTaskStatus.Paused;
+}
 
 public sealed record GalleryRowViewModel(
     Guid CandidateImageId,

@@ -107,7 +107,22 @@ public sealed class DiagnosticsPackageTests
                                     "Manifest validation succeeded.",
                                     DateTimeOffset.Parse("2026-06-01T08:06:05Z"))),
                     ],
-                    OpenAiLaunchPreflight: OpenAiLaunchPreflightDiagnosticsSnapshotFactory.FromReport(preflightReport)),
+                    OpenAiLaunchPreflight: OpenAiLaunchPreflightDiagnosticsSnapshotFactory.FromReport(preflightReport),
+                    Logs:
+                    [
+                        new DiagnosticsLogEntry(
+                            1,
+                            DateTimeOffset.Parse("2026-06-01T08:06:10Z"),
+                            "information",
+                            "generation-queue",
+                            "prepared",
+                            project.Id.ToString("N"),
+                            new DiagnosticsLogProperties(
+                                ProjectId: project.Id.ToString("N"),
+                                ItemCount: 1)),
+                    ],
+                    DroppedLogCount: 2,
+                    InvalidLogCount: 3),
                 CancellationToken.None);
 
             var json = await File.ReadAllTextAsync(result.JsonPath);
@@ -132,6 +147,12 @@ public sealed class DiagnosticsPackageTests
             Assert.Contains("Add a stronger blueprint consistency rule.", json);
             Assert.Contains("## Repair Patches", markdown);
             Assert.Contains("Blueprint", markdown);
+            Assert.Contains("\"logs\"", json);
+            Assert.Contains("\"droppedLogCount\": 2", json);
+            Assert.Contains("\"invalidLogCount\": 3", json);
+            Assert.Contains("## Structured Logs", markdown);
+            Assert.Contains("generation-queue/prepared", markdown);
+            Assert.Contains("retained=1, dropped=2, invalid=3", markdown);
         }
         finally
         {

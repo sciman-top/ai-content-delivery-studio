@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
 using System.Text.Json;
+using ContentDeliveryStudio.Application.Diagnostics;
 
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
@@ -52,6 +53,13 @@ public sealed class DiagnosticProviderCallTelemetrySink : IProviderCallTelemetry
         unit: "USD",
         description: "Configured provider cost estimate for successful calls.");
 
+    private readonly IDiagnosticsEventJournal _eventJournal;
+
+    public DiagnosticProviderCallTelemetrySink(IDiagnosticsEventJournal? eventJournal = null)
+    {
+        _eventJournal = eventJournal ?? NullDiagnosticsEventJournal.Instance;
+    }
+
     public void Record(ProviderCallTelemetry telemetry)
     {
         ArgumentNullException.ThrowIfNull(telemetry);
@@ -74,6 +82,25 @@ public sealed class DiagnosticProviderCallTelemetrySink : IProviderCallTelemetry
         if (telemetry.EstimatedCostUsd > 0m)
         {
             CostEstimateHistogram.Record((double)telemetry.EstimatedCostUsd, metricTags);
+        }
+
+        try
+        {
+            _eventJournal.Record(new ProviderCallDiagnosticsEvent(
+                telemetry.RecordedAt,
+                telemetry.ProviderId,
+                telemetry.Operation,
+                telemetry.Model,
+                telemetry.HttpStatusCode,
+                telemetry.Succeeded,
+                telemetry.Latency.TotalMilliseconds,
+                telemetry.Usage?.TotalTokens,
+                telemetry.EstimatedCostUsd,
+                activity?.TraceId.ToString() ?? Activity.Current?.TraceId.ToString()));
+        }
+        catch (Exception exception) when (exception is not StackOverflowException)
+        {
+            // Local diagnostics are best-effort and cannot affect provider behavior.
         }
     }
 

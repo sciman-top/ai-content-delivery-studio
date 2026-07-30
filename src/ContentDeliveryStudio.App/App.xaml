@@ -14,5 +14,17 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style TargetType="Button">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource AccessibleKeyboardFocusVisual}" />
+        </Style>
+        <Style TargetType="TextBox">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource AccessibleKeyboardFocusVisual}" />
+        </Style>
+        <Style TargetType="ComboBox">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource AccessibleKeyboardFocusVisual}" />
+        </Style>
+        <Style TargetType="ListBox">
+            <Setter Property="FocusVisualStyle" Value="{StaticResource AccessibleKeyboardFocusVisual}" />
+        </Style>
     </Application.Resources>
 </Application>

@@ -8,6 +8,7 @@
         <Grid Margin="12,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="1.2*" />
+                <ColumnDefinition Width="70" />
                 <ColumnDefinition Width="120" />
                 <ColumnDefinition Width="100" />
                 <ColumnDefinition Width="2*" />
@@ -18,21 +19,26 @@
                        VerticalAlignment="Center"
                        FontWeight="SemiBold" />
             <TextBlock Grid.Column="1"
-                       Text="{Binding DataContext.QueueStatusColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.QueuePositionColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="2"
-                       Text="{Binding DataContext.QueueAttemptsColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.QueueStatusColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="3"
-                       Text="{Binding DataContext.QueueOutputColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.QueueAttemptsColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="4"
+                       Text="{Binding DataContext.QueueOutputColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       VerticalAlignment="Center"
+                       FontWeight="SemiBold"
+                       Margin="10,0,0,0" />
+            <TextBlock Grid.Column="5"
                        Text="{Binding DataContext.QueueErrorColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"

@@ -8,7 +8,7 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class GenerationQueuePersistenceRecoveryTests
 {
     [Fact]
-    public async Task InitializeAndLoad_AddsErrorColumnAndPersistsInterruptedRecovery()
+    public async Task InitializeAndLoad_AddsQueueCompatibilityColumnsAndPersistsInterruptedRecovery()
     {
         var databaseDirectory = Path.Combine(
             Path.GetTempPath(),
@@ -31,6 +31,10 @@ public sealed class GenerationQueuePersistenceRecoveryTests
                 await legacy.SaveChangesAsync();
                 await legacy.Database.ExecuteSqlRawAsync(
                     "ALTER TABLE \"GenerationTasks\" DROP COLUMN \"ErrorMessage\";");
+                await legacy.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE \"GenerationTasks\" DROP COLUMN \"QueuePosition\";");
+                await legacy.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE \"GenerationTasks\" DROP COLUMN \"RetryOfTaskId\";");
             }
 
             await using (var upgrade = new AppDbContext(options))
@@ -47,16 +51,20 @@ public sealed class GenerationQueuePersistenceRecoveryTests
 
                 Assert.Equal(GenerationTaskStatus.Failed, recoveredTask.Status);
                 Assert.Contains("interrupted", recoveredTask.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+                Assert.Null(recoveredTask.QueuePosition);
+                Assert.Null(recoveredTask.RetryOfTaskId);
             }
 
             await using (var verify = new AppDbContext(options))
             {
                 var persistedTask = await verify.GenerationTasks.AsNoTracking().SingleAsync();
-                var columnCount = await CountErrorMessageColumnsAsync(verify);
+                var compatibilityColumns = await GetCompatibilityColumnsAsync(verify);
 
                 Assert.Equal(GenerationTaskStatus.Failed, persistedTask.Status);
                 Assert.Contains("interrupted", persistedTask.ErrorMessage, StringComparison.OrdinalIgnoreCase);
-                Assert.Equal(1, columnCount);
+                Assert.Null(persistedTask.QueuePosition);
+                Assert.Null(persistedTask.RetryOfTaskId);
+                Assert.Equal(["ErrorMessage", "QueuePosition", "RetryOfTaskId"], compatibilityColumns);
             }
         }
         finally
@@ -64,6 +72,44 @@ public sealed class GenerationQueuePersistenceRecoveryTests
             if (Directory.Exists(databaseDirectory))
             {
                 Directory.Delete(databaseDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task NewSchema_RoundTripsPausedPositionAndRetryProvenance()
+    {
+        var databasePath = Path.Combine(
+            Path.GetTempPath(),
+            "ContentDeliveryStudio.Tests",
+            $"queue-roundtrip-{Guid.NewGuid():N}.sqlite");
+        Directory.CreateDirectory(Path.GetDirectoryName(databasePath)!);
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseSqlite($"Data Source={databasePath};Pooling=False")
+            .Options;
+
+        try
+        {
+            var project = CreateProjectWithPausedRetryTask();
+            await using (var create = new AppDbContext(options))
+            {
+                await AppDatabaseInitializer.InitializeAsync(create, CancellationToken.None);
+                create.Projects.Add(project);
+                await create.SaveChangesAsync();
+            }
+
+            await using var verify = new AppDbContext(options);
+            var task = await verify.GenerationTasks.AsNoTracking().SingleAsync();
+
+            Assert.Equal(GenerationTaskStatus.Paused, task.Status);
+            Assert.Equal(3, task.QueuePosition);
+            Assert.NotNull(task.RetryOfTaskId);
+        }
+        finally
+        {
+            if (File.Exists(databasePath))
+            {
+                File.Delete(databasePath);
             }
         }
     }
@@ -90,27 +136,59 @@ public sealed class GenerationQueuePersistenceRecoveryTests
                 attemptCount: 1,
                 maxRetries: 0,
                 timestamp.AddMinutes(5),
-                timestamp.AddMinutes(6)),
+                timestamp.AddMinutes(6),
+                queuePosition: 7,
+                retryOfTaskId: Guid.NewGuid()),
             timestamp.AddMinutes(6));
         return project;
     }
 
-    private static async Task<int> CountErrorMessageColumnsAsync(AppDbContext dbContext)
+    private static ImageProject CreateProjectWithPausedRetryTask()
+    {
+        var timestamp = DateTimeOffset.Parse("2026-07-29T14:30:00Z");
+        var project = ImageProject.Create("Queue roundtrip", timestamp);
+        var series = project.AddSeries("Series", "Queue roundtrip", timestamp.AddMinutes(1));
+        var item = series.AddItem("Item", "Paused retry", timestamp.AddMinutes(2));
+        var profile = project.AddProviderProfile("Fake provider", ProviderKind.Fake, timestamp.AddMinutes(3));
+        var prompt = item.AddPromptVersion(
+            "Paused retry prompt",
+            new GenerationSettings(1024, 1024, "standard", "png"),
+            profile.Id,
+            timestamp.AddMinutes(4));
+        item.AddGenerationTask(
+            new GenerationTask(
+                Guid.NewGuid(),
+                item.Id,
+                prompt.Id,
+                profile.Id,
+                GenerationTaskStatus.Paused,
+                attemptCount: 0,
+                maxRetries: 0,
+                timestamp.AddMinutes(5),
+                timestamp.AddMinutes(5),
+                queuePosition: 3,
+                retryOfTaskId: Guid.NewGuid()),
+            timestamp.AddMinutes(5));
+        return project;
+    }
+
+    private static async Task<IReadOnlyList<string>> GetCompatibilityColumnsAsync(AppDbContext dbContext)
     {
         var connection = dbContext.Database.GetDbConnection();
         await connection.OpenAsync();
         await using var command = connection.CreateCommand();
         command.CommandText = "PRAGMA table_info('GenerationTasks');";
         await using var reader = await command.ExecuteReaderAsync();
-        var count = 0;
+        var columns = new List<string>();
         while (await reader.ReadAsync())
         {
-            if (string.Equals(reader.GetString(1), "ErrorMessage", StringComparison.OrdinalIgnoreCase))
+            var name = reader.GetString(1);
+            if (name is "ErrorMessage" or "QueuePosition" or "RetryOfTaskId")
             {
-                count++;
+                columns.Add(name);
             }
         }
 
-        return count;
+        return columns.OrderBy(name => name, StringComparer.Ordinal).ToArray();
     }
 }

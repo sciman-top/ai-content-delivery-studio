@@ -1,5 +1,12 @@
 # Crash-Safe Generation Queue Design
 
+> Superseded recovery detail (2026-07-29): the approved
+> [generation queue operator controls design](./2026-07-29-generation-queue-operator-controls-design.md)
+> preserves explicitly prepared `Queued` and `Paused` tasks across reload and
+> recovers only orphaned `Running` tasks to `Failed`. This document remains the
+> historical design record for durable checkpoints; its earlier rule that
+> reload converts orphaned `Queued` work to `Cancelled` is no longer current.
+
 ## Goal
 
 Make the existing fake-first generation queue durable enough that an application or machine interruption cannot leave queue work invisible or permanently `Running`.

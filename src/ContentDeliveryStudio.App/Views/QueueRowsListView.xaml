@@ -15,14 +15,25 @@
                 </Style.Triggers>
             </Style>
         </Border.Style>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding DataContext.QueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}">
-                <ItemsControl.ItemTemplate>
+        <ListBox ItemsSource="{Binding DataContext.QueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                 SelectedItem="{Binding DataContext.SelectedQueueRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
+                 AutomationProperties.AutomationId="QueueTaskList"
+                 BorderThickness="0"
+                 Background="Transparent"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="0" />
+                </Style>
+            </ListBox.ItemContainerStyle>
+                <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1.2*" />
+                                    <ColumnDefinition Width="70" />
                                     <ColumnDefinition Width="120" />
                                     <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="2*" />
@@ -33,19 +44,23 @@
                                            FontWeight="SemiBold"
                                            TextTrimming="CharacterEllipsis" />
                                 <TextBlock Grid.Column="1"
-                                           Text="{Binding Status}"
+                                           Text="{Binding Position}"
                                            TextTrimming="CharacterEllipsis"
                                            Margin="10,0,0,0" />
                                 <TextBlock Grid.Column="2"
-                                           Text="{Binding Attempts}"
+                                           Text="{Binding Status}"
                                            TextTrimming="CharacterEllipsis"
                                            Margin="10,0,0,0" />
                                 <TextBlock Grid.Column="3"
+                                           Text="{Binding Attempts}"
+                                           TextTrimming="CharacterEllipsis"
+                                           Margin="10,0,0,0" />
+                                <TextBlock Grid.Column="4"
                                            Text="{Binding OutputPath}"
                                            TextTrimming="CharacterEllipsis"
                                            Foreground="#4B5563"
                                            Margin="10,0,0,0" />
-                                <TextBlock Grid.Column="4"
+                                <TextBlock Grid.Column="5"
                                            Text="{Binding ErrorMessage}"
                                            TextWrapping="Wrap"
                                            Foreground="#8A3B3B"
@@ -53,8 +68,7 @@
                             </Grid>
                         </Border>
                     </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                </ListBox.ItemTemplate>
+            </ListBox>
     </Border>
 </UserControl>

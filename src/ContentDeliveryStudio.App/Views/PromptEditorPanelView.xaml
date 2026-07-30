@@ -13,6 +13,8 @@
                    Margin="0,0,0,8" />
         <TextBlock Text="{Binding PromptTextLabel}" Margin="0,0,0,4" />
         <TextBox Text="{Binding NewPromptText, UpdateSourceTrigger=PropertyChanged}"
+                 AutomationProperties.AutomationId="PromptTextInput"
+                 AutomationProperties.Name="{Binding PromptTextLabel}"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  MinHeight="88"
@@ -20,17 +22,30 @@
         <TextBlock Text="{Binding DefaultGenerationSettingsText}" Foreground="#5E6978" Margin="0,0,0,8" />
         <Button Content="{Binding CreatePromptVersionText}"
                 Command="{Binding CreatePromptVersionCommand}"
+                AutomationProperties.AutomationId="CreatePromptVersionButton"
+                AutomationProperties.Name="{Binding CreatePromptVersionText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,12" />
 
         <TextBlock Text="{Binding PromptHistoryTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
         <ListBox ItemsSource="{Binding PromptVersions}"
                  DisplayMemberPath="VersionNumber"
+                 AutomationProperties.AutomationId="PromptHistoryList"
+                 AutomationProperties.Name="{Binding PromptHistoryTitle}"
                  MinHeight="82"
                  Margin="0,0,0,12" />
 
+        <Button Content="{Binding PrepareGenerationQueueText}"
+                Command="{Binding PrepareGenerationQueueCommand}"
+                AutomationProperties.AutomationId="QueuePrepareButton"
+                AutomationProperties.Name="{Binding PrepareGenerationQueueText}"
+                HorizontalAlignment="Stretch"
+                Margin="0,0,0,8" />
+
         <Button Content="{Binding RunFakeGenerationText}"
                 Command="{Binding RunFakeGenerationCommand}"
+                AutomationProperties.AutomationId="RunFakeGenerationButton"
+                AutomationProperties.Name="{Binding RunFakeGenerationText}"
                 HorizontalAlignment="Stretch" />
     </StackPanel>
 </UserControl>

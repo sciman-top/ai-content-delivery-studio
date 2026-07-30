@@ -70,16 +70,20 @@ public sealed class ProjectWorkbenchProjectionCoordinator
         return project.Series
             .SelectMany(series => series.Items)
             .SelectMany(item => item.GenerationTasks.Select(task => new { Item = item, Task = task }))
-            .OrderBy(entry => entry.Task.CreatedAt)
+            .OrderBy(entry => entry.Task.QueuePosition ?? int.MaxValue)
+            .ThenBy(entry => entry.Task.CreatedAt)
             .ThenBy(entry => entry.Task.Id)
             .Select(entry => new QueueRowViewModel(
+                entry.Task.Id,
                 entry.Item.Title,
-                entry.Task.Status.ToString(),
+                entry.Task.Status,
+                entry.Task.QueuePosition,
                 entry.Task.AttemptCount.ToString(),
                 entry.Item.CandidateImages
                     .FirstOrDefault(candidate => candidate.GenerationTaskId == entry.Task.Id)?.AssetPath
                     ?? string.Empty,
-                entry.Task.ErrorMessage ?? string.Empty))
+                entry.Task.ErrorMessage ?? string.Empty,
+                entry.Task.RetryOfTaskId))
             .ToArray();
     }
 

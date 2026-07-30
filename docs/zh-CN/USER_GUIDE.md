@@ -25,6 +25,20 @@ AI Content Delivery Studio 是一个 Windows 桌面工作台，用于规划、�
 5. 比较候选结果，应用 repair guidance，并在评审指出问题时重新生成。
 6. 只有在人工最终审批之后，才导出交付包。
 
+## 生成队列
+
+图像序列工作流提供两条 fake-first 生成路径：
+
+- 使用“运行假生成”走兼容的一键路径：先创建持久队列，再立即执行。
+- 需要操作员控制时，使用“准备假生成队列”。准备动作只写入有序任务，不调用
+  provider。随后打开“队列”，选择一行，再使用“暂停”“恢复”“上移”“下移”
+  或“重试”，最后选择“执行队列”。
+
+暂停、恢复、重排和重试只修改本地持久状态。重试会创建关联的新任务，并保留原
+失败或取消记录。重新打开项目后，排队和暂停中的任务仍会保留；中断时处于运行中
+的任务会标记为失败，且不会自动重放。当前“执行队列”仍仅允许 fake provider；
+切换到其他 provider 模式并不构成付费执行授权。
+
 ## 当前最强支持路径
 
 - 需求优先的图像序列: 当前最强的端到端路径，也是最新 V1 快照中最核心的主发布主干。
@@ -105,6 +119,29 @@ post-V1 科研绘图工作流已经在受控范围内通过验收。状态必须
 - Diagnostics export 只记录 secret 是否存在，不记录 secret 值本身。
 - 安全备份默认排除 `.env`、本地 appsettings override、SQLite 数据库、`workspace/` 和 `outputs/`。
 
+## 安全备份与恢复
+
+在工作台检查器中使用“安全备份与恢复”：
+
+1. 选择源文件夹和输出 ZIP，然后点击“创建备份”。
+2. 恢复时选择该 ZIP 和一个独立、无冲突的目标文件夹，然后点击“恢复备份”。
+3. 恢复不会覆盖已有文件；在写入首个文件前，会先校验全部路径、清单条目、文件长度和 SHA-256。
+
+桌面安全模式始终排除 `.env`、本地 appsettings override、SQLite 数据库、`workspace/`、`outputs/`、`bin` 和 `obj`。它不是完整运行状态备份；迁移或回退代码前，应单独保留 SQLite、workspace 与 output 数据。
+
+## Windows ZIP 发布包
+
+在仓库根目录创建并校验 framework-dependent Windows 包：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/publish-app.ps1 -Configuration Release -Runtime win-x64 -Clean
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-publish-package.ps1 -PackagePath publish/ContentDeliveryStudio.App-win-x64-Release.zip
+```
+
+输出目录、ZIP、`publish-manifest.json` 与 `.sha256` sidecar 都位于被忽略的 `publish/` 下。目标机器需要 .NET 10 Desktop Runtime，除非显式使用 `-SelfContained`。该 ZIP 已做哈希校验，但未签名，也不具备 MSI/MSIX 的安装和注册行为。
+
+仓库侧无障碍覆盖包括键盘焦点、shell 与主要表单的本地化 UI Automation、虚拟化图库合同和 PerMonitorV2 声明。Narrator、真实高对比切换、非默认 DPI 机器、触控/手写笔和低内存硬件仍需手工测试。
+
 ## OpenAI 发布预检
 
 最近一次记录在册的真实 OpenAI V1 样本已经保存在 `artifacts/live-openai-v1-sample/20260611-132947`。在尝试刷新样本、重新验证 provider 行为，或生成新的发布证据快照之前，应先使用内置的只读 OpenAI launch preflight 路径。
@@ -142,8 +179,11 @@ Diagnostics export 是主要的本地支持包导出路径。
 - routed repair-patch summary
 - operator run audit summary
 - 若已运行 OpenAI preflight，则可附带 OpenAI launch-preflight readiness snapshot
+- 本地结构化 journal 中最近最多 500 条已验证的 generation queue/provider call 事件，以及 dropped/invalid 计数
 
 将生成的包分享给本机之外的对象前，应先人工审阅。
+
+结构化 journal 是 studio 数据根目录下的本地运行数据。单文件达到 1 MiB 时轮转，最多保留 3 个文件。它不是通用应用日志抓取：schema 不允许 prompt、provider 响应正文、源素材、生成内容、endpoint、request/response ID、凭据、`.env` 内容、完整异常或用户文件路径。无效或被手工修改的行会被跳过，不会复制进导出包。journal 不上传数据，也不会启用 OTLP 或真实 provider。
 
 ## 样本迁移
 

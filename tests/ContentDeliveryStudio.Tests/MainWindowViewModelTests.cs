@@ -18,6 +18,73 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class MainWindowViewModelTests
 {
     [Fact]
+    public async Task QueueOperatorWorkflow_PreparesPausesReordersResumesAndExecutes()
+    {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
+        var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
+
+        viewModel.NewProjectName = "Operator queue UI";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+        viewModel.NewSeriesTitle = "Queue series";
+        viewModel.NewSeriesDescription = "Queue controls";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+
+        foreach (var index in Enumerable.Range(1, 2))
+        {
+            viewModel.NewItemTitle = $"Queue item {index}";
+            viewModel.NewItemBrief = $"Queue visual {index}";
+            await viewModel.AddItemCommand.ExecuteAsync(null);
+            viewModel.NewPromptText = $"Create queue visual {index}.";
+            await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        }
+
+        var projectId = viewModel.SelectedProject!.Id;
+        try
+        {
+            await viewModel.PrepareGenerationQueueCommand.ExecuteAsync(null);
+
+            Assert.Equal(2, viewModel.QueueRows.Count);
+            Assert.All(viewModel.QueueRows, row => Assert.Equal(GenerationTaskStatus.Queued, row.TaskStatus));
+            Assert.Empty(viewModel.GalleryRows);
+            Assert.False(viewModel.PrepareGenerationQueueCommand.CanExecute(null));
+
+            var firstTaskId = viewModel.QueueRows[0].TaskId;
+            var secondTaskId = viewModel.QueueRows[1].TaskId;
+            viewModel.SelectedQueueRow = viewModel.QueueRows[0];
+            await viewModel.PauseSelectedGenerationTaskCommand.ExecuteAsync(null);
+
+            Assert.Equal(
+                GenerationTaskStatus.Paused,
+                viewModel.QueueRows.Single(row => row.TaskId == firstTaskId).TaskStatus);
+
+            viewModel.SelectedQueueRow = viewModel.QueueRows.Single(row => row.TaskId == secondTaskId);
+            Assert.True(viewModel.MoveSelectedGenerationTaskUpCommand.CanExecute(null));
+            await viewModel.MoveSelectedGenerationTaskUpCommand.ExecuteAsync(null);
+            await viewModel.ExecutePreparedGenerationQueueCommand.ExecuteAsync(null);
+
+            Assert.Single(viewModel.GalleryRows);
+            Assert.Equal(
+                GenerationTaskStatus.Paused,
+                viewModel.QueueRows.Single(row => row.TaskId == firstTaskId).TaskStatus);
+            Assert.Equal(
+                GenerationTaskStatus.Succeeded,
+                viewModel.QueueRows.Single(row => row.TaskId == secondTaskId).TaskStatus);
+
+            viewModel.SelectedQueueRow = viewModel.QueueRows.Single(row => row.TaskId == firstTaskId);
+            await viewModel.ResumeSelectedGenerationTaskCommand.ExecuteAsync(null);
+            await viewModel.ExecutePreparedGenerationQueueCommand.ExecuteAsync(null);
+
+            Assert.Equal(2, viewModel.GalleryRows.Count);
+            Assert.All(viewModel.QueueRows, row => Assert.Equal(GenerationTaskStatus.Succeeded, row.TaskStatus));
+        }
+        finally
+        {
+            DeleteProjectOutputDirectories(projectId);
+        }
+    }
+
+    [Fact]
     public async Task PlanRows_ShowLocalizedSeriesItemKind()
     {
         var viewModel = CreateViewModel();

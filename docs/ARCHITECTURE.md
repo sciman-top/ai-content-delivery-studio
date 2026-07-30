@@ -244,7 +244,15 @@ State machines:
 
 - Item: `Draft -> Ready -> Generating -> NeedsReview -> Approved -> Delivered`
 - Candidate: `Generated -> ReviewPending -> Rejected | Alternate | Final`
-- Task: `Queued -> Running -> Succeeded | Failed | Cancelled`
+- Task: `Queued <-> Paused`, `Queued -> Running | Cancelled`, and `Running -> Succeeded | Failed | Cancelled`
+
+The current image-generation queue separates preparation from execution. Prepare
+creates durable ordered `Queued` tasks without calling a provider. Operators can
+pause, resume, or reorder active work, while retry creates a new `Queued` task
+linked through `RetryOfTaskId` instead of reopening a terminal task. The
+compatibility one-click fake flow still performs Prepare followed by Execute.
+Only explicit Execute may dispatch a provider, and the current queue execution
+boundary remains fake-only.
 
 ## Storage
 
@@ -265,6 +273,14 @@ Generation and review run through a bounded local queue:
 - Run log and request ID capture.
 - Dry-run mode.
 - Review-batch thresholds so one remote vision request does not silently grow into a large multi-item review session.
+
+For the implemented image-generation path, execution is currently
+single-process and sequential. `Queued` and `Paused` work survives project
+reload without automatic dispatch; only an orphaned `Running` task is recovered
+to `Failed`. There is no background worker, automatic resume, automatic retry,
+or automatic replay after restart. The broader concurrency, backoff, budget,
+and shared-queue bullets above remain target-state requirements for later
+approved slices.
 
 Extraction, rendering, repair, and operator tasks use the same queue discipline. Long-running local tools must support cancellation where possible and must write progress, command provenance, stdout/stderr summaries, output paths, and exit codes into structured audit records.
 
@@ -348,11 +364,29 @@ Migration limits:
 
 Diagnostics packages are local support artifacts for troubleshooting. They may include application version, OS and .NET runtime details, selected project counts, provider capability summaries, and whether required secrets are configured. They must not include secret values, local SQLite database contents, generated image binaries, raw workspace folders, or transient API request payloads.
 
+Recent operational context comes from a separate app-local structured event journal, not from general `ILogger` capture. `IDiagnosticsEventJournal` accepts only strongly typed generation-queue lifecycle events and provider-call summaries. `JsonlDiagnosticsEventJournal` writes a versioned JSONL schema beneath the local studio data root, rotates each file at 1 MiB, and retains the active file plus two older files. The diagnostics exporter validates retained lines independently and includes at most the newest 500 valid events together with dropped/invalid counts.
+
+The schema has no arbitrary message, exception, or property-bag field. Its fixed safe properties exclude prompts, responses, source material, output paths, endpoints, request/response IDs, API keys, Authorization data, `.env` content, and complete exception text. Queue events are emitted only after repository persistence checkpoints. Provider summaries mirror the existing Activity/Meter sink without changing the opt-in OTLP exporter path. Journal failures are best-effort diagnostics failures and cannot change queue or provider behavior.
+
 ## Backup And Restore
 
-Local backup/restore is file-based and conservative by default. The safe default backup excludes `.env`, local appsettings overrides, SQLite databases, build outputs, `workspace/`, and `outputs/`. Restore validates every archive entry against the target directory before writing, so a crafted zip entry cannot escape the selected restore root.
+Local backup/restore is file-based and conservative by default. The safe default backup excludes `.env`, local appsettings overrides, SQLite databases, build outputs, `workspace/`, and `outputs/`. The Workbench inspector exposes only this safe mode and always restores into a user-selected separate folder without overwrite.
+
+Each archive has one schema-v1 `backup-manifest.json` with normalized paths, byte lengths, and SHA-256 values. Creation writes a same-volume temporary ZIP and moves it into place only after success. Restore preflights the complete archive before creating or mutating the target: manifest support, unique case-insensitive paths, one-to-one membership, path containment, entry/total limits, existing conflicts, sizes, and streamed hashes must all pass. Directory/link-like entries, alternate data streams, traversal, missing/extra payloads, and tampering fail closed.
 
 Full project-state backup that intentionally includes SQLite or generated assets must be an explicit user action with a separate manifest and size warning.
+
+## Windows Package
+
+`scripts/publish-app.ps1` publishes Release `win-x64`, records a portable schema-v1 manifest for every payload file, creates a sorted ZIP with normalized timestamps, writes an archive SHA-256 sidecar, and calls `scripts/verify-publish-package.ps1`. The verifier reads the archive without extraction and checks safe unique paths, manifest membership, lengths, hashes, required executable/runtime files, and the optional sidecar. `preflight-release.ps1 -NoRestore` performs an actual isolated framework-dependent publish/package/verify cycle and removes only its owned `publish/preflight` output.
+
+This is a distributable packaged release, not an installer contract. MSI/MSIX registration, code signing, update delivery, and Store acceptance remain outside the current repository claim. The WPF project declares `win-x64` as its supported restore graph and embeds a PerMonitorV2 application manifest.
+
+## Large Gallery And Accessibility
+
+The gallery uses recycling virtualization, deferred logical scrolling, asynchronous thumbnail resolution, and a disk cache. The 1,000-row benchmark enforces broad regression budgets for projection, thumbnail warmup/revisit, streamed delivery export, bounded import, and peak managed memory, and requires cached revisit to be materially faster. Real frame timing and low-memory hardware remain manual/live acceptance.
+
+Accessibility stays in the WPF presentation layer. Principal inspector inputs expose localized UIA names and stable IDs, interactive controls share a system-highlight focus visual, the gallery preserves native single-selection and keyboard containers, and the app declares PerMonitorV2. `run-packaged-accessibility-probe.ps1` verifies a ZIP before extraction, launches in fake mode with isolated data, and captures current-DPI layout/UIA facts. It is not Narrator, high-contrast-switching, touch/pen, or multi-DPI hardware acceptance.
 
 ## Modular Maintenance Period
 
@@ -363,7 +397,7 @@ The codebase should now enter a modular maintenance period:
 - Split WPF views and view models by workflow tab or feature module instead of growing `MainWindowViewModel`.
 - Treat the shell grid and column layout as stable scaffolding, and move heavy inspector workflow content into feature-owned user controls when `MainWindow.xaml` starts carrying more than placement and navigation composition.
 - Inside already-extracted tab views, keep splitting repeated or dense stage regions into narrower user controls before introducing new shell-level tabs or layout branches. The brief workflow actions bar, blueprint panel, prompt-directions panel, plan header, plan rows list, prompts header, prompt rows list, queue header, queue rows list, gallery header, gallery rows list, workflow-graph header, workflow-graph rows list, review header, delivery header, inspector project setup panel, style-recipe panel, fake-planning panel, and document-illustration panel are the current reference patterns for this finer-grained split.
-- The gallery rows list now opts into WPF virtualization and recycling on its `ListBox`, and gallery thumbnails are cached on disk through the gallery thumbnail cache; remaining large-gallery work is scroll responsiveness and low-memory verification.
+- The gallery rows list opts into WPF virtualization, recycling, deferred scrolling, keyboard focus/selection, and asynchronous disk-cached thumbnails; repository budgets are enforced, while subjective scroll responsiveness and low-memory hardware remain manual/live verification.
 - As shell views split out, move the corresponding shell command orchestration into focused coordinators instead of leaving `MainWindowViewModel` to directly coordinate project creation, provider-center refresh, document-planning refresh, or image-edit inspector actions.
 - Provider Center now follows that pattern through `ProviderCenterPresentationCoordinator`, which owns provider-row construction and health-summary composition while `ProviderCenterViewModel` keeps state and command entrypoints.
 - Apply the same rule to shell localization: keep payload construction and localized selection restoration in dedicated coordinators instead of burying option-reset logic inside `MainWindowViewModel`.

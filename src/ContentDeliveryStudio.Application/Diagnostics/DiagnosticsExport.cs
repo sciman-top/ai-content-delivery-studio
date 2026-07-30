@@ -17,7 +17,10 @@ public sealed record DiagnosticsExportRequest(
     IReadOnlyList<DiagnosticsSecretSnapshot> Secrets,
     IReadOnlyList<RepairPatchDiagnosticsSnapshot>? RepairPatches = null,
     IReadOnlyList<OperatorAuditSnapshot>? OperatorRuns = null,
-    OpenAiLaunchPreflightDiagnosticsSnapshot? OpenAiLaunchPreflight = null);
+    OpenAiLaunchPreflightDiagnosticsSnapshot? OpenAiLaunchPreflight = null,
+    IReadOnlyList<DiagnosticsLogEntry>? Logs = null,
+    int DroppedLogCount = 0,
+    int InvalidLogCount = 0);
 
 public sealed record DiagnosticsApplicationSnapshot(
     string AppName,

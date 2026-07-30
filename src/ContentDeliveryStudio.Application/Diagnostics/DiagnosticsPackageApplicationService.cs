@@ -6,15 +6,26 @@ public sealed class DiagnosticsPackageApplicationService
 {
     private readonly IProjectRepository _projectRepository;
     private readonly IDiagnosticsPackageWriter _writer;
+    private readonly IDiagnosticsEventJournal _eventJournal;
     private readonly TimeProvider _timeProvider;
 
     public DiagnosticsPackageApplicationService(
         IProjectRepository projectRepository,
         IDiagnosticsPackageWriter writer,
         TimeProvider? timeProvider = null)
+        : this(projectRepository, writer, NullDiagnosticsEventJournal.Instance, timeProvider)
+    {
+    }
+
+    public DiagnosticsPackageApplicationService(
+        IProjectRepository projectRepository,
+        IDiagnosticsPackageWriter writer,
+        IDiagnosticsEventJournal eventJournal,
+        TimeProvider? timeProvider = null)
     {
         _projectRepository = projectRepository;
         _writer = writer;
+        _eventJournal = eventJournal;
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
@@ -43,6 +54,7 @@ public sealed class DiagnosticsPackageApplicationService
         var createdAt = _timeProvider.GetUtcNow();
         var directoryName = $"content-delivery-studio-diagnostics-{createdAt:yyyyMMdd-HHmmss-fff}-{Guid.NewGuid():N}";
         var outputDirectory = Path.Combine(Path.GetFullPath(request.OutputParentDirectory), directoryName);
+        var logs = await _eventJournal.ReadRecentAsync(500, cancellationToken);
 
         return await _writer.WriteAsync(
             new DiagnosticsExportRequest(
@@ -51,7 +63,10 @@ public sealed class DiagnosticsPackageApplicationService
                 request.Machine,
                 projects,
                 request.Providers,
-                request.Secrets),
+                request.Secrets,
+                Logs: logs.Entries,
+                DroppedLogCount: logs.DroppedCount,
+                InvalidLogCount: logs.InvalidCount),
             cancellationToken);
     }
 }

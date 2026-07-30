@@ -10,11 +10,13 @@ using ContentDeliveryStudio.App.ViewModels;
 using ContentDeliveryStudio.App.Telemetry;
 using ContentDeliveryStudio.Application.Localization;
 using ContentDeliveryStudio.Application.Diagnostics;
+using ContentDeliveryStudio.Application.Backups;
 using ContentDeliveryStudio.Application.Sources;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Infrastructure.Composition;
 using ContentDeliveryStudio.Infrastructure.Delivery;
 using ContentDeliveryStudio.Infrastructure.Diagnostics;
+using ContentDeliveryStudio.Infrastructure.Backups;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
 using ContentDeliveryStudio.Infrastructure.Persistence;
 using ContentDeliveryStudio.Infrastructure.RemoteWorkflows;
@@ -52,6 +54,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<IScientificFigureExporter, ScientificFigureExporter>();
         builder.Services.AddTransient<ProjectApplicationService>();
         builder.Services.AddSingleton<IProviderCenterConfigurationService, DotEnvProviderCenterConfigurationService>();
+        builder.Services.AddSingleton<IDiagnosticsEventJournal, JsonlDiagnosticsEventJournal>();
         builder.Services.AddOpenAiProviderHttpClient(new OpenAiProviderOptions());
         builder.AddContentDeliveryStudioOpenTelemetry();
         builder.Services.AddTransient(serviceProvider => new ProviderHealthCheckService(
@@ -60,6 +63,8 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<IProviderCenterHealthCheckService, DotEnvProviderCenterHealthCheckService>();
         builder.Services.AddSingleton<IDocumentSourceFilePickerService, DocumentSourceFilePickerService>();
         builder.Services.AddSingleton<IDiagnosticsDirectoryPickerService, DiagnosticsDirectoryPickerService>();
+        builder.Services.AddSingleton<IBackupRestorePickerService, BackupRestorePickerService>();
+        builder.Services.AddSingleton<IBackupRestoreService, LocalBackupRestoreService>();
         builder.Services.AddTransient<IDesktopDiagnosticsSnapshotFactory, DesktopDiagnosticsSnapshotFactory>();
         builder.Services.AddSingleton<IScientificDeliveryPackageSaveService, ScientificDeliveryPackageSaveService>();
         builder.Services.AddContentDeliveryStudioProviderRuntime(new ProviderRuntimeRegistrationOptions());
@@ -81,6 +86,7 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<GalleryThumbnailWarmupService>();
         builder.Services.AddTransient<ProviderCenterViewModel>();
         builder.Services.AddTransient<DiagnosticsPanelViewModel>();
+        builder.Services.AddTransient<BackupRestorePanelViewModel>();
         builder.Services.AddTransient<MainWindowViewModel>();
         builder.Services.AddTransient<MainWindow>();
 

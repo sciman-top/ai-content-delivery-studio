@@ -2,6 +2,14 @@
 
 Date: 2026-07-28
 
+> Supersession note (2026-07-29):
+> [Generation Queue Operator Controls Evidence](./20260729-generation-queue-operator-controls.md)
+> replaces only the reload treatment of incomplete queued work. Explicitly
+> prepared `Queued` and `Paused` tasks now survive reload, while orphaned
+> `Running` tasks still fail closed without replay. The checkpoint, persistence,
+> native-probe, and gate results below remain historical evidence for the
+> 2026-07-28 slice.
+
 ## Status
 
 `repo-side reliability hardening complete / agent-operated WPF evidence recorded`

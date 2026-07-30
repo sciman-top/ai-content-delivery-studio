@@ -3,12 +3,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:services="clr-namespace:ContentDeliveryStudio.App.Services"
+             xmlns:automation="clr-namespace:System.Windows.Automation;assembly=PresentationCore"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <UserControl.Resources>
         <services:GalleryThumbnailPathConverter x:Key="GalleryThumbnailPathConverter" />
     </UserControl.Resources>
-    <Border BorderBrush="#D4DAE5" BorderThickness="1,0,1,1">
+    <Border BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}" BorderThickness="1,0,1,1">
         <Border.Style>
             <Style TargetType="Border">
                 <Setter Property="Visibility" Value="Collapsed" />
@@ -23,13 +24,26 @@
                  SelectedItem="{Binding DataContext.SelectedGalleryRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
                  BorderThickness="0"
                  Background="Transparent"
+                 SelectionMode="Single"
+                 automation:AutomationProperties.AutomationId="GalleryCandidateList"
+                 automation:AutomationProperties.Name="{Binding DataContext.GalleryItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                 KeyboardNavigation.DirectionalNavigation="Contained"
                  VirtualizingPanel.IsVirtualizing="True"
                  VirtualizingPanel.VirtualizationMode="Recycling"
                  ScrollViewer.CanContentScroll="True"
+                 ScrollViewer.IsDeferredScrollingEnabled="True"
                  ScrollViewer.VerticalScrollBarVisibility="Auto">
+            <ListBox.ItemContainerStyle>
+                <Style TargetType="ListBoxItem">
+                    <Setter Property="FocusVisualStyle" Value="{StaticResource AccessibleKeyboardFocusVisual}" />
+                    <Setter Property="automation:AutomationProperties.Name" Value="{Binding ItemTitle}" />
+                    <Setter Property="KeyboardNavigation.IsTabStop" Value="True" />
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                </Style>
+            </ListBox.ItemContainerStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
+                    <Border BorderBrush="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}" BorderThickness="0,0,0,1" Padding="12,10">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="1.2*" />
@@ -43,9 +57,9 @@
                             <Border Grid.Column="1"
                                     Width="112"
                                     Height="84"
-                                    BorderBrush="#D4DAE5"
+                                    BorderBrush="{DynamicResource {x:Static SystemColors.ControlDarkBrushKey}}"
                                     BorderThickness="1"
-                                    Background="#F6F7F9"
+                                    Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}"
                                     Margin="10,0,0,0">
                                 <Image Stretch="Uniform"
                                        RenderOptions.BitmapScalingMode="NearestNeighbor">
@@ -59,10 +73,10 @@
                             <StackPanel Grid.Column="2" Margin="10,0,0,0">
                                 <TextBlock Text="{Binding AssetPath}"
                                            TextTrimming="CharacterEllipsis"
-                                           Foreground="#4B5563" />
+                                           Foreground="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}" />
                                 <TextBlock Text="{Binding MetadataPath}"
                                            TextTrimming="CharacterEllipsis"
-                                           Foreground="#5E6978"
+                                           Foreground="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}"
                                            Margin="0,6,0,0" />
                             </StackPanel>
                         </Grid>

@@ -645,8 +645,20 @@ public sealed class GenerationTask
         int maxRetries,
         DateTimeOffset createdAt,
         DateTimeOffset updatedAt,
-        string? errorMessage = null)
+        string? errorMessage = null,
+        int? queuePosition = null,
+        Guid? retryOfTaskId = null)
     {
+        if (queuePosition is <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(queuePosition), "Queue position must be positive.");
+        }
+
+        if (retryOfTaskId == id)
+        {
+            throw new ArgumentException("A generation task cannot retry itself.", nameof(retryOfTaskId));
+        }
+
         Id = id;
         SeriesItemId = seriesItemId;
         PromptVersionId = promptVersionId;
@@ -657,6 +669,8 @@ public sealed class GenerationTask
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
         ErrorMessage = errorMessage;
+        QueuePosition = queuePosition;
+        RetryOfTaskId = retryOfTaskId;
     }
 
     public Guid Id { get; private set; }
@@ -678,6 +692,45 @@ public sealed class GenerationTask
     public DateTimeOffset UpdatedAt { get; private set; }
 
     public string? ErrorMessage { get; private set; }
+
+    public int? QueuePosition { get; private set; }
+
+    public Guid? RetryOfTaskId { get; private set; }
+
+    public void Pause(DateTimeOffset timestamp)
+    {
+        RequireStatus(GenerationTaskStatus.Queued);
+        RequireNonDecreasingTimestamp(timestamp);
+
+        Status = GenerationTaskStatus.Paused;
+        UpdatedAt = timestamp;
+    }
+
+    public void Resume(DateTimeOffset timestamp)
+    {
+        RequireStatus(GenerationTaskStatus.Paused);
+        RequireNonDecreasingTimestamp(timestamp);
+
+        Status = GenerationTaskStatus.Queued;
+        UpdatedAt = timestamp;
+    }
+
+    public void MoveTo(int queuePosition, DateTimeOffset timestamp)
+    {
+        if (Status is not (GenerationTaskStatus.Queued or GenerationTaskStatus.Paused))
+        {
+            throw new InvalidOperationException($"Cannot reorder a generation task in status {Status}.");
+        }
+
+        if (queuePosition <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(queuePosition), "Queue position must be positive.");
+        }
+
+        RequireNonDecreasingTimestamp(timestamp);
+        QueuePosition = queuePosition;
+        UpdatedAt = timestamp;
+    }
 
     public void Start(DateTimeOffset timestamp)
     {
@@ -702,7 +755,7 @@ public sealed class GenerationTask
 
     public void Cancel(string reason, DateTimeOffset timestamp)
     {
-        if (Status is not (GenerationTaskStatus.Queued or GenerationTaskStatus.Running))
+        if (Status is not (GenerationTaskStatus.Queued or GenerationTaskStatus.Paused or GenerationTaskStatus.Running))
         {
             throw new InvalidOperationException($"Cannot cancel a generation task in status {Status}.");
         }
@@ -718,12 +771,6 @@ public sealed class GenerationTask
         if (Status is GenerationTaskStatus.Running)
         {
             Fail("Generation was interrupted before a terminal checkpoint was persisted.", timestamp);
-            return true;
-        }
-
-        if (Status is GenerationTaskStatus.Queued)
-        {
-            Cancel("Generation was not dispatched before the previous queue run ended.", timestamp);
             return true;
         }
 
@@ -777,6 +824,7 @@ public enum GenerationTaskStatus
     Succeeded = 2,
     Failed = 3,
     Cancelled = 4,
+    Paused = 5,
 }
 
 public sealed class CandidateImage

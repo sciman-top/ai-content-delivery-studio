@@ -1,5 +1,12 @@
 # Crash-Safe Generation Queue Implementation Plan
 
+> Superseded recovery detail (2026-07-29): the completed
+> [generation queue operator controls plan](./2026-07-29-generation-queue-operator-controls.md)
+> preserves explicitly prepared `Queued` and `Paused` tasks across reload and
+> recovers only orphaned `Running` tasks to `Failed`. This plan remains the
+> historical implementation record for durable checkpoints; its earlier
+> queued-to-cancelled reload rule is no longer current.
+
 **Goal:** Persist generation queue checkpoints, fail closed after interruption, and restore Queue workspace evidence without automatically replaying provider calls.
 
 **Architecture:** Domain-owned transitions feed application-level one-item checkpoints. Project opening reconciles incomplete tasks, SQLite bootstrap adds one nullable compatibility column, and the existing WPF Queue projection reads durable task state.

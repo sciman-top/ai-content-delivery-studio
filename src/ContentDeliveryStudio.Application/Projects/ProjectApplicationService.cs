@@ -3,6 +3,7 @@ using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Core.Styles;
 using ContentDeliveryStudio.Application.Delivery;
+using ContentDeliveryStudio.Application.Diagnostics;
 using ContentDeliveryStudio.Application.RepairRouting;
 using ContentDeliveryStudio.Application.Sources;
 
@@ -56,7 +57,8 @@ public sealed class ProjectApplicationService
         IVisionReviewProvider? visionReviewProvider,
         IDeliveryPackageWriter? deliveryPackageWriter,
         IImageEditProvider? imageEditProvider = null,
-        SourceIngestionApplicationService? sourceIngestionApplicationService = null)
+        SourceIngestionApplicationService? sourceIngestionApplicationService = null,
+        IDiagnosticsEventJournal? diagnosticsEventJournal = null)
     {
         _projectWorkspaceApplicationService = new ProjectWorkspaceApplicationService(repository);
         _reviewRepairApplicationService = new ReviewRepairApplicationService(repository);
@@ -64,7 +66,11 @@ public sealed class ProjectApplicationService
         _documentIllustrationApplicationService = new DocumentIllustrationApplicationService(repository, textPlanningProvider);
         _seriesWorkflowApplicationService = new SeriesWorkflowApplicationService(repository, textPlanningProvider);
         _briefWorkflowApplicationService = new BriefWorkflowApplicationService(repository, textPlanningProvider);
-        _generationWorkflowApplicationService = new GenerationWorkflowApplicationService(repository, imageGenerationProvider, imageEditProvider);
+        _generationWorkflowApplicationService = new GenerationWorkflowApplicationService(
+            repository,
+            imageGenerationProvider,
+            imageEditProvider,
+            diagnosticsEventJournal);
         _reviewWorkflowApplicationService = new ReviewWorkflowApplicationService(repository, visionReviewProvider);
         _sourceIngestionWorkflowApplicationService = new SourceIngestionWorkflowApplicationService(sourceIngestionApplicationService);
     }
@@ -313,6 +319,52 @@ public sealed class ProjectApplicationService
             projectId,
             outputDirectory,
             cancellationToken);
+    }
+
+    public Task<GenerationQueuePreparation> PrepareGenerationQueueAsync(
+        Guid projectId,
+        CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.PrepareGenerationQueueAsync(projectId, cancellationToken);
+    }
+
+    public Task<GenerationQueueRun> ExecutePreparedGenerationQueueAsync(
+        Guid projectId,
+        string outputDirectory,
+        CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.ExecutePreparedGenerationQueueAsync(
+            projectId,
+            outputDirectory,
+            cancellationToken);
+    }
+
+    public Task PauseGenerationTaskAsync(Guid projectId, Guid taskId, CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.PauseGenerationTaskAsync(projectId, taskId, cancellationToken);
+    }
+
+    public Task ResumeGenerationTaskAsync(Guid projectId, Guid taskId, CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.ResumeGenerationTaskAsync(projectId, taskId, cancellationToken);
+    }
+
+    public Task MoveGenerationTaskAsync(
+        Guid projectId,
+        Guid taskId,
+        GenerationTaskMoveDirection direction,
+        CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.MoveGenerationTaskAsync(
+            projectId,
+            taskId,
+            direction,
+            cancellationToken);
+    }
+
+    public Task<Guid> RetryGenerationTaskAsync(Guid projectId, Guid taskId, CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.RetryGenerationTaskAsync(projectId, taskId, cancellationToken);
     }
 
     public async Task<ImageGenerationResult> RunImageEditAsync(

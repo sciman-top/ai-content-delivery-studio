@@ -17,7 +17,25 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("AutomationProperties.AutomationId=\"ExportDiagnosticsPackage\"", diagnosticsXaml);
         Assert.Contains("AutomationProperties.AutomationId=\"DiagnosticsExportStatus\"", diagnosticsXaml);
         Assert.Contains("AddSingleton<IDiagnosticsPackageWriter, DiagnosticsPackageWriter>()", appStartup);
+        Assert.Contains("AddSingleton<IDiagnosticsEventJournal, JsonlDiagnosticsEventJournal>()", appStartup);
         Assert.Contains("AddTransient<DiagnosticsPanelViewModel>()", appStartup);
+    }
+
+    [Fact]
+    public void WorkbenchInspector_ExposesSafeBackupRestoreWithStableAutomationIds()
+    {
+        var inspectorXaml = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "WorkbenchInspectorView.xaml");
+        var panelXaml = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "BackupRestorePanelView.xaml");
+        var appStartup = ReadRepoFile("src", "ContentDeliveryStudio.App", "App.xaml.cs");
+
+        Assert.Contains("<views:BackupRestorePanelView DataContext=\"{Binding BackupRestore}\" />", inspectorXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"BackupSourceDirectory\"", panelXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"CreateSafeBackup\"", panelXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"RestoreBackupFile\"", panelXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"RestoreSafeBackup\"", panelXaml);
+        Assert.Contains("AutomationProperties.LiveSetting=\"Polite\"", panelXaml);
+        Assert.Contains("AddSingleton<IBackupRestoreService, LocalBackupRestoreService>()", appStartup);
+        Assert.Contains("AddTransient<BackupRestorePanelViewModel>()", appStartup);
     }
 
     [Fact]
@@ -556,8 +574,14 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("<views:QueueView Grid.Row=\"1\" Margin=\"0,16,0,0\" />", tabHostViewXaml);
 
         var queueViewXaml = File.ReadAllText(queueViewPath);
-        Assert.Contains("<views:QueueHeaderView Grid.Row=\"0\" />", queueViewXaml);
-        Assert.Contains("<views:QueueRowsListView Grid.Row=\"2\" />", queueViewXaml);
+        Assert.Contains("<views:QueueHeaderView Grid.Row=\"1\" />", queueViewXaml);
+        Assert.Contains("<views:QueueRowsListView Grid.Row=\"3\" />", queueViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"QueueExecuteButton\"", queueViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"QueuePauseButton\"", queueViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"QueueResumeButton\"", queueViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"QueueRetryButton\"", queueViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"QueueMoveUpButton\"", queueViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"QueueMoveDownButton\"", queueViewXaml);
         Assert.DoesNotContain(
             "Text=\"{Binding DataContext.QueueItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             queueViewXaml);
@@ -574,6 +598,9 @@ public sealed class MainWindowLayoutTests
         Assert.Contains(
             "Text=\"{Binding DataContext.QueueErrorColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
             queueHeaderViewXaml);
+        Assert.Contains(
+            "Text=\"{Binding DataContext.QueuePositionColumn, RelativeSource={RelativeSource AncestorType=TabControl}}\"",
+            queueHeaderViewXaml);
 
         var queueRowsListViewPath = GetRepoFilePath("src", "ContentDeliveryStudio.App", "Views", "QueueRowsListView.xaml");
         Assert.True(File.Exists(queueRowsListViewPath));
@@ -586,7 +613,9 @@ public sealed class MainWindowLayoutTests
             "Binding DataContext.HasQueueRows, RelativeSource={RelativeSource AncestorType=TabControl}",
             queueRowsListViewXaml);
         Assert.Contains("Text=\"{Binding ItemTitle}\"", queueRowsListViewXaml);
+        Assert.Contains("Text=\"{Binding Position}\"", queueRowsListViewXaml);
         Assert.Contains("Text=\"{Binding ErrorMessage}\"", queueRowsListViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"QueueTaskList\"", queueRowsListViewXaml);
     }
 
     [Fact]
@@ -641,6 +670,13 @@ public sealed class MainWindowLayoutTests
         Assert.Contains("VirtualizingPanel.IsVirtualizing=\"True\"", galleryRowsListViewXaml);
         Assert.Contains("VirtualizingPanel.VirtualizationMode=\"Recycling\"", galleryRowsListViewXaml);
         Assert.Contains("ScrollViewer.CanContentScroll=\"True\"", galleryRowsListViewXaml);
+        Assert.Contains("ScrollViewer.IsDeferredScrollingEnabled=\"True\"", galleryRowsListViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"GalleryCandidateList\"", galleryRowsListViewXaml);
+        Assert.Contains("AutomationProperties.Name=\"{Binding DataContext.GalleryItemColumn", galleryRowsListViewXaml);
+        Assert.Contains("KeyboardNavigation.DirectionalNavigation=\"Contained\"", galleryRowsListViewXaml);
+        Assert.Contains("Property=\"FocusVisualStyle\" Value=\"{StaticResource AccessibleKeyboardFocusVisual}\"", galleryRowsListViewXaml);
+        Assert.Contains("Property=\"automation:AutomationProperties.Name\" Value=\"{Binding ItemTitle}\"", galleryRowsListViewXaml);
+        Assert.Contains("SystemColors.ControlDarkBrushKey", galleryRowsListViewXaml);
         Assert.Contains(
             "Binding DataContext.HasGalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}",
             galleryRowsListViewXaml);

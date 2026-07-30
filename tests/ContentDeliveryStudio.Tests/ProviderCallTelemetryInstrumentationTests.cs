@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using ContentDeliveryStudio.Application.Diagnostics;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
 
 namespace ContentDeliveryStudio.Tests;
@@ -17,7 +18,8 @@ public sealed class ProviderCallTelemetryInstrumentationTests
             ActivityStopped = stoppedActivities.Add,
         };
         ActivitySource.AddActivityListener(listener);
-        var sink = new DiagnosticProviderCallTelemetrySink();
+        var journal = new RecordingDiagnosticsEventJournal();
+        var sink = new DiagnosticProviderCallTelemetrySink(journal);
 
         sink.Record(CreateTelemetry());
 
@@ -36,6 +38,11 @@ public sealed class ProviderCallTelemetryInstrumentationTests
         Assert.Equal(20, activity.GetTagItem("provider.tokens.total"));
         Assert.Null(activity.GetTagItem("promptText"));
         Assert.Null(activity.GetTagItem("apiKey"));
+        var journalEvent = Assert.Single(journal.ProviderEvents);
+        Assert.Equal("openai-text", journalEvent.ProviderId);
+        Assert.Equal("text-planning", journalEvent.Operation);
+        Assert.Equal("gpt-5", journalEvent.Model);
+        Assert.Equal(20, journalEvent.TotalTokens);
     }
 
     [Fact]
@@ -80,6 +87,14 @@ public sealed class ProviderCallTelemetryInstrumentationTests
             && Convert.ToDouble(measurement.Value) == 0.03d);
     }
 
+    [Fact]
+    public void DiagnosticSink_JournalFailureDoesNotEscape()
+    {
+        var sink = new DiagnosticProviderCallTelemetrySink(new ThrowingDiagnosticsEventJournal());
+
+        sink.Record(CreateTelemetry());
+    }
+
     private static ProviderCallTelemetry CreateTelemetry()
     {
         return new ProviderCallTelemetry(
@@ -118,4 +133,33 @@ public sealed class ProviderCallTelemetryInstrumentationTests
         string InstrumentName,
         object Value,
         IReadOnlyDictionary<string, object?> Tags);
+
+    private sealed class RecordingDiagnosticsEventJournal : IDiagnosticsEventJournal
+    {
+        public List<ProviderCallDiagnosticsEvent> ProviderEvents { get; } = [];
+
+        public void Record(GenerationQueueDiagnosticsEvent value)
+        {
+        }
+
+        public void Record(ProviderCallDiagnosticsEvent value)
+        {
+            ProviderEvents.Add(value);
+        }
+
+        public Task<DiagnosticsLogReadResult> ReadRecentAsync(int maxCount, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(new DiagnosticsLogReadResult([], 0, 0));
+        }
+    }
+
+    private sealed class ThrowingDiagnosticsEventJournal : IDiagnosticsEventJournal
+    {
+        public void Record(GenerationQueueDiagnosticsEvent value) => throw new IOException("simulated journal failure");
+
+        public void Record(ProviderCallDiagnosticsEvent value) => throw new IOException("simulated journal failure");
+
+        public Task<DiagnosticsLogReadResult> ReadRecentAsync(int maxCount, CancellationToken cancellationToken) =>
+            throw new IOException("simulated journal failure");
+    }
 }

@@ -23,6 +23,24 @@ Domain identifiers, provider IDs, model IDs, and error strings remain in English
 5. Compare candidates, apply repair guidance, and regenerate where review output indicates a problem.
 6. Export a delivery package only after final human approval.
 
+## Generation Queue
+
+The image-series workflow offers two fake-first generation paths:
+
+- Use **Run fake generation** for the compatibility one-click path. It prepares
+  the durable queue and immediately executes it.
+- Use **Prepare fake queue** when you need operator control. Preparation writes
+  ordered queue tasks but makes no provider call. Open **Queue** to select a row,
+  then use **Pause**, **Resume**, **Move up**, **Move down**, or **Retry** before
+  choosing **Execute queue**.
+
+Pause, resume, reorder, and retry only change local durable state. Retry creates
+a new linked task and preserves the original failed or cancelled record. Queued
+and paused work remains available after reopening the project; an interrupted
+running task is marked failed and is never replayed automatically. Queue Execute
+is currently fake-only, and enabling another provider mode does not authorize
+paid execution.
+
 ## Strongest Supported Paths
 
 - Requirement-first image series: the strongest current end-to-end path and the primary verified launch spine in the latest recorded V1 snapshot.
@@ -132,6 +150,29 @@ Migration and rollback boundaries:
 - Diagnostics export records whether a secret exists, not the secret value.
 - Safe backup excludes `.env`, local appsettings overrides, SQLite databases, `workspace/`, and `outputs/` by default.
 
+## Safe Backup And Restore
+
+Open the Workbench inspector and use **Safe backup and restore**:
+
+1. Choose a source folder and an output ZIP, then select **Create backup**.
+2. To restore, choose the ZIP and an empty or non-conflicting separate target folder, then select **Restore backup**.
+3. Restore does not overwrite existing files. It validates every path, manifest row, file length, and SHA-256 before writing the first file.
+
+The safe desktop path never includes `.env`, local appsettings overrides, SQLite databases, `workspace/`, `outputs/`, `bin`, or `obj`. It is not a full live-state backup. Preserve SQLite/workspace/output data separately before migration or code rollback.
+
+## Windows ZIP Package
+
+Create and verify a framework-dependent Windows package from the repository root:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/publish-app.ps1 -Configuration Release -Runtime win-x64 -Clean
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-publish-package.ps1 -PackagePath publish/ContentDeliveryStudio.App-win-x64-Release.zip
+```
+
+The output directory, ZIP, `publish-manifest.json`, and `.sha256` sidecar stay under ignored `publish/`. The target machine needs the .NET 10 Desktop Runtime unless `-SelfContained` is explicitly used. The ZIP is hash-verified but is not signed and does not install/register the application like MSI/MSIX.
+
+Repository accessibility coverage includes keyboard focus, localized UI Automation for the shell and principal forms, a virtualized gallery contract, and PerMonitorV2 declaration. Narrator, actual high-contrast switching, non-default-DPI machines, touch/pen, and low-memory hardware still require manual testing.
+
 ## OpenAI Launch Preflight
 
 The latest recorded live OpenAI V1 sample is already captured under `artifacts/live-openai-v1-sample/20260611-132947`. Use the built-in read-only OpenAI launch preflight path before attempting any refresh run, provider-behavior revalidation, or new release-evidence snapshot.
@@ -169,8 +210,11 @@ It can include:
 - routed repair-patch summaries
 - operator-run audit summaries
 - OpenAI launch-preflight readiness snapshots when that preflight has been run
+- up to 500 recent validated generation-queue and provider-call events from the local structured journal, plus dropped/invalid counts
 
 Review the generated package before sharing it outside the local machine.
+
+The structured journal is local runtime data under the studio data root. It rotates at 1 MiB and retains no more than three files. It is not a general application-log capture: prompts, provider response bodies, source material, generated content, endpoints, request/response IDs, credentials, `.env` content, full exceptions, and user file paths are outside its schema. Invalid or hand-edited lines are skipped rather than copied into an export. The journal does not upload data and does not enable OTLP or a live provider.
 
 ## Sample Migration
 

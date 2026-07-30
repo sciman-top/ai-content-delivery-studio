@@ -61,11 +61,12 @@ public sealed class ProjectWorkspaceApplicationServiceTests
         var loaded = await service.LoadProjectAsync(project.Id, CancellationToken.None);
 
         var tasks = loaded!.Series.Single().Items.Single().GenerationTasks.OrderBy(task => task.CreatedAt).ToArray();
-        Assert.Equal(GenerationTaskStatus.Cancelled, tasks[0].Status);
-        Assert.Contains("not dispatched", tasks[0].ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(GenerationTaskStatus.Queued, tasks[0].Status);
+        Assert.Null(tasks[0].ErrorMessage);
+        Assert.Equal(DateTimeOffset.Parse("2026-07-28T16:35:00Z"), tasks[0].UpdatedAt);
         Assert.Equal(GenerationTaskStatus.Failed, tasks[1].Status);
         Assert.Contains("interrupted", tasks[1].ErrorMessage, StringComparison.OrdinalIgnoreCase);
-        Assert.All(tasks, task => Assert.Equal(recoveryTimestamp, task.UpdatedAt));
+        Assert.Equal(recoveryTimestamp, tasks[1].UpdatedAt);
         Assert.Equal(1, repository.SaveCount);
     }
 

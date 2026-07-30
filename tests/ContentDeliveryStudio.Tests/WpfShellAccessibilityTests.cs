@@ -62,6 +62,21 @@ public sealed class WpfShellAccessibilityTests
         Assert.Contains("KeyboardNavigation.IsTabStop=\"False\"", activity);
     }
 
+    [Fact]
+    public void VirtualizedGallery_ExposesNativeSelectionFocusAndSystemColors()
+    {
+        var gallery = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "GalleryRowsListView.xaml");
+
+        Assert.Contains("AutomationProperties.AutomationId=\"GalleryCandidateList\"", gallery);
+        Assert.Contains("AutomationProperties.Name=\"{Binding DataContext.GalleryItemColumn", gallery);
+        Assert.Contains("SelectionMode=\"Single\"", gallery);
+        Assert.Contains("KeyboardNavigation.DirectionalNavigation=\"Contained\"", gallery);
+        Assert.Contains("KeyboardNavigation.IsTabStop\" Value=\"True\"", gallery);
+        Assert.Contains("AccessibleKeyboardFocusVisual", gallery);
+        Assert.Contains("SystemColors.ControlDarkBrushKey", gallery);
+        Assert.Contains("SystemColors.GrayTextBrushKey", gallery);
+    }
+
     private static string ReadRepoFile(params string[] segments)
     {
         var pathSegments = new List<string>

@@ -10,18 +10,24 @@
         <ComboBox ItemsSource="{Binding ImageTypePresetOptions}"
                   SelectedItem="{Binding SelectedImageTypePresetOption, Mode=TwoWay}"
                   DisplayMemberPath="DisplayName"
+                  AutomationProperties.AutomationId="ImageTypePresetSelector"
+                  AutomationProperties.Name="{Binding ImageTypePresetLabel}"
                   MinHeight="28"
                   Margin="0,0,0,6" />
         <TextBlock Text="{Binding StyleGuideLabel}" Margin="0,0,0,4" />
         <ComboBox ItemsSource="{Binding StyleGuideOptions}"
                   SelectedItem="{Binding SelectedStyleGuideOption, Mode=TwoWay}"
                   DisplayMemberPath="Name"
+                  AutomationProperties.AutomationId="StyleGuideSelector"
+                  AutomationProperties.Name="{Binding StyleGuideLabel}"
                   MinHeight="28"
                   Margin="0,0,0,6" />
         <TextBlock Text="{Binding GenerationRecipeLabel}" Margin="0,0,0,4" />
         <ComboBox ItemsSource="{Binding GenerationRecipeOptions}"
                   SelectedItem="{Binding SelectedGenerationRecipeOption, Mode=TwoWay}"
                   DisplayMemberPath="DisplayName"
+                  AutomationProperties.AutomationId="GenerationRecipeSelector"
+                  AutomationProperties.Name="{Binding GenerationRecipeLabel}"
                   MinHeight="28"
                   Margin="0,0,0,6" />
         <TextBlock Text="{Binding StyleRecipeSummaryTitle}" FontWeight="SemiBold" Margin="0,4,0,4" />
