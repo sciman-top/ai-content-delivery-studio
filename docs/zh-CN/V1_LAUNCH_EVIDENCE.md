@@ -22,7 +22,7 @@
 
 - 快照日期: `2026-06-23`
 - 仓库根目录: `D:\CODE\ai-content-delivery-studio`
-- 最近一次自动化仓库验证: `2026-06-23`，命令为 `.\scripts\verify-repo.ps1 -NoRestore`
+- 本快照记录的自动化仓库验证: `2026-06-23`，命令为 `.\scripts\verify-repo.ps1 -NoRestore`
 - 最近一次真实 provider 样本运行: `artifacts/live-openai-v1-sample/20260611-132947`
 - 本快照使用的最新门禁:
   - `.\scripts\verify-repo.ps1 -NoRestore`
@@ -32,6 +32,8 @@
   - Build passed
   - Tests passed: `433 / 433`
   - Format check passed
+
+上面的日期和 `433 / 433` 是本次发布快照不可改写的历史事实，不是仓库最新测试基线。后续 Phase 7 repo-only 收口已通过 `734 / 734` 测试，但没有刷新付费 provider 样本，也没有改变本快照的 live evidence 权威边界。
 
 ## 指标台账
 
@@ -45,9 +47,10 @@
 
 ## 当前结论
 
-- `5 / 5` 个发布指标现在都已经具备足以计为当前已验证的自动化仓库证据或记录在册的真实 provider 证据。
+- 对于 `2026-06-23` 快照，`5 / 5` 个发布指标都具备已记录的自动化仓库证据或真实 provider 证据，并继续保持已验证状态。
 - 对于 `2026-06-23` 这次快照，live OpenAI 发布缺口仍然处于关闭状态。
-- 本快照使用的最新自动化门禁已经通过规范的仓库验证路径，并保持 `433 / 433` 测试通过。
+- 本快照记录的自动化门禁通过规范仓库验证路径，并保持 `433 / 433` 测试通过。
+- 更新的 repo-only 基线已按 [Phase 7 产品硬化收口证据](../change-evidence/20260730-phase7-product-hardening-closeout.md) 通过 `734 / 734` 测试；这个更新的自动化结果不会刷新 live OpenAI 样本，也不会静默创建新的 V1 发布快照。
 - 本快照中的最新真实 OpenAI 证据仍来自 `artifacts/live-openai-v1-sample/20260611-132947`；这次读数刷新不需要新增付费 provider 重跑。
 - 仓库现在同时具备只读 preflight 路径，以及一组与同一发布声明对应的已记录真实 provider 证据。
 

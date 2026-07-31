@@ -5,7 +5,7 @@
 Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for current release claims. The latest recorded release-verification readout is:
 
 - Latest recorded release-verification snapshot: `2026-06-23`
-- Current readout: no open V1 release-claim gaps remain in that snapshot; all `5 / 5` launch metrics remain verified, with fresh automated repo verification at `433 / 433` tests and the latest recorded opt-in OpenAI `2-item` sample still under `artifacts/live-openai-v1-sample/20260611-132947`
+- Snapshot readout: no open V1 release-claim gaps remain in that snapshot; all `5 / 5` launch metrics remain verified. The snapshot captured `433 / 433` automated tests and the opt-in OpenAI `2-item` sample under `artifacts/live-openai-v1-sample/20260611-132947`. The newer repo-only baseline is `734 / 734` in [Phase 7 closeout evidence](./change-evidence/20260730-phase7-product-hardening-closeout.md); it does not refresh the historical live-provider sample.
 - Reopen this as a release-gap section only when provider behavior materially changes, a newer live-provider snapshot is needed, or a regression invalidates the existing evidence
 - Remaining non-release work is intentionally grouped into deferred trigger notes: OCR reference coverage when scanned-document hardening enters the active roadmap, scholarly PDF extraction references when paper-figure evidence extraction becomes active, real additional scenario pack-policy hardening only when a new scenario has a repo-owned spec and bounded plan, and partial-image streaming UX only if a future workbench flow proves it useful.
 

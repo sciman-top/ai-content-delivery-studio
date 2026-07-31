@@ -11,7 +11,7 @@ AI, providers, workflow packs, and output formats can evolve quickly. Core domai
 - A workflow is user-visible complete only when it can run end-to-end in the workbench with review and delivery.
 - A workflow is production-ready only when approval evidence, deterministic rendering or composition where required, and real-provider behavior are verified.
 - Current V1 release-claim truth lives in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md); roadmap phase status and completed backlog items do not count as launch proof by themselves.
-- As of the latest recorded launch snapshot on `2026-06-23`, that evidence file keeps all `5 / 5` V1 launch metrics verified. The fresh automated repo gate is current, while the latest recorded live-provider sample in that snapshot still remains the `2026-06-11` artifact set. This does not mean every roadmap phase is complete or that future release snapshots never need refresh.
+- The latest recorded launch snapshot remains `2026-06-23`: it keeps all `5 / 5` V1 launch metrics verified and captured the then-current `433 / 433` automated gate plus the `2026-06-11` live-provider artifact set. The newer repo-only baseline is `734 / 734` in Phase 7 evidence; it does not refresh or relabel that historical live-provider snapshot. This does not mean every roadmap phase is complete or that future release snapshots never need refresh.
 - The recorded V1 repo-side execution queue remains closed. The post-V1 trustworthy-scientific-figure flagship implementation, fake/live verification, human acceptance, Task 30 documentation, and Checkpoint 5 final-gate closeout are accepted.
 
 ## V1 Release Frame

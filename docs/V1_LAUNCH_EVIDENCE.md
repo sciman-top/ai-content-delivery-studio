@@ -20,7 +20,7 @@ The goal is to keep launch readiness honest. Completed implementation slices are
 
 - Snapshot date: `2026-06-23`
 - Repository root: `D:\CODE\ai-content-delivery-studio`
-- Latest automated repo verification: `2026-06-23` via `.\scripts\verify-repo.ps1 -NoRestore`
+- Automated repo verification captured by this snapshot: `2026-06-23` via `.\scripts\verify-repo.ps1 -NoRestore`
 - Latest live provider sample run: `artifacts/live-openai-v1-sample/20260611-132947`
 - Fresh gate for this snapshot:
   - `.\scripts\verify-repo.ps1 -NoRestore`
@@ -30,6 +30,11 @@ The goal is to keep launch readiness honest. Completed implementation slices are
   - Build passed
   - Tests passed: `433 / 433`
   - Format check passed
+
+The date and `433 / 433` count above are immutable facts of this release
+snapshot. They are not the repository's newest test baseline: the repo-only
+Phase 7 closeout later passed `734 / 734` tests without refreshing the paid
+provider sample or changing this snapshot's live-evidence authority.
 
 ## Metric Ledger
 
@@ -43,9 +48,10 @@ The goal is to keep launch readiness honest. Completed implementation slices are
 
 ## Current Readout
 
-- `5 / 5` launch metrics now have either fresh automated repo evidence or recorded live provider evidence strong enough to count as currently verified.
+- For the `2026-06-23` snapshot, all `5 / 5` launch metrics have either captured automated repo evidence or recorded live provider evidence strong enough to remain verified.
 - The live OpenAI launch gap remains closed for the current `2026-06-23` snapshot.
-- The fresh automated repo gate for this snapshot passed through the canonical repository verification path with `433 / 433` tests.
+- The automated repo gate captured by this snapshot passed through the canonical repository verification path with `433 / 433` tests.
+- The newer repo-only baseline passes `734 / 734` tests as recorded in [Phase 7 product hardening closeout evidence](./change-evidence/20260730-phase7-product-hardening-closeout.md). This newer automated result does not refresh the live OpenAI sample or silently create a new V1 launch snapshot.
 - The latest live OpenAI evidence in this snapshot still comes from `artifacts/live-openai-v1-sample/20260611-132947`; no newer paid-provider rerun was required for this readout refresh.
 - The repository now has both the read-only preflight path and one recorded live provider evidence set for the same release claim.
 
