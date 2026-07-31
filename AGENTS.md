@@ -1,10 +1,10 @@
 # AGENTS.md - ai-content-delivery-studio
 **项目契约**: 2.0
-**全局规则复核**: 9.58
-**最后更新**: 2026-07-28
+**全局规则复核**: 9.59
+**最后更新**: 2026-08-01
 
 ## 1. 当前落点与目标归宿
-- 当前落点：`D:\CODE\ai-content-delivery-studio` 是 AI Content Delivery Studio 的实现仓，图像系列生成是当前核心生产路径。
+- 当前落点：`D:\CODE\ai-content-delivery-studio` 是 AI Content Delivery Studio 的实现仓，图像系列与科学图解是当前生产路径。
 - 目标归宿：交付 Windows-first 桌面应用，覆盖素材理解、系列规划、生成、审查、修复、自动化和交付打包。
 - 下一最小里程碑：按 `docs/TASKS.md` 与仓内 spec/plan 完成一个有 fresh gate evidence 的有界切片。
 - `D:\CODE\physicist_chinese_poster_batch_tool` 仅是生产案例，不是实现根；仓库重命名以 `docs/adr/0008-product-identity-and-repository-rename.md` 的 gate 为准。
