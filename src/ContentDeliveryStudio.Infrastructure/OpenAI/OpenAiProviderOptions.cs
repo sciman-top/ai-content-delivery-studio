@@ -26,7 +26,9 @@ public sealed record OpenAiProviderOptions
 
     public OpenAiProviderOperation AllowedOperations { get; init; } = OpenAiProviderOperation.All;
 
-    public string TextPlanningModel { get; init; } = "gpt-5";
+    public string TextPlanningModel { get; init; } = "gpt-5.6-sol";
+
+    public string ReasoningEffort { get; init; } = "medium";
 
     public string ImageGenerationModel { get; init; } = "gpt-image-2";
 
@@ -37,7 +39,7 @@ public sealed record OpenAiProviderOptions
 
     public bool ImageGenerationUsesResponsesByDefault { get; init; }
 
-    public string VisionReviewModel { get; init; } = "gpt-5";
+    public string VisionReviewModel { get; init; } = "gpt-5.6-sol";
 
     // Keep remote visual review in small local-direct batches unless a later slice explicitly widens it.
     public int VisionReviewBatchItemLimit { get; init; } = VisionReviewExecutionPolicy.DefaultBatchItemLimit;
@@ -75,6 +77,7 @@ public sealed record OpenAiProviderOptions
             AppSecretSecretName = endpoint.AppSecretSecretName,
             UsesSharedTextApiKeyFallback = false,
             TextPlanningModel = RequireModel(endpoint, "Text provider"),
+            ReasoningEffort = endpoint.ReasoningEffort,
             ImageGenerationModel = string.Empty,
             VisionReviewModel = RequireModel(endpoint, "Text provider"),
             AllowedOperations = OpenAiProviderOperation.TextPlanning | OpenAiProviderOperation.VisionReview,
@@ -106,6 +109,7 @@ public sealed record OpenAiProviderOptions
             UsesSharedTextApiKeyFallback = endpoint.UsesSharedTextApiKeyFallback,
             TextPlanningModel = string.Empty,
             ImageGenerationModel = RequireModel(endpoint, "Image provider"),
+            ReasoningEffort = endpoint.ReasoningEffort,
             ImageGenerationResponsesModel = endpoint.ResponsesModel,
             ImageGenerationAllowsResponsesState = !string.IsNullOrWhiteSpace(endpoint.ResponsesModel),
             ImageGenerationUsesResponsesByDefault =
@@ -165,6 +169,11 @@ public sealed record OpenAiProviderOptions
             && string.IsNullOrWhiteSpace(VisionReviewModel))
         {
             errors.Add("Vision review model is required.");
+        }
+
+        if (ReasoningEffort is not ("none" or "low" or "medium" or "high" or "xhigh" or "max"))
+        {
+            errors.Add("OpenAI reasoning effort is invalid.");
         }
 
         if (VisionReviewBatchItemLimit <= 0)

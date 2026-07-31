@@ -9,6 +9,7 @@ namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 public sealed class OpenAiScientificReviewProvider
     : IScientificSemanticReviewProvider, IScientificVisualReviewProvider
 {
+    private const int MaximumTransientAttempts = 3;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
     private readonly HttpClient _httpClient;
     private readonly OpenAiProviderOptions _options;
@@ -37,7 +38,10 @@ public sealed class OpenAiScientificReviewProvider
             .ToHashSet(StringComparer.Ordinal);
         return ReviewAsync(
             "scientific-semantic-review",
-            OpenAiScientificReviewMapper.CreateSemanticPayload(request, _options.VisionReviewModel),
+            OpenAiScientificReviewMapper.CreateSemanticPayload(
+                request,
+                _options.VisionReviewModel,
+                _options.ReasoningEffort),
             allowedIds,
             ScientificReviewLayer.Semantic.ToString(),
             cancellationToken);
@@ -51,7 +55,10 @@ public sealed class OpenAiScientificReviewProvider
             .ToHashSet(StringComparer.Ordinal);
         return ReviewAsync(
             "scientific-visual-review",
-            OpenAiScientificReviewMapper.CreateVisualPayload(request, _options.VisionReviewModel),
+            OpenAiScientificReviewMapper.CreateVisualPayload(
+                request,
+                _options.VisionReviewModel,
+                _options.ReasoningEffort),
             allowedIds,
             ScientificReviewLayer.Visual.ToString(),
             cancellationToken);
@@ -72,29 +79,62 @@ public sealed class OpenAiScientificReviewProvider
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
         var endpoint = new Uri(_options.BaseUri, OpenAiRoutingDefaults.VisionReviewEndpointPath);
-        using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        request.Content = JsonContent.Create(payload, options: JsonOptions);
-
-        var stopwatch = Stopwatch.StartNew();
-        using var response = await _httpClient.SendAsync(request, cancellationToken);
-        stopwatch.Stop();
-        if (!response.IsSuccessStatusCode)
+        for (var attempt = 1; attempt <= MaximumTransientAttempts; attempt++)
         {
-            RecordTelemetry(operation, endpoint, response, null, null, stopwatch.Elapsed);
-            throw new HttpRequestException(
-                $"OpenAI scientific review request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            request.Content = JsonContent.Create(payload, options: JsonOptions);
+
+            var stopwatch = Stopwatch.StartNew();
+            HttpResponseMessage response;
+            try
+            {
+                response = await _httpClient.SendAsync(request, cancellationToken);
+            }
+            catch (HttpRequestException) when (attempt < MaximumTransientAttempts)
+            {
+                stopwatch.Stop();
+                await DelayForRetryAsync(attempt, cancellationToken);
+                continue;
+            }
+
+            using (response)
+            {
+                stopwatch.Stop();
+                if (!response.IsSuccessStatusCode)
+                {
+                    RecordTelemetry(operation, endpoint, response, null, null, stopwatch.Elapsed);
+                    if (IsTransient(response.StatusCode) && attempt < MaximumTransientAttempts)
+                    {
+                        await DelayForRetryAsync(attempt, cancellationToken);
+                        continue;
+                    }
+
+                    throw new HttpRequestException(
+                        $"OpenAI scientific review request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+                }
+
+                await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+                using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+                var traceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
+                RecordTelemetry(operation, endpoint, response, document.RootElement, traceId, stopwatch.Elapsed);
+                return OpenAiScientificReviewMapper.Parse(
+                    document.RootElement,
+                    allowedIds,
+                    layerResponsibleItemId);
+            }
         }
 
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
-        var traceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
-        RecordTelemetry(operation, endpoint, response, document.RootElement, traceId, stopwatch.Elapsed);
-        return OpenAiScientificReviewMapper.Parse(
-            document.RootElement,
-            allowedIds,
-            layerResponsibleItemId);
+        throw new HttpRequestException("OpenAI scientific review exhausted transient retries.");
     }
+
+    private static bool IsTransient(System.Net.HttpStatusCode statusCode) =>
+        statusCode is System.Net.HttpStatusCode.RequestTimeout
+            or System.Net.HttpStatusCode.TooManyRequests
+        || (int)statusCode >= 500;
+
+    private static Task DelayForRetryAsync(int attempt, CancellationToken cancellationToken) =>
+        Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), cancellationToken);
 
     private void RecordTelemetry(
         string operation,

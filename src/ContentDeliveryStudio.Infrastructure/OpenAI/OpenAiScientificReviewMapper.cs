@@ -20,18 +20,21 @@ internal static class OpenAiScientificReviewMapper
 
     public static Dictionary<string, object?> CreateSemanticPayload(
         ScientificSemanticReviewRequest request,
-        string model)
+        string model,
+        string reasoningEffort = "medium")
     {
         ArgumentNullException.ThrowIfNull(request);
         return CreatePayload(
             model,
             SemanticInstructions,
-            [TextPart(BuildSemanticInput(request))]);
+            [TextPart(BuildSemanticInput(request))],
+            reasoningEffort);
     }
 
     public static Dictionary<string, object?> CreateVisualPayload(
         ScientificVisualReviewRequest request,
-        string model)
+        string model,
+        string reasoningEffort = "medium")
     {
         ArgumentNullException.ThrowIfNull(request);
         ScientificReviewExecutionPolicy.ValidateFullResolutionArtifact(
@@ -47,10 +50,16 @@ internal static class OpenAiScientificReviewMapper
         var content = new List<Dictionary<string, object?>>
         {
             TextPart(BuildVisualMetadata(request)),
-            ImagePart(request.FullResolutionOutput.MimeType, request.FullResolutionOutput.Bytes),
+            ImagePart(
+                request.FullResolutionOutput.MimeType,
+                request.FullResolutionOutput.Bytes,
+                OpenAiVisionDetailPolicy.ForScientificReview(model)),
         };
-        content.AddRange(request.RegionCrops.Select(crop => ImagePart(crop.MimeType, crop.Bytes)));
-        return CreatePayload(model, VisualInstructions, content);
+        content.AddRange(request.RegionCrops.Select(crop => ImagePart(
+            crop.MimeType,
+            crop.Bytes,
+            OpenAiVisionDetailPolicy.ForScientificReview(model))));
+        return CreatePayload(model, VisualInstructions, content, reasoningEffort);
     }
 
     public static ScientificProviderReviewResult Parse(
@@ -198,6 +207,17 @@ internal static class OpenAiScientificReviewMapper
                 crop.Y,
                 crop.Width,
                 crop.Height,
+                expected = new
+                {
+                    crop.ExpectedCheck!.CheckId,
+                    crop.ExpectedCheck.ScientificMeaning,
+                    crop.ExpectedCheck.ExactContent,
+                    crop.ExpectedCheck.RelationshipDirection,
+                    crop.ExpectedCheck.Conditions,
+                    crop.ExpectedCheck.ForbiddenContent,
+                    crop.ExpectedCheck.EvidenceSourceBlockIds,
+                    authority = crop.ExpectedCheck.Authority.ToString(),
+                },
             }),
             imageInputOrder = "fullResolution, then typedCrops in listed order",
         }, JsonOptions);
@@ -206,7 +226,8 @@ internal static class OpenAiScientificReviewMapper
     private static Dictionary<string, object?> CreatePayload(
         string model,
         string instructions,
-        IReadOnlyList<Dictionary<string, object?>> content)
+        IReadOnlyList<Dictionary<string, object?>> content,
+        string reasoningEffort)
     {
         return new Dictionary<string, object?>
         {
@@ -222,6 +243,7 @@ internal static class OpenAiScientificReviewMapper
             },
             ["store"] = false,
             ["max_output_tokens"] = MaxOutputTokens,
+            ["reasoning"] = OpenAiReasoningPayload.Create(reasoningEffort),
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = new Dictionary<string, object?>
@@ -240,14 +262,31 @@ internal static class OpenAiScientificReviewMapper
         return new Dictionary<string, object?> { ["type"] = "input_text", ["text"] = text };
     }
 
-    private static Dictionary<string, object?> ImagePart(string mimeType, byte[] bytes)
+    private static Dictionary<string, object?> ImagePart(
+        string mimeType,
+        byte[] bytes,
+        string detail)
     {
         return new Dictionary<string, object?>
         {
             ["type"] = "input_image",
             ["image_url"] = $"data:{mimeType};base64,{Convert.ToBase64String(bytes)}",
-            ["detail"] = "high",
+            ["detail"] = detail,
         };
+    }
+
+    internal static class OpenAiVisionDetailPolicy
+    {
+        public static string ForScientificReview(string model)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(model);
+            var normalized = model.Trim().ToLowerInvariant();
+            return normalized.StartsWith("gpt-5.4", StringComparison.Ordinal)
+                || normalized.StartsWith("gpt-5.5", StringComparison.Ordinal)
+                || normalized.StartsWith("gpt-5.6", StringComparison.Ordinal)
+                ? "original"
+                : "high";
+        }
     }
 
     private static Dictionary<string, object?> CreateSchema()

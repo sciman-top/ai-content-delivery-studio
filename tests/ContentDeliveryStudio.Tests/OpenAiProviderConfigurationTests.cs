@@ -8,6 +8,17 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class OpenAiProviderConfigurationTests
 {
     [Fact]
+    public void OpenAiProviderOptions_DefaultsToGpt56SolWithMediumReasoning()
+    {
+        var options = new OpenAiProviderOptions();
+
+        Assert.Equal("gpt-5.6-sol", options.TextPlanningModel);
+        Assert.Equal("gpt-5.6-sol", options.VisionReviewModel);
+        Assert.Equal("medium", options.ReasoningEffort);
+        Assert.Empty(options.Validate());
+    }
+
+    [Fact]
     public async Task DotEnvSecretStore_ReadsDotEnvValuesWithoutPersistingSecrets()
     {
         var directory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));

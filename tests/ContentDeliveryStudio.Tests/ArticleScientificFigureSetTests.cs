@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml.Linq;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.ScientificFigures;
 using ContentDeliveryStudio.Core.Sources;
@@ -30,6 +32,9 @@ public sealed class ArticleScientificFigureSetTests
         Assert.All(run.Items, item =>
         {
             Assert.True(item.PassedVisualReview);
+            Assert.True(item.DeterministicScientificReview.Passed);
+            Assert.NotEmpty(item.VisualReviewRequest.RegionCrops);
+            Assert.All(item.VisualReviewRequest.RegionCrops, crop => Assert.NotNull(crop.ExpectedCheck));
             Assert.Equal(ArticleScientificFigureGateStatus.PendingHumanApproval, item.Candidate.GateOneStatus);
             Assert.False(string.IsNullOrWhiteSpace(item.VisualReview.ProviderTraceId));
         });
@@ -121,6 +126,76 @@ public sealed class ArticleScientificFigureSetTests
     }
 
     [Fact]
+    public async Task TextClipping_IsPresentationOnlyAndTriggersBoundedRepair()
+    {
+        var candidate = CreateCandidates().Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.LensEquationGraph);
+        var visual = new SequenceVisualReviewProvider(
+            FailedReview(ScientificProviderFindingKind.VisualDefect, "text-clipped"),
+            FakeScientificReviewResults.Pass("text-clipping-repaired"));
+
+        var run = await CreateService(visual).RunAsync(
+            "article.pdf",
+            [candidate],
+            CancellationToken.None);
+
+        var result = Assert.Single(run.Items);
+        Assert.True(run.Complete);
+        Assert.Equal(2, result.PresentationAttempts);
+        Assert.Contains(result.Repairs, repair => repair.Reason.Contains("text-clipped", StringComparison.Ordinal));
+        Assert.True(result.DeterministicScientificReview.Passed);
+    }
+
+    [Theory]
+    [InlineData(ArticleScientificFigureCandidateKind.LensEquationGraph, "wrong-formula", "optics-virtual-object-branch-invalid")]
+    [InlineData(ArticleScientificFigureCandidateKind.CorrectiveLensControl, "swap-lens", "optics-corrective-lens-type-invalid")]
+    [InlineData(ArticleScientificFigureCandidateKind.CorrectiveLensControl, "same-focus", "optics-focus-shift-not-represented")]
+    [InlineData(ArticleScientificFigureCandidateKind.Mechanism, "reverse-ray", "optics-ray-direction-reversed")]
+    [InlineData(ArticleScientificFigureCandidateKind.Comparison, "swap-plane-order", "optics-plane-order-right-invalid")]
+    public void DeterministicOpticsReview_BlocksScientificMutations(
+        ArticleScientificFigureCandidateKind kind,
+        string mutation,
+        string expectedCode)
+    {
+        var candidate = CreateCandidates().Single(item => item.Kind == kind);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var mutated = Mutate(artifact.Svg, mutation);
+        var review = new ArticleOpticalScientificReviewer().Review(
+            candidate,
+            artifact with
+            {
+                Svg = mutated,
+                Sha256 = Hash(Encoding.UTF8.GetBytes(mutated)),
+            },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(review.Passed);
+        Assert.Contains(review.Findings, finding => finding.Code == expectedCode);
+    }
+
+    [Fact]
+    public void DeterministicOpticsReview_BlocksMissingSourcePhoto()
+    {
+        var candidate = CreateCandidates().Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard);
+        var audit = new FakeSourceFigureExtractor().Extract("article.pdf");
+        var board = new FakeEvidenceBoardRenderer().Render(audit) with
+        {
+            SourceAssetIds = audit.Assets.Take(5).Select(item => item.AssetId).ToArray(),
+        };
+
+        var review = new ArticleOpticalScientificReviewer().Review(
+            candidate,
+            artifact: null,
+            audit,
+            board);
+
+        Assert.False(review.Passed);
+        Assert.Contains(review.Findings, finding => finding.Code == "optics-source-photo-coverage-invalid");
+    }
+
+    [Fact]
     public void Exporter_RendersEndAnchoredCandidateWatermarkInsideTheCanvas()
     {
         var candidate = CreateCandidates().Single(item =>
@@ -185,7 +260,8 @@ public sealed class ArticleScientificFigureSetTests
             new SkiaArticleSourceEvidenceBoardRenderer(),
             new ArticleScientificFigureCandidateRenderer(),
             new ScientificFigureExporter(),
-            new FakeScientificVisualReviewProvider()).RunAsync(
+            new FakeScientificVisualReviewProvider(),
+            new SkiaScientificReviewImageCropper()).RunAsync(
                 sourcePath,
                 candidates,
                 CancellationToken.None);
@@ -280,6 +356,22 @@ public sealed class ArticleScientificFigureSetTests
                 authorityBoundary = "visual review only; no scientific Gate 1 or human acceptance",
                 contractPassed = item.ContractReview.Passed,
                 contractFindings = item.ContractReview.Findings,
+                deterministicScientificPassed = item.DeterministicScientificReview.Passed,
+                deterministicScientificPackage = item.DeterministicScientificReview.PackageId,
+                deterministicScientificAuthority = item.DeterministicScientificReview.AuthorityBoundary,
+                deterministicScientificFindings = item.DeterministicScientificReview.Findings,
+                expectedVisualChecks = item.DeterministicScientificReview.ExpectedVisualChecks,
+                typedCrops = item.VisualReviewRequest.RegionCrops.Select(crop => new
+                {
+                    crop.CropId,
+                    crop.Kind,
+                    crop.ResponsibleItemId,
+                    crop.X,
+                    crop.Y,
+                    crop.Width,
+                    crop.Height,
+                    crop.ExpectedCheck,
+                }),
                 item.VisualReview.Verdict,
                 item.VisualReview.Findings,
                 item.VisualReview.ProviderTraceId,
@@ -313,6 +405,8 @@ public sealed class ArticleScientificFigureSetTests
             run.Complete,
             visualReviewProvider = "fake-scientific-visual",
             visualReviewBoundary = "fake-first contract path; not a live multimodal-model or scientific-expert verdict",
+            deterministicReview = "article-optics-v1",
+            deterministicReviewBoundary = "machine-checkable optics invariants; not human Gate 1",
             gateOneStatus = "pending for every candidate",
             gateTwoStatus = "not-run",
             deliveryStatus = "not-created",
@@ -328,7 +422,8 @@ public sealed class ArticleScientificFigureSetTests
             new FakeEvidenceBoardRenderer(),
             renderer ?? new ArticleScientificFigureCandidateRenderer(),
             new ScientificFigureExporter(),
-            visual);
+            visual,
+            new SkiaScientificReviewImageCropper());
 
     private static IReadOnlyList<ArticleScientificFigureCandidate> CreateCandidates()
     {
@@ -397,23 +492,47 @@ public sealed class ArticleScientificFigureSetTests
     private static string Hash(byte[] bytes) =>
         $"sha256:{Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()}";
 
+    private static string Mutate(string svg, string mutation)
+    {
+        return mutation switch
+        {
+            "wrong-formula" => svg.Replace("x / (x + 1)", "x / (x - 1)", StringComparison.Ordinal),
+            "swap-lens" => svg.Replace("附加凹透镜", "附加凸透镜", StringComparison.Ordinal),
+            "same-focus" => svg.Replace("x=\"1038\"", "x=\"990\"", StringComparison.Ordinal),
+            "swap-plane-order" => svg.Replace("L2 位于 S 右侧", "L2 位于 S 左侧", StringComparison.Ordinal),
+            "reverse-ray" => ReverseFirstRay(svg),
+            _ => throw new ArgumentOutOfRangeException(nameof(mutation), mutation, null),
+        };
+    }
+
+    private static string ReverseFirstRay(string svg)
+    {
+        XNamespace ns = "http://www.w3.org/2000/svg";
+        var document = XDocument.Parse(svg, LoadOptions.PreserveWhitespace);
+        var ray = document.Descendants(ns + "path").First(item =>
+            item.Attribute("marker-end") is not null
+            && ((string?)item.Attribute("d"))?.StartsWith("M 135 255 L 330", StringComparison.Ordinal) == true);
+        ray.SetAttributeValue("d", "M 330 300 L 135 255");
+        return document.ToString(SaveOptions.DisableFormatting);
+    }
+
     private sealed class FakeSourceFigureExtractor : IArticleSourceFigureExtractor
     {
         public ArticleSourceFigureAudit Extract(string sourcePdfPath) => new(
             new string('b', 64).Insert(0, "sha256:"),
             8,
-            [new ArticleSourceFigureAsset(
-                "page-6-image-1",
+            Enumerable.Range(1, 6).Select(index => new ArticleSourceFigureAsset(
+                $"page-6-image-{index}",
                 6,
-                1,
+                index,
                 800,
                 600,
                 10,
                 10,
                 400,
                 300,
-                new string('c', 64).Insert(0, "sha256:"),
-                [1, 2, 3])]);
+                $"sha256:{new string((char)('a' + index), 64)}",
+                [1, 2, 3])).ToArray());
     }
 
     private sealed class FakeEvidenceBoardRenderer : IArticleSourceEvidenceBoardRenderer
@@ -426,7 +545,7 @@ public sealed class ArticleScientificFigureSetTests
                 Hash(bytes),
                 1600,
                 1200,
-                [audit.Assets[0].AssetId]);
+                audit.Assets.Select(item => item.AssetId).ToArray());
         }
     }
 

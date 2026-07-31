@@ -1,6 +1,6 @@
 # Scientific Figure Workflow Supply-Chain Research
 
-Last reviewed: 2026-07-31.
+Last reviewed: 2026-08-01.
 
 ## Status And Decision Boundary
 
@@ -731,3 +731,47 @@ critical relation-label bounds into the hard failure
 `critical-relation-label-overlap`. This guard checks visual legibility of the
 approved relationship; it does not infer or validate any additional scientific
 claim.
+
+## 8. Optical Scientific-Rigor Review Package (2026-08-01)
+
+The article shortcut now applies the repo-owned `article-optics-v1`
+deterministic review package before provider visual review. This package is
+authoritative for the bounded eye/lens corpus only; the visual model remains a
+visible-defect detector and cannot redefine scientific truth. It checks the
+approved article branches `y=x/(x+1), x>0` and `y=x/(1-x), 0<x<1`, the
+definitions `x=u/f` and `y=v/f`, positive-distance and dimensionless-variable
+conventions, convex/concave lens roles, `L2/S` plane ordering, left-to-right
+ray propagation, convergence/divergence topology, changed intervention focus,
+and complete coverage of the six located source-photo references.
+
+Each full-resolution review request is accompanied by responsibility-scoped
+formula, lens, ray/relationship, or source-evidence crops. Every crop carries
+a typed `ExpectedVisualCheck` containing its scientific meaning, exact
+content, relationship direction, conditions, forbidden content, evidence
+block IDs, and authority. The formal workflow derives these checks from an
+approved `ScientificFigureSpec` and marks them `ApprovedSpecification`. The
+article shortcut has no approved spec and therefore marks them
+`LocatedSourceEvidencePendingGateOne`; it must keep every candidate
+`PendingHumanApproval` rather than manufacturing approval.
+
+Scientific findings fail closed and never enter automatic repair. The bounded
+repair loop remains available only for presentation defects such as layout,
+text, labels, or non-evidentiary assets. Any change to a formula, optical
+element role, plane order, ray direction, or focus topology invalidates Gate 1
+and requires human review.
+
+The OpenAI Responses routes now default to the explicitly requested
+`gpt-5.6-sol` model with `reasoning.effort=medium`. This is a configuration
+change only: fake providers remain the default, and no live call is authorized
+by the model selection. Official GPT-5.6 guidance identifies Sol as the
+frontier-capability tier, supports `none`, `low`, `medium`, `high`, `xhigh`, and
+`max`, and describes `medium` as a balanced starting point. The image-detail
+policy uses `original` for GPT-5.4 and newer models when exact small text and
+spatial relationships matter, and falls back to `high` for older routes. Full
+bytes, typed crops, deterministic checks, and human Gate 1 remain separate
+controls even when `original` is available.
+
+Primary OpenAI sources:
+
+- <https://developers.openai.com/api/docs/guides/model-guidance?model=gpt-5.6#migration-quickstart>
+- <https://developers.openai.com/api/docs/guides/images-vision#choose-an-image-detail-level>

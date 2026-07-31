@@ -105,15 +105,20 @@ Key findings:
 - Responses accepts base64 data URLs and multiple `input_image` parts in one
   content array. Scientific review can therefore send the unchanged exported
   PNG bytes followed by typed critical-item crops in a deterministic order.
-- `detail: high` requests standard high-fidelity analysis, but model-specific
-  tokenization may still resize an input. The application must not claim that
-  provider-side processing preserves every source pixel. Full exported bytes,
-  bounded region crops, local deterministic checks, and human approval remain
-  separate controls.
+- `detail: original` is appropriate for small text and coordinate-sensitive
+  inspection when the selected model supports it. GPT-5.4, GPT-5.5, and the
+  GPT-5.6 family support this mode; older, mini, and o-series routes may support
+  only `low`, `high`, and `auto`. The application therefore selects `original`
+  only from a model capability policy and otherwise falls back to `high`.
+  Provider vision still cannot define scientific truth: full exported bytes,
+  typed crops, local deterministic checks, and human approval remain separate.
 - Vision has documented limitations for small text, graphs, styled lines,
   spatial reasoning, and accuracy. A model `Pass` cannot prove scientific
   correctness; malformed output, `Uncertain`, provider failure, or item-level
   findings must fail closed before the human Gate 2 decision.
+- The current OpenAI flagship default is `gpt-5.6-sol`; Responses requests set
+  `reasoning.effort=medium` explicitly. This is a provider configuration choice,
+  not permission to enable live calls or relax fake-first verification.
 - Strict `text.format` JSON Schema constrains the response shape but does not
   validate responsible item authority. Element/relation identifiers, enums,
   required failure findings, and non-empty evidence still require local checks.

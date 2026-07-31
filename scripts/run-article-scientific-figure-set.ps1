@@ -86,10 +86,30 @@ if ($missing.Count -gt 0) {
 
 $report = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory "article-figure-set-report.json") |
     ConvertFrom-Json
-if (-not $report.complete -or $report.resultCount -ne 6 -or $report.requestedCandidateCount -ne 6) {
+if (-not $report.complete -or $report.resultCount -ne 6 -or $report.requestedCandidateCount -ne 6 `
+    -or $report.deterministicReview -ne "article-optics-v1" `
+    -or $report.gateOneStatus -ne "pending for every candidate") {
     throw "Article figure-set report is incomplete."
 }
 
+foreach ($prefix in @(
+    "01-secondary-imaging",
+    "02-lens-equation",
+    "03-screen-retina",
+    "04-observation-position",
+    "05-corrective-lens",
+    "06-source-evidence-board")) {
+    $review = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory "$prefix.visual-review.json") |
+        ConvertFrom-Json
+    if (-not $review.deterministicScientificPassed `
+        -or $review.deterministicScientificPackage -ne "article-optics-v1" `
+        -or $review.gateOneStatus -ne "PendingHumanApproval" `
+        -or @($review.expectedVisualChecks).Count -eq 0 `
+        -or @($review.typedCrops).Count -eq 0) {
+        throw "Article review evidence is incomplete: $prefix"
+    }
+}
+
 Write-Host "[OK] Six-item article candidate set persisted: $resolvedOutputDirectory" -ForegroundColor Green
-Write-Host "[OK] Every PNG has deterministic-contract and fake-first visual-review evidence." -ForegroundColor Green
+Write-Host "[OK] Every PNG has article-optics-v1, typed-crop, and fake-first visual-review evidence." -ForegroundColor Green
 Write-Host "[BOUNDARY] Scientific Gate 1, live multimodal review, expert acceptance, Gate 2, and delivery are not complete." -ForegroundColor Yellow

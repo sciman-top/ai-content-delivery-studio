@@ -24,6 +24,27 @@
 
 第二轮分别检查 6 张 PNG，未发现文字裁切、标签重叠、空白输出或新的图意冲突。5 个 PDF 又用 `pypdfium2` 重渲染为 1200×800 PNG 并逐张检查；相对直接 PNG 的最大平均通道绝对差为 1.608，无可见布局漂移。实际两轮记录位于 `outputs/article-scientific-figure-runs/20260801-eye-lens-complete-set/system-visual-review.json`。
 
+## Optical Scientific-Rigor Follow-Up
+
+本轮加入 `article-optics-v1` 本地确定性审查包，视觉模型只检查可见缺陷，不承担科学真值定义：
+
+- 公式区校验文章采用的 `y=x/(x+1), x>0` 与 `y=x/(1-x), 0<x<1`、反函数关系、`x=u/f`、`y=v/f`、距离正值约定及无量纲变量；
+- 光学元件区校验主/眼睛透镜为凸透镜、控制变量使用附加凹透镜；
+- 关系区校验 `L2` 位于 `S` 右侧/共面/左侧的三种顺序、光线从左向右、到达 `L2` 前的会聚/发散状态以及干预前后焦点不能相同；
+- 来源板校验 6 个来源照片引用均有不同的已审计源资产，禁止生成实验照片或遗漏引用；
+- 科学失败直接阻断且不进入自动修复；文字裁切、标签重叠、布局和非证据素材仍受三次 presentation-only 修复上限约束。
+
+正式 `ScientificFigureSpec` 路径与文章路径的每个 crop 现在都携带 typed `ExpectedVisualCheck`：科学含义、exact content、关系方向、条件、禁止项、来源 block id 与 authority。正式路径标记 `ApprovedSpecification`；文章快捷路径因没有人工批准规格，只能标记 `LocatedSourceEvidencePendingGateOne`。
+
+对抗测试覆盖错误公式 `x/(x-1)`、凸/凹透镜互换、干预前后焦点相同、光线反向、`L2/S` 顺序颠倒、来源照片遗漏、文字裁切和标签重叠。正确 6 图的确定性报告全部通过，但候选仍全部是 `PendingHumanApproval`。
+
+OpenAI 官方图像视觉文档说明，精确小字和空间定位应在模型支持时使用 `detail: original`；GPT-5.4 及更新模型支持该模式，旧模型回退 `high`。本仓现在按模型能力选择 detail。根据用户新增要求与官方 GPT-5.6 指南，主动默认设置为 `gpt-5.6-sol` 与显式 `reasoning.effort=medium`；fake provider 仍是默认，未执行 live 调用。Scientific review provider 对 `408`、`429`、`5xx` 和瞬态网络错误最多尝试 3 次，`400/401/403` 不重试。
+
+官方依据：
+
+- <https://developers.openai.com/api/docs/guides/images-vision#choose-an-image-detail-level>
+- <https://developers.openai.com/api/docs/guides/model-guidance?model=gpt-5.6>
+
 ## Persistence
 
 实跑目录为 `outputs/article-scientific-figure-runs/20260801-eye-lens-complete-set/`，包含：
@@ -33,6 +54,8 @@
 - 6 份 `*.visual-review.json`、受限修复历史和 `system-visual-review.json`；
 - `source-assets/` 下 12 张逐项哈希的来源图；
 - `pdf-renders/` 下 5 张 PDF 复核渲染图。
+
+本轮 fresh fake-first 实跑目录为 `outputs/article-scientific-figure-runs/20260801-eye-lens-optics-rigor/`。聚合报告记录 `deterministicReview=article-optics-v1`、6/6 完整、12 个来源资产、`gateOneStatus=pending for every candidate`；每份 `*.visual-review.json` 记录确定性 findings、typed crops 与 expected checks。`fresh-visual-contact-sheet.png` 仅是本轮交互式呈现复核，不是应用内 live provider 或物理专家证据。
 
 实跑命令：
 
@@ -49,7 +72,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-article-scientific-fig
 - `system-visual-review.json` 是本次交互中的系统视觉检查，覆盖视觉呈现和有界示意一致性；它不是逐图人类科学 Gate 1。
 - Gate 2、ZIP 正式交付、WPF 图组入口与 SQLite 图组持久化不在本切片完成范围内。
 
-## Verification
+## Historical Verification
 
 按项目固定顺序执行并通过：
 
@@ -59,6 +82,20 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-article-scientific-fig
 - `dotnet format --verify-no-changes`：exit 0。
 - `scripts/preflight-release.ps1 -NoRestore`：repository verification、publish WhatIf/实际 preflight、84 文件 ZIP、placeholder/conflict 和 diff hygiene 全部通过；包 SHA-256 为 `8fc01b59b00da3e3c3aafede9abb2f08c84796ae3e6f71d0f01df43076a47ff8`。
 
+以上 747/747 与包哈希属于上一轮重建基线，不能代表本轮 follow-up。
+
+## Fresh Optical-Rigor Verification
+
+本轮先通过 92 项 provider/article 合同测试与 29 项 optics/retry/prep 聚焦测试，再对最终实现按固定顺序刷新完整门禁：
+
+- `dotnet build ContentDeliveryStudio.sln`：0 警告、0 错误；
+- `dotnet test ContentDeliveryStudio.sln --no-build`：758/758 通过，0 失败、0 跳过；
+- `scripts/verify-reference-evidence.ps1`：`openai-provider` 与 `scientific-figure-workflow` 两个触发领域均命中 authority evidence 并通过；
+- `dotnet format --verify-no-changes`：exit 0；
+- `scripts/preflight-release.ps1 -NoRestore`：repository verification、publish WhatIf/实际 preflight、placeholder/conflict 与 diff hygiene 全部通过；生成 84 文件 ZIP，SHA-256 为 `2cb2bd4c05b50ac49c7b18774cedfbbff7fed852ef43008585cf17b52a8544fd`。
+
+以上均为 fake-first、本机 repo-side 验证。它们不等于物理专家 Gate 1、live OpenAI provider acceptance 或正式 Gate 2 交付。
+
 ## Rollback
 
-仅撤销本切片新增的图组规划、渲染、提取、测试、脚本、设计/计划和证据文件，以及 `ScientificFigureExporter` 的 `text-anchor=end` 修复。`paper/`、`outputs/` 和 `tmp/` 是 Git 外资料，不使用 Git 回滚伪装恢复。
+仅撤销本切片新增的 optical reviewer、typed expected-check 合同、provider model/reasoning/detail/retry 设置、测试、脚本、设计/计划和证据变更。原重建切片与 `paper/` 不回滚；`outputs/` 是 Git 外运行证据，不使用 Git 回滚伪装恢复。

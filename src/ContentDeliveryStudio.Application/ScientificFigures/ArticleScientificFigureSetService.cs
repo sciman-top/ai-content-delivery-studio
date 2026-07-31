@@ -177,12 +177,15 @@ public sealed record ArticleScientificFigureSetItemResult(
     ScientificFigureExportBundle? Exports,
     ArticleSourceEvidenceBoard? EvidenceBoard,
     ArticleCandidateVisualContractReport ContractReview,
+    ArticleOpticalScientificReviewReport DeterministicScientificReview,
+    ScientificVisualReviewRequest VisualReviewRequest,
     ScientificProviderReviewResult VisualReview,
     IReadOnlyList<ArticleCandidateRepairRecord> Repairs,
     int PresentationAttempts)
 {
     public bool PassedVisualReview =>
         ContractReview.Passed
+        && DeterministicScientificReview.Passed
         && VisualReview.Verdict == ScientificReviewVerdict.Pass
         && VisualReview.Findings.Count == 0;
 }
@@ -221,7 +224,9 @@ public sealed class ArticleScientificFigureSetService
     private readonly IArticleScientificFigureCandidateRenderer _candidateRenderer;
     private readonly IScientificFigureExporter _exporter;
     private readonly IScientificVisualReviewProvider _visualReviewProvider;
+    private readonly IScientificReviewImageCropper _cropper;
     private readonly ArticleCandidateVisualContractReviewer _contractReviewer;
+    private readonly ArticleOpticalScientificReviewer _scientificReviewer;
 
     public ArticleScientificFigureSetService(
         IArticleSourceFigureExtractor sourceFigureExtractor,
@@ -229,14 +234,18 @@ public sealed class ArticleScientificFigureSetService
         IArticleScientificFigureCandidateRenderer candidateRenderer,
         IScientificFigureExporter exporter,
         IScientificVisualReviewProvider visualReviewProvider,
-        ArticleCandidateVisualContractReviewer? contractReviewer = null)
+        IScientificReviewImageCropper cropper,
+        ArticleCandidateVisualContractReviewer? contractReviewer = null,
+        ArticleOpticalScientificReviewer? scientificReviewer = null)
     {
         _sourceFigureExtractor = sourceFigureExtractor;
         _evidenceBoardRenderer = evidenceBoardRenderer;
         _candidateRenderer = candidateRenderer;
         _exporter = exporter;
         _visualReviewProvider = visualReviewProvider;
+        _cropper = cropper ?? throw new ArgumentNullException(nameof(cropper));
         _contractReviewer = contractReviewer ?? new ArticleCandidateVisualContractReviewer();
+        _scientificReviewer = scientificReviewer ?? new ArticleOpticalScientificReviewer();
     }
 
     public async Task<ArticleScientificFigureSetRun> RunAsync(
@@ -278,7 +287,7 @@ public sealed class ArticleScientificFigureSetService
             cancellationToken.ThrowIfCancellationRequested();
             results.Add(candidate.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard
                 ? await ReviewEvidenceBoardAsync(candidate, audit, cancellationToken)
-                : await RenderAndReviewCandidateAsync(candidate, cancellationToken));
+                : await RenderAndReviewCandidateAsync(candidate, audit, cancellationToken));
         }
 
         return new ArticleScientificFigureSetRun(
@@ -289,6 +298,7 @@ public sealed class ArticleScientificFigureSetService
 
     private async Task<ArticleScientificFigureSetItemResult> RenderAndReviewCandidateAsync(
         ArticleScientificFigureCandidate candidate,
+        ArticleSourceFigureAudit audit,
         CancellationToken cancellationToken)
     {
         var repairs = new List<ArticleCandidateRepairRecord>();
@@ -296,6 +306,12 @@ public sealed class ArticleScientificFigureSetService
         ScientificFigureExportBundle? lastExports = null;
         ArticleCandidateVisualContractReport lastContract = new([]);
         ScientificProviderReviewResult lastVisual = FailedVisual("candidate-not-reviewed");
+        ArticleOpticalScientificReviewReport lastScientific = _scientificReviewer.Review(
+            candidate,
+            artifact: null,
+            audit,
+            board: null);
+        ScientificVisualReviewRequest? lastVisualRequest = null;
         var lastAttempt = 0;
         for (var attempt = 1; attempt <= MaximumPresentationAttempts; attempt++)
         {
@@ -307,6 +323,12 @@ public sealed class ArticleScientificFigureSetService
                 Width: 1200,
                 Height: 800));
             lastContract = _contractReviewer.Review(candidate, lastSvg, lastExports);
+            lastScientific = _scientificReviewer.Review(candidate, lastSvg, audit, board: null);
+            if (!lastScientific.Passed)
+            {
+                lastVisual = FailedVisual("deterministic-scientific-review-failed");
+                break;
+            }
             if (!lastContract.Passed)
             {
                 if (attempt < MaximumPresentationAttempts)
@@ -320,8 +342,9 @@ public sealed class ArticleScientificFigureSetService
                 continue;
             }
 
+            lastVisualRequest = BuildVisualRequest(candidate, lastExports);
             lastVisual = await ReviewVisualAsync(
-                BuildFullFrameVisualRequest(lastExports),
+                lastVisualRequest,
                 cancellationToken);
             if (lastVisual.Verdict == ScientificReviewVerdict.Pass
                 && lastVisual.Findings.Count == 0)
@@ -332,6 +355,8 @@ public sealed class ArticleScientificFigureSetService
                     lastExports,
                     EvidenceBoard: null,
                     lastContract,
+                    lastScientific,
+                    lastVisualRequest,
                     lastVisual,
                     repairs,
                     attempt);
@@ -354,6 +379,8 @@ public sealed class ArticleScientificFigureSetService
             lastExports,
             EvidenceBoard: null,
             lastContract,
+            lastScientific,
+            lastVisualRequest ?? BuildVisualRequest(candidate, lastExports!),
             lastVisual,
             repairs,
             lastAttempt);
@@ -380,9 +407,11 @@ public sealed class ArticleScientificFigureSetService
             : [new ArticleCandidateVisualContractFinding(
                 "source-evidence-board-invalid",
                 "Evidence board requires hashed source-faithful pixels and valid source asset ids.")]);
-        var visual = contract.Passed
+        var scientific = _scientificReviewer.Review(candidate, artifact: null, audit, board);
+        var visualRequest = BuildVisualRequest(candidate, board);
+        var visual = contract.Passed && scientific.Passed
             ? await ReviewVisualAsync(
-                BuildFullFrameVisualRequest(board),
+                visualRequest,
                 cancellationToken)
             : FailedVisual("source-evidence-board-contract-failed");
         return new ArticleScientificFigureSetItemResult(
@@ -391,39 +420,43 @@ public sealed class ArticleScientificFigureSetService
             Exports: null,
             board,
             contract,
+            scientific,
+            visualRequest,
             visual,
             Repairs: [],
             PresentationAttempts: 1);
     }
 
-    private static ScientificVisualReviewRequest BuildFullFrameVisualRequest(
+    private ScientificVisualReviewRequest BuildVisualRequest(
+        ArticleScientificFigureCandidate candidate,
         ScientificFigureExportBundle exports)
     {
         var png = exports.Artifacts.Single(item =>
             string.Equals(item.Format, "png", StringComparison.OrdinalIgnoreCase));
-        return BuildFullFrameVisualRequest(
+        return BuildVisualRequest(
+            candidate,
             png.Bytes,
             png.Sha256,
             exports.Width,
-            exports.Height,
-            "candidate-full-frame");
+            exports.Height);
     }
 
-    private static ScientificVisualReviewRequest BuildFullFrameVisualRequest(
+    private ScientificVisualReviewRequest BuildVisualRequest(
+        ArticleScientificFigureCandidate candidate,
         ArticleSourceEvidenceBoard board) =>
-        BuildFullFrameVisualRequest(
+        BuildVisualRequest(
+            candidate,
             board.PngBytes,
             board.Sha256,
             board.PixelWidth,
-            board.PixelHeight,
-            "source-evidence-board");
+            board.PixelHeight);
 
-    private static ScientificVisualReviewRequest BuildFullFrameVisualRequest(
+    private ScientificVisualReviewRequest BuildVisualRequest(
+        ArticleScientificFigureCandidate candidate,
         byte[] pngBytes,
         string sha256,
         int width,
-        int height,
-        string responsibleItemId)
+        int height)
     {
         var full = new ScientificFullResolutionImage(
             "png",
@@ -434,18 +467,37 @@ public sealed class ArticleScientificFigureSetService
             height,
             width,
             height);
-        return ScientificVisualReviewRequest.Create(
-            full,
-            [new ScientificVisualRegionCrop(
-                $"crop-{responsibleItemId}",
-                ScientificVisualRegionKind.Element,
-                responsibleItemId,
-                0,
-                0,
-                width,
-                height,
+        var regions = _scientificReviewer.BuildRegions(candidate);
+        var crops = regions.Select(region =>
+        {
+            var bounded = Clamp(region.Region, width, height);
+            var bytes = candidate.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard
+                ? pngBytes
+                : _cropper.CropPng(pngBytes, width, height, bounded);
+            return new ScientificVisualRegionCrop(
+                $"crop-{region.ExpectedCheck.ResponsibleItemId}",
+                region.Kind,
+                region.ExpectedCheck.ResponsibleItemId,
+                bounded.X,
+                bounded.Y,
+                bounded.Width,
+                bounded.Height,
                 "image/png",
-                pngBytes)]);
+                bytes,
+                region.ExpectedCheck);
+        }).ToArray();
+        return ScientificVisualReviewRequest.Create(full, crops);
+    }
+
+    private static ScientificPixelRegion Clamp(ScientificPixelRegion region, int width, int height)
+    {
+        var x = Math.Clamp(region.X, 0, width - 1);
+        var y = Math.Clamp(region.Y, 0, height - 1);
+        return new ScientificPixelRegion(
+            x,
+            y,
+            Math.Clamp(region.Width, 1, width - x),
+            Math.Clamp(region.Height, 1, height - y));
     }
 
     private static ScientificProviderReviewResult FailedVisual(string code) =>
