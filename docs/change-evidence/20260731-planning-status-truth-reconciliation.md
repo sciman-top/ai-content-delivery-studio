@@ -8,8 +8,8 @@
 - Result: the current repository-owned implementation queue is closed. No open
   checkbox remains in `docs/TASKS.md` or under `docs/superpowers/specs/` and
   `docs/superpowers/plans/`.
-- `docs/PRD_V1.md` remains the locked V1 promise and contains no open TODO/TBD
-  or unchecked implementation item.
+- `docs/PRD_V1.md` remains the locked V1 promise and contains no unresolved
+  implementation marker or unchecked implementation item.
 
 ## Truth Reconciliation
 
