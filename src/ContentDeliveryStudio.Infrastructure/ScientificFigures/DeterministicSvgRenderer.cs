@@ -47,6 +47,7 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
 
         var orderedLayers = plan.Layers.OrderBy(layer => layer.ZIndex).ToArray();
         var connectionLayerId = orderedLayers.FirstOrDefault(layer => layer.IsScientific)?.LayerId;
+        var occupiedRelationLabelBounds = new List<LabelBounds>();
         foreach (var layer in orderedLayers)
         {
             var layerElement = new XElement(
@@ -58,7 +59,17 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
             {
                 foreach (var connection in plan.Connections)
                 {
-                    layerElement.Add(RenderConnection(connection, positions, plan));
+                    var renderedConnection = RenderConnection(
+                        connection,
+                        positions,
+                        plan,
+                        occupiedRelationLabelBounds,
+                        out var labelBounds);
+                    layerElement.Add(renderedConnection);
+                    if (labelBounds is not null)
+                    {
+                        occupiedRelationLabelBounds.Add(labelBounds);
+                    }
                 }
             }
 
@@ -113,7 +124,9 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
     private static XElement RenderConnection(
         SvgRenderConnection connection,
         IReadOnlyDictionary<string, ElementPosition> positions,
-        SvgRenderPlan plan)
+        SvgRenderPlan plan,
+        IReadOnlyList<LabelBounds> occupiedRelationLabelBounds,
+        out LabelBounds? renderedLabelBounds)
     {
         var source = positions[connection.SourceRenderElementId];
         var target = positions[connection.TargetRenderElementId];
@@ -167,6 +180,7 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
 
         if (string.IsNullOrWhiteSpace(connection.Label))
         {
+            renderedLabelBounds = null;
             return path;
         }
 
@@ -179,11 +193,10 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
         var deltaX = targetPoint.X - sourcePoint.X;
         var deltaY = targetPoint.Y - sourcePoint.Y;
         var length = Math.Sqrt((deltaX * deltaX) + (deltaY * deltaY));
-        var labelX = (sourcePoint.X + targetPoint.X) / 2;
-        var labelY = (sourcePoint.Y + targetPoint.Y) / 2 - 8;
+        var labelOffset = 0d;
         if (length > 0)
         {
-            var labelOffset = Math.Abs(deltaY) <= Math.Abs(deltaX) * 0.25
+            labelOffset = Math.Abs(deltaY) <= Math.Abs(deltaX) * 0.25
                 ? 110
                 : 80;
             if (parallelConnections.Length > 1
@@ -192,27 +205,39 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
             {
                 labelOffset = 150;
             }
-            labelX += (-deltaY / length) * labelOffset * parallelLabelSide;
-            labelY += (deltaX / length) * labelOffset * parallelLabelSide;
         }
 
-        var labelLines = CreateWrappedTextLines(
+        var labelLines = WrapPreservingContent(displayLabel, maxCharactersPerLine: 28);
+        var maximumLineLength = labelLines.Max(item => item.Length);
+        var labelWidth = Math.Clamp(maximumLineLength * 8.5, 48, 250);
+        var labelHeight = (labelLines.Count * 19) + 8;
+        var labelPlacement = PlaceRelationLabel(
+            sourcePoint,
+            targetPoint,
+            deltaX,
+            deltaY,
+            length,
+            labelOffset,
+            parallelLabelSide,
+            labelWidth,
+            labelHeight,
+            plan.Canvas,
+            occupiedRelationLabelBounds);
+        renderedLabelBounds = labelPlacement.Bounds;
+        var labelElements = CreateWrappedTextLines(
             displayLabel,
-            labelX,
-            labelY,
+            labelPlacement.X,
+            labelPlacement.Y,
             maxCharactersPerLine: 28,
             lineHeight: 19,
             fontSize: 16,
             Style(plan, "scientific-stroke", "#1F2937"),
             Style(plan, "font-family", "Segoe UI"),
             "data-relation-label");
-        var maximumLineLength = labelLines.Max(item => item.Value.Length);
-        var labelWidth = Math.Clamp(maximumLineLength * 8.5, 48, 250);
-        var labelHeight = (labelLines.Count * 19) + 8;
         var labelBackground = new XElement(
             Svg + "rect",
-            new XAttribute("x", Number(labelX - (labelWidth / 2))),
-            new XAttribute("y", Number(labelY - (labelHeight / 2))),
+            new XAttribute("x", Number(labelPlacement.Bounds.Left)),
+            new XAttribute("y", Number(labelPlacement.Bounds.Top)),
             new XAttribute("width", Number(labelWidth)),
             new XAttribute("height", Number(labelHeight)),
             new XAttribute("rx", 3),
@@ -224,8 +249,66 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
             new XAttribute("data-connection-group", connection.RenderConnectionId),
             path,
             labelBackground,
-            labelLines);
+            labelElements);
     }
+
+    private static LabelPlacement PlaceRelationLabel(
+        ElementPoint sourcePoint,
+        ElementPoint targetPoint,
+        double deltaX,
+        double deltaY,
+        double length,
+        double labelOffset,
+        double preferredSide,
+        double labelWidth,
+        double labelHeight,
+        SvgCanvas canvas,
+        IReadOnlyList<LabelBounds> occupiedBounds)
+    {
+        var midpointX = (sourcePoint.X + targetPoint.X) / 2;
+        var midpointY = ((sourcePoint.Y + targetPoint.Y) / 2) - 8;
+        var offsets = new[] { labelOffset, labelOffset + 56, labelOffset + 112 };
+        var sides = new[] { preferredSide, -preferredSide };
+        foreach (var offset in offsets)
+        {
+            foreach (var side in sides)
+            {
+                var x = midpointX;
+                var y = midpointY;
+                if (length > 0)
+                {
+                    x += (-deltaY / length) * offset * side;
+                    y += (deltaX / length) * offset * side;
+                }
+
+                var bounds = new LabelBounds(
+                    x - (labelWidth / 2),
+                    y - (labelHeight / 2),
+                    labelWidth,
+                    labelHeight);
+                if (IsInsideCanvas(bounds, canvas)
+                    && occupiedBounds.All(existing => !bounds.Overlaps(existing)))
+                {
+                    return new LabelPlacement(x, y, bounds);
+                }
+            }
+        }
+
+        // The renderer keeps output deterministic even for saturated layouts; the
+        // contract reviewer rejects any remaining overlap before delivery.
+        var fallbackBounds = new LabelBounds(
+            midpointX - (labelWidth / 2),
+            midpointY - (labelHeight / 2),
+            labelWidth,
+            labelHeight);
+        return new LabelPlacement(midpointX, midpointY, fallbackBounds);
+    }
+
+    private static bool IsInsideCanvas(LabelBounds bounds, SvgCanvas canvas) =>
+        bounds.Left >= 0
+        && bounds.Top >= 0
+        && bounds.Left + bounds.Width <= canvas.Width
+        && bounds.Top + bounds.Height <= canvas.Height;
 
     private static XElement RenderElement(
         SvgRenderElement element,
@@ -825,4 +908,15 @@ public sealed class DeterministicSvgRenderer : IScientificFigureRenderer
     }
 
     private sealed record ElementPoint(double X, double Y);
+
+    private sealed record LabelPlacement(double X, double Y, LabelBounds Bounds);
+
+    private sealed record LabelBounds(double Left, double Top, double Width, double Height)
+    {
+        public bool Overlaps(LabelBounds other) =>
+            Left < other.Left + other.Width
+            && Left + Width > other.Left
+            && Top < other.Top + other.Height
+            && Top + Height > other.Top;
+    }
 }

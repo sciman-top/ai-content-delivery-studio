@@ -406,15 +406,18 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
             Color = Color(element, "fill", SKColors.Black),
             IsAntialias = true,
         };
-        using var typeface = SKTypeface.FromFamilyName(
-            (string?)element.Attribute("font-family") ?? "Segoe UI");
+        using var typeface = ResolveTypeface(
+            (string?)element.Attribute("font-family") ?? "Segoe UI",
+            element.Value);
         using var font = new SKFont(typeface, OptionalNumber(element, "font-size", 16));
-        var alignment = string.Equals(
-            (string?)element.Attribute("text-anchor"),
-            "middle",
-            StringComparison.Ordinal)
-            ? SKTextAlign.Center
-            : SKTextAlign.Left;
+        var alignment = (string?)element.Attribute("text-anchor") switch
+        {
+            null or "start" => SKTextAlign.Left,
+            "middle" => SKTextAlign.Center,
+            "end" => SKTextAlign.Right,
+            var unsupported => throw new InvalidOperationException(
+                $"The SVG contains an unsupported text anchor: {unsupported}."),
+        };
         canvas.DrawText(
             element.Value,
             Number(element, "x"),
@@ -422,6 +425,32 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
             alignment,
             font,
             paint);
+    }
+
+    private static SKTypeface ResolveTypeface(string familyName, string text)
+    {
+        var primary = SKTypeface.FromFamilyName(familyName);
+        if (primary.ContainsGlyphs(text))
+        {
+            return primary;
+        }
+
+        primary.Dispose();
+        var manager = SKFontManager.Default;
+        foreach (var character in text.Where(character => !char.IsWhiteSpace(character)))
+        {
+            var fallback = manager.MatchCharacter(familyName, character)
+                ?? manager.MatchCharacter(character);
+            if (fallback is not null && fallback.ContainsGlyphs(text))
+            {
+                return fallback;
+            }
+
+            fallback?.Dispose();
+        }
+
+        throw new InvalidOperationException(
+            $"No installed typeface can render the approved SVG text: '{text}'.");
     }
 
     private static ScientificFigureExportArtifact CreateArtifact(

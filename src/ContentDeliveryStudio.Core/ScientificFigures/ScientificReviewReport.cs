@@ -10,6 +10,7 @@ public enum ScientificContractInvariant
     RelationDirection = 5,
     SvgAuthority = 6,
     ExportEquivalence = 7,
+    VisualReadability = 8,
 }
 
 public enum ScientificContractRepairLayer

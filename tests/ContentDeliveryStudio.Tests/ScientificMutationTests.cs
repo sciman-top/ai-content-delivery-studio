@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using System.Xml.Linq;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.ScientificFigures;
 using ContentDeliveryStudio.Infrastructure.ScientificFigures;
@@ -73,6 +74,38 @@ public sealed class ScientificMutationTests
             report,
             "relation-direction-drift-in-svg",
             "relation-force-acceleration");
+    }
+
+    [Fact]
+    public void Review_BlocksOverlappingCriticalRelationLabelBackgrounds()
+    {
+        var fixture = ScientificContractReviewFixture.Create();
+        var document = XDocument.Parse(fixture.Svg.Svg);
+        var svg = (XNamespace)"http://www.w3.org/2000/svg";
+        var labelBackground = document.Descendants(svg + "rect").Single(item =>
+            (string?)item.Attribute("data-relation-label-background") == "true");
+        labelBackground.AddAfterSelf(new XElement(labelBackground));
+        var mutatedText = document.ToString(SaveOptions.DisableFormatting);
+        var mutatedSvg = fixture.Svg with
+        {
+            Svg = mutatedText,
+            Sha256 = Hash(Encoding.UTF8.GetBytes(mutatedText)),
+        };
+        var mutatedExports = new ScientificFigureExporter().Export(
+            new ScientificFigureExportRequest(
+                mutatedSvg,
+                mutatedSvg.Sha256,
+                fixture.Exports.Width,
+                fixture.Exports.Height));
+
+        var report = Review(
+            fixture,
+            fixture.Request with { Svg = mutatedSvg, Exports = mutatedExports });
+
+        AssertHardFailure(
+            report,
+            "critical-relation-label-overlap",
+            "render-relation-force-acceleration");
     }
 
     [Theory]

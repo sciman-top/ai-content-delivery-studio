@@ -1,6 +1,6 @@
 # Scientific Figure Workflow Supply-Chain Research
 
-Last reviewed: 2026-07-26.
+Last reviewed: 2026-07-31.
 
 ## Status And Decision Boundary
 
@@ -685,3 +685,49 @@ records all of the following.
 Rollback always removes only the optional adapter/package/tool and its
 registration. It never rewrites source evidence, approved claims,
 `ScientificFigureSpec`, stable render-plan IDs, or the approved SVG hash.
+
+## 7. Article-Candidate Integration Follow-Up (2026-07-31)
+
+The article-level candidate slice reuses the already retained `PdfPig 0.1.14`
+extractor and the repository-owned static SVG approach. It adds neither a
+package nor an external executable to the product. The sample article route
+produces located, high-risk proposals and an explicitly non-final optical SVG
+preview; it does not invoke a provider, perform OCR, or claim scholarly
+structure recovery beyond the PDF text layer.
+
+The implementation deliberately keeps the existing authority boundary intact:
+
+```text
+article PDF and hash
+  > page/block evidence for candidate proposals
+  > explicit human Gate 1 approval of claims and ScientificFigureSpec
+  > deterministic approved SVG and existing review/delivery workflow
+```
+
+The preview is labelled as a non-proportional Gate 1 candidate, so it cannot
+be exported as an approved deliverable or used to infer that article assertions
+about eye focal length, accommodation, perceived orientation, or clarity have
+been independently confirmed. This is an adoption decision for the existing
+repository contracts, not a change to the GROBID, Docling, MathJax, Svg.Skia,
+or resvg decisions above.
+
+The article run also exposed a Windows/Skia text-rendering requirement: a
+requested UI font can omit CJK glyphs, and Unicode subscripts may be absent
+from the CJK fallback font. The repository exporter now resolves a system
+fallback only when one typeface covers the complete approved text run; otherwise
+it fails closed before PNG/PDF or visual review. Approved scientific labels use
+the interoperable ASCII forms `L1` and `L2` in this slice. This is a rendering
+integrity guard, not a scientific conclusion or a substitute for a full font
+inventory and cross-machine packaging proof.
+
+Visual review also needs a deterministic readability floor before a provider
+sees the image. The article sample exposed an overlap between two critical
+relation-label backgrounds: the SVG still carried both labels, but the later
+white background hid part of the earlier label in the PNG. The renderer now
+allocates each relation label against already occupied label bounds, tries the
+opposite side of the relation, and keeps candidate bounds within the canvas.
+`ScientificContractReviewer` independently turns any remaining overlap of
+critical relation-label bounds into the hard failure
+`critical-relation-label-overlap`. This guard checks visual legibility of the
+approved relationship; it does not infer or validate any additional scientific
+claim.

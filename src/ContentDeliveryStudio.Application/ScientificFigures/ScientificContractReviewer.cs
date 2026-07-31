@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Globalization;
 using System.Xml;
 using System.Xml.Linq;
 using ContentDeliveryStudio.Core.ScientificFigures;
@@ -33,6 +34,7 @@ public sealed class ScientificContractReviewer
         if (svgSnapshot is not null)
         {
             ComparePlanAndSvg(request.RenderPlan, svgSnapshot, findings);
+            CompareCriticalRelationLabelLayout(request.RenderPlan, svgSnapshot, findings);
             CompareExports(request.Svg, request.Exports, svgSnapshot, findings);
         }
         else
@@ -418,6 +420,46 @@ public sealed class ScientificContractReviewer
         }
     }
 
+    private static void CompareCriticalRelationLabelLayout(
+        SvgRenderPlan plan,
+        SvgSnapshot svg,
+        ICollection<ScientificContractFinding> findings)
+    {
+        var criticalRelationIds = plan.Connections
+            .Where(item => item.IsCritical)
+            .Select(item => item.RenderConnectionId)
+            .ToHashSet(StringComparer.Ordinal);
+        var labelBounds = svg.RelationLabelBounds
+            .Where(item => criticalRelationIds.Contains(item.RelationId))
+            .ToArray();
+        for (var index = 0; index < labelBounds.Length; index++)
+        {
+            for (var candidate = index + 1; candidate < labelBounds.Length; candidate++)
+            {
+                var first = labelBounds[index];
+                var second = labelBounds[candidate];
+                if (!first.Overlaps(second))
+                {
+                    continue;
+                }
+
+                var responsibleItemId = string.Equals(
+                    first.RelationId,
+                    second.RelationId,
+                    StringComparison.Ordinal)
+                    ? first.RelationId
+                    : $"{first.RelationId}|{second.RelationId}";
+                Add(
+                    findings,
+                    "critical-relation-label-overlap",
+                    ScientificContractInvariant.VisualReadability,
+                    responsibleItemId,
+                    "Critical relation-label backgrounds overlap, so the approved scientific relation may not remain readable in the exported figure.",
+                    ScientificContractRepairLayer.SvgRenderer);
+            }
+        }
+    }
+
     private static string? SingleSourceId(IEnumerable<SvgRenderElement> elements)
     {
         var items = elements.Take(2).ToArray();
@@ -483,11 +525,26 @@ public sealed class ScientificContractReviewer
         bool HasMarkerStart,
         bool HasMarkerEnd);
 
+    private sealed record SvgRelationLabelBounds(
+        string RelationId,
+        double Left,
+        double Top,
+        double Width,
+        double Height)
+    {
+        public bool Overlaps(SvgRelationLabelBounds other) =>
+            Left < other.Left + other.Width
+            && Left + Width > other.Left
+            && Top < other.Top + other.Height
+            && Top + Height > other.Top;
+    }
+
     private sealed record SvgSnapshot(
         string AccessibilityTitle,
         string AccessibilityDescription,
         IReadOnlyList<SvgElementSnapshot> Elements,
-        IReadOnlyList<SvgRelationSnapshot> Relations)
+        IReadOnlyList<SvgRelationSnapshot> Relations,
+        IReadOnlyList<SvgRelationLabelBounds> RelationLabelBounds)
     {
         public static SvgSnapshot Create(XElement root)
         {
@@ -515,13 +572,29 @@ public sealed class ScientificContractReviewer
                     item.Attribute("marker-start") is not null,
                     item.Attribute("marker-end") is not null))
                 .ToArray();
+            var relationLabelBounds = root.Descendants(SvgNamespace + "rect")
+                .Where(item => item.Attribute("data-relation-label-background") is not null)
+                .Select(item =>
+                {
+                    var relation = item.Parent?.Element(SvgNamespace + "path")
+                        ?? throw new InvalidOperationException(
+                            "A relation label background is not grouped with a relation path.");
+                    return new SvgRelationLabelBounds(
+                        Required(relation, "id"),
+                        Number(item, "x"),
+                        Number(item, "y"),
+                        Number(item, "width"),
+                        Number(item, "height"));
+                })
+                .ToArray();
             return new SvgSnapshot(
                 root.Element(SvgNamespace + "title")?.Value
                     ?? throw new InvalidOperationException("SVG accessibility title is missing."),
                 root.Element(SvgNamespace + "desc")?.Value
                     ?? throw new InvalidOperationException("SVG accessibility description is missing."),
                 elements,
-                relations);
+                relations,
+                relationLabelBounds);
         }
 
         public ScientificExportSemantics ToExportSemantics()
@@ -572,5 +645,8 @@ public sealed class ScientificContractReviewer
                 _ => throw new InvalidOperationException($"SVG boolean attribute is invalid: {attribute}."),
             };
         }
+
+        private static double Number(XElement element, string attribute) =>
+            double.Parse(Required(element, attribute), CultureInfo.InvariantCulture);
     }
 }
