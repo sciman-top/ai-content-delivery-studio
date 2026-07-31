@@ -31,6 +31,7 @@ public static class OpenAiTextPlanningRequestMapper
             ["instructions"] = Instructions,
             ["input"] = BuildInput(request),
             ["store"] = OpenAiRoutingDefaults.StoreRemoteStateByDefault,
+            ["reasoning"] = OpenAiReasoningPayload.Create(options.ReasoningEffort),
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = CreateTextFormatPayload(),
@@ -65,6 +66,7 @@ public static class OpenAiTextPlanningRequestMapper
             ["instructions"] = "You plan document-grounded illustration targets. Return only valid JSON that matches the requested schema. Do not fabricate evidence, experimental results, or unsupported factual claims.",
             ["input"] = BuildDocumentIllustrationInput(request),
             ["store"] = OpenAiRoutingDefaults.StoreRemoteStateByDefault,
+            ["reasoning"] = OpenAiReasoningPayload.Create(options.ReasoningEffort),
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = new Dictionary<string, object?>

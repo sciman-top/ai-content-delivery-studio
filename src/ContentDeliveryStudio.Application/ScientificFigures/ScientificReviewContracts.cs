@@ -170,6 +170,23 @@ public enum ScientificVisualRegionKind
     Legend = 3,
 }
 
+public enum ScientificExpectedVisualAuthority
+{
+    ApprovedSpecification = 0,
+    LocatedSourceEvidencePendingGateOne = 1,
+}
+
+public sealed record ScientificExpectedVisualCheck(
+    string CheckId,
+    string ResponsibleItemId,
+    string ScientificMeaning,
+    string? ExactContent,
+    string? RelationshipDirection,
+    IReadOnlyList<string> Conditions,
+    IReadOnlyList<string> ForbiddenContent,
+    IReadOnlyList<string> EvidenceSourceBlockIds,
+    ScientificExpectedVisualAuthority Authority);
+
 public sealed record ScientificFullResolutionImage(
     string Format,
     string MimeType,
@@ -189,7 +206,8 @@ public sealed record ScientificVisualRegionCrop(
     int Width,
     int Height,
     string MimeType,
-    byte[] Bytes);
+    byte[] Bytes,
+    ScientificExpectedVisualCheck? ExpectedCheck = null);
 
 public sealed record ScientificVisualReviewRequest
 {
@@ -245,7 +263,16 @@ public sealed record ScientificVisualReviewRequest
                 || crop.Y < 0
                 || crop.X + crop.Width > fullResolutionOutput.PixelWidth
                 || crop.Y + crop.Height > fullResolutionOutput.PixelHeight
-                || string.IsNullOrWhiteSpace(crop.ResponsibleItemId)))
+                || string.IsNullOrWhiteSpace(crop.ResponsibleItemId)
+                || crop.ExpectedCheck is null
+                || string.IsNullOrWhiteSpace(crop.ExpectedCheck.CheckId)
+                || string.IsNullOrWhiteSpace(crop.ExpectedCheck.ScientificMeaning)
+                || crop.ExpectedCheck.Authority == ScientificExpectedVisualAuthority.ApprovedSpecification
+                    && crop.ExpectedCheck.EvidenceSourceBlockIds.Count == 0
+                || !string.Equals(
+                    crop.ResponsibleItemId,
+                    crop.ExpectedCheck.ResponsibleItemId,
+                    StringComparison.Ordinal)))
         {
             throw new ArgumentException(
                 "Visual review crops must be non-empty, typed, bounded, and item-addressable.",

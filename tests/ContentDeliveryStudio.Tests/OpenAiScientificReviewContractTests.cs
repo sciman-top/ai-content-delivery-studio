@@ -43,7 +43,7 @@ public sealed class OpenAiScientificReviewContractTests
     }
 
     [Fact]
-    public async Task VisualReview_SendsOriginalPngAndEveryTypedCropAtHighDetail()
+    public async Task VisualReview_SendsExpectedChecksAndUsesOriginalDetailForGpt56()
     {
         var fixture = ScientificReviewTestFixture.Create();
         var handler = new CapturingHandler(Response("Pass", []));
@@ -58,14 +58,35 @@ public sealed class OpenAiScientificReviewContractTests
         Assert.All(content.EnumerateArray().Skip(1), part =>
         {
             Assert.Equal("input_image", part.GetProperty("type").GetString());
-            Assert.Equal("high", part.GetProperty("detail").GetString());
+            Assert.Equal("original", part.GetProperty("detail").GetString());
             Assert.StartsWith("data:image/png;base64,", part.GetProperty("image_url").GetString(), StringComparison.Ordinal);
         });
         var metadata = content[0].GetProperty("text").GetString();
         Assert.Contains("1200", metadata, StringComparison.Ordinal);
         Assert.Contains("Element", metadata, StringComparison.Ordinal);
         Assert.Contains("element-force", metadata, StringComparison.Ordinal);
+        Assert.Contains("ScientificMeaning", metadata, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("ApprovedSpecification", metadata, StringComparison.Ordinal);
         Assert.DoesNotContain("384", handler.Body, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task VisualReview_FallsBackToHighWhenModelDoesNotSupportOriginalDetail()
+    {
+        var fixture = ScientificReviewTestFixture.Create();
+        var handler = new CapturingHandler(Response("Pass", []));
+        var provider = Provider(handler, new OpenAiProviderOptions
+        {
+            RealApiEnabled = true,
+            VisionReviewModel = "gpt-5",
+        });
+
+        await provider.ReviewAsync(fixture.VisualRequest, CancellationToken.None);
+
+        using var payload = JsonDocument.Parse(handler.Body!);
+        var content = payload.RootElement.GetProperty("input")[0].GetProperty("content");
+        Assert.All(content.EnumerateArray().Skip(1), part =>
+            Assert.Equal("high", part.GetProperty("detail").GetString()));
     }
 
     [Theory]
@@ -91,11 +112,42 @@ public sealed class OpenAiScientificReviewContractTests
         Assert.Contains(decision.Blockers, blocker => blocker.Code == expectedCode);
     }
 
-    private static OpenAiScientificReviewProvider Provider(HttpMessageHandler handler)
+    [Fact]
+    public async Task Provider_RetriesTransientStatusWithinBound()
+    {
+        var fixture = ScientificReviewTestFixture.Create();
+        var handler = new SequenceHandler(
+            new HttpResponseMessage(HttpStatusCode.TooManyRequests),
+            JsonResponse(Response("Pass", [])));
+
+        var result = await Provider(handler).ReviewAsync(
+            fixture.SemanticRequest,
+            CancellationToken.None);
+
+        Assert.Equal(ScientificReviewVerdict.Pass, result.Verdict);
+        Assert.Equal(2, handler.InvocationCount);
+    }
+
+    [Fact]
+    public async Task Provider_DoesNotRetryNonTransientStatus()
+    {
+        var fixture = ScientificReviewTestFixture.Create();
+        var handler = new SequenceHandler(new HttpResponseMessage(HttpStatusCode.BadRequest));
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => Provider(handler).ReviewAsync(
+            fixture.SemanticRequest,
+            CancellationToken.None));
+
+        Assert.Equal(1, handler.InvocationCount);
+    }
+
+    private static OpenAiScientificReviewProvider Provider(
+        HttpMessageHandler handler,
+        OpenAiProviderOptions? options = null)
     {
         return new OpenAiScientificReviewProvider(
             new HttpClient(handler),
-            new OpenAiProviderOptions { RealApiEnabled = true },
+            options ?? new OpenAiProviderOptions { RealApiEnabled = true },
             new StaticSecretStore());
     }
 
@@ -108,6 +160,11 @@ public sealed class OpenAiScientificReviewContractTests
     {
         return JsonSerializer.Serialize(new { id = "resp_scientific_review_123", output_text = output });
     }
+
+    private static HttpResponseMessage JsonResponse(string body) => new(HttpStatusCode.OK)
+    {
+        Content = new StringContent(body, Encoding.UTF8, "application/json"),
+    };
 
     private sealed class CapturingHandler(string responseBody) : HttpMessageHandler
     {
@@ -122,6 +179,22 @@ public sealed class OpenAiScientificReviewContractTests
             {
                 Content = new StringContent(responseBody, Encoding.UTF8, "application/json"),
             };
+        }
+    }
+
+    private sealed class SequenceHandler(params HttpResponseMessage[] responses) : HttpMessageHandler
+    {
+        private readonly Queue<HttpResponseMessage> _responses = new(responses);
+
+        public int InvocationCount { get; private set; }
+
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            InvocationCount++;
+            return Task.FromResult(_responses.Dequeue());
         }
     }
 

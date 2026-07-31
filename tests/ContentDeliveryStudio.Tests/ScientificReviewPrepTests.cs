@@ -37,6 +37,12 @@ public sealed class ScientificReviewPrepTests
                 Assert.Equal(
                     new byte[] { 137, 80, 78, 71 },
                     crop.Bytes.Take(4).ToArray());
+                Assert.NotNull(crop.ExpectedCheck);
+                Assert.Equal(
+                    ScientificExpectedVisualAuthority.ApprovedSpecification,
+                    crop.ExpectedCheck.Authority);
+                Assert.Equal(crop.ResponsibleItemId, crop.ExpectedCheck.ResponsibleItemId);
+                Assert.NotEmpty(crop.ExpectedCheck.EvidenceSourceBlockIds);
             });
         Assert.Contains(
             bundle.Manifest.StructureRows,

@@ -106,7 +106,8 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
     string? AppSecretSecretName,
     int ConcurrencyPerKey,
     int TotalConcurrency,
-    ProviderImageGenerationSurface ImageGenerationSurface)
+    ProviderImageGenerationSurface ImageGenerationSurface,
+    string ReasoningEffort = "medium")
 {
     public static ProviderEndpointEnvironmentConfiguration CreateText(IReadOnlyDictionary<string, string?> values)
         => CreateText(values, "TEXT_PROVIDER");
@@ -137,7 +138,8 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             GetPresentSecretName(values, $"{prefix}_APP_SECRET"),
             GetPositiveInt(values, $"{prefix}_CONCURRENCY_PER_KEY", 1),
             GetPositiveInt(values, $"{prefix}_TOTAL_CONCURRENCY", Math.Max(1, keyNames.Count)),
-            ProviderImageGenerationSurface.Images);
+            ProviderImageGenerationSurface.Images,
+            GetValue(values, $"{prefix}_REASONING_EFFORT", "medium"));
     }
 
     public static ProviderEndpointEnvironmentConfiguration CreateImage(IReadOnlyDictionary<string, string?> values)
@@ -183,7 +185,8 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             GetPresentSecretName(values, $"{prefix}_APP_SECRET"),
             concurrencyPerKey,
             GetPositiveInt(values, $"{prefix}_TOTAL_CONCURRENCY", keyNames.Count * concurrencyPerKey),
-            GetImageGenerationSurface(values, prefix));
+            GetImageGenerationSurface(values, prefix),
+            GetValue(values, $"{prefix}_REASONING_EFFORT", "medium"));
     }
 
     public IReadOnlyList<string> Validate(string displayName)
@@ -236,6 +239,11 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             && string.IsNullOrWhiteSpace(ResponsesModel))
         {
             errors.Add($"{displayName} responses image model is required when image surface is responses.");
+        }
+
+        if (ReasoningEffort is not ("none" or "low" or "medium" or "high" or "xhigh" or "max"))
+        {
+            errors.Add($"{displayName} reasoning effort is invalid.");
         }
 
         return errors;

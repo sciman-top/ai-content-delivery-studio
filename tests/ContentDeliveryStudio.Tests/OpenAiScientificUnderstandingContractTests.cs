@@ -40,7 +40,7 @@ public sealed class OpenAiScientificUnderstandingContractTests
         Assert.Single(result.Terms);
         Assert.NotNull(result.FigureProposal);
         Assert.NotNull(client.LastOptions);
-        Assert.Equal("gpt-5", client.LastOptions!.Model);
+        Assert.Equal("gpt-5.6-sol", client.LastOptions!.Model);
         Assert.False(client.LastOptions.StoredOutputEnabled);
         Assert.Equal(4000, client.LastOptions.MaxOutputTokenCount);
         Assert.NotNull(client.LastOptions.TextOptions?.TextFormat);

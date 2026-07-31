@@ -11,7 +11,8 @@ The default configuration path is now single-key friendly: if no image-specific 
 TEXT_PROVIDER_KIND=openai_compatible
 TEXT_PROVIDER_BASE_URL=https://text.example/v1
 TEXT_PROVIDER_API_KEY=sk-text-provider-key
-TEXT_PROVIDER_MODEL=gpt-5.5
+TEXT_PROVIDER_MODEL=gpt-5.6-sol
+TEXT_PROVIDER_REASONING_EFFORT=medium
 
 IMAGE_PROVIDER_KIND=openai_compatible_image_only
 IMAGE_PROVIDER_BASE_URL=https://image.example/v1
@@ -36,11 +37,13 @@ For text planning and vision review:
 ```env
 TEXT_PROVIDER_BASE_URL=https://primary-gateway.example/v1
 TEXT_PROVIDER_API_KEY=sk-primary
-TEXT_PROVIDER_MODEL=gpt-5.5
+TEXT_PROVIDER_MODEL=gpt-5.6-sol
+TEXT_PROVIDER_REASONING_EFFORT=medium
 
 TEXT_PROVIDER_FALLBACK_1_BASE_URL=https://backup-gateway.example/v1
 TEXT_PROVIDER_FALLBACK_1_API_KEY=sk-backup
-TEXT_PROVIDER_FALLBACK_1_MODEL=gpt-5.5
+TEXT_PROVIDER_FALLBACK_1_MODEL=gpt-5.6-sol
+TEXT_PROVIDER_FALLBACK_1_REASONING_EFFORT=medium
 ```
 
 For image generation:
@@ -49,7 +52,8 @@ For image generation:
 IMAGE_PROVIDER_BASE_URL=https://primary-gateway.example/v1
 IMAGE_PROVIDER_MODEL=gpt-image-2
 IMAGE_PROVIDER_IMAGE_SURFACE=responses
-IMAGE_PROVIDER_RESPONSES_MODEL=gpt-5.5
+IMAGE_PROVIDER_RESPONSES_MODEL=gpt-5.6-sol
+IMAGE_PROVIDER_REASONING_EFFORT=medium
 IMAGE_PROVIDER_API_KEY_1=sk-primary
 
 IMAGE_PROVIDER_FALLBACK_1_BASE_URL=https://backup-gateway.example/v1
@@ -59,6 +63,8 @@ IMAGE_PROVIDER_FALLBACK_1_API_KEY_1=sk-backup
 ```
 
 `IMAGE_PROVIDER_IMAGE_SURFACE=responses` means ordinary image-generation requests default to `POST /responses` with the configured `IMAGE_PROVIDER_RESPONSES_MODEL` and an `image_generation` tool. `IMAGE_PROVIDER_IMAGE_SURFACE=images` means ordinary image-generation requests use `POST /images/generations` with `IMAGE_PROVIDER_MODEL`.
+
+The OpenAI Responses defaults are `gpt-5.6-sol` with explicit `reasoning.effort=medium`. Each profile may override `*_REASONING_EFFORT` with `none`, `low`, `medium`, `high`, `xhigh`, or `max`; image-only `/images/generations` requests do not receive a reasoning field. Fake providers remain the desktop default until `PROVIDER_MODE=live` is explicitly selected.
 
 Failover should be used only for transient or reachability failures: network failure, timeout, `408`, `429`, or `5xx`. Do not fail over on `400`, `401`, or `403`; those indicate request, credential, or authorization problems that should fail closed.
 

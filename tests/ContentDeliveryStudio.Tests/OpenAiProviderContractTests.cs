@@ -42,7 +42,8 @@ public sealed class OpenAiProviderContractTests
         Assert.Equal("test-openai-key", handler.LastRequest.Headers.Authorization.Parameter);
 
         using var payload = JsonDocument.Parse(handler.LastRequestBody!);
-        Assert.Equal("gpt-5", payload.RootElement.GetProperty("model").GetString());
+        Assert.Equal("gpt-5.6-sol", payload.RootElement.GetProperty("model").GetString());
+        Assert.Equal("medium", payload.RootElement.GetProperty("reasoning").GetProperty("effort").GetString());
         Assert.False(payload.RootElement.GetProperty("store").GetBoolean());
         Assert.Equal(
             "json_schema",
@@ -86,7 +87,7 @@ public sealed class OpenAiProviderContractTests
         var telemetry = Assert.Single(telemetrySink.Events);
         Assert.Equal("openai-text", telemetry.ProviderId);
         Assert.Equal("text-planning", telemetry.Operation);
-        Assert.Equal("gpt-5", telemetry.Model);
+        Assert.Equal("gpt-5.6-sol", telemetry.Model);
         Assert.Equal("https://api.openai.com/v1/responses", telemetry.Endpoint);
         Assert.Equal(200, telemetry.HttpStatusCode);
         Assert.True(telemetry.Succeeded);
@@ -319,7 +320,7 @@ public sealed class OpenAiProviderContractTests
         Assert.Contains("visual analogy", target.SourceEvidence[0], StringComparison.OrdinalIgnoreCase);
 
         using var payload = JsonDocument.Parse(handler.LastRequestBody!);
-        Assert.Equal("gpt-5", payload.RootElement.GetProperty("model").GetString());
+        Assert.Equal("gpt-5.6-sol", payload.RootElement.GetProperty("model").GetString());
         Assert.False(payload.RootElement.GetProperty("store").GetBoolean());
         Assert.Contains("Quantum teaching note", payload.RootElement.GetProperty("input").GetString());
         Assert.Contains("teachers", payload.RootElement.GetProperty("input").GetString());
@@ -359,7 +360,7 @@ public sealed class OpenAiProviderContractTests
         Assert.Single(result.Plan.Targets);
         Assert.Equal(1, client.CallCount);
         Assert.NotNull(client.LastOptions);
-        Assert.Equal("gpt-5", client.LastOptions!.Model);
+        Assert.Equal("gpt-5.6-sol", client.LastOptions!.Model);
         Assert.False(client.LastOptions.StoredOutputEnabled);
         Assert.NotNull(client.LastOptions.TextOptions);
     }
@@ -708,7 +709,8 @@ public sealed class OpenAiProviderContractTests
             Assert.Equal("Bearer", handler.LastRequest.Headers.Authorization!.Scheme);
 
             using var payload = JsonDocument.Parse(handler.LastRequestBody!);
-            Assert.Equal("gpt-5", payload.RootElement.GetProperty("model").GetString());
+            Assert.Equal("gpt-5.6-sol", payload.RootElement.GetProperty("model").GetString());
+            Assert.Equal("medium", payload.RootElement.GetProperty("reasoning").GetProperty("effort").GetString());
             Assert.False(payload.RootElement.GetProperty("store").GetBoolean());
             Assert.False(payload.RootElement.TryGetProperty("previous_response_id", out _));
             Assert.Equal(
@@ -775,7 +777,7 @@ public sealed class OpenAiProviderContractTests
             var telemetry = Assert.Single(telemetrySink.Events);
             Assert.Equal("openai-vision", telemetry.ProviderId);
             Assert.Equal("vision-review", telemetry.Operation);
-            Assert.Equal("gpt-5", telemetry.Model);
+            Assert.Equal("gpt-5.6-sol", telemetry.Model);
             Assert.Equal("req_vision_123", telemetry.RequestId);
             Assert.Equal("resp_review_telemetry", telemetry.ProviderTraceId);
             Assert.Equal(22, telemetry.Usage!.InputTokens);

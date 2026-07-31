@@ -94,7 +94,17 @@ internal sealed record ScientificReviewTestFixture(
             Width: 300,
             Height: 200,
             "image/png",
-            [1, 2, 3]);
+            [1, 2, 3],
+            new ScientificExpectedVisualCheck(
+                "expected-element-force",
+                element.ElementId,
+                element.ScientificMeaning,
+                element.LabelOrFormula,
+                RelationshipDirection: null,
+                Conditions: [],
+                ForbiddenContent: [],
+                EvidenceSourceBlockIds: [evidence.SourceBlockId],
+                ScientificExpectedVisualAuthority.ApprovedSpecification));
         var visualRequest = ScientificVisualReviewRequest.Create(
             FullResolutionImage(),
             [crop]);

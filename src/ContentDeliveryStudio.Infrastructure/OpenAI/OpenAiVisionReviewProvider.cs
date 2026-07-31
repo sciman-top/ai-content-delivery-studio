@@ -112,6 +112,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         var payload = new Dictionary<string, object?>
         {
             ["model"] = _options.VisionReviewModel,
+            ["reasoning"] = OpenAiReasoningPayload.Create(_options.ReasoningEffort),
             ["instructions"] = "Review the generated image against the prompt and rubric. Return only valid JSON with the final decision and a short comment.",
             ["input"] = new object[]
             {

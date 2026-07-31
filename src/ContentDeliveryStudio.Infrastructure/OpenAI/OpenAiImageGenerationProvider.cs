@@ -202,6 +202,7 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             ["input"] = request.PromptText,
             ["tools"] = new object[] { tool },
             ["store"] = StatefulRouting.Store,
+            ["reasoning"] = OpenAiReasoningPayload.Create(_options.ReasoningEffort),
         };
 
         if (!string.IsNullOrWhiteSpace(request.PreviousResponseId))

@@ -17,7 +17,8 @@ does not become scientific authority merely because it is clearer.
 source PDF text and embedded figures
   -> located replacement/consolidation candidates
   -> candidate SVG or source-faithful evidence board
-  -> deterministic visual contract and visual-provider review
+  -> deterministic optical science package and typed expected visual checks
+  -> full-resolution plus responsibility-region visual-provider review
   -> explicit per-figure Gate 1 before semantic approval or Gate 2
 ```
 
@@ -47,12 +48,28 @@ that a generated scene is experimental evidence.
   or scientific approval.
 - Deterministic review blocks blank output, missing candidate watermark,
   missing title/description, and invalid or out-of-canvas text coordinates.
+- `article-optics-v1` separately blocks formula/domain/sign/unit drift, convex or
+  concave lens swaps, `L2/S` plane-order drift, reversed ray propagation,
+  convergence/divergence topology changes, unchanged intervention focus, and
+  missing source-photo coverage.
+- Every crop carries an `ExpectedVisualCheck`: meaning, exact content,
+  relationship direction, conditions, forbidden content, evidence block ids,
+  and authority status. Article candidates use
+  `LocatedSourceEvidencePendingGateOne`; the formal workflow uses
+  `ApprovedSpecification`.
+- GPT-5.6 Sol scientific review uses `detail: original`; models without original
+  detail support use `high`. The configured model is not changed implicitly by
+  this policy.
 - Visual-provider `fail` or `uncertain` blocks the candidate.
 - Automatic repair is limited to three presentation-only attempts. A renderer
   cannot change the candidate id, source references, or scientific scope during
   repair.
 - A complete run requires one result for every planned candidate and a review
   record for every generated PNG.
+
+Scientific failures never enter automatic repair. Layout, text, label, and
+non-evidentiary asset defects may use the existing three-attempt repair bound;
+any scientific relationship change invalidates Gate 1 and requires a person.
 
 ## Persistence
 

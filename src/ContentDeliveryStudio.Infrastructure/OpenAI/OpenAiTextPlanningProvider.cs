@@ -123,6 +123,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             ["instructions"] = "You plan coherent image series. Return only valid JSON that matches the requested schema.",
             ["input"] = BuildInput(request),
             ["store"] = Routing.Store,
+            ["reasoning"] = OpenAiReasoningPayload.Create(_options.ReasoningEffort),
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = new Dictionary<string, object?>

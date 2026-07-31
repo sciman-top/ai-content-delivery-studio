@@ -135,7 +135,8 @@ public sealed class ScientificReviewPrepBuilder
                 row.Region.Width,
                 row.Region.Height,
                 "image/png",
-                bytes);
+                bytes,
+                BuildExpectedCheck(row, semanticRequest, specification));
         }).ToArray();
         var fullResolution = new ScientificFullResolutionImage(
             png.Format,
@@ -173,6 +174,51 @@ public sealed class ScientificReviewPrepBuilder
             manifest,
             semanticRequest,
             visualRequest);
+    }
+
+    private static ScientificExpectedVisualCheck BuildExpectedCheck(
+        ScientificSvgStructureRow row,
+        ScientificSemanticReviewRequest semanticRequest,
+        ScientificFigureSpec specification)
+    {
+        var element = specification.Elements.SingleOrDefault(item =>
+            string.Equals(item.ElementId, row.ResponsibleItemId, StringComparison.Ordinal));
+        var relation = specification.Relations.SingleOrDefault(item =>
+            string.Equals(item.RelationId, row.ResponsibleItemId, StringComparison.Ordinal));
+        if (element is null && relation is null)
+        {
+            throw new InvalidOperationException(
+                $"Review crop has no approved specification authority: {row.ResponsibleItemId}.");
+        }
+
+        var provenance = element?.Provenance ?? relation!.Provenance;
+        var evidenceIds = provenance.Kind == ScientificProvenanceKind.ClaimEvidence
+            && provenance.Evidence is not null
+            ? new[] { provenance.Evidence.SourceBlockId }
+            : semanticRequest.ApprovedClaims.SelectMany(claim => claim.Evidence)
+                .Select(item => item.SourceBlockId)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+        var conditions = relation is null || string.IsNullOrWhiteSpace(relation.RepresentationConstraint)
+            ? Array.Empty<string>()
+            : new[] { relation.RepresentationConstraint };
+        var forbidden = specification.Elements
+            .Where(item => item.Requirement == FigureContentRequirement.Forbidden)
+            .Select(item => item.ScientificMeaning)
+            .Concat(specification.Relations
+                .Where(item => item.Requirement == FigureContentRequirement.Forbidden)
+                .Select(item => item.ScientificMeaning))
+            .ToArray();
+        return new ScientificExpectedVisualCheck(
+            $"expected-{row.ResponsibleItemId}",
+            row.ResponsibleItemId,
+            element is not null ? element.ScientificMeaning : relation!.ScientificMeaning,
+            element is not null ? element.LabelOrFormula : relation!.Label,
+            relation?.Direction.ToString(),
+            conditions,
+            forbidden,
+            evidenceIds,
+            ScientificExpectedVisualAuthority.ApprovedSpecification);
     }
 
     private static void ValidateAuthority(
