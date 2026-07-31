@@ -6,6 +6,7 @@ using ContentDeliveryStudio.Infrastructure.Fakes;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
 using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace ContentDeliveryStudio.App.Services;
 
@@ -65,6 +66,7 @@ public static class ProviderRuntimeServiceCollectionExtensions
         }
 
         var secretStore = new DotEnvSecretStore(envPath);
+        services.TryAddSingleton<IOpenAiScientificReviewCheckpointStore, JsonOpenAiScientificReviewCheckpointStore>();
         services.AddSingleton(configuration);
         services.AddSingleton<IOpenAiSecretStore>(secretStore);
         services.AddSingleton<OpenAiSdkClientFactory>();
@@ -104,7 +106,8 @@ public static class ProviderRuntimeServiceCollectionExtensions
                     configuration,
                     realApiEnabled: true),
                 secretStore,
-                serviceProvider.GetService<IProviderCallTelemetrySink>()));
+                serviceProvider.GetService<IProviderCallTelemetrySink>(),
+                serviceProvider.GetRequiredService<IOpenAiScientificReviewCheckpointStore>()));
         services.AddSingleton<IScientificSemanticReviewProvider>(serviceProvider =>
             serviceProvider.GetRequiredService<OpenAiScientificReviewProvider>());
         services.AddSingleton<IScientificVisualReviewProvider>(serviceProvider =>

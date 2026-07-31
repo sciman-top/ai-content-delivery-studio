@@ -24,6 +24,7 @@ public static class OpenAiServiceCollectionExtensions
         services.TryAddSingleton<IOpenAiOfficialSdkFactory, OpenAiOfficialSdkFactory>();
         services.TryAddSingleton<IOpenAiSdkImageBackend, OpenAiOfficialSdkImageBackend>();
         services.TryAddSingleton<IOpenAiSdkImageTransport, OpenAiSdkImageTransport>();
+        services.TryAddSingleton<IOpenAiScientificReviewCheckpointStore, JsonOpenAiScientificReviewCheckpointStore>();
         services.TryAddSingleton<OpenAiSdkClientFactory>();
         services.TryAddTransient<OpenAiSdkTextPlanningProvider>();
         services.TryAddTransient<OpenAiScientificUnderstandingProvider>();
@@ -33,7 +34,8 @@ public static class OpenAiServiceCollectionExtensions
                     .CreateClient(OpenAiHttpClientNames.Provider),
                 providerOptions,
                 serviceProvider.GetRequiredService<IOpenAiSecretStore>(),
-                serviceProvider.GetService<IProviderCallTelemetrySink>()));
+                serviceProvider.GetService<IProviderCallTelemetrySink>(),
+                serviceProvider.GetRequiredService<IOpenAiScientificReviewCheckpointStore>()));
 
         var builder = services.AddHttpClient(
             OpenAiHttpClientNames.Provider,

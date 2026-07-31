@@ -106,6 +106,31 @@ Recommended implementation-facing defaults:
 
 Credential placement alone does not justify stateful review. If a workflow later enables retained remote state, that decision must still follow [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md).
 
+### Scientific Review Local Checkpoints
+
+Live scientific semantic and visual review requests remain remote-stateless with
+`store: false` and no `previous_response_id` chaining. Separately, the desktop
+runtime writes a local resume checkpoint after a response has passed the strict
+scientific review parser. The default location is:
+
+```text
+%LOCALAPPDATA%\AIContentDeliveryStudio\provider-checkpoints\scientific-review
+```
+
+A checkpoint is reusable only when its schema, operation, endpoint, model,
+reasoning effort, and SHA-256 of the exact transmitted JSON payload all match.
+A missing checkpoint permits the normal bounded provider request; a corrupt or
+identity-mismatched checkpoint fails closed. Resume revalidates all responsible
+item identifiers against the current request and preserves `Pass`, `Fail`, or
+`Uncertain` without upgrading the verdict.
+
+Checkpoint files contain the parsed verdict, findings, provider trace id, and
+request identity hashes. They do not contain provider secrets, image bytes,
+base64 data URLs, or the raw provider response. Fake runtime selection neither
+reads nor writes these checkpoints. A resumed result is marked
+`PersistedCheckpoint`; it is reuse of an earlier parsed response, not a new live
+provider acceptance event.
+
 ## Same-Key Providers
 
 Some official or full OpenAI-compatible providers may license the same key for text, vision, and image operations.

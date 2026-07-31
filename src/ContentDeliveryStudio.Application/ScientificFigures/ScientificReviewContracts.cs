@@ -313,10 +313,18 @@ public sealed record ScientificProviderFinding(
     string ResponsibleItemId,
     string Evidence);
 
+public enum ScientificProviderReviewOrigin
+{
+    ProviderResponse = 0,
+    PersistedCheckpoint = 1,
+    FakeProvider = 2,
+}
+
 public sealed record ScientificProviderReviewResult(
     ScientificReviewVerdict Verdict,
     IReadOnlyList<ScientificProviderFinding> Findings,
-    string ProviderTraceId);
+    string ProviderTraceId,
+    ScientificProviderReviewOrigin Origin = ScientificProviderReviewOrigin.ProviderResponse);
 
 public enum ScientificReviewLayer
 {

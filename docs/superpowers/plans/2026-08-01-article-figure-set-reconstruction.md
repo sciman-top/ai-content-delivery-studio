@@ -21,5 +21,6 @@ Date: 2026-08-01
 - [x] Add adversarial formula, lens, focus, ray, plane, source-photo, clipping, and overlap coverage.
 - [x] Make scientific image detail model-capability-aware.
 - [x] Set active OpenAI Responses defaults to `gpt-5.6-sol` with explicit medium reasoning while preserving fake-first runtime selection.
+- [x] Add bounded transient retry and exact-request local checkpoint/resume with fail-closed identity validation and explicit result origin.
 - [ ] Human physics-expert Gate 1 review for the six-item sample.
-- [ ] Live provider acceptance and persisted live-provider resume evidence; requires separate explicit paid/live authorization.
+- [ ] Live provider acceptance evidence; requires separate explicit paid/live authorization. Local checkpoint behavior is covered fake-first, but no live response was created or resumed in this slice.

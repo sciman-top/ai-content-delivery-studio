@@ -40,6 +40,8 @@
 
 OpenAI 官方图像视觉文档说明，精确小字和空间定位应在模型支持时使用 `detail: original`；GPT-5.4 及更新模型支持该模式，旧模型回退 `high`。本仓现在按模型能力选择 detail。根据用户新增要求与官方 GPT-5.6 指南，主动默认设置为 `gpt-5.6-sol` 与显式 `reasoning.effort=medium`；fake provider 仍是默认，未执行 live 调用。Scientific review provider 对 `408`、`429`、`5xx` 和瞬态网络错误最多尝试 3 次，`400/401/403` 不重试。
 
+本轮又补齐 scientific review 的本地持久化 resume：checkpoint 身份绑定 schema、operation、endpoint、model、reasoning effort 与实际发送 JSON bytes 的 SHA-256，只有完全匹配才复用；损坏、超限、未知字段或身份不匹配均 fail closed。恢复结果继续校验当前责任项 ID，并显式标记 `PersistedCheckpoint`，不会把旧的 `Fail/Uncertain` 升级为 `Pass`。checkpoint 不保存 API key、图片 bytes/base64/data URL 或原始 provider response；`RealApiEnabled=false` 在读取 checkpoint 前阻断，因此 fake-first 不能被历史 live 状态绕过。
+
 官方依据：
 
 - <https://developers.openai.com/api/docs/guides/images-vision#choose-an-image-detail-level>
@@ -69,6 +71,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-article-scientific-fig
 
 - 6 项候选均为 `PendingHumanApproval`；本轮没有自动批准任何新科学主张。
 - 应用内 provider 记录是 `fake-scientific-visual`，只证明全分辨率请求、结果和修复路径可运行；不能称为 live OpenAI 视觉审查或专家验收。
+- checkpoint/resume 的对抗测试只证明本地精确请求恢复、隐私边界和 fail-closed 行为；`PersistedCheckpoint` 不是本轮新的 live provider call 或 acceptance。
 - `system-visual-review.json` 是本次交互中的系统视觉检查，覆盖视觉呈现和有界示意一致性；它不是逐图人类科学 Gate 1。
 - Gate 2、ZIP 正式交付、WPF 图组入口与 SQLite 图组持久化不在本切片完成范围内。
 
@@ -95,6 +98,22 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-article-scientific-fig
 - `scripts/preflight-release.ps1 -NoRestore`：repository verification、publish WhatIf/实际 preflight、placeholder/conflict 与 diff hygiene 全部通过；生成 84 文件 ZIP，SHA-256 为 `2cb2bd4c05b50ac49c7b18774cedfbbff7fed852ef43008585cf17b52a8544fd`。
 
 以上均为 fake-first、本机 repo-side 验证。它们不等于物理专家 Gate 1、live OpenAI provider acceptance 或正式 Gate 2 交付。
+
+## Checkpoint/Resume Focused Verification
+
+在 full gate 前执行 scientific review、runtime DI、fake origin 和 checkpoint 聚焦测试，30/30 通过。覆盖跨 provider 实例精确请求恢复、恢复时零 secret 读取和零 HTTP 调用、model/payload/image hash 变化不命中、损坏或身份篡改阻断、fake-first 不读取历史 checkpoint、`Fail` verdict 原样恢复，以及 checkpoint 不含 secret 或图像 payload。该测试使用本地 fake handler，没有发起 live/付费调用；full gate 结果在本轮 fresh 验证后更新。
+
+## Fresh Checkpoint/Resume Full Gate
+
+checkpoint/resume 最终代码与文档按固定顺序完成本轮 full gate：
+
+- `dotnet build ContentDeliveryStudio.sln`：0 警告、0 错误；
+- `dotnet test ContentDeliveryStudio.sln --no-build`：764/764 通过，0 失败、0 跳过；
+- `scripts/verify-reference-evidence.ps1`：`openai-provider` 与 `scientific-figure-workflow` 两个触发域均命中各自 authority evidence 并通过；
+- `dotnet format --verify-no-changes`：exit 0；
+- `scripts/preflight-release.ps1 -NoRestore`：repository verification、publish WhatIf/实际 preflight、placeholder/conflict 与 diff hygiene 全部通过；生成 84 文件 ZIP，SHA-256 为 `a4eedf0e9101d506980bed5a5dd9841d6e616fd060b1fd66921cc534c1d55a18`。
+
+该结果只证明 repo-side 实现、fake handler 合同与本地 checkpoint 行为。没有读取 secret，没有发起 live/付费调用，也不构成物理专家 Gate 1、live provider acceptance 或 Gate 2 正式交付。
 
 ## Rollback
 

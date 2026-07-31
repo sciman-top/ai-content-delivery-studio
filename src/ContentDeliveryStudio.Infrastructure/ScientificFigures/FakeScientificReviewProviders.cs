@@ -73,7 +73,8 @@ public static class FakeScientificReviewResults
         return new ScientificProviderReviewResult(
             ScientificReviewVerdict.Pass,
             [],
-            traceId);
+            traceId,
+            ScientificProviderReviewOrigin.FakeProvider);
     }
 
     public static ScientificProviderReviewResult WithVerdict(
@@ -84,6 +85,7 @@ public static class FakeScientificReviewResults
         return new ScientificProviderReviewResult(
             verdict,
             findings ?? [],
-            traceId);
+            traceId,
+            ScientificProviderReviewOrigin.FakeProvider);
     }
 }

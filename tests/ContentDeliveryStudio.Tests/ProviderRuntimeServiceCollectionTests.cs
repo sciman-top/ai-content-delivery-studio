@@ -74,6 +74,8 @@ public sealed class ProviderRuntimeServiceCollectionTests
                 provider.GetRequiredService<IScientificSemanticReviewProvider>());
             Assert.IsType<OpenAiScientificReviewProvider>(
                 provider.GetRequiredService<IScientificVisualReviewProvider>());
+            Assert.IsType<JsonOpenAiScientificReviewCheckpointStore>(
+                provider.GetRequiredService<IOpenAiScientificReviewCheckpointStore>());
         }
         finally
         {

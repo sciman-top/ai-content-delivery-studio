@@ -458,7 +458,8 @@ public sealed class ScientificFigureCorpusRunner
             return Task.FromResult(new ScientificProviderReviewResult(
                 ScientificReviewVerdict.Pass,
                 [],
-                "corpus-fake-pass"));
+                "corpus-fake-pass",
+                ScientificProviderReviewOrigin.FakeProvider));
         }
     }
 
@@ -485,7 +486,8 @@ public sealed class ScientificFigureCorpusRunner
                     ScientificProviderFindingKind.VisualDefect,
                     responsibleItemId,
                     _mutation.Description)],
-                $"corpus-fake-{_mutation.MutationId}"));
+                $"corpus-fake-{_mutation.MutationId}",
+                ScientificProviderReviewOrigin.FakeProvider));
         }
     }
 }

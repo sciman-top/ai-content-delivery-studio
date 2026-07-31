@@ -126,6 +126,17 @@ Key findings:
   `store: false`; no `previous_response_id` or remote conversation history is
   used. Image count and byte budgets are enforced locally because every image
   contributes tokens and cost.
+- `store: false` controls remote response retention; it does not prevent a
+  privacy-bounded local application checkpoint. Scientific review resume is
+  therefore keyed by schema, operation, endpoint, model, reasoning effort, and
+  the SHA-256 of the exact request JSON. It persists only the already-validated
+  verdict/findings/trace id, never the secret, image bytes, data URL, or raw
+  provider response. Corrupt or identity-mismatched state fails closed.
+- A local checkpoint hit is explicitly reported as `PersistedCheckpoint`.
+  It preserves the original `Pass`, `Fail`, or `Uncertain` result and is not
+  evidence of a new provider call or a new live acceptance. `previous_response_id`
+  remains unused because each scientific review request is independently
+  authoritative and fully specified.
 
 ## Official Google Vertex AI References
 

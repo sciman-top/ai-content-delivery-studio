@@ -71,6 +71,27 @@ Scientific failures never enter automatic repair. Layout, text, label, and
 non-evidentiary asset defects may use the existing three-attempt repair bound;
 any scientific relationship change invalidates Gate 1 and requires a person.
 
+## Provider Resume Boundary
+
+Scientific semantic and visual provider requests remain independent Responses
+calls with `store: false`; the workflow does not use remote conversation state
+or `previous_response_id`. After strict parsing and responsibility-id
+validation, the application may atomically persist a local checkpoint containing
+only the parsed verdict, findings, trace id, timestamp, and request identity.
+
+The identity binds checkpoint schema, operation, absolute endpoint, exact model,
+reasoning effort, and SHA-256 of the same serialized JSON bytes sent over HTTP.
+Only an exact identity hit can resume. Missing state continues to the bounded
+provider call; malformed, oversized, unknown-field, or identity-mismatched state
+fails closed. The resumed result is revalidated against current responsible item
+ids and tagged `PersistedCheckpoint`; `Fail` and `Uncertain` cannot become
+`Pass`. Fake mode is checked before checkpoint access, so persisted live state
+cannot bypass the fake-first opt-in boundary.
+
+No checkpoint contains an API key, input image bytes/data URLs, or a raw provider
+response. This is crash/restart recovery, not a new provider acceptance record
+and not scientific authority.
+
 ## Persistence
 
 The sample runner writes the plan, source-figure audit, per-candidate SVG/PNG/PDF

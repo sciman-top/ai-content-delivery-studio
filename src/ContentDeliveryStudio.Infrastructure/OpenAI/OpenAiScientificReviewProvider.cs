@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
 using ContentDeliveryStudio.Application.ScientificFigures;
 
@@ -15,17 +14,20 @@ public sealed class OpenAiScientificReviewProvider
     private readonly OpenAiProviderOptions _options;
     private readonly IOpenAiSecretStore _secretStore;
     private readonly IProviderCallTelemetrySink _telemetrySink;
+    private readonly IOpenAiScientificReviewCheckpointStore _checkpointStore;
 
     public OpenAiScientificReviewProvider(
         HttpClient httpClient,
         OpenAiProviderOptions options,
         IOpenAiSecretStore secretStore,
-        IProviderCallTelemetrySink? telemetrySink = null)
+        IProviderCallTelemetrySink? telemetrySink = null,
+        IOpenAiScientificReviewCheckpointStore? checkpointStore = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _secretStore = secretStore ?? throw new ArgumentNullException(nameof(secretStore));
         _telemetrySink = telemetrySink ?? NullProviderCallTelemetrySink.Instance;
+        _checkpointStore = checkpointStore ?? NullOpenAiScientificReviewCheckpointStore.Instance;
         OpenAiProviderGuard.EnsureAllowsOperation(options, OpenAiProviderOperation.VisionReview);
     }
 
@@ -71,6 +73,26 @@ public sealed class OpenAiScientificReviewProvider
         string layerResponsibleItemId,
         CancellationToken cancellationToken)
     {
+        if (!_options.RealApiEnabled)
+        {
+            throw new InvalidOperationException("Real OpenAI API calls are disabled.");
+        }
+
+        var endpoint = new Uri(_options.BaseUri, OpenAiRoutingDefaults.VisionReviewEndpointPath);
+        var payloadBytes = JsonSerializer.SerializeToUtf8Bytes(payload, JsonOptions);
+        var checkpointIdentity = OpenAiScientificReviewCheckpointIdentity.Create(
+            operation,
+            endpoint,
+            _options.VisionReviewModel,
+            _options.ReasoningEffort,
+            payloadBytes);
+        var resumed = await _checkpointStore.TryLoadAsync(checkpointIdentity, cancellationToken);
+        if (resumed is not null)
+        {
+            ValidateResumedResult(resumed, allowedIds);
+            return resumed with { Origin = ScientificProviderReviewOrigin.PersistedCheckpoint };
+        }
+
         await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
             _options,
             _secretStore,
@@ -78,12 +100,12 @@ public sealed class OpenAiScientificReviewProvider
             cancellationToken);
         var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
-        var endpoint = new Uri(_options.BaseUri, OpenAiRoutingDefaults.VisionReviewEndpointPath);
         for (var attempt = 1; attempt <= MaximumTransientAttempts; attempt++)
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-            request.Content = JsonContent.Create(payload, options: JsonOptions);
+            request.Content = new ByteArrayContent(payloadBytes);
+            request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 
             var stopwatch = Stopwatch.StartNew();
             HttpResponseMessage response;
@@ -118,10 +140,12 @@ public sealed class OpenAiScientificReviewProvider
                 using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
                 var traceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
                 RecordTelemetry(operation, endpoint, response, document.RootElement, traceId, stopwatch.Elapsed);
-                return OpenAiScientificReviewMapper.Parse(
+                var result = OpenAiScientificReviewMapper.Parse(
                     document.RootElement,
                     allowedIds,
                     layerResponsibleItemId);
+                await _checkpointStore.SaveAsync(checkpointIdentity, result, cancellationToken);
+                return result;
             }
         }
 
@@ -135,6 +159,18 @@ public sealed class OpenAiScientificReviewProvider
 
     private static Task DelayForRetryAsync(int attempt, CancellationToken cancellationToken) =>
         Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), cancellationToken);
+
+    private static void ValidateResumedResult(
+        ScientificProviderReviewResult result,
+        IReadOnlySet<string> allowedIds)
+    {
+        JsonOpenAiScientificReviewCheckpointStore.ValidateResult(result);
+        if (result.Findings.Any(item => !allowedIds.Contains(item.ResponsibleItemId)))
+        {
+            throw new InvalidDataException(
+                "Scientific review checkpoint contains an unknown responsible item.");
+        }
+    }
 
     private void RecordTelemetry(
         string operation,

@@ -771,6 +771,21 @@ spatial relationships matter, and falls back to `high` for older routes. Full
 bytes, typed crops, deterministic checks, and human Gate 1 remain separate
 controls even when `original` is available.
 
+Provider transport recovery also remains below the scientific authority chain.
+After a strict scientific response has been parsed, the desktop runtime may
+atomically persist its verdict, findings, and trace id in a local checkpoint.
+Reuse requires an exact match on checkpoint schema, review operation, endpoint,
+model, reasoning effort, and SHA-256 of the same JSON bytes sent to Responses.
+The resumed result is revalidated against the current responsible-item IDs and
+tagged `PersistedCheckpoint`; the original `Pass`, `Fail`, or `Uncertain`
+verdict cannot be upgraded. Corrupt or identity-mismatched state fails closed.
+
+This local resume mechanism does not use `previous_response_id`, does not change
+the remote `store: false` policy, and does not persist secrets, image payloads,
+or raw responses. Fake mode blocks checkpoint access before lookup. A checkpoint
+hit is crash/restart recovery of an earlier provider result, not a new provider
+call, scientific acceptance, or human Gate 1 evidence.
+
 Primary OpenAI sources:
 
 - <https://developers.openai.com/api/docs/guides/model-guidance?model=gpt-5.6#migration-quickstart>

@@ -141,14 +141,238 @@ public sealed class OpenAiScientificReviewContractTests
         Assert.Equal(1, handler.InvocationCount);
     }
 
+    [Fact]
+    public async Task Provider_ResumesExactRequestAcrossInstancesWithoutAnotherApiCall()
+    {
+        var directory = TemporaryDirectory();
+        try
+        {
+            var fixture = ScientificReviewTestFixture.Create();
+            var store = new JsonOpenAiScientificReviewCheckpointStore(directory);
+            var firstHandler = new SequenceHandler(JsonResponse(Response("Pass", [])));
+            var first = Provider(firstHandler, checkpointStore: store);
+
+            var initial = await first.ReviewAsync(fixture.SemanticRequest, CancellationToken.None);
+
+            var resumedHandler = new SequenceHandler();
+            var resumed = await Provider(
+                    resumedHandler,
+                    checkpointStore: store,
+                    secretStore: new ThrowingSecretStore())
+                .ReviewAsync(fixture.SemanticRequest, CancellationToken.None);
+
+            Assert.Equal(ScientificReviewVerdict.Pass, initial.Verdict);
+            Assert.Equal(initial.Verdict, resumed.Verdict);
+            Assert.Equal(initial.Findings, resumed.Findings);
+            Assert.Equal(initial.ProviderTraceId, resumed.ProviderTraceId);
+            Assert.Equal(ScientificProviderReviewOrigin.ProviderResponse, initial.Origin);
+            Assert.Equal(ScientificProviderReviewOrigin.PersistedCheckpoint, resumed.Origin);
+            Assert.Equal(1, firstHandler.InvocationCount);
+            Assert.Equal(0, resumedHandler.InvocationCount);
+            Assert.Single(Directory.GetFiles(directory, "*.json"));
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Provider_DoesNotResumeWhenModelOrPayloadChanges()
+    {
+        var directory = TemporaryDirectory();
+        try
+        {
+            var fixture = ScientificReviewTestFixture.Create();
+            var store = new JsonOpenAiScientificReviewCheckpointStore(directory);
+            await Provider(
+                    new SequenceHandler(JsonResponse(Response("Pass", []))),
+                    checkpointStore: store)
+                .ReviewAsync(fixture.VisualRequest, CancellationToken.None);
+
+            var changedModelHandler = new SequenceHandler(JsonResponse(Response("Pass", [])));
+            await Provider(
+                    changedModelHandler,
+                    new OpenAiProviderOptions
+                    {
+                        RealApiEnabled = true,
+                        VisionReviewModel = "gpt-5.5",
+                    },
+                    store)
+                .ReviewAsync(fixture.VisualRequest, CancellationToken.None);
+
+            var changedImage = fixture.VisualRequest.FullResolutionOutput with
+            {
+                Bytes = [9, 8, 7, 6],
+                Sha256 = $"sha256:{new string('b', 64)}",
+            };
+            var changedRequest = ScientificVisualReviewRequest.Create(
+                changedImage,
+                fixture.VisualRequest.RegionCrops);
+            var changedPayloadHandler = new SequenceHandler(JsonResponse(Response("Pass", [])));
+            await Provider(changedPayloadHandler, checkpointStore: store)
+                .ReviewAsync(changedRequest, CancellationToken.None);
+
+            Assert.Equal(1, changedModelHandler.InvocationCount);
+            Assert.Equal(1, changedPayloadHandler.InvocationCount);
+            Assert.Equal(3, Directory.GetFiles(directory, "*.json").Length);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Provider_FailsClosedForCorruptedCheckpointWithoutCallingApi()
+    {
+        var directory = TemporaryDirectory();
+        try
+        {
+            var fixture = ScientificReviewTestFixture.Create();
+            var store = new JsonOpenAiScientificReviewCheckpointStore(directory);
+            await Provider(
+                    new SequenceHandler(JsonResponse(Response("Pass", []))),
+                    checkpointStore: store)
+                .ReviewAsync(fixture.SemanticRequest, CancellationToken.None);
+            await File.WriteAllTextAsync(Assert.Single(Directory.GetFiles(directory, "*.json")), "{");
+            var handler = new SequenceHandler(JsonResponse(Response("Pass", [])));
+
+            await Assert.ThrowsAsync<InvalidDataException>(() =>
+                Provider(handler, checkpointStore: store)
+                    .ReviewAsync(fixture.SemanticRequest, CancellationToken.None));
+
+            Assert.Equal(0, handler.InvocationCount);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Provider_FailsClosedForIdentityTamperingWithoutCallingApi()
+    {
+        var directory = TemporaryDirectory();
+        try
+        {
+            var fixture = ScientificReviewTestFixture.Create();
+            var store = new JsonOpenAiScientificReviewCheckpointStore(directory);
+            await Provider(
+                    new SequenceHandler(JsonResponse(Response("Pass", []))),
+                    checkpointStore: store)
+                .ReviewAsync(fixture.SemanticRequest, CancellationToken.None);
+            var checkpointPath = Assert.Single(Directory.GetFiles(directory, "*.json"));
+            var checkpoint = await File.ReadAllTextAsync(checkpointPath);
+            await File.WriteAllTextAsync(
+                checkpointPath,
+                checkpoint.Replace("gpt-5.6-sol", "gpt-5.5", StringComparison.Ordinal));
+            var handler = new SequenceHandler(JsonResponse(Response("Pass", [])));
+
+            await Assert.ThrowsAsync<InvalidDataException>(() =>
+                Provider(handler, checkpointStore: store)
+                    .ReviewAsync(fixture.SemanticRequest, CancellationToken.None));
+
+            Assert.Equal(0, handler.InvocationCount);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Provider_DoesNotReuseCheckpointWhenRealApiIsDisabled()
+    {
+        var directory = TemporaryDirectory();
+        try
+        {
+            var fixture = ScientificReviewTestFixture.Create();
+            var store = new JsonOpenAiScientificReviewCheckpointStore(directory);
+            await Provider(
+                    new SequenceHandler(JsonResponse(Response("Pass", []))),
+                    checkpointStore: store)
+                .ReviewAsync(fixture.SemanticRequest, CancellationToken.None);
+            var handler = new SequenceHandler(JsonResponse(Response("Pass", [])));
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                Provider(
+                        handler,
+                        new OpenAiProviderOptions { RealApiEnabled = false },
+                        store,
+                        new ThrowingSecretStore())
+                    .ReviewAsync(fixture.SemanticRequest, CancellationToken.None));
+
+            Assert.Contains("disabled", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, handler.InvocationCount);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task Provider_ResumesFailVerdictWithoutUpgradingItAndCheckpointExcludesPayloadAndSecret()
+    {
+        var directory = TemporaryDirectory();
+        try
+        {
+            var fixture = ScientificReviewTestFixture.Create();
+            var finding = new
+            {
+                code = "wrong-force",
+                kind = "ScientificMismatch",
+                responsibleItemId = "element-force",
+                evidence = "Force direction is reversed.",
+            };
+            var store = new JsonOpenAiScientificReviewCheckpointStore(directory);
+            var first = await Provider(
+                    new SequenceHandler(JsonResponse(Response("Fail", [finding]))),
+                    checkpointStore: store)
+                .ReviewAsync(fixture.VisualRequest, CancellationToken.None);
+            var resumedHandler = new SequenceHandler(JsonResponse(Response("Pass", [])));
+
+            var resumed = await Provider(resumedHandler, checkpointStore: store)
+                .ReviewAsync(fixture.VisualRequest, CancellationToken.None);
+
+            Assert.Equal(ScientificReviewVerdict.Fail, first.Verdict);
+            Assert.Equal(ScientificReviewVerdict.Fail, resumed.Verdict);
+            Assert.Equal(ScientificProviderReviewOrigin.PersistedCheckpoint, resumed.Origin);
+            Assert.Equal(0, resumedHandler.InvocationCount);
+            var checkpoint = await File.ReadAllTextAsync(
+                Assert.Single(Directory.GetFiles(directory, "*.json")));
+            Assert.DoesNotContain("test-openai-key", checkpoint, StringComparison.Ordinal);
+            Assert.DoesNotContain("image_url", checkpoint, StringComparison.Ordinal);
+            Assert.DoesNotContain(Convert.ToBase64String(fixture.VisualRequest.FullResolutionOutput.Bytes), checkpoint, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
     private static OpenAiScientificReviewProvider Provider(
         HttpMessageHandler handler,
-        OpenAiProviderOptions? options = null)
+        OpenAiProviderOptions? options = null,
+        IOpenAiScientificReviewCheckpointStore? checkpointStore = null,
+        IOpenAiSecretStore? secretStore = null)
     {
         return new OpenAiScientificReviewProvider(
             new HttpClient(handler),
             options ?? new OpenAiProviderOptions { RealApiEnabled = true },
-            new StaticSecretStore());
+            secretStore ?? new StaticSecretStore(),
+            checkpointStore: checkpointStore);
+    }
+
+    private static string TemporaryDirectory()
+    {
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            "ContentDeliveryStudio.Tests",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        return directory;
     }
 
     private static string Response(string verdict, object[] findings)
@@ -203,6 +427,14 @@ public sealed class OpenAiScientificReviewContractTests
         public Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
         {
             return Task.FromResult<string?>("test-openai-key");
+        }
+    }
+
+    private sealed class ThrowingSecretStore : IOpenAiSecretStore
+    {
+        public Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException("Checkpoint resume must not read provider secrets.");
         }
     }
 }
