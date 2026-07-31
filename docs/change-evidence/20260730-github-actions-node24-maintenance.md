@@ -8,11 +8,6 @@
 - Product/runtime behavior: unchanged. No provider call, external publication,
   package signing, installer registration, schema change, or dependency restore
   policy change was introduced.
-- The separate `agent-rule-contract.yml` checkout remains on its governed v4
-  pin. Its normalized workflow hash is owned by
-  `governed-ai-coding-runtime/rules/target-project-rule-coordination.json`, and
-  that control repository currently carries an uncommitted nine-target 9.58
-  rollout. Updating it here would create cross-repository governance drift.
 
 ## Supply-Chain Decision
 
@@ -39,8 +34,5 @@ Existing inputs remain supported: checkout `fetch-depth: 0` and setup-dotnet
 
 - Risk is bounded to GitHub-hosted workflow bootstrap. The product code and
   release script are unchanged, and action permissions remain `contents: read`.
-- Recovery condition for the remaining agent-rule warning: close the control
-  repository's 9.58 rollout, update the governed normalized workflow hash, then
-  upgrade the target workflow and run both target and control-repository gates.
 - Rollback reverts only `.github/workflows/verify-repo.yml` and this evidence
   file. Git-external publish artifacts and workspaces are unaffected.
