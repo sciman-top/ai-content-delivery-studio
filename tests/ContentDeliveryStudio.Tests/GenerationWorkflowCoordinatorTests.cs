@@ -84,7 +84,7 @@ public sealed class GenerationWorkflowCoordinatorTests
         }
         finally
         {
-            DeleteProjectOutputDirectories(project.Id, "generated");
+            DeleteWorkspaceProjectDirectory(project.Id, "generated");
         }
     }
 
@@ -105,7 +105,7 @@ public sealed class GenerationWorkflowCoordinatorTests
         var timestamp = DateTimeOffset.Parse("2026-06-08T09:00:00Z");
         var project = await projectService.CreateProjectAsync("Edit coordinator demo", timestamp, CancellationToken.None);
 
-        var sourceDirectory = localStudioRoot.GetProjectDirectory("generated", project.Id);
+        var sourceDirectory = localStudioRoot.GetWorkspaceProjectDirectory("generated", project.Id);
         Directory.CreateDirectory(sourceDirectory);
         var sourcePath = Path.Combine(sourceDirectory, "source.png");
         var metadataPath = Path.Combine(sourceDirectory, "source.json");
@@ -137,14 +137,14 @@ public sealed class GenerationWorkflowCoordinatorTests
         }
         finally
         {
-            DeleteProjectOutputDirectories(project.Id, "edited");
-            DeleteProjectOutputDirectories(project.Id, "generated");
+            DeleteWorkspaceProjectDirectory(project.Id, "edited");
+            DeleteWorkspaceProjectDirectory(project.Id, "generated");
         }
     }
 
-    private static void DeleteProjectOutputDirectories(Guid projectId, string folder)
+    private static void DeleteWorkspaceProjectDirectory(Guid projectId, string categoryName)
     {
-        var directory = LocalStudioDataPaths.ResolveProjectDirectory(folder, projectId);
+        var directory = LocalStudioDataPaths.ResolveWorkspaceProjectDirectory(categoryName, projectId);
         if (Directory.Exists(directory))
         {
             Directory.Delete(directory, recursive: true);

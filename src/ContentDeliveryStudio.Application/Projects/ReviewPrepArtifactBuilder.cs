@@ -18,7 +18,7 @@ public static class ReviewPrepArtifactBuilder
         string promptText,
         CancellationToken cancellationToken)
     {
-        var directory = LocalStudioDataPaths.ResolveProjectDirectory("review-prep", projectId);
+        var directory = LocalStudioDataPaths.ResolveWorkspaceProjectDirectory("review-prep", projectId);
 
         Directory.CreateDirectory(directory);
         var fileName = $"{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{SanitizeFileName(itemTitle)}-review-prep.json";

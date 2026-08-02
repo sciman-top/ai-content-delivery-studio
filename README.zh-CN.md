@@ -83,6 +83,13 @@ rg -n "(TB[D]|TO[D]O|PLACE''HOLDER)" .
 git status --short
 ```
 
+### 最终图片存放
+
+最终批准图片与临时候选严格分离，统一目录合同见
+[docs/DELIVERY_OUTPUT_LAYOUT.md](./docs/DELIVERY_OUTPUT_LAYOUT.md)。默认交付根可由
+`CONTENT_DELIVERY_STUDIO_DELIVERY_ROOT` 覆盖；候选、编辑、crop 和审查证据仍在
+`workspace/`，不会混入 `images/`。
+
 ## 仓库结构
 
 ### 源项目

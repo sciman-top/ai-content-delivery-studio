@@ -96,6 +96,10 @@ public sealed class MainWindowLocalizationCoordinator
             ApproveSelectedReviewText = Text(LocalizationKey.ApproveSelectedReview),
             RejectSelectedReviewText = Text(LocalizationKey.RejectSelectedReview),
             ExportDeliveryText = Text(LocalizationKey.ExportDelivery),
+            FinalDeliveryCategoryLabel = Text(LocalizationKey.FinalDeliveryCategory),
+            FinalDeliveryRootLabel = Text(LocalizationKey.FinalDeliveryRoot),
+            BrowseFinalDeliveryRootText = Text(LocalizationKey.BrowseFinalDeliveryRoot),
+            FinalDeliveryDestinationLabel = Text(LocalizationKey.FinalDeliveryDestination),
             DeliveryPackageColumn = Text(LocalizationKey.DeliveryPackageColumn),
             DeliveryManifestColumn = Text(LocalizationKey.DeliveryManifestColumn),
             DeliveryReportColumn = Text(LocalizationKey.DeliveryReportColumn),
@@ -417,6 +421,10 @@ public sealed class MainWindowLocalizationPayload
     public string ApproveSelectedReviewText { get; init; } = string.Empty;
     public string RejectSelectedReviewText { get; init; } = string.Empty;
     public string ExportDeliveryText { get; init; } = string.Empty;
+    public string FinalDeliveryCategoryLabel { get; init; } = string.Empty;
+    public string FinalDeliveryRootLabel { get; init; } = string.Empty;
+    public string BrowseFinalDeliveryRootText { get; init; } = string.Empty;
+    public string FinalDeliveryDestinationLabel { get; init; } = string.Empty;
     public string DeliveryPackageColumn { get; init; } = string.Empty;
     public string DeliveryManifestColumn { get; init; } = string.Empty;
     public string DeliveryReportColumn { get; init; } = string.Empty;

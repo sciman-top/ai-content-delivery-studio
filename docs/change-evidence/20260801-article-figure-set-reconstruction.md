@@ -118,3 +118,18 @@ checkpoint/resume 最终代码与文档按固定顺序完成本轮 full gate：
 ## Rollback
 
 仅撤销本切片新增的 optical reviewer、typed expected-check 合同、provider model/reasoning/detail/retry 设置、测试、脚本、设计/计划和证据变更。原重建切片与 `paper/` 不回滚；`outputs/` 是 Git 外运行证据，不使用 Git 回滚伪装恢复。
+
+## 2026-08-01 路径收口复核
+
+统一最终图片路径切片后，使用同一份眼睛/凸透镜 PDF 重新执行：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-article-scientific-figure-set.ps1 `
+  -SourcePath 'paper\眼睛直接观察凸透镜成像时的各种问题（王耀强）.pdf' `
+  -OutputDirectory 'workspace\article-figure-runs\20260801-delivery-factory-rerun-complete-set'
+```
+
+结果为 exit 0、6/6、`complete=true`、`deterministicReview=article-optics-v1`；6 份
+`*.visual-review.json` 均有 typed crops 与 expected checks，确定性科学审查通过，
+且 `gateOneStatus=PendingHumanApproval`。这次运行没有 live/付费 provider 调用，
+也没有把脚本候选复制到最终交付根。

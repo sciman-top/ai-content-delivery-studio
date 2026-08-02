@@ -14,6 +14,11 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($repoRoot)) {
 }
 
 $repoRoot = $repoRoot.Trim()
+$studioDataRoot = if ([string]::IsNullOrWhiteSpace($env:CONTENT_DELIVERY_STUDIO_DATA_ROOT)) {
+    Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) "ContentDeliveryStudio"
+} else {
+    [System.IO.Path]::GetFullPath($env:CONTENT_DELIVERY_STUDIO_DATA_ROOT)
+}
 $resolvedSourcePath = [System.IO.Path]::GetFullPath($SourcePath)
 if (-not (Test-Path -LiteralPath $resolvedSourcePath -PathType Leaf)) {
     throw "Article source PDF was not found: $resolvedSourcePath"
@@ -23,7 +28,7 @@ if ([System.IO.Path]::GetExtension($resolvedSourcePath) -ine ".pdf") {
 }
 
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
-    $OutputDirectory = Join-Path $repoRoot (Join-Path "outputs\article-scientific-figure-runs" (Get-Date -Format "yyyyMMdd-HHmmss"))
+    $OutputDirectory = Join-Path $studioDataRoot (Join-Path "workspace\article-figure-runs" (Get-Date -Format "yyyyMMdd-HHmmss"))
 } elseif (-not [System.IO.Path]::IsPathRooted($OutputDirectory)) {
     $OutputDirectory = Join-Path $repoRoot $OutputDirectory
 }
@@ -55,6 +60,6 @@ if (@($reportPath, $previewPath, $workflowPath, $reviewPath, $approvedSvgPath, $
     throw "Article run did not produce the required candidate, approved-workflow, review, PNG, and PDF artifacts."
 }
 
-Write-Host "[OK] Article candidate run complete: $resolvedOutputDirectory" -ForegroundColor Green
+Write-Host "[OK] Article candidate run persisted under workspace: $resolvedOutputDirectory" -ForegroundColor Green
 Write-Host "[OK] Gate 1, deterministic contract review, semantic review, and visual review were persisted." -ForegroundColor Green
 Write-Host "[NEXT] A separate explicit human Gate 2 decision is required before delivery-package creation." -ForegroundColor Yellow

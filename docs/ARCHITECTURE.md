@@ -26,11 +26,62 @@ ai-content-delivery-studio/              active checkout
     adr/
     research/
     superpowers/
-  workspace/                            ignored local user data
-  outputs/                              ignored generated outputs
+  workspace/                            ignored temporary candidates, edits, and review preparation
+  outputs/                              ignored scripted evidence and ad hoc run outputs
 ```
 
 `ContentDeliveryStudio` is now the active internal solution and namespace root. Historical `ImageSeriesStudio` text remains only in preserved evidence and compatibility notes described by ADR 0008.
+
+## Local Output Layout
+
+The desktop app keeps final delivery artifacts separate from temporary work. Temporary
+data uses `%LOCALAPPDATA%\ContentDeliveryStudio` by default (or the explicit
+`CONTENT_DELIVERY_STUDIO_DATA_ROOT` override). Final deliveries use
+`CONTENT_DELIVERY_STUDIO_DELIVERY_ROOT` when configured, otherwise the data-root
+`deliveries` fallback:
+
+```text
+workspace/<project-id>/generated/       candidate generation output
+workspace/<project-id>/edited/          edited candidate output
+workspace/<project-id>/review-prep/     crops, contact sheets, and review preparation
+workspace/article-figure-runs/<run-id>/ article sample candidates and their review evidence
+deliveries/<category>/<project-id>/<timestamp>/ immutable approved delivery package (fallback)
+  images/                               final approved images only
+  prompts/ metadata/ composition/       delivery evidence and provenance
+```
+
+The built-in final-image categories are `image-series`, `image-edits`,
+`article-figure-sets`, `scientific-figures`, `document-illustrations`,
+`courseware-visuals`, and `poster-report-visuals`. The application resolves these
+through `FinalImageDeliveryCategory`; callers cannot inject a title or prompt as a
+category path segment. A delivery export defaults to `image-series`, while a
+specialized caller can select another category and/or pass an explicit custom root.
+The generic WPF approval panel projects this contract directly: category selection
+is finite and localized, the root defaults from configuration but remains editable
+and browseable, and the resolved category destination is visible before export.
+The ViewModel blocks export when the root resolves inside temporary `workspace`.
+
+For the local classroom integration, configure the final root to
+`D:\CODE\classroom-answer-toolkit\正式交付\科学配图`. The resulting package is
+`<final-root>/<category>/<project-id>/<timestamp>/images/`; the generator
+repository keeps temporary candidates and review material under its own
+`workspace/` tree. The external root is an explicit deployment choice, not a
+hard-coded repository dependency, so another consumer can provide its own delivery
+root.
+
+Resolution precedence is explicit custom root, then
+`CONTENT_DELIVERY_STUDIO_DELIVERY_ROOT`, then the data-root `deliveries` fallback.
+The data root itself is controlled by `CONTENT_DELIVERY_STUDIO_DATA_ROOT`; setting
+both to D: locations keeps final assets off the default C: local-app-data tree.
+Existing persisted asset paths are not migrated or deleted by this layout change.
+
+Only a completed human-approved delivery creates `<delivery-root>/.../images/`
+(or the fallback `deliveries/.../images/`).
+Generation, edits, and review preparation must not write there. Repository-local
+`outputs/` remains for ignored scripted evidence and sample runs, not end-user
+delivery. The article sample scripts default to
+`workspace/article-figure-runs/<run-id>/`; their `-OutputDirectory` parameter
+remains an explicit override for reproducible evidence runs.
 
 ## Logical Layers
 

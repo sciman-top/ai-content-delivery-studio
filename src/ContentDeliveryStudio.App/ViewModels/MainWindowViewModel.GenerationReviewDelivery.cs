@@ -370,7 +370,9 @@ public sealed partial class MainWindowViewModel
                 ReviewRows,
                 DesignBlueprintRows,
                 _activeCreativeBriefId,
-                cancellationToken));
+                cancellationToken,
+                SelectedFinalDeliveryCategoryOption?.Category ?? FinalImageDeliveryCategory.ImageSeries,
+                FinalDeliveryRootPath));
 
         if (!result.Executed || result.Value is null)
         {
@@ -385,7 +387,32 @@ public sealed partial class MainWindowViewModel
         return CanRunMutation()
             && SelectedProject is not null
             && GalleryRows.Count > 0
+            && SelectedFinalDeliveryCategoryOption is not null
+            && !string.IsNullOrWhiteSpace(FinalDeliveryDestinationPreview)
             && ReviewRows.Any(row => row.HumanApproved && row.Decision == ReviewDecision.Pass.ToString());
+    }
+
+    [RelayCommand(CanExecute = nameof(CanBrowseFinalDeliveryRoot))]
+    private async Task BrowseFinalDeliveryRootAsync()
+    {
+        if (_finalDeliveryRootPickerService is null)
+        {
+            return;
+        }
+
+        var selectedRoot = await _finalDeliveryRootPickerService.PickAsync(
+            FinalDeliveryRootPath,
+            BrowseFinalDeliveryRootText,
+            CancellationToken.None);
+        if (!string.IsNullOrWhiteSpace(selectedRoot))
+        {
+            FinalDeliveryRootPath = selectedRoot;
+        }
+    }
+
+    private bool CanBrowseFinalDeliveryRoot()
+    {
+        return CanRunMutation() && _finalDeliveryRootPickerService is not null;
     }
 
     [RelayCommand(CanExecute = nameof(CanCreateSeries))]

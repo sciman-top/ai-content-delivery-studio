@@ -17,6 +17,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - The post-acceptance native WPF shell/Diagnostics accessibility baseline is repo-side complete with XAML contracts and `authorized_agent` equivalent-operator acceptance. This does not reopen Tasks 1-30 or Checkpoints 0-5 and does not close Narrator, high-contrast, DPI, full-form, virtualized gallery/grid, touch/pen, or packaged-app trigger lanes.
 - Phase 7 product hardening is repo-side closed through the verified Windows ZIP, safe backup/restore, budgeted 1,000-row gallery benchmark, principal-form accessibility contracts, PerMonitorV2 declaration, and packaged-app UIA probe. Narrator, real system high-contrast switching, a non-default-DPI hardware matrix, touch/pen, subjective scroll quality, and real low-memory devices remain manual/live acceptance rather than repository tasks.
 - Reliability Hardening Wave 2 is closed: the `latest-wins`/`exclusive` operation gate, responsibility-focused ViewModel partials, race/failure guardrail tests, and repository-scan pruning landed in `ab3e42d`; its previously stale checklist was reconciled with fresh evidence on `2026-07-29`.
+- The unified final-image layout follow-through is repo-side complete: the generic WPF approval panel now selects the finite delivery category, defaults and browses a custom final root, previews the resolved category directory, rejects temporary-workspace roots, and still exports only human-approved `Pass` items. Article Gate 1/Gate 2 and live-provider acceptance remain separate pending authority boundaries.
 
 ## Accepted Post-V1 Flagship Slice: Trustworthy Scientific Figures
 
@@ -111,6 +112,7 @@ These items are still valuable, but they are not the same thing as the current V
 - [x] Harden the short requirement -> brief -> blueprint -> series -> review -> delivery path as the primary V1 launch route.
 - [x] Harden the article or plain-text -> evidence anchors -> illustration targets -> promoted plan -> delivery path as a supporting validation route without requiring real providers by default.
 - [x] Complete Phase 4A deterministic text composition, readability checks, reviewer notes, and approval evidence export.
+- [x] Centralize categorized final-image delivery roots, custom-root precedence, and the application request factory while keeping candidates/compositions in workspace until approval.
 - [x] Implement the provider routing policy defaults for Images API vs Responses API, structured outputs, and `store: false` by default.
 - [x] Evaluate and adopt the official OpenAI .NET SDK where stable; keep raw `HttpClient` only for unsupported or lagging gaps.
 - [x] Add a bounded transient `502 upstream_error` retry on the official SDK Images path before failing the live OpenAI route.

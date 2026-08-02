@@ -36,6 +36,32 @@
                 AutomationProperties.Name="{Binding RejectSelectedReviewText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,8" />
+        <TextBlock Text="{Binding FinalDeliveryCategoryLabel}" Margin="0,0,0,4" />
+        <ComboBox ItemsSource="{Binding FinalDeliveryCategoryOptions}"
+                  SelectedItem="{Binding SelectedFinalDeliveryCategoryOption}"
+                  DisplayMemberPath="DisplayName"
+                  AutomationProperties.AutomationId="FinalDeliveryCategorySelector"
+                  AutomationProperties.Name="{Binding FinalDeliveryCategoryLabel}"
+                  Margin="0,0,0,6" />
+        <TextBlock Text="{Binding FinalDeliveryRootLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding FinalDeliveryRootPath, UpdateSourceTrigger=PropertyChanged}"
+                 AutomationProperties.AutomationId="FinalDeliveryRootInput"
+                 AutomationProperties.Name="{Binding FinalDeliveryRootLabel}"
+                 Margin="0,0,0,6" />
+        <Button Content="{Binding BrowseFinalDeliveryRootText}"
+                Command="{Binding BrowseFinalDeliveryRootCommand}"
+                AutomationProperties.AutomationId="BrowseFinalDeliveryRootButton"
+                AutomationProperties.Name="{Binding BrowseFinalDeliveryRootText}"
+                HorizontalAlignment="Stretch"
+                Margin="0,0,0,6" />
+        <TextBlock Text="{Binding FinalDeliveryDestinationLabel}" Margin="0,0,0,4" />
+        <TextBlock Text="{Binding FinalDeliveryDestinationPreview}"
+                   AutomationProperties.AutomationId="FinalDeliveryDestinationPreview"
+                   AutomationProperties.Name="{Binding FinalDeliveryDestinationLabel}"
+                   AutomationProperties.LiveSetting="Polite"
+                   Focusable="False"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,8" />
         <Button Content="{Binding ExportDeliveryText}"
                 Command="{Binding ExportDeliveryCommand}"
                 AutomationProperties.AutomationId="ExportDeliveryButton"

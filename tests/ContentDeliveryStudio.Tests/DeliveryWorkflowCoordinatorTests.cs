@@ -101,6 +101,14 @@ public sealed class DeliveryWorkflowCoordinatorTests
                 CancellationToken.None);
 
             var deliveryRow = Assert.Single(result.DeliveryRows);
+            Assert.StartsWith(
+                Path.Combine(
+                    localStudioRoot.RootPath,
+                    "deliveries",
+                    "image-series",
+                    project.Id.ToString("N")),
+                deliveryRow.PackageDirectory,
+                StringComparison.OrdinalIgnoreCase);
             using var manifestStream = File.OpenRead(deliveryRow.ManifestJsonPath);
             using var manifest = await JsonDocument.ParseAsync(manifestStream, cancellationToken: CancellationToken.None);
             var items = manifest.RootElement.GetProperty("items").EnumerateArray().ToArray();

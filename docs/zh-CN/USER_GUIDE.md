@@ -202,6 +202,20 @@ Delivery export 会写出：
 
 交付包是不可变快照。内容有变化时，应重新构建一个新包，而不是原地改写旧包。
 
+最终图片路径统一遵循 [最终视觉交付目录合同](../DELIVERY_OUTPUT_LAYOUT.md)。候选生成、编辑、crop、审查、盲测和系统视觉证据仍在 `workspace/`；只有通过人工批准的交付包才会写入
+`<delivery-root>/<category>/<project-id>/<timestamp>/images/`。默认类别是
+`image-series`，科学图解、文章图组、文档插图、课件视觉和海报/报告视觉各有稳定分类目录。
+
+本机若不希望最终文件落在 C 盘，可在启动应用或脚本前设置：
+
+```powershell
+$env:CONTENT_DELIVERY_STUDIO_DATA_ROOT = 'D:\CODE\ai-content-delivery-studio'
+$env:CONTENT_DELIVERY_STUDIO_DELIVERY_ROOT = 'D:\CODE\classroom-answer-toolkit\正式交付\科学配图'
+```
+
+调用方也可以显式传入 custom delivery root；显式路径优先于环境变量。应用不会自动迁移或删除既有候选和交付资产。
+在桌面应用的人工评审面板中，可直接选择上述 7 类最终图片、编辑或浏览选择正式交付根目录，并在导出前查看“实际分类目录”。该输入默认采用环境变量或应用 fallback 解析出的根目录；若选择了临时 `workspace` 内的路径，实际目录预览会清空且导出按钮保持禁用。
+
 ## 故障排查
 
 在报告构建或工作流问题之前，先运行仓库规范门禁：

@@ -1,4 +1,5 @@
 using ContentDeliveryStudio.Core.Projects;
+using ContentDeliveryStudio.Application.Projects;
 
 namespace ContentDeliveryStudio.Application.Delivery;
 
@@ -10,7 +11,36 @@ public interface IDeliveryPackageWriter
 public sealed record DeliveryExportRequest(
     string ProjectName,
     string OutputDirectory,
-    IReadOnlyList<DeliveryExportItem> Items);
+    IReadOnlyList<DeliveryExportItem> Items)
+{
+    /// <summary>
+    /// Creates a delivery request rooted in the categorized final-image layout.
+    ///
+    /// Candidates and review-prep artifacts must be supplied as item inputs, but
+    /// the writer is the only component that promotes them into the final package.
+    /// Keeping path construction here prevents specialized callers from rebuilding
+    /// category paths by hand.
+    /// </summary>
+    public static DeliveryExportRequest CreateForFinalDelivery(
+        string projectName,
+        Guid projectId,
+        FinalImageDeliveryCategory category,
+        DateTimeOffset timestamp,
+        IReadOnlyList<DeliveryExportItem> items,
+        string? customRoot = null)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+
+        return new DeliveryExportRequest(
+            projectName,
+            LocalStudioDataPaths.ResolveFinalDeliveryPackageDirectory(
+                category,
+                projectId,
+                timestamp,
+                customRoot),
+            items);
+    }
+}
 
 public sealed record DeliveryExportItem(
     string ItemKey,

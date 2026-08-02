@@ -33,6 +33,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly MainWindowSelectionSummaryCoordinator _mainWindowSelectionSummaryCoordinator;
     private readonly GalleryThumbnailWarmupService _galleryThumbnailWarmupService;
     private readonly IDocumentSourceFilePickerService? _documentSourceFilePickerService;
+    private readonly IFinalDeliveryRootPickerService? _finalDeliveryRootPickerService;
     private readonly MainWindowOperationGate _operationGate;
     private bool _isMutatingOperationActive;
     private bool _suppressSelectedProjectLoad;
@@ -131,6 +132,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _approveSelectedReviewText = string.Empty;
     private string _rejectSelectedReviewText = string.Empty;
     private string _exportDeliveryText = string.Empty;
+    private string _finalDeliveryCategoryLabel = string.Empty;
+    private string _finalDeliveryRootLabel = string.Empty;
+    private string _browseFinalDeliveryRootText = string.Empty;
+    private string _finalDeliveryDestinationLabel = string.Empty;
+    private string _finalDeliveryRootPath = LocalStudioDataPaths.ResolveDeliveryRoot();
     private string _deliveryPackageColumn = string.Empty;
     private string _deliveryManifestColumn = string.Empty;
     private string _deliveryReportColumn = string.Empty;
@@ -207,6 +213,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<ImageTypePresetOptionViewModel> _imageTypePresetOptions = [];
     private IReadOnlyList<StyleGuideOptionViewModel> _styleGuideOptions = [];
     private IReadOnlyList<GenerationRecipeOptionViewModel> _generationRecipeOptions = [];
+    private IReadOnlyList<FinalImageDeliveryCategoryOptionViewModel> _finalDeliveryCategoryOptions = [];
     private SeriesSummaryViewModel? _selectedSeries;
     private SeriesItemViewModel? _selectedSeriesItem;
     private ImageTypePresetOptionViewModel? _selectedImageTypePresetOption;
@@ -217,6 +224,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private QueueRowViewModel? _selectedQueueRow;
     private GalleryRowViewModel? _selectedGalleryRow;
     private ReviewRowViewModel? _selectedReviewRow;
+    private FinalImageDeliveryCategoryOptionViewModel? _selectedFinalDeliveryCategoryOption;
     private Guid? _activeCreativeBriefId;
 
     public MainWindowViewModel(
@@ -225,6 +233,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ProviderCenterViewModel providerCenter,
         GalleryThumbnailWarmupService galleryThumbnailWarmupService,
         IDocumentSourceFilePickerService? documentSourceFilePickerService = null,
+        IFinalDeliveryRootPickerService? finalDeliveryRootPickerService = null,
         IScientificDeliveryPackageSaveService? scientificDeliveryPackageSaveService = null,
         DiagnosticsPanelViewModel? diagnostics = null,
         BackupRestorePanelViewModel? backupRestore = null)
@@ -233,6 +242,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _projectService = projectService;
         _galleryThumbnailWarmupService = galleryThumbnailWarmupService;
         _documentSourceFilePickerService = documentSourceFilePickerService;
+        _finalDeliveryRootPickerService = finalDeliveryRootPickerService;
         _projectWorkspaceCoordinator = new ProjectWorkspaceCoordinator(projectService);
         _planningWorkflowCoordinator = new PlanningWorkflowCoordinator(projectService, localizationService);
         _briefWorkflowCoordinator = new BriefWorkflowCoordinator(projectService);
@@ -833,6 +843,30 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _exportDeliveryText, value);
     }
 
+    public string FinalDeliveryCategoryLabel
+    {
+        get => _finalDeliveryCategoryLabel;
+        private set => SetProperty(ref _finalDeliveryCategoryLabel, value);
+    }
+
+    public string FinalDeliveryRootLabel
+    {
+        get => _finalDeliveryRootLabel;
+        private set => SetProperty(ref _finalDeliveryRootLabel, value);
+    }
+
+    public string BrowseFinalDeliveryRootText
+    {
+        get => _browseFinalDeliveryRootText;
+        private set => SetProperty(ref _browseFinalDeliveryRootText, value);
+    }
+
+    public string FinalDeliveryDestinationLabel
+    {
+        get => _finalDeliveryDestinationLabel;
+        private set => SetProperty(ref _finalDeliveryDestinationLabel, value);
+    }
+
     public string DeliveryPackageColumn
     {
         get => _deliveryPackageColumn;
@@ -1312,6 +1346,40 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    public IReadOnlyList<FinalImageDeliveryCategoryOptionViewModel> FinalDeliveryCategoryOptions
+    {
+        get => _finalDeliveryCategoryOptions;
+        private set => SetProperty(ref _finalDeliveryCategoryOptions, value);
+    }
+
+    public FinalImageDeliveryCategoryOptionViewModel? SelectedFinalDeliveryCategoryOption
+    {
+        get => _selectedFinalDeliveryCategoryOption;
+        set
+        {
+            if (SetProperty(ref _selectedFinalDeliveryCategoryOption, value))
+            {
+                OnPropertyChanged(nameof(FinalDeliveryDestinationPreview));
+                ExportDeliveryCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string FinalDeliveryRootPath
+    {
+        get => _finalDeliveryRootPath;
+        set
+        {
+            if (SetProperty(ref _finalDeliveryRootPath, value))
+            {
+                OnPropertyChanged(nameof(FinalDeliveryDestinationPreview));
+                ExportDeliveryCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public string FinalDeliveryDestinationPreview => ResolveFinalDeliveryDestinationPreview();
+
     public IReadOnlyList<SeriesSummaryViewModel> Series
     {
         get => _series;
@@ -1663,6 +1731,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var previousPresetId = SelectedImageTypePresetOption?.Id;
         var previousStyleGuideId = SelectedStyleGuideOption?.Id;
         var previousRecipeId = SelectedGenerationRecipeOption?.Id;
+        var previousFinalDeliveryCategory = SelectedFinalDeliveryCategoryOption?.Category
+            ?? FinalImageDeliveryCategory.ImageSeries;
         var payload = _mainWindowLocalizationCoordinator.BuildPayload();
         var restoredSelections = _mainWindowLocalizationCoordinator.RestoreSelectionState(
             payload,
@@ -1750,6 +1820,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ApproveSelectedReviewText = payload.ApproveSelectedReviewText;
         RejectSelectedReviewText = payload.RejectSelectedReviewText;
         ExportDeliveryText = payload.ExportDeliveryText;
+        FinalDeliveryCategoryLabel = payload.FinalDeliveryCategoryLabel;
+        FinalDeliveryRootLabel = payload.FinalDeliveryRootLabel;
+        BrowseFinalDeliveryRootText = payload.BrowseFinalDeliveryRootText;
+        FinalDeliveryDestinationLabel = payload.FinalDeliveryDestinationLabel;
         DeliveryPackageColumn = payload.DeliveryPackageColumn;
         DeliveryManifestColumn = payload.DeliveryManifestColumn;
         DeliveryReportColumn = payload.DeliveryReportColumn;
@@ -1811,6 +1885,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedStyleGuideOption = restoredSelections.SelectedStyleGuideOption;
         GenerationRecipeOptions = restoredSelections.GenerationRecipeOptions;
         SelectedGenerationRecipeOption = restoredSelections.SelectedGenerationRecipeOption;
+        FinalDeliveryCategoryOptions = BuildFinalDeliveryCategoryOptions();
+        SelectedFinalDeliveryCategoryOption = FinalDeliveryCategoryOptions.First(
+            option => option.Category == previousFinalDeliveryCategory);
         CurrentProjectSummary = _mainWindowSelectionSummaryCoordinator.BuildCurrentProjectSummary(
             SelectedProject,
             Text(LocalizationKey.NoProjectLoaded));
@@ -1845,6 +1922,39 @@ public sealed partial class MainWindowViewModel : ObservableObject
             SelectedImageTypePresetOption,
             SelectedStyleGuideOption,
             SelectedGenerationRecipeOption);
+    }
+
+    private IReadOnlyList<FinalImageDeliveryCategoryOptionViewModel> BuildFinalDeliveryCategoryOptions()
+    {
+        return
+        [
+            new(FinalImageDeliveryCategory.ImageSeries, Text(LocalizationKey.FinalDeliveryImageSeries)),
+            new(FinalImageDeliveryCategory.ImageEdits, Text(LocalizationKey.FinalDeliveryImageEdits)),
+            new(FinalImageDeliveryCategory.ArticleFigureSets, Text(LocalizationKey.FinalDeliveryArticleFigureSets)),
+            new(FinalImageDeliveryCategory.ScientificFigures, Text(LocalizationKey.FinalDeliveryScientificFigures)),
+            new(FinalImageDeliveryCategory.DocumentIllustrations, Text(LocalizationKey.FinalDeliveryDocumentIllustrations)),
+            new(FinalImageDeliveryCategory.CoursewareVisuals, Text(LocalizationKey.FinalDeliveryCoursewareVisuals)),
+            new(FinalImageDeliveryCategory.PosterReportVisuals, Text(LocalizationKey.FinalDeliveryPosterReportVisuals)),
+        ];
+    }
+
+    private string ResolveFinalDeliveryDestinationPreview()
+    {
+        if (SelectedFinalDeliveryCategoryOption is null)
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            return LocalStudioDataPaths.ResolveFinalDeliveryCategoryRoot(
+                SelectedFinalDeliveryCategoryOption.Category,
+                FinalDeliveryRootPath);
+        }
+        catch (ArgumentException)
+        {
+            return string.Empty;
+        }
     }
 
     private bool TryGetPlanningItemCount(out int itemCount)
@@ -2020,6 +2130,10 @@ public sealed record StyleGuideOptionViewModel(string Id, string Name, string Su
 public sealed record GenerationRecipeOptionViewModel(string Id, string DisplayName, string Summary) : IIdentifiedOption;
 
 public sealed record DocumentStrictnessOptionViewModel(IllustrationStrictnessLevel Value, string DisplayName);
+
+public sealed record FinalImageDeliveryCategoryOptionViewModel(
+    FinalImageDeliveryCategory Category,
+    string DisplayName);
 
 public sealed record SeriesItemViewModel(
     Guid Id,

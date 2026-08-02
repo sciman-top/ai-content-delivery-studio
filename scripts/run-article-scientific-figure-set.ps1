@@ -14,6 +14,11 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($repoRoot)) {
 }
 
 $repoRoot = $repoRoot.Trim()
+$studioDataRoot = if ([string]::IsNullOrWhiteSpace($env:CONTENT_DELIVERY_STUDIO_DATA_ROOT)) {
+    Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) "ContentDeliveryStudio"
+} else {
+    [System.IO.Path]::GetFullPath($env:CONTENT_DELIVERY_STUDIO_DATA_ROOT)
+}
 $resolvedSourcePath = [System.IO.Path]::GetFullPath($SourcePath)
 if (-not (Test-Path -LiteralPath $resolvedSourcePath -PathType Leaf)) {
     throw "Article source PDF was not found: $resolvedSourcePath"
@@ -24,7 +29,7 @@ if ([System.IO.Path]::GetExtension($resolvedSourcePath) -ine ".pdf") {
 
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
     $runName = "{0}-complete-set" -f (Get-Date -Format "yyyyMMdd-HHmmss")
-    $OutputDirectory = Join-Path $repoRoot (Join-Path "outputs\article-scientific-figure-runs" $runName)
+    $OutputDirectory = Join-Path $studioDataRoot (Join-Path "workspace\article-figure-runs" $runName)
 } elseif (-not [System.IO.Path]::IsPathRooted($OutputDirectory)) {
     $OutputDirectory = Join-Path $repoRoot $OutputDirectory
 }
@@ -110,6 +115,6 @@ foreach ($prefix in @(
     }
 }
 
-Write-Host "[OK] Six-item article candidate set persisted: $resolvedOutputDirectory" -ForegroundColor Green
+Write-Host "[OK] Six-item article candidate set persisted under workspace: $resolvedOutputDirectory" -ForegroundColor Green
 Write-Host "[OK] Every PNG has article-optics-v1, typed-crop, and fake-first visual-review evidence." -ForegroundColor Green
 Write-Host "[BOUNDARY] Scientific Gate 1, live multimodal review, expert acceptance, Gate 2, and delivery are not complete." -ForegroundColor Yellow

@@ -62,6 +62,7 @@ public partial class App : System.Windows.Application
             serviceProvider.GetRequiredService<IOpenAiSecretStore>()));
         builder.Services.AddSingleton<IProviderCenterHealthCheckService, DotEnvProviderCenterHealthCheckService>();
         builder.Services.AddSingleton<IDocumentSourceFilePickerService, DocumentSourceFilePickerService>();
+        builder.Services.AddSingleton<IFinalDeliveryRootPickerService, FinalDeliveryRootPickerService>();
         builder.Services.AddSingleton<IDiagnosticsDirectoryPickerService, DiagnosticsDirectoryPickerService>();
         builder.Services.AddSingleton<IBackupRestorePickerService, BackupRestorePickerService>();
         builder.Services.AddSingleton<IBackupRestoreService, LocalBackupRestoreService>();

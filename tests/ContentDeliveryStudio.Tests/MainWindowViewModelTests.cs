@@ -366,6 +366,97 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task DeliverySettings_DefaultToImageSeriesUnderConfiguredDeliveryRoot()
+    {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
+        var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
+
+        Assert.Equal(FinalImageDeliveryCategory.ImageSeries, viewModel.SelectedFinalDeliveryCategoryOption?.Category);
+        Assert.Equal(LocalStudioDataPaths.ResolveDeliveryRoot(), viewModel.FinalDeliveryRootPath);
+        Assert.Equal(
+            LocalStudioDataPaths.ResolveFinalDeliveryCategoryRoot(FinalImageDeliveryCategory.ImageSeries),
+            viewModel.FinalDeliveryDestinationPreview);
+        Assert.Equal(7, viewModel.FinalDeliveryCategoryOptions.Count);
+    }
+
+    [Fact]
+    public async Task BrowseFinalDeliveryRoot_UpdatesRootAndResolvedCategoryPreview()
+    {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
+        var selectedRoot = Path.Combine(Path.GetTempPath(), $"delivery-picker-{Guid.NewGuid():N}");
+        var picker = new StaticFinalDeliveryRootPickerService(selectedRoot);
+        var viewModel = CreateViewModel(finalDeliveryRootPickerService: picker);
+        await viewModel.BackgroundTask;
+
+        viewModel.SelectedFinalDeliveryCategoryOption = viewModel.FinalDeliveryCategoryOptions.Single(
+            option => option.Category == FinalImageDeliveryCategory.DocumentIllustrations);
+        await viewModel.BrowseFinalDeliveryRootCommand.ExecuteAsync(null);
+
+        Assert.Equal(LocalStudioDataPaths.ResolveDeliveryRoot(), picker.InitialRoot);
+        Assert.Equal(selectedRoot, viewModel.FinalDeliveryRootPath);
+        Assert.Equal(
+            Path.Combine(selectedRoot, "document-illustrations"),
+            viewModel.FinalDeliveryDestinationPreview);
+
+        viewModel.FinalDeliveryRootPath = LocalStudioDataPaths.ResolveProjectDirectory(
+            LocalStudioDataPaths.WorkspaceAreaName,
+            Guid.NewGuid());
+        Assert.Empty(viewModel.FinalDeliveryDestinationPreview);
+        Assert.False(viewModel.ExportDeliveryCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task FinalApprovalWorkflow_ExportsToSelectedCategoryAndCustomRoot()
+    {
+        using var localStudioRoot = LocalStudioDataPathScope.Create();
+        var deliveryRoot = Path.Combine(Path.GetTempPath(), $"categorized-delivery-{Guid.NewGuid():N}");
+        var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
+
+        viewModel.NewProjectName = "Categorized delivery demo";
+        await viewModel.CreateProjectCommand.ExecuteAsync(null);
+        viewModel.NewSeriesTitle = "Document illustrations";
+        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+        viewModel.NewItemTitle = "Approved illustration";
+        viewModel.NewItemBrief = "An approved document illustration.";
+        await viewModel.AddItemCommand.ExecuteAsync(null);
+        viewModel.NewPromptText = "Create a clear document illustration.";
+        await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
+        await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
+        await viewModel.RunFakeReviewCommand.ExecuteAsync(null);
+
+        try
+        {
+            viewModel.SelectedReviewRow = Assert.Single(viewModel.ReviewRows);
+            viewModel.FinalApprovalReviewer = "Teacher";
+            viewModel.FinalApprovalNotes = "Approved for document delivery.";
+            await viewModel.ApproveSelectedReviewCommand.ExecuteAsync(null);
+            viewModel.SelectedFinalDeliveryCategoryOption = viewModel.FinalDeliveryCategoryOptions.Single(
+                option => option.Category == FinalImageDeliveryCategory.DocumentIllustrations);
+            viewModel.FinalDeliveryRootPath = deliveryRoot;
+
+            await viewModel.ExportDeliveryCommand.ExecuteAsync(null);
+
+            var delivery = Assert.Single(viewModel.DeliveryRows);
+            Assert.StartsWith(
+                Path.Combine(deliveryRoot, "document-illustrations") + Path.DirectorySeparatorChar,
+                delivery.PackageDirectory,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.True(File.Exists(delivery.ManifestJsonPath));
+        }
+        finally
+        {
+            if (Directory.Exists(deliveryRoot))
+            {
+                Directory.Delete(deliveryRoot, recursive: true);
+            }
+
+            DeleteProjectOutputDirectories(viewModel.SelectedProject?.Id);
+        }
+    }
+
+    [Fact]
     public async Task ReviewWorkflow_ShowsRepairRouteSummary()
     {
         using var localStudioRoot = LocalStudioDataPathScope.Create();
@@ -987,7 +1078,8 @@ public sealed class MainWindowViewModelTests
         IProjectRepository? repository = null,
         ProjectApplicationService? projectService = null,
         GalleryThumbnailWarmupService? galleryThumbnailWarmupService = null,
-        IDocumentSourceFilePickerService? documentSourceFilePickerService = null)
+        IDocumentSourceFilePickerService? documentSourceFilePickerService = null,
+        IFinalDeliveryRootPickerService? finalDeliveryRootPickerService = null)
     {
         var fakeImageProvider = new FakeImageGenerationProvider();
 
@@ -1004,7 +1096,8 @@ public sealed class MainWindowViewModelTests
                 new StaticProviderCenterConfigurationService(
                     ProviderCenterSnapshot.MissingEnvironmentFile(".env"))),
             galleryThumbnailWarmupService ?? new NoopGalleryThumbnailWarmupService(),
-            documentSourceFilePickerService);
+            documentSourceFilePickerService,
+            finalDeliveryRootPickerService);
     }
 
     private static ProjectApplicationService CreateProjectService(
@@ -1060,6 +1153,19 @@ public sealed class MainWindowViewModelTests
             cancellationToken.ThrowIfCancellationRequested();
 
             return Task.FromResult<string?>(filePath);
+        }
+    }
+
+    private sealed class StaticFinalDeliveryRootPickerService(string selectedRoot)
+        : IFinalDeliveryRootPickerService
+    {
+        public string InitialRoot { get; private set; } = string.Empty;
+
+        public Task<string?> PickAsync(string currentRoot, string title, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            InitialRoot = currentRoot;
+            return Task.FromResult<string?>(selectedRoot);
         }
     }
 

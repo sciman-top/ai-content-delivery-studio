@@ -301,6 +301,10 @@ public sealed class MainWindowLayoutTests
         var reviewApprovalPanelViewXaml = File.ReadAllText(reviewApprovalPanelViewPath);
         Assert.Contains("Command=\"{Binding ApproveSelectedReviewCommand}\"", reviewApprovalPanelViewXaml);
         Assert.Contains("Command=\"{Binding ExportDeliveryCommand}\"", reviewApprovalPanelViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"FinalDeliveryCategorySelector\"", reviewApprovalPanelViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"FinalDeliveryRootInput\"", reviewApprovalPanelViewXaml);
+        Assert.Contains("Command=\"{Binding BrowseFinalDeliveryRootCommand}\"", reviewApprovalPanelViewXaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"FinalDeliveryDestinationPreview\"", reviewApprovalPanelViewXaml);
     }
 
     [Fact]

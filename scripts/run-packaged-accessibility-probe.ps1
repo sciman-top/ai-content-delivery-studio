@@ -99,6 +99,11 @@ try {
         'RestoreBackupFile',
         'RestoreSafeBackup',
         'BackupRestoreStatus',
+        'FinalDeliveryCategorySelector',
+        'FinalDeliveryRootInput',
+        'BrowseFinalDeliveryRootButton',
+        'FinalDeliveryDestinationPreview',
+        'ExportDeliveryButton',
         'ActivityStatus'
     )
 
@@ -151,7 +156,7 @@ try {
         perMonitorV2Contract = $true
         automationElements = $observed
         truthBoundary = [ordered]@{
-            proves = 'verified ZIP launch, current-DPI minimum layout, and named UI Automation shell/backup controls'
+            proves = 'verified ZIP launch, current-DPI minimum layout, and named UI Automation shell, backup, and final-delivery controls'
             doesNotProve = 'Narrator behavior, high-contrast switching, non-default-DPI matrix, touch, pen, or low-memory hardware acceptance'
         }
     }

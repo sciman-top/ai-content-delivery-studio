@@ -20,7 +20,7 @@ public sealed class GenerationWorkflowCoordinator
         IReadOnlyList<SeriesSummaryViewModel> series,
         CancellationToken cancellationToken)
     {
-        var outputDirectory = LocalStudioDataPaths.ResolveProjectDirectory("generated", projectId);
+        var outputDirectory = LocalStudioDataPaths.ResolveWorkspaceProjectDirectory("generated", projectId);
         var run = await _projectService.RunGenerationQueueAsync(
             projectId,
             outputDirectory,
@@ -43,7 +43,7 @@ public sealed class GenerationWorkflowCoordinator
         Guid projectId,
         CancellationToken cancellationToken)
     {
-        var outputDirectory = LocalStudioDataPaths.ResolveProjectDirectory("generated", projectId);
+        var outputDirectory = LocalStudioDataPaths.ResolveWorkspaceProjectDirectory("generated", projectId);
         return _projectService.ExecutePreparedGenerationQueueAsync(projectId, outputDirectory, cancellationToken);
     }
 
@@ -80,7 +80,7 @@ public sealed class GenerationWorkflowCoordinator
     {
         ArgumentNullException.ThrowIfNull(selectedRow);
 
-        var outputDirectory = LocalStudioDataPaths.ResolveProjectDirectory("edited", projectId);
+        var outputDirectory = LocalStudioDataPaths.ResolveWorkspaceProjectDirectory("edited", projectId);
 
         var result = await _projectService.RunImageEditAsync(
             new ImageEditWorkflowRequest(

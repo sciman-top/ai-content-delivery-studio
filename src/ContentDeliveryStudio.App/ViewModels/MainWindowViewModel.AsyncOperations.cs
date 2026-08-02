@@ -81,6 +81,7 @@ public sealed partial class MainWindowViewModel
         RunFakeReviewCommand.NotifyCanExecuteChanged();
         ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
         RejectSelectedReviewCommand.NotifyCanExecuteChanged();
+        BrowseFinalDeliveryRootCommand.NotifyCanExecuteChanged();
         ExportDeliveryCommand.NotifyCanExecuteChanged();
         CreateSeriesCommand.NotifyCanExecuteChanged();
         AddItemCommand.NotifyCanExecuteChanged();

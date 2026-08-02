@@ -33,6 +33,11 @@ internal sealed class LocalStudioDataPathScope : IDisposable
         return Path.Combine(RootPath, areaName, projectId.ToString("N"));
     }
 
+    public string GetWorkspaceProjectDirectory(string categoryName, Guid projectId)
+    {
+        return Path.Combine(RootPath, "workspace", projectId.ToString("N"), categoryName);
+    }
+
     public void Dispose()
     {
         if (_disposed)

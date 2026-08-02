@@ -21,7 +21,9 @@ public sealed class DeliveryWorkflowCoordinator
         IReadOnlyList<ReviewRowViewModel> reviewRows,
         IReadOnlyList<DesignBlueprintRowViewModel> designBlueprintRows,
         Guid? activeCreativeBriefId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        FinalImageDeliveryCategory finalImageCategory = FinalImageDeliveryCategory.ImageSeries,
+        string? customDeliveryRoot = null)
     {
         ArgumentNullException.ThrowIfNull(galleryRows);
         ArgumentNullException.ThrowIfNull(reviewRows);
@@ -29,10 +31,6 @@ public sealed class DeliveryWorkflowCoordinator
 
         var reviewByCandidate = reviewRows.ToDictionary(row => row.CandidateImageId);
         var exportTimestamp = DateTimeOffset.UtcNow;
-        var outputDirectory = LocalStudioDataPaths.ResolveTimestampedProjectDirectory(
-            "deliveries",
-            projectId,
-            exportTimestamp);
         var blueprint = ResolvePromotedDeliveryBlueprint(designBlueprintRows, activeCreativeBriefId);
         var items = galleryRows
             .Where(row => reviewByCandidate.TryGetValue(row.CandidateImageId, out var review)
@@ -54,10 +52,13 @@ public sealed class DeliveryWorkflowCoordinator
             .ToArray();
 
         var result = await _projectService.ExportDeliveryPackageAsync(
-            new DeliveryExportRequest(
+            DeliveryExportRequest.CreateForFinalDelivery(
                 projectName,
-                outputDirectory,
-                items),
+                projectId,
+                finalImageCategory,
+                exportTimestamp,
+                items,
+                customDeliveryRoot),
             cancellationToken);
 
         return new DeliveryWorkflowResult(
