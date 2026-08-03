@@ -108,9 +108,7 @@ function Invoke-RgFilteredCheck {
 }
 
 Invoke-Step -Label "Repository verification" -Action {
-    $verifyParams = @{
-        Mode = "Release"
-    }
+    $verifyParams = @{}
     if ($NoRestore) {
         $verifyParams.NoRestore = $true
     }

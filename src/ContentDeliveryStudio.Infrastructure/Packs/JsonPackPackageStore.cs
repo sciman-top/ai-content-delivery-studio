@@ -8,28 +8,8 @@ public sealed class JsonPackPackageStore
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
-        WriteIndented = true,
         Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
     };
-
-    public async Task ExportAsync(
-        PackPackage package,
-        string packagePath,
-        CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(package);
-        var validated = package.ValidateForExport();
-        var fullPath = Path.GetFullPath(RequireText(packagePath, nameof(packagePath)));
-        var directory = Path.GetDirectoryName(fullPath);
-        if (string.IsNullOrWhiteSpace(directory))
-        {
-            throw new ArgumentException("Pack package path must include a directory.", nameof(packagePath));
-        }
-
-        Directory.CreateDirectory(directory);
-        await using var stream = File.Create(fullPath);
-        await JsonSerializer.SerializeAsync(stream, validated, JsonOptions, cancellationToken);
-    }
 
     public async Task<PackPackage> ImportAsync(
         string packagePath,

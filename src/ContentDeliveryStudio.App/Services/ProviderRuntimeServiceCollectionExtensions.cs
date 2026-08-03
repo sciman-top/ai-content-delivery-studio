@@ -70,7 +70,7 @@ public static class ProviderRuntimeServiceCollectionExtensions
         services.AddSingleton(configuration);
         services.AddSingleton<IOpenAiSecretStore>(secretStore);
         services.AddSingleton<OpenAiSdkClientFactory>();
-        services.AddSingleton<FakeImageGenerationProvider>();
+        services.AddHttpClient("openai-image-edit", client => client.BaseAddress = configuration.Image.BaseUri);
         services.AddSingleton<ITextPlanningProvider>(serviceProvider =>
             OpenAiProviderFailoverFactory.CreateTextPlanningProvider(
                 configuration,
@@ -84,7 +84,11 @@ public static class ProviderRuntimeServiceCollectionExtensions
                 serviceProvider.GetService<IProviderCallTelemetrySink>(),
                 realApiEnabled: true));
         services.AddSingleton<IImageEditProvider>(serviceProvider =>
-            serviceProvider.GetRequiredService<FakeImageGenerationProvider>());
+            new OpenAiImageEditProvider(
+                serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient("openai-image-edit"),
+                OpenAiProviderOptions.FromImageProviderEnvironment(configuration, realApiEnabled: true),
+                secretStore,
+                serviceProvider.GetService<IProviderCallTelemetrySink>()));
         services.AddSingleton<IVisionReviewProvider>(serviceProvider =>
             OpenAiProviderFailoverFactory.CreateVisionReviewProvider(
                 configuration,

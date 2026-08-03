@@ -14,19 +14,19 @@
             <Style TargetType="Border">
                 <Setter Property="Visibility" Value="Collapsed" />
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding DataContext.ImageSeries.HasGalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                    <DataTrigger Binding="{Binding DataContext.ImageSeriesWorkspace.Gallery.HasGalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
                         <Setter Property="Visibility" Value="Visible" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
         </Border.Style>
-        <ListBox ItemsSource="{Binding DataContext.ImageSeries.GalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                 SelectedItem="{Binding DataContext.ImageSeries.SelectedGalleryRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
+        <ListBox ItemsSource="{Binding DataContext.ImageSeriesWorkspace.Gallery.GalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                 SelectedItem="{Binding DataContext.ImageSeriesWorkspace.Gallery.SelectedGalleryRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
                  BorderThickness="0"
                  Background="Transparent"
                  SelectionMode="Single"
                  automation:AutomationProperties.AutomationId="GalleryCandidateList"
-                 automation:AutomationProperties.Name="{Binding DataContext.ImageSeries.GalleryItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                 automation:AutomationProperties.Name="{Binding DataContext.ImageSeriesWorkspace.Gallery.GalleryItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                  KeyboardNavigation.DirectionalNavigation="Contained"
                  VirtualizingPanel.IsVirtualizing="True"
                  VirtualizingPanel.VirtualizationMode="Recycling"

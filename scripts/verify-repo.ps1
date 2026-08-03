@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("Quick", "Full", "Release")]
+    [ValidateSet("Quick", "Full")]
     [string]$Mode = "Full",
     [string]$TestFilter,
     [switch]$SkipReferenceEvidence,
@@ -23,8 +23,8 @@ if ($Mode -eq "Quick" -and [string]::IsNullOrWhiteSpace($TestFilter)) {
     throw "Quick mode requires -TestFilter so it cannot masquerade as full repository verification."
 }
 
-if ($Mode -ne "Quick" -and -not [string]::IsNullOrWhiteSpace($TestFilter)) {
-    throw "-TestFilter is available only in Quick mode. Full and Release use fixed test lanes."
+if ($Mode -eq "Full" -and -not [string]::IsNullOrWhiteSpace($TestFilter)) {
+    throw "-TestFilter is available only in Quick mode. Full mode always runs the complete test suite."
 }
 
 function Invoke-Step {
@@ -100,46 +100,11 @@ function Invoke-DotNetBuildWithRetry {
     }
 }
 
-function Get-ChangedPaths {
-    $paths = [System.Collections.Generic.HashSet[string]]::new(
-        [System.StringComparer]::OrdinalIgnoreCase)
-    $gitQueries = @(
-        @("diff", "--name-only", "--diff-filter=ACMR"),
-        @("diff", "--cached", "--name-only", "--diff-filter=ACMR"),
-        @("ls-files", "--others", "--exclude-standard")
-    )
-
-    if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef) -and
-        -not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
-        $gitQueries += ,@(
-            "diff",
-            "--name-only",
-            "--diff-filter=ACMR",
-            "$ReferenceEvidenceBaseRef...$ReferenceEvidenceHeadRef")
-    }
-
-    foreach ($query in $gitQueries) {
-        $output = @(& git @query)
-        if ($LASTEXITCODE -ne 0) {
-            throw "Failed to discover changed paths with: git $($query -join ' ')"
-        }
-
-        foreach ($path in $output) {
-            $relativePath = $path.ToString().Trim()
-            if (-not [string]::IsNullOrWhiteSpace($relativePath) -and
-                (Test-Path -LiteralPath $relativePath -PathType Leaf)) {
-                $null = $paths.Add($relativePath)
-            }
-        }
-    }
-
-    return @($paths | Sort-Object)
-}
-
 $buildArgs = @("build", "ContentDeliveryStudio.sln")
-$testArgs = @("test", "ContentDeliveryStudio.sln", "--no-build", "--no-restore")
+$testArgs = @("test", "ContentDeliveryStudio.sln")
 if ($NoRestore) {
     $buildArgs += "--no-restore"
+    $testArgs += @("--no-build", "--no-restore")
 }
 
 Invoke-Step -Label "dotnet build" -Action {
@@ -148,11 +113,6 @@ Invoke-Step -Label "dotnet build" -Action {
 
 if ($Mode -eq "Quick") {
     $testArgs += @("--filter", $TestFilter)
-} elseif ($Mode -eq "Full") {
-    $testArgs += @("--filter", "Category!=ReleaseOnly")
-    Write-Host "[BOUNDARY] Full runs the core suite; Category=ReleaseOnly remains for Release/CI or an explicit focused filter." -ForegroundColor Yellow
-} else {
-    Write-Host "[BOUNDARY] Release verification includes the complete suite, including Category=ReleaseOnly." -ForegroundColor Yellow
 }
 
 Invoke-Step -Label "dotnet test" -Action {
@@ -178,56 +138,8 @@ Invoke-Step -Label "Product focus plan contract" -Action {
     & ".\scripts\verify-product-focus-plan.ps1"
 }
 
-if ($Mode -eq "Full") {
-    Invoke-Step -Label "git diff --check" -Action {
-        if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef) -and
-            -not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
-            & git diff --check "$ReferenceEvidenceBaseRef...$ReferenceEvidenceHeadRef"
-        } else {
-            & git diff --check
-            if ($LASTEXITCODE -eq 0) {
-                & git diff --cached --check
-            }
-        }
-    }
-
-    Write-Host "Repository verification passed." -ForegroundColor Green
-    exit 0
-}
-
 Invoke-Step -Label "dotnet format --verify-no-changes" -Action {
-    $changedPaths = @(Get-ChangedPaths)
-    $changedCSharpPaths = @($changedPaths | Where-Object {
-        [System.IO.Path]::GetExtension($_) -ieq ".cs"
-    })
-    $formatConfigurationChanged = @($changedPaths | Where-Object {
-        $name = [System.IO.Path]::GetFileName($_)
-        $name -in @(".editorconfig", "global.json") -or
-        $name -like "*.csproj" -or
-        $name -like "Directory.Build.*"
-    }).Count -gt 0
-
-    if ($changedPaths.Count -eq 0 -or $formatConfigurationChanged) {
-        $formatArgs = @("format")
-        $formatArgs += @("ContentDeliveryStudio.sln", "--verify-no-changes", "--no-restore")
-        & dotnet @formatArgs
-        return
-    }
-
-    if ($changedCSharpPaths.Count -eq 0) {
-        Write-Host "No changed C# files detected; formatting verification is not required."
-        $global:LASTEXITCODE = 0
-        return
-    }
-
-    $formatArgs = @("format")
-    $formatArgs += @(
-        "ContentDeliveryStudio.sln",
-        "--verify-no-changes",
-        "--no-restore",
-        "--include")
-    $formatArgs += $changedCSharpPaths
-    & dotnet @formatArgs
+    & dotnet format --verify-no-changes
 }
 
 Write-Host "Repository verification passed." -ForegroundColor Green

@@ -48,7 +48,8 @@ public sealed class DeliveryWorkflowCoordinator
                 FinalReviewer: reviewByCandidate[row.CandidateImageId].FinalReviewer,
                 FinalApprovalNotes: reviewByCandidate[row.CandidateImageId].FinalApprovalNotes,
                 FinalApprovalDecidedAt: reviewByCandidate[row.CandidateImageId].FinalApprovalDecidedAt,
-                Blueprint: blueprint))
+                Blueprint: blueprint,
+                EditProvenance: row.EditProvenance))
             .ToArray();
 
         var result = await _projectService.ExportDeliveryPackageAsync(

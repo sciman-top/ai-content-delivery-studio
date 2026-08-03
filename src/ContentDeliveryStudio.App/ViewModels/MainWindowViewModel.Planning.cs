@@ -9,12 +9,15 @@ namespace ContentDeliveryStudio.App.ViewModels;
 
 public sealed partial class MainWindowViewModel
 {
-    [RelayCommand(CanExecute = nameof(CanRunFakePlanning))]
-    private async Task RunFakePlanningAsync()
+    private async Task<bool> RunImageSeriesFakePlanningAsync(
+        string goal,
+        string audience,
+        int itemCount,
+        string styleBrief)
     {
-        if (SelectedProject is null || !TryGetPlanningItemCount(out var itemCount))
+        if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
         var projectId = SelectedProject.Id;
@@ -24,10 +27,10 @@ public sealed partial class MainWindowViewModel
             {
                 var planningResult = await _planningWorkflowCoordinator.RunFakePlanningAsync(
                     projectId,
-                    NewPlanningGoal,
-                    NewPlanningAudience,
+                    goal,
+                    audience,
                     itemCount,
-                    NewPlanningStyleBrief,
+                    styleBrief,
                     cancellationToken);
 
                 return await CaptureProjectReloadSnapshotAsync(
@@ -39,19 +42,10 @@ public sealed partial class MainWindowViewModel
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return false;
         }
 
-        TryApplyProjectReloadSnapshot(result.Value);
-    }
-
-    private bool CanRunFakePlanning()
-    {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && !string.IsNullOrWhiteSpace(NewPlanningGoal)
-            && !string.IsNullOrWhiteSpace(NewPlanningAudience)
-            && TryGetPlanningItemCount(out _);
+        return TryApplyProjectReloadSnapshot(result.Value);
     }
 
     [RelayCommand(CanExecute = nameof(CanRunFakeDocumentPlanning))]
@@ -223,26 +217,29 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    [RelayCommand(CanExecute = nameof(CanCreateBrief))]
-    private async Task CreateBriefAsync()
+    private async Task<bool> RunImageSeriesCreateBriefAsync(
+        SeriesSummaryViewModel selectedSeries,
+        string goal,
+        string audience,
+        string styleBrief)
     {
-        if (SelectedProject is null || SelectedSeries is null)
+        if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
         var projectId = SelectedProject.Id;
-        var selectedSeriesId = SelectedSeries.Id;
+        var selectedSeriesId = selectedSeries.Id;
         var selectedItemId = SelectedSeriesItem?.Id;
         var result = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
                 var briefId = await _briefWorkflowCoordinator.CreateBriefAsync(
                     projectId,
-                    SelectedSeries,
-                    NewPlanningGoal,
-                    NewPlanningAudience,
-                    NewPlanningStyleBrief,
+                    selectedSeries,
+                    goal,
+                    audience,
+                    styleBrief,
                     cancellationToken);
                 var snapshot = await CaptureProjectReloadSnapshotAsync(
                     projectId,
@@ -256,42 +253,36 @@ public sealed partial class MainWindowViewModel
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return false;
         }
 
-        TryApplyProjectReloadSnapshot(result.Value.Snapshot);
+        return TryApplyProjectReloadSnapshot(result.Value.Snapshot);
     }
 
-    private bool CanCreateBrief()
+    private async Task<bool> RunImageSeriesGeneratePromptDirectionsAsync(
+        SeriesSummaryViewModel selectedSeries,
+        string goal,
+        string audience,
+        string styleBrief)
     {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && SelectedSeries is not null
-            && !string.IsNullOrWhiteSpace(NewPlanningGoal)
-            && !string.IsNullOrWhiteSpace(NewPlanningAudience);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanGeneratePromptDirections))]
-    private async Task GeneratePromptDirectionsAsync()
-    {
-        if (SelectedProject is null || SelectedSeries is null)
+        if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
         var projectId = SelectedProject.Id;
-        var selectedSeriesId = SelectedSeries.Id;
+        var selectedSeriesId = selectedSeries.Id;
         var selectedItemId = SelectedSeriesItem?.Id;
         var result = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
                 var brief = await _briefWorkflowCoordinator.GeneratePromptDirectionsAsync(
                     projectId,
-                    SelectedSeries,
+                    selectedSeries,
                     _activeCreativeBriefId,
-                    NewPlanningGoal,
-                    NewPlanningAudience,
-                    NewPlanningStyleBrief,
+                    goal,
+                    audience,
+                    styleBrief,
                     cancellationToken);
                 var snapshot = await CaptureProjectReloadSnapshotAsync(
                     projectId,
@@ -305,44 +296,44 @@ public sealed partial class MainWindowViewModel
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return false;
         }
 
         if (!TryApplyProjectReloadSnapshot(result.Value.Snapshot))
         {
-            return;
+            return false;
         }
 
-        SelectedPromptDirection = PromptDirectionRows.FirstOrDefault(direction => direction.CreativeBriefId == result.Value.BriefId)
+        ImageSeriesBriefWorkspace.SelectedPromptDirection = PromptDirectionRows.FirstOrDefault(
+            direction => direction.CreativeBriefId == result.Value.BriefId)
             ?? PromptDirectionRows.FirstOrDefault();
+        return true;
     }
 
-    private bool CanGeneratePromptDirections()
+    private async Task<bool> RunImageSeriesGenerateDesignBlueprintsAsync(
+        SeriesSummaryViewModel selectedSeries,
+        string goal,
+        string audience,
+        string styleBrief)
     {
-        return CanCreateBrief();
-    }
-
-    [RelayCommand(CanExecute = nameof(CanGenerateDesignBlueprints))]
-    private async Task GenerateDesignBlueprintsAsync()
-    {
-        if (SelectedProject is null || SelectedSeries is null)
+        if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
         var projectId = SelectedProject.Id;
-        var selectedSeriesId = SelectedSeries.Id;
+        var selectedSeriesId = selectedSeries.Id;
         var selectedItemId = SelectedSeriesItem?.Id;
         var result = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
                 var brief = await _briefWorkflowCoordinator.GenerateDesignBlueprintsAsync(
                     projectId,
-                    SelectedSeries,
+                    selectedSeries,
                     _activeCreativeBriefId,
-                    NewPlanningGoal,
-                    NewPlanningAudience,
-                    NewPlanningStyleBrief,
+                    goal,
+                    audience,
+                    styleBrief,
                     cancellationToken);
                 var snapshot = await CaptureProjectReloadSnapshotAsync(
                     projectId,
@@ -356,32 +347,28 @@ public sealed partial class MainWindowViewModel
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return false;
         }
 
         if (!TryApplyProjectReloadSnapshot(result.Value.Snapshot))
         {
-            return;
+            return false;
         }
 
-        SelectedDesignBlueprint = DesignBlueprintRows.FirstOrDefault(blueprint => blueprint.CreativeBriefId == result.Value.BriefId)
+        ImageSeriesBriefWorkspace.SelectedDesignBlueprint = DesignBlueprintRows.FirstOrDefault(
+            blueprint => blueprint.CreativeBriefId == result.Value.BriefId)
             ?? DesignBlueprintRows.FirstOrDefault();
+        return true;
     }
 
-    private bool CanGenerateDesignBlueprints()
+    private async Task<bool> RunImageSeriesPromoteDesignBlueprintAsync(
+        DesignBlueprintRowViewModel selectedBlueprint)
     {
-        return CanCreateBrief();
-    }
-
-    [RelayCommand(CanExecute = nameof(CanPromoteDesignBlueprint))]
-    private async Task PromoteDesignBlueprintAsync()
-    {
-        if (SelectedProject is null || SelectedDesignBlueprint is null)
+        if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
-        var selectedBlueprint = SelectedDesignBlueprint;
         var projectId = SelectedProject.Id;
         var selectedSeriesId = SelectedSeries?.Id;
         var selectedItemId = SelectedSeriesItem?.Id;
@@ -406,37 +393,32 @@ public sealed partial class MainWindowViewModel
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return false;
         }
 
         if (!TryApplyProjectReloadSnapshot(result.Value.Snapshot))
         {
-            return;
+            return false;
         }
 
-        SelectedDesignBlueprint = DesignBlueprintRows.FirstOrDefault(blueprint => blueprint.BlueprintId == result.Value.BlueprintId)
+        ImageSeriesBriefWorkspace.SelectedDesignBlueprint = DesignBlueprintRows.FirstOrDefault(
+            blueprint => blueprint.BlueprintId == result.Value.BlueprintId)
             ?? DesignBlueprintRows.FirstOrDefault();
+        return true;
     }
 
-    private bool CanPromoteDesignBlueprint()
+    private async Task<bool> RunImageSeriesPromotePromptDirectionAsync(
+        SeriesItemViewModel selectedItem,
+        PromptDirectionRowViewModel selectedDirection)
     {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && SelectedDesignBlueprint is not null;
-    }
-
-    [RelayCommand(CanExecute = nameof(CanPromotePromptDirection))]
-    private async Task PromotePromptDirectionAsync()
-    {
-        if (SelectedProject is null || SelectedSeriesItem is null || SelectedPromptDirection is null)
+        if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
-        var selectedDirection = SelectedPromptDirection;
         var projectId = SelectedProject.Id;
         var selectedSeriesId = SelectedSeries?.Id;
-        var selectedItemId = SelectedSeriesItem.Id;
+        var selectedItemId = selectedItem.Id;
         var operation = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
@@ -458,18 +440,10 @@ public sealed partial class MainWindowViewModel
 
         if (!operation.Executed || operation.Value is null)
         {
-            return;
+            return false;
         }
 
-        TryApplyProjectReloadSnapshot(operation.Value);
-    }
-
-    private bool CanPromotePromptDirection()
-    {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && SelectedSeriesItem is not null
-            && SelectedPromptDirection is not null;
+        return TryApplyProjectReloadSnapshot(operation.Value);
     }
 
     private async Task<Guid> EnsureActiveCreativeBriefIdAsync(CancellationToken cancellationToken)

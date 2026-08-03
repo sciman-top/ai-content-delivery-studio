@@ -6,7 +6,7 @@
              mc:Ignorable="d">
     <Border BorderBrush="#D4DAE5" BorderThickness="1" Background="#FFFFFF">
         <Grid>
-            <TextBlock Text="{Binding DataContext.NoPromptDirectionRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+            <TextBlock Text="{Binding DataContext.ImageSeriesWorkspace.Brief.NoPromptDirectionRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        Foreground="#5E6978"
                        Margin="12"
                        TextWrapping="Wrap">
@@ -14,22 +14,22 @@
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding DataContext.HasPromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False">
+                            <DataTrigger Binding="{Binding DataContext.ImageSeriesWorkspace.Brief.HasPromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False">
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <ListBox ItemsSource="{Binding DataContext.PromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                     SelectedItem="{Binding DataContext.SelectedPromptDirection, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
+            <ListBox ItemsSource="{Binding DataContext.ImageSeriesWorkspace.Brief.PromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                     SelectedItem="{Binding DataContext.ImageSeriesWorkspace.Brief.SelectedPromptDirection, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
                      BorderThickness="0"
                      Background="Transparent">
                 <ListBox.Style>
                     <Style TargetType="ListBox">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding DataContext.HasPromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                            <DataTrigger Binding="{Binding DataContext.ImageSeriesWorkspace.Brief.HasPromptDirectionRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                         </Style.Triggers>

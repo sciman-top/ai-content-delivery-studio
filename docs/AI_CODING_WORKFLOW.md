@@ -110,7 +110,7 @@ Canonical Full verification:
 .\scripts\verify-repo.ps1
 ```
 
-Full runs exactly one `build -> core test -> reference/product contracts -> diff check` sequence. The build is the only restore/build point and tests reuse its outputs with `--no-build --no-restore`. Core tests exclude the explicit `Category=ReleaseOnly` long-tail classes; this boundary must remain visible in completion claims. Full deliberately avoids Roslyn formatter startup; compilation/analyzers run in build, while complete formatting remains a Release responsibility.
+Full runs exactly one `build -> complete test -> reference/product contracts -> format` sequence.
 
 Release closeout:
 
@@ -118,11 +118,7 @@ Release closeout:
 .\scripts\preflight-release.ps1
 ```
 
-Release invokes the Release form of repository verification once: all tests including `Category=ReleaseOnly`, complete format rules, and the same reference/product contracts. Format is scoped to changed C# when a trustworthy diff or dirty-worktree set exists; formatting-configuration changes or an unknown clean range fail back to a full-solution scan. Release then adds placeholder/conflict scans, actual publish/package verification, and staged/unstaged diff hygiene. It must not repeat repository or reference-governance work.
-
-CI runs Full for pull requests and Release only after a push to `main` or `master`. Feature-branch push plus pull-request events must not duplicate release packaging for the same change.
-
-`Category=ReleaseOnly` is reserved for tests that are high-signal but intrinsically long-running or self-hosting: the 1,000-row performance benchmark, full scientific corpus acceptance, three-run launch proof, operator PowerShell lifecycle, and verification-script self-tests. Do not use it to hide ordinary unit, integration, persistence, provider, security, or compatibility tests.
+Release runs Full once, then adds placeholder/conflict scans, actual publish/package verification, and staged/unstaged diff hygiene. It must not repeat Full or reference-governance work.
 
 Tests should observe domain behavior, persisted state, provider requests, packages, public ViewModel behavior, parsed semantic structure, or native UI Automation. Exact source-token and file-placement assertions are retained only when the source declaration itself is the externally meaningful contract and no stronger probe exists.
 

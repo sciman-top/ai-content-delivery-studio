@@ -29,33 +29,40 @@
                 BorderThickness="1,1,1,0"
                 Padding="8">
             <WrapPanel Orientation="Horizontal">
-                <Button Content="{Binding DataContext.ExecuteGenerationQueueText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                        Command="{Binding DataContext.ExecutePreparedGenerationQueueCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                <Button Content="{Binding DataContext.ImageSeriesWorkspace.ExecuteGenerationQueueText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        Command="{Binding DataContext.ImageSeriesWorkspace.ExecutePreparedGenerationQueueCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                         AutomationProperties.AutomationId="QueueExecuteButton"
                         MinWidth="104"
                         Margin="0,0,8,0" />
-                <Button Content="{Binding DataContext.PauseGenerationTaskText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                        Command="{Binding DataContext.PauseSelectedGenerationTaskCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                <Button Content="{Binding DataContext.ImageSeriesWorkspace.ExecuteApprovedLiveGenerationText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        IsEnabled="{Binding DataContext.ImageSeriesWorkspace.IsLiveGenerationExecutionAvailable, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        ToolTip="{Binding DataContext.ImageSeriesWorkspace.LiveGenerationAuthorityRequiredText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        AutomationProperties.AutomationId="QueueExecuteApprovedLiveButton"
+                        AutomationProperties.HelpText="{Binding DataContext.ImageSeriesWorkspace.LiveGenerationAuthorityRequiredText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        MinWidth="160"
+                        Margin="0,0,8,0" />
+                <Button Content="{Binding DataContext.ImageSeriesWorkspace.PauseGenerationTaskText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        Command="{Binding DataContext.ImageSeriesWorkspace.PauseSelectedGenerationTaskCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                         AutomationProperties.AutomationId="QueuePauseButton"
                         MinWidth="76"
                         Margin="0,0,8,0" />
-                <Button Content="{Binding DataContext.ResumeGenerationTaskText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                        Command="{Binding DataContext.ResumeSelectedGenerationTaskCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                <Button Content="{Binding DataContext.ImageSeriesWorkspace.ResumeGenerationTaskText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        Command="{Binding DataContext.ImageSeriesWorkspace.ResumeSelectedGenerationTaskCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                         AutomationProperties.AutomationId="QueueResumeButton"
                         MinWidth="76"
                         Margin="0,0,8,0" />
-                <Button Content="{Binding DataContext.RetryGenerationTaskText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                        Command="{Binding DataContext.RetrySelectedGenerationTaskCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                <Button Content="{Binding DataContext.ImageSeriesWorkspace.RetryGenerationTaskText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        Command="{Binding DataContext.ImageSeriesWorkspace.RetrySelectedGenerationTaskCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                         AutomationProperties.AutomationId="QueueRetryButton"
                         MinWidth="76"
                         Margin="0,0,8,0" />
-                <Button Content="{Binding DataContext.MoveGenerationTaskUpText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                        Command="{Binding DataContext.MoveSelectedGenerationTaskUpCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                <Button Content="{Binding DataContext.ImageSeriesWorkspace.MoveGenerationTaskUpText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        Command="{Binding DataContext.ImageSeriesWorkspace.MoveSelectedGenerationTaskUpCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                         AutomationProperties.AutomationId="QueueMoveUpButton"
                         MinWidth="76"
                         Margin="0,0,8,0" />
-                <Button Content="{Binding DataContext.MoveGenerationTaskDownText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                        Command="{Binding DataContext.MoveSelectedGenerationTaskDownCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                <Button Content="{Binding DataContext.ImageSeriesWorkspace.MoveGenerationTaskDownText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                        Command="{Binding DataContext.ImageSeriesWorkspace.MoveSelectedGenerationTaskDownCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                         AutomationProperties.AutomationId="QueueMoveDownButton"
                         MinWidth="76" />
             </WrapPanel>
@@ -64,7 +71,7 @@
         <views:QueueHeaderView Grid.Row="1" />
 
         <TextBlock Grid.Row="2"
-                   Text="{Binding DataContext.NoQueueRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                   Text="{Binding DataContext.ImageSeriesWorkspace.NoQueueRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
                    Foreground="#5E6978"
                    Margin="0,14,0,0"
                    TextWrapping="Wrap">
@@ -75,7 +82,7 @@
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding IsQueue}" Value="True" />
-                                <Condition Binding="{Binding DataContext.HasQueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False" />
+                                <Condition Binding="{Binding DataContext.ImageSeriesWorkspace.HasQueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False" />
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Visibility" Value="Visible" />
                         </MultiDataTrigger>

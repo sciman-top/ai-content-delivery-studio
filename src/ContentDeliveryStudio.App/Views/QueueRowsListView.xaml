@@ -9,14 +9,14 @@
             <Style TargetType="Border">
                 <Setter Property="Visibility" Value="Collapsed" />
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding DataContext.HasQueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                    <DataTrigger Binding="{Binding DataContext.ImageSeriesWorkspace.HasQueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
                         <Setter Property="Visibility" Value="Visible" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
         </Border.Style>
-        <ListBox ItemsSource="{Binding DataContext.QueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                 SelectedItem="{Binding DataContext.SelectedQueueRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
+        <ListBox ItemsSource="{Binding DataContext.ImageSeriesWorkspace.QueueRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                 SelectedItem="{Binding DataContext.ImageSeriesWorkspace.SelectedQueueRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
                  AutomationProperties.AutomationId="QueueTaskList"
                  BorderThickness="0"
                  Background="Transparent"
@@ -30,6 +30,7 @@
                 <ListBox.ItemTemplate>
                     <DataTemplate>
                         <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">
+                            <StackPanel>
                             <Grid>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1.2*" />
@@ -66,6 +67,18 @@
                                            Foreground="#8A3B3B"
                                            Margin="10,0,0,0" />
                             </Grid>
+                            <TextBlock Text="{Binding RequestSummary}"
+                                       Foreground="#4B5563"
+                                       FontSize="11"
+                                       Margin="0,5,0,0"
+                                       TextWrapping="Wrap" />
+                            <TextBlock Text="{Binding ApprovalSummary}"
+                                       AutomationProperties.Name="{Binding ApprovalSummary}"
+                                       Foreground="#315B7D"
+                                       FontSize="11"
+                                       Margin="0,3,0,0"
+                                       TextWrapping="Wrap" />
+                            </StackPanel>
                         </Border>
                     </DataTemplate>
                 </ListBox.ItemTemplate>

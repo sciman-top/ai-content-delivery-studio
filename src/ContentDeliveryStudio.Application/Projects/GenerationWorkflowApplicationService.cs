@@ -2,6 +2,9 @@ using ContentDeliveryStudio.Application.Diagnostics;
 using ContentDeliveryStudio.Core.Generation;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Providers;
+using ContentDeliveryStudio.Core.References;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace ContentDeliveryStudio.Application.Projects;
 
@@ -149,6 +152,11 @@ public sealed class GenerationWorkflowApplicationService
 
         var nextPosition = allEntries.Select(entry => entry.Task.QueuePosition ?? 0).DefaultIfEmpty().Max() + 1;
         var timestamp = DateTimeOffset.UtcNow;
+        foreach (var entry in activeEntries.Where(entry => entry.Task.ApprovalReceipt is not null))
+        {
+            entry.Task.InvalidateApproval(GetNonDecreasingTimestamp(entry.Task, timestamp));
+        }
+
         foreach (var entry in activeEntries.Where(entry => entry.Task.QueuePosition is null))
         {
             entry.Task.MoveTo(nextPosition++, GetNonDecreasingTimestamp(entry.Task, timestamp));
@@ -222,12 +230,101 @@ public sealed class GenerationWorkflowApplicationService
     {
         var imageGenerationProvider = RequireFakeImageGenerationProvider();
 
+        return await ExecuteQueueAsync(
+            projectId,
+            outputDirectory,
+            imageGenerationProvider,
+            approvalReceiptId: null,
+            cancellationToken);
+    }
+
+    public async Task<GenerationApprovalReceipt> ApprovePreparedLiveGenerationQueueAsync(
+        Guid projectId,
+        GenerationQueueApprovalRequest request,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var imageGenerationProvider = RequireLiveImageGenerationProvider();
+        if (!request.ExplicitPaidAuthorityConfirmed)
+        {
+            throw new InvalidOperationException("Explicit paid-provider authority is required.");
+        }
+
+        if (!imageGenerationProvider.Capabilities.ModelIds.Contains(request.ModelId, StringComparer.Ordinal))
+        {
+            throw new InvalidOperationException($"Provider does not expose approved model: {request.ModelId}");
+        }
+
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var entries = GetTaskEntries(project)
+            .Where(entry => entry.Task.Status is GenerationTaskStatus.Queued or GenerationTaskStatus.Paused)
+            .OrderBy(entry => entry.Task.QueuePosition ?? int.MaxValue)
+            .ThenBy(entry => entry.Task.CreatedAt)
+            .ThenBy(entry => entry.Task.Id)
+            .ToArray();
+        if (entries.Length == 0)
+        {
+            throw new InvalidOperationException("No prepared generation operations are available for approval.");
+        }
+
+        var now = DateTimeOffset.UtcNow;
+        var requestSet = CreateApprovalRequestSet(
+            project.Id,
+            entries,
+            imageGenerationProvider,
+            request.ModelId,
+            request.EstimatedCostPerOperationUsd);
+        var receipt = GenerationApprovalReceipt.Issue(
+            requestSet,
+            request.EstimatedCostPerOperationUsd * entries.Length,
+            request.MaximumCostUsd,
+            request.ApprovalSource,
+            request.AuthorityReference,
+            now,
+            request.ExpiresAt);
+        foreach (var entry in entries)
+        {
+            entry.Task.AttachApproval(receipt, GetNonDecreasingTimestamp(entry.Task, now));
+        }
+
+        await _repository.SaveAsync(project, cancellationToken);
+        return receipt;
+    }
+
+    public async Task<GenerationQueueRun> ExecuteApprovedLiveGenerationQueueAsync(
+        Guid projectId,
+        string outputDirectory,
+        Guid approvalReceiptId,
+        CancellationToken cancellationToken)
+    {
+        if (approvalReceiptId == Guid.Empty)
+        {
+            throw new ArgumentException("Approval receipt id is required.", nameof(approvalReceiptId));
+        }
+
+        return await ExecuteQueueAsync(
+            projectId,
+            outputDirectory,
+            RequireLiveImageGenerationProvider(),
+            approvalReceiptId,
+            cancellationToken);
+    }
+
+    private async Task<GenerationQueueRun> ExecuteQueueAsync(
+        Guid projectId,
+        string outputDirectory,
+        IImageGenerationProvider imageGenerationProvider,
+        Guid? approvalReceiptId,
+        CancellationToken cancellationToken)
+    {
+
         var project = await RequireProjectAsync(projectId, cancellationToken);
         var queue = new GenerationQueue(
             imageGenerationProvider,
             new GenerationQueueOptions(MaxConcurrency: 1, MaxRetries: 0));
         var workItems = GetTaskEntries(project)
-            .Where(entry => entry.Task.Status is GenerationTaskStatus.Queued)
+            .Where(entry => entry.Task.Status is GenerationTaskStatus.Queued
+                && (approvalReceiptId is null || entry.Task.ApprovalReceipt?.Id == approvalReceiptId))
             .OrderBy(entry => entry.Task.QueuePosition ?? int.MaxValue)
             .ThenBy(entry => entry.Task.CreatedAt)
             .ThenBy(entry => entry.Task.Id)
@@ -244,11 +341,26 @@ public sealed class GenerationWorkflowApplicationService
         var taskResults = new List<GenerationQueueTaskResult>(workItems.Length);
         var images = new List<ImageGenerationResult>(workItems.Length);
 
+        if (approvalReceiptId is not null && workItems.Length == 0)
+        {
+            throw new InvalidOperationException("No queued generation operations match the approval receipt.");
+        }
+
         foreach (var workItem in workItems)
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 break;
+            }
+
+            if (workItem.Task.Status is not GenerationTaskStatus.Queued)
+            {
+                continue;
+            }
+
+            if (approvalReceiptId is { } receiptId)
+            {
+                ValidateLiveApprovalBeforeDispatch(project, imageGenerationProvider, receiptId);
             }
 
             workItem.Task.Start(GetCheckpointTimestamp(workItem.Task));
@@ -320,6 +432,120 @@ public sealed class GenerationWorkflowApplicationService
             cancellationToken);
     }
 
+    public async Task<ImageEditApprovalReceipt> ApproveImageEditAsync(
+        ImageEditWorkflowRequest request,
+        ImageEditApprovalRequest approval,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(approval);
+        var provider = RequireLiveImageEditProvider();
+        if (!approval.ExplicitPaidAuthorityConfirmed)
+        {
+            throw new InvalidOperationException("Explicit paid-provider authority is required.");
+        }
+
+        ValidateImageEditCapabilities(provider, request);
+        if (!provider.Capabilities.ModelIds.Contains(approval.ModelId, StringComparer.Ordinal))
+        {
+            throw new InvalidOperationException($"Provider does not expose approved edit model: {approval.ModelId}");
+        }
+
+        var project = await RequireProjectAsync(request.ProjectId, cancellationToken);
+        var context = RequireImageEditContext(project, request);
+        var requestSet = CreateImageEditApprovalRequestSet(
+            project,
+            context,
+            request,
+            provider,
+            approval.ModelId,
+            approval.EstimatedCostUsd);
+        var now = DateTimeOffset.UtcNow;
+        return ImageEditApprovalReceipt.Issue(
+            requestSet,
+            approval.MaximumCostUsd,
+            approval.ApprovedBy,
+            approval.AuthorityReference,
+            now,
+            approval.ExpiresAt);
+    }
+
+    public async Task<ImageGenerationResult> RunApprovedImageEditAsync(
+        ImageEditWorkflowRequest request,
+        ImageEditApprovalReceipt receipt,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(receipt);
+        var provider = RequireLiveImageEditProvider();
+        ValidateImageEditCapabilities(provider, request);
+        var project = await RequireProjectAsync(request.ProjectId, cancellationToken);
+        var context = RequireImageEditContext(project, request);
+        var modelId = ResolveSingleEditModelId(provider);
+        var requestSet = CreateImageEditApprovalRequestSet(
+            project,
+            context,
+            request,
+            provider,
+            modelId,
+            receipt.EstimatedCostUsd);
+
+        receipt.Validate(requestSet, DateTimeOffset.UtcNow);
+        var references = new[]
+        {
+            new ImageEditReferenceInput(
+                context.SourceCandidate.Id,
+                ReferenceImageRole.Subject,
+                context.SourceCandidate.AssetPath,
+                requestSet.SourceSha256),
+        };
+        var result = await provider.EditImageAsync(
+            new ImageEditRequest(
+                request.SeriesItemId,
+                request.SourceCandidateImageId,
+                context.SourceCandidate.AssetPath,
+                request.MaskImagePath,
+                request.PromptText,
+                request.Settings,
+                request.OutputDirectory,
+                request.OutputFileName,
+                request.Recipe,
+                references),
+            cancellationToken);
+
+        var provenance = new CandidateImageEditProvenance(
+            Guid.NewGuid(),
+            context.SourceCandidate.Id,
+            requestSet.SourceSha256,
+            requestSet.MaskSha256,
+            requestSet.InstructionSha256,
+            requestSet.ProviderId,
+            requestSet.EndpointClass,
+            requestSet.ModelId,
+            requestSet.References.Select(reference => new CandidateImageEditReferenceProvenance(
+                reference.ReferenceId,
+                reference.Role.ToString(),
+                reference.Sha256)).ToArray(),
+            receipt.Id,
+            receipt.RequestSetHash,
+            result.GeneratedAt);
+        context.Item.AddCandidateImage(
+            new CandidateImage(
+                result.CandidateImageId,
+                context.Item.Id,
+                context.SourceCandidate.PromptVersionId,
+                generationTaskId: null,
+                context.SourceCandidate.ProviderProfileId,
+                CandidateImageStatus.ReviewPending,
+                result.AssetPath,
+                result.MetadataPath,
+                result.GeneratedAt,
+                provenance),
+            result.GeneratedAt);
+        await _repository.SaveAsync(project, CancellationToken.None);
+        return result;
+    }
+
     private async Task<ImageProject> RequireProjectAsync(Guid projectId, CancellationToken cancellationToken)
     {
         return await _repository.LoadAsync(projectId, cancellationToken)
@@ -383,6 +609,228 @@ public sealed class GenerationWorkflowApplicationService
         }
 
         return _imageGenerationProvider;
+    }
+
+    private IImageEditProvider RequireLiveImageEditProvider()
+    {
+        if (_imageEditProvider is null)
+        {
+            throw new InvalidOperationException("Image edit provider is not registered.");
+        }
+
+        if (_imageEditProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Approved image editing requires a real provider.");
+        }
+
+        return _imageEditProvider;
+    }
+
+    private static void ValidateImageEditCapabilities(
+        IImageEditProvider provider,
+        ImageEditWorkflowRequest request)
+    {
+        var capabilities = provider.Capabilities;
+        if (!capabilities.SupportsImageEditing
+            || !capabilities.SupportsReferenceImages
+            || capabilities.MaxReferenceImageCount < 1
+            || !capabilities.SupportedReferenceImageRoles.Contains(ReferenceImageRole.Subject))
+        {
+            throw new InvalidOperationException("Provider does not support the required subject-reference image edit contract.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.MaskImagePath) && !capabilities.SupportsMaskEditing)
+        {
+            throw new InvalidOperationException("Provider does not support mask editing.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.PromptText))
+        {
+            throw new ArgumentException("Image edit instruction is required.", nameof(request));
+        }
+
+        if (!capabilities.SupportedSizes.Any(size =>
+                size.Width == request.Settings.Width && size.Height == request.Settings.Height))
+        {
+            throw new InvalidOperationException("Provider does not support the requested image edit size.");
+        }
+
+        var quality = request.Settings.Quality.Trim();
+        if (!capabilities.SupportedQualities.Contains(quality, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Provider does not support the requested image edit quality.");
+        }
+
+        var outputFormat = request.Settings.OutputFormat.Trim().Equals("jpg", StringComparison.OrdinalIgnoreCase)
+            ? "jpeg"
+            : request.Settings.OutputFormat.Trim();
+        if (!capabilities.SupportedOutputFormats.Contains(outputFormat, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Provider does not support the requested image edit output format.");
+        }
+    }
+
+    private static ImageEditContext RequireImageEditContext(
+        ImageProject project,
+        ImageEditWorkflowRequest request)
+    {
+        var item = project.Series
+            .SelectMany(series => series.Items)
+            .SingleOrDefault(candidate => candidate.Id == request.SeriesItemId)
+            ?? throw new InvalidOperationException($"Series item not found: {request.SeriesItemId}");
+        var sourceCandidate = item.CandidateImages
+            .SingleOrDefault(candidate => candidate.Id == request.SourceCandidateImageId)
+            ?? throw new InvalidOperationException($"Source candidate image not found: {request.SourceCandidateImageId}");
+        if (!Path.GetFullPath(sourceCandidate.AssetPath)
+            .Equals(Path.GetFullPath(request.SourceImagePath), StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Source image path does not match the persisted candidate lineage.");
+        }
+
+        if (!File.Exists(sourceCandidate.AssetPath))
+        {
+            throw new FileNotFoundException("Persisted source candidate image was not found.", sourceCandidate.AssetPath);
+        }
+
+        return new ImageEditContext(item, sourceCandidate);
+    }
+
+    private static ImageEditApprovalRequestSet CreateImageEditApprovalRequestSet(
+        ImageProject project,
+        ImageEditContext context,
+        ImageEditWorkflowRequest request,
+        IImageEditProvider provider,
+        string modelId,
+        decimal estimatedCostUsd)
+    {
+        if (estimatedCostUsd < 0m)
+        {
+            throw new ArgumentOutOfRangeException(nameof(estimatedCostUsd));
+        }
+
+        var sourceSha256 = ComputeFileSha256(context.SourceCandidate.AssetPath);
+        var sourceLength = new FileInfo(context.SourceCandidate.AssetPath).Length;
+        if (provider.Capabilities.MaxReferenceImageBytes is { } maximumBytes
+            && sourceLength > maximumBytes)
+        {
+            throw new InvalidOperationException("Source candidate exceeds the provider reference-image size limit.");
+        }
+
+        var maskSha256 = string.IsNullOrWhiteSpace(request.MaskImagePath)
+            ? null
+            : ComputeFileSha256(request.MaskImagePath);
+        return new ImageEditApprovalRequestSet(
+            project.Id,
+            context.Item.Id,
+            context.SourceCandidate.Id,
+            sourceSha256,
+            maskSha256,
+            ComputeTextSha256(request.PromptText),
+            provider.Capabilities.ProviderId,
+            "images/edits",
+            modelId,
+            request.Settings.Width,
+            request.Settings.Height,
+            request.Settings.Quality,
+            request.Settings.OutputFormat,
+            [new ImageEditApprovalReference(context.SourceCandidate.Id, ReferenceImageRole.Subject, sourceSha256)],
+            estimatedCostUsd);
+    }
+
+    private static string ResolveSingleEditModelId(IImageEditProvider provider)
+    {
+        return provider.Capabilities.ModelIds.Count == 1
+            ? provider.Capabilities.ModelIds[0]
+            : throw new InvalidOperationException("Approved image edit execution requires one unambiguous provider model.");
+    }
+
+    private static string ComputeFileSha256(string path)
+    {
+        return Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(path)));
+    }
+
+    private static string ComputeTextSha256(string value)
+    {
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+    }
+
+    private IImageGenerationProvider RequireLiveImageGenerationProvider()
+    {
+        if (_imageGenerationProvider is null)
+        {
+            throw new InvalidOperationException("Image generation provider is not registered.");
+        }
+
+        if (_imageGenerationProvider.Capabilities.ProviderId.StartsWith("fake", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Live generation requires a non-fake image provider.");
+        }
+
+        if (_imageGenerationProvider.Capabilities.ProviderId.StartsWith("failover:", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException(
+                "Live approval requires a direct provider identity; failover destinations need separate receipt coverage.");
+        }
+
+        return _imageGenerationProvider;
+    }
+
+    private static void ValidateLiveApprovalBeforeDispatch(
+        ImageProject project,
+        IImageGenerationProvider provider,
+        Guid approvalReceiptId)
+    {
+        var approvedEntries = GetTaskEntries(project)
+            .Where(entry => entry.Task.ApprovalReceipt?.Id == approvalReceiptId)
+            .OrderBy(entry => entry.Task.QueuePosition ?? int.MaxValue)
+            .ThenBy(entry => entry.Task.CreatedAt)
+            .ThenBy(entry => entry.Task.Id)
+            .ToArray();
+        var receipt = approvedEntries.Select(entry => entry.Task.ApprovalReceipt).FirstOrDefault()
+            ?? throw new InvalidOperationException("Generation approval receipt is absent.");
+        if (approvedEntries.Any(entry => entry.Task.ApprovalReceipt?.Id != receipt.Id
+                || entry.Task.ApprovalReceipt?.RequestSetHash != receipt.RequestSetHash))
+        {
+            throw new InvalidOperationException("Generation approval receipt is inconsistent across the request set.");
+        }
+
+        receipt.Validate(
+            CreateApprovalRequestSet(
+                project.Id,
+                approvedEntries,
+                provider,
+                receipt.ModelId,
+                receipt.EstimatedCostPerOperationUsd),
+            DateTimeOffset.UtcNow);
+    }
+
+    private static GenerationApprovalRequestSet CreateApprovalRequestSet(
+        Guid projectId,
+        IReadOnlyList<GenerationTaskEntry> entries,
+        IImageGenerationProvider provider,
+        string modelId,
+        decimal estimatedCostPerOperationUsd)
+    {
+        return new GenerationApprovalRequestSet(
+            projectId,
+            provider.Capabilities.ProviderId,
+            "images",
+            modelId,
+            entries.Select(entry => new GenerationApprovalOperation(
+                entry.Task.Id,
+                entry.Item.SeriesId ?? throw new InvalidOperationException("Generation item is not attached to a series."),
+                entry.Prompt.Id,
+                entry.Task.ProviderProfileId,
+                entry.Prompt.PromptText,
+                Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(entry.Prompt.PromptText))),
+                entry.Prompt.Settings.Width,
+                entry.Prompt.Settings.Height,
+                entry.Prompt.Settings.Quality,
+                entry.Prompt.Settings.OutputFormat,
+                "auto",
+                entry.Prompt.Settings.Seed,
+                entry.Task.MaxRetries,
+                estimatedCostPerOperationUsd)).ToArray());
     }
 
     private static IReadOnlyList<GenerationTaskEntry> GetTaskEntries(ImageProject project)
@@ -494,9 +942,31 @@ public sealed class GenerationWorkflowApplicationService
         GenerationTask Task,
         SeriesItem Item,
         PromptVersion Prompt);
+
+    private sealed record ImageEditContext(
+        SeriesItem Item,
+        CandidateImage SourceCandidate);
 }
 
 public sealed record GenerationQueuePreparation(IReadOnlyList<Guid> TaskIds);
+
+public sealed record GenerationQueueApprovalRequest(
+    string ModelId,
+    decimal EstimatedCostPerOperationUsd,
+    decimal MaximumCostUsd,
+    string ApprovalSource,
+    string AuthorityReference,
+    DateTimeOffset ExpiresAt,
+    bool ExplicitPaidAuthorityConfirmed);
+
+public sealed record ImageEditApprovalRequest(
+    string ModelId,
+    decimal EstimatedCostUsd,
+    decimal MaximumCostUsd,
+    string ApprovedBy,
+    string AuthorityReference,
+    DateTimeOffset ExpiresAt,
+    bool ExplicitPaidAuthorityConfirmed);
 
 public enum GenerationTaskMoveDirection
 {

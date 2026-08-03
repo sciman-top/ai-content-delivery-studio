@@ -30,24 +30,6 @@ public sealed record PackPackage(
         }
     }
 
-    public static PackPackage FromRegistry(
-        string name,
-        DateTimeOffset exportedAt,
-        PackRegistry registry)
-    {
-        ArgumentNullException.ThrowIfNull(registry);
-
-        return Create(
-            name,
-            exportedAt,
-            registry.Packs.OfType<WorkflowPack>().ToArray(),
-            registry.Packs.OfType<BlueprintPack>().ToArray(),
-            registry.Packs.OfType<IndustryPack>().ToArray(),
-            registry.Packs.OfType<RendererPack>().ToArray(),
-            registry.Packs.OfType<ReviewRubricPack>().ToArray(),
-            registry.AppVersion.ToString());
-    }
-
     public static PackPackage Create(
         string name,
         DateTimeOffset exportedAt,
@@ -89,11 +71,6 @@ public sealed record PackPackage(
             RendererPacks,
             ReviewRubricPacks,
             appVersion);
-    }
-
-    public PackPackage ValidateForExport()
-    {
-        return ValidateForAppVersion(SelectExportValidationAppVersion(Packs));
     }
 
     public PackRegistry CreateRegistry(string appVersion)
@@ -216,20 +193,6 @@ public sealed record PackPackage(
         return PackCompatibilityRange.Create(
             compatibility.MinimumAppVersion.ToString(),
             compatibility.MaximumAppVersion?.ToString());
-    }
-
-    private static string SelectExportValidationAppVersion(IReadOnlyList<IPackDefinition> packs)
-    {
-        ArgumentNullException.ThrowIfNull(packs);
-
-        var maximumMinimum = packs
-            .Select(pack => pack.Metadata.Compatibility.MinimumAppVersion)
-            .OrderByDescending(version => version.Major)
-            .ThenByDescending(version => version.Minor)
-            .ThenByDescending(version => version.Patch)
-            .FirstOrDefault();
-
-        return (maximumMinimum ?? PackVersion.Parse("1.0.0")).ToString();
     }
 
     private static string RequireText(string value, string parameterName)

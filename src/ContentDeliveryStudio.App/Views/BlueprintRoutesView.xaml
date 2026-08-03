@@ -6,7 +6,7 @@
              mc:Ignorable="d">
     <Border BorderBrush="#D4DAE5" BorderThickness="1" Background="#FFFFFF">
         <Grid>
-            <TextBlock Text="{Binding DataContext.NoBlueprintRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+            <TextBlock Text="{Binding DataContext.ImageSeriesWorkspace.Brief.NoBlueprintRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        Foreground="#5E6978"
                        Margin="12"
                        TextWrapping="Wrap">
@@ -14,22 +14,22 @@
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding DataContext.HasDesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False">
+                            <DataTrigger Binding="{Binding DataContext.ImageSeriesWorkspace.Brief.HasDesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False">
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <ListBox ItemsSource="{Binding DataContext.DesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                     SelectedItem="{Binding DataContext.SelectedDesignBlueprint, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
+            <ListBox ItemsSource="{Binding DataContext.ImageSeriesWorkspace.Brief.DesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                     SelectedItem="{Binding DataContext.ImageSeriesWorkspace.Brief.SelectedDesignBlueprint, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
                      BorderThickness="0"
                      Background="Transparent">
                 <ListBox.Style>
                     <Style TargetType="ListBox">
                         <Setter Property="Visibility" Value="Collapsed" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding DataContext.HasDesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                            <DataTrigger Binding="{Binding DataContext.ImageSeriesWorkspace.Brief.HasDesignBlueprintRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
                                 <Setter Property="Visibility" Value="Visible" />
                             </DataTrigger>
                         </Style.Triggers>

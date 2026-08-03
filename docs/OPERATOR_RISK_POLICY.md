@@ -65,6 +65,7 @@ Examples:
 - Deleting user files or performing broad recursive mutations.
 - Writing outside the declared project or configured export roots.
 - Using privileged credentials or modifying provider-secret configuration.
+- Dispatching a paid image-generation queue or approving a cost-bearing provider request set.
 
 Requirements:
 
@@ -72,6 +73,9 @@ Requirements:
 - clear impact statement
 - rollback plan if feasible
 - screenshots, logs, or equivalent evidence when execution proceeds
+- an immutable receipt for the exact ordered request set, bounded estimate, cost ceiling, expiry, approval actor, and authority reference before each new paid dispatch
+
+Paid generation approval is not inferred from provider configuration, a prepared queue, a prior run, a paused task, or a persisted API key. Repository tests use captured fake transports only. A real paid probe remains a separate, current-task authorization boundary.
 
 ### Blocked
 

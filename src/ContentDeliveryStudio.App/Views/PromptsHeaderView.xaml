@@ -14,26 +14,26 @@
                 <ColumnDefinition Width="130" />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0"
-                       Text="{Binding DataContext.PromptVersionColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PromptVersionColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold" />
             <TextBlock Grid.Column="1"
-                       Text="{Binding DataContext.PromptItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PromptItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="2"
-                       Text="{Binding DataContext.PromptTextColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PromptTextColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="3"
-                       Text="{Binding DataContext.PromptSettingsColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PromptSettingsColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="4"
-                       Text="{Binding DataContext.PromptCreatedColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PromptCreatedColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />

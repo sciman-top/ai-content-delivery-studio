@@ -60,6 +60,170 @@ public sealed class Phase7AccessibilityContractTests
         }
     }
 
+    [Fact]
+    public void QueueViews_BindThroughImageSeriesWorkspaceAndKeepStableAutomationIds()
+    {
+        var queueView = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "QueueView.xaml");
+        var queueHeader = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "QueueHeaderView.xaml");
+        var queueRows = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "QueueRowsListView.xaml");
+        var promptEditor = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "PromptEditorPanelView.xaml");
+
+        foreach (var file in new[] { queueView, queueHeader, queueRows })
+        {
+            Assert.Contains("ImageSeriesWorkspace", file);
+        }
+
+        foreach (var automationId in new[]
+        {
+            "QueueExecuteButton",
+            "QueueExecuteApprovedLiveButton",
+            "QueuePauseButton",
+            "QueueResumeButton",
+            "QueueRetryButton",
+            "QueueMoveUpButton",
+            "QueueMoveDownButton",
+            "QueueTaskList",
+        })
+        {
+            Assert.Contains(automationId, queueView + queueRows);
+        }
+
+        Assert.Contains("ImageSeriesWorkspace.PrepareGenerationQueueCommand", promptEditor);
+        Assert.Contains("ImageSeriesWorkspace.PrepareGenerationQueueText", promptEditor);
+        Assert.Contains("ImageSeriesWorkspace.IsLiveGenerationExecutionAvailable", queueView);
+        Assert.Contains("ImageSeriesWorkspace.LiveGenerationAuthorityRequiredText", queueView);
+        Assert.Contains("RequestSummary", queueRows);
+        Assert.Contains("ApprovalSummary", queueRows);
+    }
+
+    [Fact]
+    public void GalleryAndImageEditViews_BindThroughGalleryOwnerAndKeepStableAutomationIds()
+    {
+        var galleryView = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "GalleryView.xaml");
+        var galleryHeader = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "GalleryHeaderView.xaml");
+        var galleryRows = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "GalleryRowsListView.xaml");
+        var imageEdit = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "ImageEditPanelView.xaml");
+
+        foreach (var file in new[] { galleryView, galleryHeader, galleryRows, imageEdit })
+        {
+            Assert.Contains("ImageSeriesWorkspace.Gallery", file);
+        }
+
+        Assert.Contains("GalleryCandidateList", galleryRows);
+        Assert.Contains("ImageEditPromptInput", imageEdit);
+        Assert.Contains("ImageEditMaskPathInput", imageEdit);
+        Assert.Contains("RunFakeImageEditButton", imageEdit);
+        Assert.Contains("ApprovedImageEditCapabilitySummary", imageEdit);
+        Assert.Contains("RunApprovedImageEditButton", imageEdit);
+    }
+
+    [Fact]
+    public void ReviewViews_BindThroughReviewOwnerAndKeepStableAutomationIds()
+    {
+        var reviewView = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "ReviewView.xaml");
+        var reviewHeader = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "ReviewHeaderView.xaml");
+        var reviewRows = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "ReviewResultsListView.xaml");
+        var approvalPanel = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "ReviewApprovalPanelView.xaml");
+
+        foreach (var file in new[] { reviewView, reviewHeader, reviewRows, approvalPanel })
+        {
+            Assert.Contains("ImageSeriesWorkspace.Review", file);
+        }
+
+        foreach (var automationId in new[]
+        {
+            "RunFakeReviewButton",
+            "FinalApprovalReviewerInput",
+            "FinalApprovalNotesInput",
+            "ApproveSelectedReviewButton",
+            "RejectSelectedReviewButton",
+        })
+        {
+            Assert.Contains(automationId, approvalPanel);
+        }
+    }
+
+    [Fact]
+    public void DeliveryViews_BindThroughDeliveryOwnerAndKeepStableAutomationIds()
+    {
+        var deliveryView = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "DeliveryView.xaml");
+        var deliveryHeader = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "DeliveryHeaderView.xaml");
+        var deliveryRows = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "DeliveryResultsListView.xaml");
+        var approvalPanel = ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", "ReviewApprovalPanelView.xaml");
+
+        foreach (var file in new[] { deliveryView, deliveryHeader, deliveryRows, approvalPanel })
+        {
+            Assert.Contains("ImageSeriesWorkspace.Delivery", file);
+        }
+
+        foreach (var automationId in new[]
+        {
+            "FinalDeliveryCategorySelector",
+            "FinalDeliveryRootInput",
+            "BrowseFinalDeliveryRootButton",
+            "FinalDeliveryDestinationPreview",
+            "ExportDeliveryButton",
+        })
+        {
+            Assert.Contains(automationId, approvalPanel);
+        }
+    }
+
+    [Fact]
+    public void PlanAndPromptViews_BindThroughPlanningOwnerAndKeepStableAutomationIds()
+    {
+        var files = new[]
+        {
+            "PlanView.xaml",
+            "PlanHeaderView.xaml",
+            "PlanRowsListView.xaml",
+            "PromptsView.xaml",
+            "PromptsHeaderView.xaml",
+            "PromptRowsListView.xaml",
+            "PlanEditorPanelView.xaml",
+            "PromptEditorPanelView.xaml",
+        }.Select(fileName => ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", fileName)).ToArray();
+
+        Assert.All(files, file => Assert.Contains("ImageSeriesWorkspace.Planning", file));
+        Assert.Contains("CreateSeriesButton", files[6]);
+        Assert.Contains("AddSeriesItemButton", files[6]);
+        Assert.Contains("CreatePromptVersionButton", files[7]);
+    }
+
+    [Fact]
+    public void BriefViews_BindThroughBriefOwnerAndKeepStableAutomationIds()
+    {
+        var files = new[]
+        {
+            "FakePlanningPanelView.xaml",
+            "BriefWorkflowView.xaml",
+            "BriefWorkflowActionsView.xaml",
+            "BlueprintRoutesPanelView.xaml",
+            "BlueprintRoutesView.xaml",
+            "PromptDirectionsPanelView.xaml",
+            "PromptDirectionsView.xaml",
+        }.Select(fileName => ReadRepoFile("src", "ContentDeliveryStudio.App", "Views", fileName)).ToArray();
+
+        Assert.All(files, file => Assert.Contains("ImageSeriesWorkspace.Brief", file));
+        Assert.Contains("PlanningGoalInput", files[0]);
+        Assert.Contains("RunFakePlanningButton", files[0]);
+    }
+
+    [Fact]
+    public void GenerationSettingsView_BindsThroughOwnerAndKeepsStableAutomationIds()
+    {
+        var inspector = ReadRepoFile(
+            "src",
+            "ContentDeliveryStudio.App",
+            "Views",
+            "StyleRecipeInspectorPanelView.xaml");
+
+        Assert.Contains("ImageSeriesWorkspace.GenerationSettings", inspector);
+        Assert.Contains("ImageTypePresetSelector", inspector);
+        Assert.Contains("StyleGuideSelector", inspector);
+        Assert.Contains("GenerationRecipeSelector", inspector);
+    }
+
     private static string ReadRepoFile(params string[] segments) => File.ReadAllText(GetRepoFilePath(segments));
 
     private static string GetRepoFilePath(params string[] segments)

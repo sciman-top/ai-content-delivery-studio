@@ -1,170 +1,346 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using ContentDeliveryStudio.Application.Projects;
+using ContentDeliveryStudio.Core.Projects;
 
 namespace ContentDeliveryStudio.App.ViewModels;
 
-public sealed class ImageSeriesWorkspaceViewModel : ObservableObject
+internal delegate Task<bool> ImageSeriesQueueMutationRunner(
+    Guid? selectedTaskId,
+    Func<Guid, Guid?, CancellationToken, Task> mutation);
+
+internal delegate Task<bool> ImageSeriesFakeGenerationRunner(
+    IReadOnlyList<SeriesSummaryViewModel> series);
+
+public sealed partial class ImageSeriesWorkspaceViewModel : ObservableObject
 {
-    private IReadOnlyList<GalleryRowViewModel> _galleryRows = [];
-    private GalleryRowViewModel? _selectedGalleryRow;
-    private string _galleryItemColumn = string.Empty;
-    private string _galleryImageColumn = string.Empty;
-    private string _galleryMetadataColumn = string.Empty;
-    private string _noGalleryRowsText = string.Empty;
-    private IReadOnlyList<ReviewRowViewModel> _reviewRows = [];
-    private ReviewRowViewModel? _selectedReviewRow;
-    private string _finalApprovalReviewer = string.Empty;
-    private string _finalApprovalNotes = string.Empty;
-    private string _reviewItemColumn = string.Empty;
-    private string _reviewDecisionColumn = string.Empty;
-    private string _reviewScoreColumn = string.Empty;
-    private string _reviewCommentsColumn = string.Empty;
-    private string _reviewFixColumn = string.Empty;
-    private string _reviewRouteColumn = string.Empty;
-    private string _humanApprovalColumn = string.Empty;
-    private string _noReviewRowsText = string.Empty;
-    private string _finalApprovalReviewerLabel = string.Empty;
-    private string _finalApprovalNotesLabel = string.Empty;
+    private readonly GenerationWorkflowCoordinator _generationWorkflowCoordinator;
+    private readonly ImageSeriesQueueMutationRunner _runMutationAndReload;
+    private readonly ImageSeriesFakeGenerationRunner _runFakeGeneration;
+    private readonly Func<bool> _canMutate;
+    private readonly Func<bool> _hasSelectedProject;
+    private readonly Func<bool> _hasCurrentLiveGenerationAuthority;
+    private readonly Action _queueProjectionChanged;
 
-    public IReadOnlyList<GalleryRowViewModel> GalleryRows
+    [ObservableProperty]
+    private IReadOnlyList<QueueRowViewModel> _queueRows = [];
+
+    [ObservableProperty]
+    private QueueRowViewModel? _selectedQueueRow;
+
+    [ObservableProperty]
+    private string _prepareGenerationQueueText = string.Empty;
+
+    [ObservableProperty]
+    private string _runFakeGenerationText = string.Empty;
+
+    [ObservableProperty]
+    private string _executeGenerationQueueText = string.Empty;
+
+    [ObservableProperty]
+    private string _executeApprovedLiveGenerationText = string.Empty;
+
+    [ObservableProperty]
+    private string _liveGenerationAuthorityRequiredText = string.Empty;
+
+    [ObservableProperty]
+    private string _pauseGenerationTaskText = string.Empty;
+
+    [ObservableProperty]
+    private string _resumeGenerationTaskText = string.Empty;
+
+    [ObservableProperty]
+    private string _retryGenerationTaskText = string.Empty;
+
+    [ObservableProperty]
+    private string _moveGenerationTaskUpText = string.Empty;
+
+    [ObservableProperty]
+    private string _moveGenerationTaskDownText = string.Empty;
+
+    [ObservableProperty]
+    private string _queueItemColumn = string.Empty;
+
+    [ObservableProperty]
+    private string _queuePositionColumn = string.Empty;
+
+    [ObservableProperty]
+    private string _queueStatusColumn = string.Empty;
+
+    [ObservableProperty]
+    private string _queueAttemptsColumn = string.Empty;
+
+    [ObservableProperty]
+    private string _queueOutputColumn = string.Empty;
+
+    [ObservableProperty]
+    private string _queueErrorColumn = string.Empty;
+
+    [ObservableProperty]
+    private string _noQueueRowsText = string.Empty;
+
+    internal ImageSeriesWorkspaceViewModel(
+        GenerationWorkflowCoordinator generationWorkflowCoordinator,
+        ImageSeriesQueueMutationRunner runMutationAndReload,
+        ImageSeriesFakeGenerationRunner runFakeGeneration,
+        Func<bool> canMutate,
+        Func<bool> hasSelectedProject,
+        Func<bool> hasCurrentLiveGenerationAuthority,
+        Action queueProjectionChanged,
+        ImageSeriesPlanningWorkspaceViewModel planning,
+        ImageSeriesBriefWorkspaceViewModel brief,
+        ImageSeriesGenerationSettingsWorkspaceViewModel generationSettings,
+        ImageSeriesGalleryWorkspaceViewModel gallery,
+        ImageSeriesReviewWorkspaceViewModel review,
+        ImageSeriesDeliveryWorkspaceViewModel delivery)
     {
-        get => _galleryRows;
-        internal set
+        _generationWorkflowCoordinator = generationWorkflowCoordinator
+            ?? throw new ArgumentNullException(nameof(generationWorkflowCoordinator));
+        _runMutationAndReload = runMutationAndReload
+            ?? throw new ArgumentNullException(nameof(runMutationAndReload));
+        _runFakeGeneration = runFakeGeneration ?? throw new ArgumentNullException(nameof(runFakeGeneration));
+        _canMutate = canMutate ?? throw new ArgumentNullException(nameof(canMutate));
+        _hasSelectedProject = hasSelectedProject ?? throw new ArgumentNullException(nameof(hasSelectedProject));
+        _hasCurrentLiveGenerationAuthority = hasCurrentLiveGenerationAuthority
+            ?? throw new ArgumentNullException(nameof(hasCurrentLiveGenerationAuthority));
+        _queueProjectionChanged = queueProjectionChanged
+            ?? throw new ArgumentNullException(nameof(queueProjectionChanged));
+        Planning = planning ?? throw new ArgumentNullException(nameof(planning));
+        Brief = brief ?? throw new ArgumentNullException(nameof(brief));
+        GenerationSettings = generationSettings ?? throw new ArgumentNullException(nameof(generationSettings));
+        Gallery = gallery ?? throw new ArgumentNullException(nameof(gallery));
+        Review = review ?? throw new ArgumentNullException(nameof(review));
+        Delivery = delivery ?? throw new ArgumentNullException(nameof(delivery));
+    }
+
+    public ImageSeriesPlanningWorkspaceViewModel Planning { get; }
+
+    public ImageSeriesBriefWorkspaceViewModel Brief { get; }
+
+    public ImageSeriesGenerationSettingsWorkspaceViewModel GenerationSettings { get; }
+
+    public ImageSeriesGalleryWorkspaceViewModel Gallery { get; }
+
+    public ImageSeriesReviewWorkspaceViewModel Review { get; }
+
+    public ImageSeriesDeliveryWorkspaceViewModel Delivery { get; }
+
+    public bool HasQueueRows => QueueRows.Count > 0;
+
+    public bool IsLiveGenerationExecutionAvailable =>
+        CanRunProjectMutation()
+        && _hasCurrentLiveGenerationAuthority()
+        && QueueRows.Any(row => row.TaskStatus is GenerationTaskStatus.Queued);
+
+    internal void ApplyProjection(IReadOnlyList<QueueRowViewModel> rows)
+    {
+        ArgumentNullException.ThrowIfNull(rows);
+
+        var selectedTaskId = SelectedQueueRow?.TaskId;
+        QueueRows = rows;
+        SelectedQueueRow = rows.FirstOrDefault(row => row.TaskId == selectedTaskId)
+            ?? rows.FirstOrDefault();
+    }
+
+    internal void ApplyLocalization(MainWindowLocalizationPayload payload)
+    {
+        ArgumentNullException.ThrowIfNull(payload);
+
+        PrepareGenerationQueueText = payload.PrepareGenerationQueueText;
+        RunFakeGenerationText = payload.RunFakeGenerationText;
+        ExecuteGenerationQueueText = payload.ExecuteGenerationQueueText;
+        ExecuteApprovedLiveGenerationText = payload.ExecuteApprovedLiveGenerationText;
+        LiveGenerationAuthorityRequiredText = payload.LiveGenerationAuthorityRequiredText;
+        PauseGenerationTaskText = payload.PauseGenerationTaskText;
+        ResumeGenerationTaskText = payload.ResumeGenerationTaskText;
+        RetryGenerationTaskText = payload.RetryGenerationTaskText;
+        MoveGenerationTaskUpText = payload.MoveGenerationTaskUpText;
+        MoveGenerationTaskDownText = payload.MoveGenerationTaskDownText;
+        QueueItemColumn = payload.QueueItemColumn;
+        QueuePositionColumn = payload.QueuePositionColumn;
+        QueueStatusColumn = payload.QueueStatusColumn;
+        QueueAttemptsColumn = payload.QueueAttemptsColumn;
+        QueueOutputColumn = payload.QueueOutputColumn;
+        QueueErrorColumn = payload.QueueErrorColumn;
+        NoQueueRowsText = payload.NoQueueRowsText;
+    }
+
+    internal void NotifyCommandStatesChanged()
+    {
+        PrepareGenerationQueueCommand.NotifyCanExecuteChanged();
+        RunFakeGenerationCommand.NotifyCanExecuteChanged();
+        ExecutePreparedGenerationQueueCommand.NotifyCanExecuteChanged();
+        PauseSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
+        ResumeSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
+        RetrySelectedGenerationTaskCommand.NotifyCanExecuteChanged();
+        MoveSelectedGenerationTaskUpCommand.NotifyCanExecuteChanged();
+        MoveSelectedGenerationTaskDownCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(IsLiveGenerationExecutionAvailable));
+    }
+
+    partial void OnQueueRowsChanged(IReadOnlyList<QueueRowViewModel> value)
+    {
+        OnPropertyChanged(nameof(HasQueueRows));
+        NotifyCommandStatesChanged();
+        _queueProjectionChanged();
+    }
+
+    partial void OnSelectedQueueRowChanged(QueueRowViewModel? value)
+    {
+        NotifyCommandStatesChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanPrepareGenerationQueue))]
+    private Task PrepareGenerationQueueAsync()
+    {
+        return RunMutationAndReloadAsync((projectId, ignoredTaskId, cancellationToken) =>
+            _generationWorkflowCoordinator.PrepareFakeGenerationQueueAsync(projectId, cancellationToken));
+    }
+
+    private bool CanPrepareGenerationQueue()
+    {
+        return CanRunFakeGeneration();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunFakeGeneration))]
+    private Task RunFakeGenerationAsync()
+    {
+        return _runFakeGeneration(Planning.Series);
+    }
+
+    private bool CanRunFakeGeneration()
+    {
+        return CanRunProjectMutation()
+            && Planning.PromptRows.Count > 0
+            && QueueRows.All(row => row.TaskStatus is not (
+                GenerationTaskStatus.Queued
+                or GenerationTaskStatus.Paused
+                or GenerationTaskStatus.Running));
+    }
+
+    [RelayCommand(CanExecute = nameof(CanExecutePreparedGenerationQueue))]
+    private Task ExecutePreparedGenerationQueueAsync()
+    {
+        return RunMutationAndReloadAsync(async (projectId, ignoredTaskId, cancellationToken) =>
         {
-            if (!SetProperty(ref _galleryRows, value))
-            {
-                return;
-            }
-
-            OnPropertyChanged(nameof(HasGalleryRows));
-            if (value.Count == 0)
-            {
-                SelectedGalleryRow = null;
-            }
-            else if (SelectedGalleryRow is null
-                || !value.Any(row => row.CandidateImageId == SelectedGalleryRow.CandidateImageId))
-            {
-                SelectedGalleryRow = value[0];
-            }
-        }
+            await _generationWorkflowCoordinator.ExecuteFakeGenerationQueueAsync(projectId, cancellationToken);
+        });
     }
 
-    public bool HasGalleryRows => GalleryRows.Count > 0;
-
-    public GalleryRowViewModel? SelectedGalleryRow
+    private bool CanExecutePreparedGenerationQueue()
     {
-        get => _selectedGalleryRow;
-        set => SetProperty(ref _selectedGalleryRow, value);
+        return CanRunProjectMutation()
+            && QueueRows.Any(row => row.TaskStatus is GenerationTaskStatus.Queued);
     }
 
-    public string GalleryItemColumn
+    [RelayCommand(CanExecute = nameof(CanPauseSelectedGenerationTask))]
+    private Task PauseSelectedGenerationTaskAsync()
     {
-        get => _galleryItemColumn;
-        private set => SetProperty(ref _galleryItemColumn, value);
+        return RunSelectedTaskMutationAsync((projectId, taskId, cancellationToken) =>
+            _generationWorkflowCoordinator.PauseGenerationTaskAsync(projectId, taskId, cancellationToken));
     }
 
-    public string GalleryImageColumn
+    private bool CanPauseSelectedGenerationTask()
     {
-        get => _galleryImageColumn;
-        private set => SetProperty(ref _galleryImageColumn, value);
+        return CanRunProjectMutation() && SelectedQueueRow?.CanPause is true;
     }
 
-    public string GalleryMetadataColumn
+    [RelayCommand(CanExecute = nameof(CanResumeSelectedGenerationTask))]
+    private Task ResumeSelectedGenerationTaskAsync()
     {
-        get => _galleryMetadataColumn;
-        private set => SetProperty(ref _galleryMetadataColumn, value);
+        return RunSelectedTaskMutationAsync((projectId, taskId, cancellationToken) =>
+            _generationWorkflowCoordinator.ResumeGenerationTaskAsync(projectId, taskId, cancellationToken));
     }
 
-    public string NoGalleryRowsText
+    private bool CanResumeSelectedGenerationTask()
     {
-        get => _noGalleryRowsText;
-        private set => SetProperty(ref _noGalleryRowsText, value);
+        return CanRunProjectMutation() && SelectedQueueRow?.CanResume is true;
     }
 
-    public IReadOnlyList<ReviewRowViewModel> ReviewRows
+    [RelayCommand(CanExecute = nameof(CanRetrySelectedGenerationTask))]
+    private Task RetrySelectedGenerationTaskAsync()
     {
-        get => _reviewRows;
-        internal set
+        return RunSelectedTaskMutationAsync((projectId, taskId, cancellationToken) =>
+            _generationWorkflowCoordinator.RetryGenerationTaskAsync(projectId, taskId, cancellationToken));
+    }
+
+    private bool CanRetrySelectedGenerationTask()
+    {
+        return CanRunProjectMutation() && SelectedQueueRow?.CanRetry is true;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanMoveSelectedGenerationTaskUp))]
+    private Task MoveSelectedGenerationTaskUpAsync()
+    {
+        return MoveSelectedGenerationTaskAsync(GenerationTaskMoveDirection.Up);
+    }
+
+    private bool CanMoveSelectedGenerationTaskUp()
+    {
+        return CanMoveSelectedGenerationTask(GenerationTaskMoveDirection.Up);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanMoveSelectedGenerationTaskDown))]
+    private Task MoveSelectedGenerationTaskDownAsync()
+    {
+        return MoveSelectedGenerationTaskAsync(GenerationTaskMoveDirection.Down);
+    }
+
+    private bool CanMoveSelectedGenerationTaskDown()
+    {
+        return CanMoveSelectedGenerationTask(GenerationTaskMoveDirection.Down);
+    }
+
+    private Task MoveSelectedGenerationTaskAsync(GenerationTaskMoveDirection direction)
+    {
+        return RunSelectedTaskMutationAsync((projectId, taskId, cancellationToken) =>
+            _generationWorkflowCoordinator.MoveGenerationTaskAsync(
+                projectId,
+                taskId,
+                direction,
+                cancellationToken));
+    }
+
+    private bool CanMoveSelectedGenerationTask(GenerationTaskMoveDirection direction)
+    {
+        if (!CanRunProjectMutation() || SelectedQueueRow?.CanReorder is not true)
         {
-            if (!SetProperty(ref _reviewRows, value))
-            {
-                return;
-            }
-
-            OnPropertyChanged(nameof(HasReviewRows));
-            SelectedReviewRow = value.FirstOrDefault(row =>
-                SelectedReviewRow is null || row.CandidateImageId == SelectedReviewRow.CandidateImageId);
+            return false;
         }
+
+        var activeRows = QueueRows
+            .Where(row => row.CanReorder)
+            .OrderBy(row => row.QueuePosition ?? int.MaxValue)
+            .ThenBy(row => row.TaskId)
+            .ToArray();
+        var index = Array.FindIndex(activeRows, row => row.TaskId == SelectedQueueRow.TaskId);
+        return direction is GenerationTaskMoveDirection.Up
+            ? index > 0
+            : index >= 0 && index < activeRows.Length - 1;
     }
 
-    public bool HasReviewRows => ReviewRows.Count > 0;
-
-    public ReviewRowViewModel? SelectedReviewRow
+    private Task RunSelectedTaskMutationAsync(Func<Guid, Guid, CancellationToken, Task> mutation)
     {
-        get => _selectedReviewRow;
-        set => SetProperty(ref _selectedReviewRow, value);
+        if (SelectedQueueRow is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var taskId = SelectedQueueRow.TaskId;
+        return RunMutationAndReloadAsync((projectId, ignoredTaskId, cancellationToken) =>
+            mutation(projectId, taskId, cancellationToken));
     }
 
-    public string FinalApprovalReviewer
+    private async Task RunMutationAndReloadAsync(Func<Guid, Guid?, CancellationToken, Task> mutation)
     {
-        get => _finalApprovalReviewer;
-        set => SetProperty(ref _finalApprovalReviewer, value);
+        ArgumentNullException.ThrowIfNull(mutation);
+
+        var selectedTaskId = SelectedQueueRow?.TaskId;
+        await _runMutationAndReload(selectedTaskId, mutation);
     }
 
-    public string FinalApprovalNotes
+    private bool CanRunProjectMutation()
     {
-        get => _finalApprovalNotes;
-        set => SetProperty(ref _finalApprovalNotes, value);
-    }
-
-    public string ReviewItemColumn { get => _reviewItemColumn; private set => SetProperty(ref _reviewItemColumn, value); }
-
-    public string ReviewDecisionColumn { get => _reviewDecisionColumn; private set => SetProperty(ref _reviewDecisionColumn, value); }
-
-    public string ReviewScoreColumn { get => _reviewScoreColumn; private set => SetProperty(ref _reviewScoreColumn, value); }
-
-    public string ReviewCommentsColumn { get => _reviewCommentsColumn; private set => SetProperty(ref _reviewCommentsColumn, value); }
-
-    public string ReviewFixColumn { get => _reviewFixColumn; private set => SetProperty(ref _reviewFixColumn, value); }
-
-    public string ReviewRouteColumn { get => _reviewRouteColumn; private set => SetProperty(ref _reviewRouteColumn, value); }
-
-    public string HumanApprovalColumn { get => _humanApprovalColumn; private set => SetProperty(ref _humanApprovalColumn, value); }
-
-    public string NoReviewRowsText { get => _noReviewRowsText; private set => SetProperty(ref _noReviewRowsText, value); }
-
-    public string FinalApprovalReviewerLabel { get => _finalApprovalReviewerLabel; private set => SetProperty(ref _finalApprovalReviewerLabel, value); }
-
-    public string FinalApprovalNotesLabel { get => _finalApprovalNotesLabel; private set => SetProperty(ref _finalApprovalNotesLabel, value); }
-
-    internal void ApplyLocalization(
-        string galleryItemColumn,
-        string galleryImageColumn,
-        string galleryMetadataColumn,
-        string noGalleryRowsText,
-        string reviewItemColumn,
-        string reviewDecisionColumn,
-        string reviewScoreColumn,
-        string reviewCommentsColumn,
-        string reviewFixColumn,
-        string reviewRouteColumn,
-        string humanApprovalColumn,
-        string noReviewRowsText,
-        string finalApprovalReviewerLabel,
-        string finalApprovalNotesLabel)
-    {
-        GalleryItemColumn = galleryItemColumn;
-        GalleryImageColumn = galleryImageColumn;
-        GalleryMetadataColumn = galleryMetadataColumn;
-        NoGalleryRowsText = noGalleryRowsText;
-        ReviewItemColumn = reviewItemColumn;
-        ReviewDecisionColumn = reviewDecisionColumn;
-        ReviewScoreColumn = reviewScoreColumn;
-        ReviewCommentsColumn = reviewCommentsColumn;
-        ReviewFixColumn = reviewFixColumn;
-        ReviewRouteColumn = reviewRouteColumn;
-        HumanApprovalColumn = humanApprovalColumn;
-        NoReviewRowsText = noReviewRowsText;
-        FinalApprovalReviewerLabel = finalApprovalReviewerLabel;
-        FinalApprovalNotesLabel = finalApprovalNotesLabel;
+        return _canMutate() && _hasSelectedProject();
     }
 }

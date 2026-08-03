@@ -5,33 +5,33 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <TextBlock Text="{Binding StyleRecipeInspectorTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
-        <TextBlock Text="{Binding ImageTypePresetLabel}" Margin="0,0,0,4" />
-        <ComboBox ItemsSource="{Binding ImageTypePresetOptions}"
-                  SelectedItem="{Binding SelectedImageTypePresetOption, Mode=TwoWay}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.GenerationSettings.StyleRecipeInspectorTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.GenerationSettings.ImageTypePresetLabel}" Margin="0,0,0,4" />
+        <ComboBox ItemsSource="{Binding ImageSeriesWorkspace.GenerationSettings.ImageTypePresetOptions}"
+                  SelectedItem="{Binding ImageSeriesWorkspace.GenerationSettings.SelectedImageTypePresetOption, Mode=TwoWay}"
                   DisplayMemberPath="DisplayName"
                   AutomationProperties.AutomationId="ImageTypePresetSelector"
-                  AutomationProperties.Name="{Binding ImageTypePresetLabel}"
+                  AutomationProperties.Name="{Binding ImageSeriesWorkspace.GenerationSettings.ImageTypePresetLabel}"
                   MinHeight="28"
                   Margin="0,0,0,6" />
-        <TextBlock Text="{Binding StyleGuideLabel}" Margin="0,0,0,4" />
-        <ComboBox ItemsSource="{Binding StyleGuideOptions}"
-                  SelectedItem="{Binding SelectedStyleGuideOption, Mode=TwoWay}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.GenerationSettings.StyleGuideLabel}" Margin="0,0,0,4" />
+        <ComboBox ItemsSource="{Binding ImageSeriesWorkspace.GenerationSettings.StyleGuideOptions}"
+                  SelectedItem="{Binding ImageSeriesWorkspace.GenerationSettings.SelectedStyleGuideOption, Mode=TwoWay}"
                   DisplayMemberPath="Name"
                   AutomationProperties.AutomationId="StyleGuideSelector"
-                  AutomationProperties.Name="{Binding StyleGuideLabel}"
+                  AutomationProperties.Name="{Binding ImageSeriesWorkspace.GenerationSettings.StyleGuideLabel}"
                   MinHeight="28"
                   Margin="0,0,0,6" />
-        <TextBlock Text="{Binding GenerationRecipeLabel}" Margin="0,0,0,4" />
-        <ComboBox ItemsSource="{Binding GenerationRecipeOptions}"
-                  SelectedItem="{Binding SelectedGenerationRecipeOption, Mode=TwoWay}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.GenerationSettings.GenerationRecipeLabel}" Margin="0,0,0,4" />
+        <ComboBox ItemsSource="{Binding ImageSeriesWorkspace.GenerationSettings.GenerationRecipeOptions}"
+                  SelectedItem="{Binding ImageSeriesWorkspace.GenerationSettings.SelectedGenerationRecipeOption, Mode=TwoWay}"
                   DisplayMemberPath="DisplayName"
                   AutomationProperties.AutomationId="GenerationRecipeSelector"
-                  AutomationProperties.Name="{Binding GenerationRecipeLabel}"
+                  AutomationProperties.Name="{Binding ImageSeriesWorkspace.GenerationSettings.GenerationRecipeLabel}"
                   MinHeight="28"
                   Margin="0,0,0,6" />
-        <TextBlock Text="{Binding StyleRecipeSummaryTitle}" FontWeight="SemiBold" Margin="0,4,0,4" />
-        <TextBlock Text="{Binding StyleRecipeSummaryText}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.GenerationSettings.StyleRecipeSummaryTitle}" FontWeight="SemiBold" Margin="0,4,0,4" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.GenerationSettings.StyleRecipeSummaryText}"
                    TextWrapping="Wrap"
                    Foreground="#4B5563"
                    Margin="0,0,0,14" />

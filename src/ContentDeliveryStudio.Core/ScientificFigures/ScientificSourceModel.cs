@@ -175,20 +175,22 @@ public sealed record ScientificSourceBlock
         ScientificSourceGuard.RequireDefined(recoveryStatus, nameof(recoveryStatus));
         ArgumentNullException.ThrowIfNull(location);
 
-        var requiresRecovery = kind is ScientificSourceBlockKind.Formula
+        var requiresRecovery = kind is ScientificSourceBlockKind.Caption
+            or ScientificSourceBlockKind.Reference
+            or ScientificSourceBlockKind.Formula
             or ScientificSourceBlockKind.Table
             or ScientificSourceBlockKind.UnrecoverableRegion;
         if (requiresRecovery && recoveryStatus == ScientificRecoveryStatus.NotRequired)
         {
             throw new ArgumentException(
-                "Formula, table, and unrecoverable-region blocks require an explicit recovery result.",
+                "Caption, reference, formula, table, and unrecoverable-region blocks require an explicit recovery result.",
                 nameof(recoveryStatus));
         }
 
         if (!requiresRecovery && recoveryStatus != ScientificRecoveryStatus.NotRequired)
         {
             throw new ArgumentException(
-                "Recovery status applies only to formula and table blocks.",
+                "Recovery status applies only to caption, reference, formula, table, and unrecoverable-region blocks.",
                 nameof(recoveryStatus));
         }
 
@@ -402,15 +404,26 @@ public sealed record ScientificDocumentExtraction
         {
             codes.Add("corrupted-reading-order");
         }
+        else if (quality.ReadingOrder == ScientificReadingOrderStatus.Uncertain)
+        {
+            codes.Add("uncertain-reading-order");
+        }
 
         if (quality.RequiredContent == ScientificRequiredContentStatus.Missing)
         {
             codes.Add("missing-required-content");
         }
+        else if (quality.RequiredContent == ScientificRequiredContentStatus.Uncertain)
+        {
+            codes.Add("uncertain-required-content");
+        }
 
         foreach (var block in blocks.Where(block =>
                      block.IsRequired
-                     && block.Kind is ScientificSourceBlockKind.Formula or ScientificSourceBlockKind.Table
+                     && block.Kind is ScientificSourceBlockKind.Caption
+                        or ScientificSourceBlockKind.Reference
+                        or ScientificSourceBlockKind.Formula
+                        or ScientificSourceBlockKind.Table
                      && block.RecoveryStatus is ScientificRecoveryStatus.Missing or ScientificRecoveryStatus.Uncertain))
         {
             codes.Add(
@@ -451,12 +464,14 @@ public enum ScientificReadingOrderStatus
 {
     Reliable = 0,
     Corrupted = 1,
+    Uncertain = 2,
 }
 
 public enum ScientificRequiredContentStatus
 {
     Complete = 0,
     Missing = 1,
+    Uncertain = 2,
 }
 
 public enum ScientificDiagnosticSeverity

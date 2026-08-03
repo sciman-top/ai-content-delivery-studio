@@ -75,6 +75,24 @@ public sealed class ScientificFigureWorkspaceLayoutTests
         }
     }
 
+    [Fact]
+    public void FigureSpecWorkspace_ExposesGroundedChartInputsWithStableAutomationIds()
+    {
+        var xaml = ReadRepoFile(
+            "src",
+            "ContentDeliveryStudio.App",
+            "Views",
+            "ScientificFigureSpecWorkspaceView.xaml");
+
+        Assert.Contains("AutomationProperties.AutomationId=\"ScientificChartSpecificationSummary\"", xaml);
+        Assert.Contains("AutomationProperties.AutomationId=\"ScientificChartSourceRows\"", xaml);
+        Assert.Contains("ScientificChartWorkspace.AxesSummary", xaml);
+        Assert.Contains("ScientificChartWorkspace.SelectionSummary", xaml);
+        Assert.Contains("ScientificChartWorkspace.TransformSummary", xaml);
+        Assert.Contains("ScientificChartWorkspace.SourceHash", xaml);
+        Assert.DoesNotContain("ChartPrompt", xaml, StringComparison.OrdinalIgnoreCase);
+    }
+
     private static int Count(string value, string token)
     {
         return value.Split(token, StringSplitOptions.None).Length - 1;

@@ -44,6 +44,10 @@ public sealed class ScientificFigurePackageWriter : IScientificFigurePackageWrit
                     package.MachineReview));
             WriteJson(archive, "repairs.json", package.Repairs);
             WriteJson(archive, "providers.json", package.Providers);
+            if (package.ChartProvenance is not null)
+            {
+                WriteJson(archive, "chart-provenance.json", package.ChartProvenance);
+            }
             WriteJson(
                 archive,
                 "approvals.json",
@@ -61,7 +65,10 @@ public sealed class ScientificFigurePackageWriter : IScientificFigurePackageWrit
                     package.Exports.Artifacts.ToDictionary(
                         item => item.Format,
                         item => item.Sha256,
-                        StringComparer.OrdinalIgnoreCase)));
+                        StringComparer.OrdinalIgnoreCase),
+                    package.ChartProvenance?.DataSha256,
+                    package.ChartProvenance?.SpecificationSha256,
+                    package.ChartProvenance?.RendererVersion));
         }
 
         return output.ToArray();
@@ -98,5 +105,8 @@ public sealed class ScientificFigurePackageWriter : IScientificFigurePackageWrit
         int SpecificationVersion,
         string SvgSha256,
         string SemanticSha256,
-        IReadOnlyDictionary<string, string> ArtifactSha256);
+        IReadOnlyDictionary<string, string> ArtifactSha256,
+        string? ChartDataSha256,
+        string? ChartSpecificationSha256,
+        string? ChartRendererVersion);
 }

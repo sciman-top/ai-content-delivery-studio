@@ -9,14 +9,14 @@
             <Style TargetType="Border">
                 <Setter Property="Visibility" Value="Collapsed" />
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding DataContext.ImageSeries.HasReviewRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                    <DataTrigger Binding="{Binding DataContext.ImageSeriesWorkspace.Review.HasReviewRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
                         <Setter Property="Visibility" Value="Visible" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
         </Border.Style>
-        <ListBox ItemsSource="{Binding DataContext.ImageSeries.ReviewRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                 SelectedItem="{Binding DataContext.ImageSeries.SelectedReviewRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
+        <ListBox ItemsSource="{Binding DataContext.ImageSeriesWorkspace.Review.ReviewRows, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                 SelectedItem="{Binding DataContext.ImageSeriesWorkspace.Review.SelectedReviewRow, RelativeSource={RelativeSource AncestorType=TabControl}, Mode=TwoWay}"
                  BorderThickness="0"
                  Background="Transparent"
                  ScrollViewer.VerticalScrollBarVisibility="Auto">

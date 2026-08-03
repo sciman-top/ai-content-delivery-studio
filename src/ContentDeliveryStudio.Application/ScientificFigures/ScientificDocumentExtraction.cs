@@ -26,4 +26,6 @@ public enum ScientificRequiredContentKind
 {
     Formula = 0,
     Table = 1,
+    Caption = 2,
+    Citation = 3,
 }

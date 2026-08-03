@@ -13,7 +13,7 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 
 - The historical V1 execution queue remains closed, but the post-V1 product-focus queue is active. Its mutable truth is [product-focus-execution.json](./product-focus-execution.json); use the [post-V1 PRD](./PRD_POST_V1_PRODUCT_FOCUS.md), [design](./superpowers/specs/2026-08-02-product-focus-and-simplification-design.md), and [implementation plan](./superpowers/plans/2026-08-02-product-focus-and-simplification.md) to interpret each task.
 - Two production lanes are in scope: `image-series-production` and `trustworthy-scientific-figures`. Scenario labels are profiles, not independent platforms.
-- `FOCUS-004` and `FOCUS-006` are repo-side complete. `FOCUS-005` is again the active repo-only task; `FOCUS-007` and `FOCUS-010` are dependency-ready. `FOCUS-002` and `FOCUS-003` still require external authority.
+- `FOCUS-004` through `FOCUS-011` are repo-side complete. `FOCUS-002`, `FOCUS-003`, `FOCUS-012`, and `FOCUS-013` require external human/live/hardware authority before further execution.
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
 - The post-V1 trustworthy-scientific-figure flagship is accepted through Task 30 and Checkpoint 5. Tasks 6-20 and Checkpoint 3 establish the machine-trust loop; Tasks 21-25 and Checkpoint 4 provide the user-visible fake-first five-workspace flow; Task 26 accepts all 12 baselines plus 40 blocking mutations; Tasks 27-28 add opt-in OpenAI understanding and independent review; Task 29 records three live samples and their human Gate 2 approvals; Task 30 synchronizes documentation and final repository evidence. No scientific-figure implementation task remains open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
@@ -32,15 +32,15 @@ The status values below mirror `docs/product-focus-execution.json` as of `2026-0
 | `FOCUS-002` | P0 | `blocked_external` | human-expert | `FOCUS-001` | Record a named physics-expert Gate 1 decision for all six reconstructed article figures. |
 | `FOCUS-003` | P0 | `blocked_external` | paid-live-approval | `FOCUS-002` | Run one explicitly authorized live scientific acceptance from the exact Gate-1 identity. |
 | `FOCUS-004` | P0 | `completed` | repo-only | `FOCUS-001` | Separate quick/full/release gates and remove low-signal governance and source-shape tests while retaining high-risk guards. |
-| `FOCUS-005` | P1 | `in_progress` | repo-only | `FOCUS-004` | Give image-series and scientific workspaces real state ownership and reduce the main-window binding surface. |
-| `FOCUS-006` | P1 | `completed` | repo-only | `FOCUS-004` | Removed unconsumed repository-module and fake remote-workflow runtime abstractions after compatibility inventory. |
-| `FOCUS-007` | P1 | `ready` | repo-only | `FOCUS-006` | Reduce packs to the scenario-profile and compatibility surface actually consumed by the desktop workflow. |
-| `FOCUS-008` | P1 | `proposed` | repo-only until live probe | `FOCUS-004`, `FOCUS-005` | Add immutable approval receipts, cost summary, invalidation, and no-replay live queue dispatch. |
-| `FOCUS-009` | P1 | `proposed` | repo-only until live probe | `FOCUS-008` | Add one real capability-aware reference/edit operation with non-destructive candidate lineage. |
-| `FOCUS-010` | P1 | `ready` | repo-only | `FOCUS-004` | Recover scholarly reading order, captions, formulas, tables, and citations with explicit fail-closed states. |
-| `FOCUS-011` | P2 | `proposed` | repo-only | `FOCUS-010` | Add deterministic charts whose values, units, transforms, axes, and provenance come from hashed structured data. |
-| `FOCUS-012` | P2 | `proposed` | manual-hardware | `FOCUS-005`, `FOCUS-008`, `FOCUS-009` | Replace high-value source assertions with packaged native UIA and named Windows/hardware acceptance. |
-| `FOCUS-013` | P2 | `proposed` | mixed-explicit | seven production dependencies | Publish a new truthful evidence snapshot without relabeling historical V1 or scientific evidence. |
+| `FOCUS-005` | P1 | `completed` | repo-only | `FOCUS-004` | Image-series stages now own state/commands under `ImageSeriesWorkspace`; scientific state remains isolated, MainWindow partials fell 34.9%, and public properties fell 42.1%. |
+| `FOCUS-006` | P1 | `completed` | repo-only | `FOCUS-004` | Removed unconsumed repository-folder module metadata and the fake-only remote-workflow contract/DI registration after persistence, package, runtime, and UI consumer inventory. |
+| `FOCUS-007` | P1 | `completed` | repo-only | `FOCUS-006` | Retired the unconsumed built-in starter catalog and export surface; retained import-only `pack-package.v1` validation with scenario IDs treated as descriptive profiles. |
+| `FOCUS-008` | P1 | `completed` | repo-only until live probe | `FOCUS-004`, `FOCUS-005` | Immutable approval receipts, additive reload, cost-bounded captured-provider dispatch, invalidation, pause, and no-replay behavior are repo-side complete; any paid probe still requires separate authority. |
+| `FOCUS-009` | P1 | `completed` | repo-only until live probe | `FOCUS-008` | Added a captured real Images edit provider, immutable approval, non-destructive persisted candidate lineage, capability-aware fail-closed UI, and path-safe delivery provenance; paid live proof remains separately gated. |
+| `FOCUS-010` | P1 | `completed` | repo-only | `FOCUS-004` | Recover scholarly reading order, captions, formulas, tables, and citations with explicit fail-closed states. |
+| `FOCUS-011` | P2 | `completed` | repo-only | `FOCUS-010` | Add deterministic charts whose values, units, transforms, axes, and provenance come from hashed structured data. |
+| `FOCUS-012` | P2 | `blocked_external` | manual-hardware | `FOCUS-005`, `FOCUS-008`, `FOCUS-009` | Replace high-value source assertions with packaged native UIA and named Windows/hardware acceptance. |
+| `FOCUS-013` | P2 | `blocked_external` | mixed-explicit | seven production dependencies | Publish a new truthful evidence snapshot without relabeling historical V1 or scientific evidence. |
 
 AI execution rule: run `scripts/verify-product-focus-plan.ps1`, select the lowest-order `ready` task, set only that task to `in_progress`, honor its authority and write-set, run focused verification before the full gate, create one bounded evidence record, then mark it `completed` and promote newly unblocked work. Never treat repo-only completion as human, live, paid, or hardware acceptance.
 
@@ -296,7 +296,7 @@ These items are still valuable, but they are not the same thing as the current V
   - [x] Add local OTLP/Aspire dashboard profile.
 - [x] Support opt-in Responses API multi-turn image state where the product benefits and where the provider routing policy calls for it.
 - Deferred: Add partial-image streaming UX only if a future workbench flow gains clear product value from progressive previews.
-- [x] Retire the fake-only remote workflow-engine boundary after proving it had no persisted or user-visible consumer.
+- [x] Add a remote workflow-engine adapter boundary without requiring local model installs.
 - [x] Run full build, test, and format gates for the implementation slice.
 
 ## Phase 4: Quality Loop
@@ -450,9 +450,10 @@ Priority note: this phase is now part of the near-term golden-path hardening sli
 
 ## Phase 12: Modular Maintenance And Use Case Split
 
-- [x] Retire production runtime records that only described repository module folders.
+- [x] Define module folders for source ingestion, artifact planning, pack registry, repair routing, and tool adapters.
+  - [x] Guard built-in module folder declarations against stale repository paths.
 - [x] Define reusable `WorkflowViewSlot` names for source list, stage workspace, inspector, activity panel, approval panel, and artifact preview.
-- [x] Retire the unconsumed `FeatureViewModule` contract; static feature views remain owned by their ViewModels.
+- [x] Add `FeatureViewModule` contract for WPF view, view model, localization keys, commands, and fake-service tests.
 - [x] Split `MainWindowViewModel` by workflow tab or feature module as new slices touch existing UI.
   - [x] Extract project workspace command orchestration into `ProjectWorkspaceCoordinator` while preserving existing bindings and commands.
   - [x] Extract shell-inspector project creation, provider-center, document planning, and image-edit orchestration into `WorkbenchInspectorCoordinator` while preserving existing bindings and inspector behavior.

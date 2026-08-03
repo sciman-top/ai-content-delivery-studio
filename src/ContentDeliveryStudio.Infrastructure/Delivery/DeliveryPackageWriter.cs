@@ -132,7 +132,8 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 item.EvidenceAnchorIds ?? [],
                 item.ArtifactRole,
                 item.Blueprint,
-                item.OperatorRunIds ?? []));
+                item.OperatorRunIds ?? [],
+                item.EditProvenance));
         }
 
         var manifestPath = Path.Combine(packageDirectory, "manifest.json");
@@ -190,7 +191,8 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                         item.ArtifactRole,
                         item.Blueprint,
                         item.OperatorRunIds,
-                        item.DeterministicCompositionReportPath))
+                        item.DeterministicCompositionReportPath,
+                        item.EditProvenance))
                     .ToArray()),
             cancellationToken);
 
@@ -308,7 +310,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
     private static string WriteManifestCsv(IReadOnlyList<DeliveryManifestItem> items)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,finalReviewer,finalApprovalNotes,finalApprovalDecidedAt,deterministicCompositionReportPath,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,outputArtifactId,sourceAssetIds,evidenceAnchorIds,operatorRunIds,artifactRole,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary");
+        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,finalReviewer,finalApprovalNotes,finalApprovalDecidedAt,deterministicCompositionReportPath,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,outputArtifactId,sourceAssetIds,evidenceAnchorIds,operatorRunIds,artifactRole,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary,editSourceCandidateId,editProviderId,editEndpointClass,editModelId,editApprovalReceiptId,editApprovalRequestSetHash");
 
         foreach (var item in items)
         {
@@ -343,7 +345,13 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 EscapeCsv(item.Blueprint?.Category ?? string.Empty),
                 EscapeCsv(item.Blueprint?.SequenceMode ?? string.Empty),
                 EscapeCsv(item.Blueprint?.ConsistencySummary ?? string.Empty),
-                EscapeCsv(item.Blueprint?.VariationSummary ?? string.Empty)));
+                EscapeCsv(item.Blueprint?.VariationSummary ?? string.Empty),
+                EscapeCsv(item.EditProvenance?.SourceCandidateImageId.ToString() ?? string.Empty),
+                EscapeCsv(item.EditProvenance?.ProviderId ?? string.Empty),
+                EscapeCsv(item.EditProvenance?.EndpointClass ?? string.Empty),
+                EscapeCsv(item.EditProvenance?.ModelId ?? string.Empty),
+                EscapeCsv(item.EditProvenance?.ApprovalReceiptId.ToString() ?? string.Empty),
+                EscapeCsv(item.EditProvenance?.ApprovalRequestSetHash ?? string.Empty)));
         }
 
         return builder.ToString();
@@ -438,7 +446,8 @@ public sealed record DeliveryPackageItem(
     string? ArtifactRole = null,
     DeliveryBlueprintMetadata? Blueprint = null,
     IReadOnlyList<Guid>? OperatorRunIds = null,
-    string? DeterministicCompositionReportPath = null);
+    string? DeterministicCompositionReportPath = null,
+    CandidateImageEditProvenance? EditProvenance = null);
 
 public sealed record DeliveryPackageResult(
     string PackageDirectory,
@@ -476,7 +485,8 @@ internal sealed record DeliveryManifestItem(
     IReadOnlyList<Guid> EvidenceAnchorIds,
     string? ArtifactRole,
     DeliveryBlueprintMetadata? Blueprint,
-    IReadOnlyList<Guid> OperatorRunIds);
+    IReadOnlyList<Guid> OperatorRunIds,
+    CandidateImageEditProvenance? EditProvenance);
 
 internal sealed record StagedDeliveryPackage(
     IReadOnlyList<string> FinalImageRelativePaths);

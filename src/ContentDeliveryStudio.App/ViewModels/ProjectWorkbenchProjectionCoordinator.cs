@@ -59,7 +59,8 @@ public sealed class ProjectWorkbenchProjectionCoordinator
                     item.Title,
                     candidate.AssetPath,
                     candidate.MetadataPath,
-                    item.PromptVersions.FirstOrDefault(prompt => prompt.Id == candidate.PromptVersionId)?.PromptText ?? string.Empty)))
+                    item.PromptVersions.FirstOrDefault(prompt => prompt.Id == candidate.PromptVersionId)?.PromptText ?? string.Empty,
+                    candidate.EditProvenance)))
             .ToArray();
     }
 
@@ -69,7 +70,12 @@ public sealed class ProjectWorkbenchProjectionCoordinator
 
         return project.Series
             .SelectMany(series => series.Items)
-            .SelectMany(item => item.GenerationTasks.Select(task => new { Item = item, Task = task }))
+            .SelectMany(item => item.GenerationTasks.Select(task => new
+            {
+                Item = item,
+                Task = task,
+                Prompt = item.PromptVersions.Single(prompt => prompt.Id == task.PromptVersionId),
+            }))
             .OrderBy(entry => entry.Task.QueuePosition ?? int.MaxValue)
             .ThenBy(entry => entry.Task.CreatedAt)
             .ThenBy(entry => entry.Task.Id)
@@ -83,7 +89,9 @@ public sealed class ProjectWorkbenchProjectionCoordinator
                     .FirstOrDefault(candidate => candidate.GenerationTaskId == entry.Task.Id)?.AssetPath
                     ?? string.Empty,
                 entry.Task.ErrorMessage ?? string.Empty,
-                entry.Task.RetryOfTaskId))
+                entry.Task.RetryOfTaskId,
+                $"prompt={entry.Prompt.Id:N}; settings={FormatGenerationSettings(entry.Prompt.Settings)}; retry-ceiling={entry.Task.MaxRetries}",
+                FormatApprovalSummary(entry.Task.ApprovalReceipt)))
             .ToArray();
     }
 
@@ -193,6 +201,17 @@ public sealed class ProjectWorkbenchProjectionCoordinator
     private static string FormatGenerationSettings(GenerationSettings settings)
     {
         return $"{settings.Width}x{settings.Height} {settings.Quality} {settings.OutputFormat}";
+    }
+
+    private static string FormatApprovalSummary(ContentDeliveryStudio.Core.Generation.GenerationApprovalReceipt? receipt)
+    {
+        return receipt is null
+            ? string.Empty
+            : $"approval={receipt.Id:N}; authority={receipt.AuthorityReference}; "
+                + $"provider={receipt.ProviderId}; endpoint={receipt.EndpointClass}; model={receipt.ModelId}; "
+                + $"operations={receipt.OperationCount}; retry-ceiling={receipt.RetryCeiling}; "
+                + $"estimated=${receipt.EstimatedCostUsd:0.####}; ceiling=${receipt.MaximumCostUsd:0.####}; "
+                + $"expires={receipt.ExpiresAt:O}";
     }
 
     private string Text(LocalizationKey key)

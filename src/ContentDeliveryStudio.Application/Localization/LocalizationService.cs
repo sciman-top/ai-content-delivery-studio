@@ -213,6 +213,8 @@ public sealed class LocalizationService
         [LocalizationKey.RunFakeGeneration] = "Run fake generation",
         [LocalizationKey.PrepareGenerationQueue] = "Prepare fake queue",
         [LocalizationKey.ExecuteGenerationQueue] = "Execute queue",
+        [LocalizationKey.ExecuteApprovedLiveGeneration] = "Execute approved live queue",
+        [LocalizationKey.LiveGenerationAuthorityRequired] = "Live execution is unavailable until an exact, current approval receipt and paid-provider authority are present.",
         [LocalizationKey.PauseGenerationTask] = "Pause",
         [LocalizationKey.ResumeGenerationTask] = "Resume",
         [LocalizationKey.RetryGenerationTask] = "Retry",
@@ -288,6 +290,9 @@ public sealed class LocalizationService
         [LocalizationKey.ImageEditPrompt] = "Edit prompt",
         [LocalizationKey.ImageEditMaskPath] = "Mask image path (optional)",
         [LocalizationKey.RunFakeImageEdit] = "Run fake image edit",
+        [LocalizationKey.RunApprovedImageEdit] = "Run approved real image edit",
+        [LocalizationKey.ImageEditLiveApprovalRequired] = "This provider supports source-guided editing, but desktop paid authority is not configured. Real edit remains disabled.",
+        [LocalizationKey.ImageEditLiveUnsupported] = "The active provider does not expose the bounded source-reference image edit capability.",
         [LocalizationKey.ImageEditResult] = "Fake image edit output was added to the gallery.",
     };
 
@@ -499,6 +504,8 @@ public sealed class LocalizationService
         [LocalizationKey.RunFakeGeneration] = "运行假生成",
         [LocalizationKey.PrepareGenerationQueue] = "准备假生成队列",
         [LocalizationKey.ExecuteGenerationQueue] = "执行队列",
+        [LocalizationKey.ExecuteApprovedLiveGeneration] = "执行已批准的真实生成队列",
+        [LocalizationKey.LiveGenerationAuthorityRequired] = "只有具备精确且当前有效的批准凭证与付费 provider 权限后，真实执行才可用。",
         [LocalizationKey.PauseGenerationTask] = "暂停",
         [LocalizationKey.ResumeGenerationTask] = "恢复",
         [LocalizationKey.RetryGenerationTask] = "重试",
@@ -574,6 +581,9 @@ public sealed class LocalizationService
         [LocalizationKey.ImageEditPrompt] = "编辑提示词",
         [LocalizationKey.ImageEditMaskPath] = "蒙版图片路径（可选）",
         [LocalizationKey.RunFakeImageEdit] = "运行假图像编辑",
+        [LocalizationKey.RunApprovedImageEdit] = "运行已批准的真实图像编辑",
+        [LocalizationKey.ImageEditLiveApprovalRequired] = "当前 Provider 支持源图引导编辑，但桌面端尚未配置付费授权来源，因此真实编辑保持禁用。",
+        [LocalizationKey.ImageEditLiveUnsupported] = "当前 Provider 未公开受限源图引用编辑能力。",
         [LocalizationKey.ImageEditResult] = "假图像编辑输出已加入图库。",
     };
 
@@ -872,6 +882,8 @@ public enum LocalizationKey
     RunFakeGeneration,
     PrepareGenerationQueue,
     ExecuteGenerationQueue,
+    ExecuteApprovedLiveGeneration,
+    LiveGenerationAuthorityRequired,
     PauseGenerationTask,
     ResumeGenerationTask,
     RetryGenerationTask,
@@ -947,5 +959,8 @@ public enum LocalizationKey
     ImageEditPrompt,
     ImageEditMaskPath,
     RunFakeImageEdit,
+    RunApprovedImageEdit,
+    ImageEditLiveApprovalRequired,
+    ImageEditLiveUnsupported,
     ImageEditResult,
 }

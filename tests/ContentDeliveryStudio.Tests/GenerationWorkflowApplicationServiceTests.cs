@@ -2,6 +2,7 @@ using ContentDeliveryStudio.Application.Diagnostics;
 using ContentDeliveryStudio.Application.Projects;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Providers;
+using ContentDeliveryStudio.Core.References;
 using ContentDeliveryStudio.Infrastructure.Fakes;
 
 namespace ContentDeliveryStudio.Tests;
@@ -129,6 +130,140 @@ public sealed class GenerationWorkflowApplicationServiceTests
         var retryEvent = Assert.Single(journal.QueueEvents);
         Assert.Equal(GenerationQueueDiagnosticsEventName.Retried, retryEvent.EventName);
         Assert.Equal(failedTask.Id, retryEvent.RetryOfTaskId);
+        Assert.Null(retry.ApprovalReceipt);
+    }
+
+    [Fact]
+    public async Task LiveApproval_RequiresExplicitAuthorityAndMakesNoProviderCall()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CapturedPaidImageGenerationProvider();
+        var service = new GenerationWorkflowApplicationService(repository, provider, imageEditProvider: null);
+        var project = await SeedGenerationProjectAsync(repository, itemCount: 1);
+        await service.PrepareGenerationQueueAsync(project.Id, CancellationToken.None);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ApprovePreparedLiveGenerationQueueAsync(
+                project.Id,
+                CreateLiveApprovalRequest(explicitAuthority: false),
+                CancellationToken.None));
+
+        Assert.Equal(0, provider.CallCount);
+        var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+        Assert.Null(loaded!.Series.Single().Items.Single().GenerationTasks.Single().ApprovalReceipt);
+    }
+
+    [Fact]
+    public async Task ApprovedLiveQueue_ValidatesReceiptBeforeEachCapturedDispatch()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CapturedPaidImageGenerationProvider();
+        var service = new GenerationWorkflowApplicationService(repository, provider, imageEditProvider: null);
+        var project = await SeedGenerationProjectAsync(repository, itemCount: 2);
+        await service.PrepareGenerationQueueAsync(project.Id, CancellationToken.None);
+        var receipt = await service.ApprovePreparedLiveGenerationQueueAsync(
+            project.Id,
+            CreateLiveApprovalRequest(explicitAuthority: true),
+            CancellationToken.None);
+        var outputDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+
+        try
+        {
+            var run = await service.ExecuteApprovedLiveGenerationQueueAsync(
+                project.Id,
+                outputDirectory,
+                receipt.Id,
+                CancellationToken.None);
+
+            Assert.Equal(2, provider.CallCount);
+            Assert.Equal(["Create visual 1.", "Create visual 2."], provider.Prompts);
+            Assert.All(run.Tasks, task => Assert.Equal(GenerationTaskStatus.Succeeded, task.Status));
+            Assert.Equal(2, receipt.OperationCount);
+            Assert.Equal(0.20m, receipt.EstimatedCostUsd);
+            Assert.Equal(0.25m, receipt.MaximumCostUsd);
+        }
+        finally
+        {
+            if (Directory.Exists(outputDirectory))
+            {
+                Directory.Delete(outputDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ReorderInvalidatesWholeLiveApprovalBeforeProviderDispatch()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CapturedPaidImageGenerationProvider();
+        var service = new GenerationWorkflowApplicationService(repository, provider, imageEditProvider: null);
+        var project = await SeedGenerationProjectAsync(repository, itemCount: 2);
+        var prepared = await service.PrepareGenerationQueueAsync(project.Id, CancellationToken.None);
+        var receipt = await service.ApprovePreparedLiveGenerationQueueAsync(
+            project.Id,
+            CreateLiveApprovalRequest(explicitAuthority: true),
+            CancellationToken.None);
+
+        await service.MoveGenerationTaskAsync(
+            project.Id,
+            prepared.TaskIds[1],
+            GenerationTaskMoveDirection.Up,
+            CancellationToken.None);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ExecuteApprovedLiveGenerationQueueAsync(
+                project.Id,
+                Path.GetTempPath(),
+                receipt.Id,
+                CancellationToken.None));
+        Assert.Equal(0, provider.CallCount);
+        var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+        Assert.All(
+            loaded!.Series.Single().Items.SelectMany(item => item.GenerationTasks),
+            task => Assert.Null(task.ApprovalReceipt));
+    }
+
+    [Fact]
+    public async Task LiveQueue_PauseDuringInflightCallPreventsLaterDispatch()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CapturedPaidImageGenerationProvider();
+        var service = new GenerationWorkflowApplicationService(repository, provider, imageEditProvider: null);
+        var project = await SeedGenerationProjectAsync(repository, itemCount: 2);
+        var prepared = await service.PrepareGenerationQueueAsync(project.Id, CancellationToken.None);
+        var receipt = await service.ApprovePreparedLiveGenerationQueueAsync(
+            project.Id,
+            CreateLiveApprovalRequest(explicitAuthority: true),
+            CancellationToken.None);
+        provider.BeforeCompletion = callCount => callCount == 1
+            ? service.PauseGenerationTaskAsync(project.Id, prepared.TaskIds[1], CancellationToken.None)
+            : Task.CompletedTask;
+        var outputDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+
+        try
+        {
+            var run = await service.ExecuteApprovedLiveGenerationQueueAsync(
+                project.Id,
+                outputDirectory,
+                receipt.Id,
+                CancellationToken.None);
+
+            Assert.Equal(1, provider.CallCount);
+            Assert.Single(run.Tasks);
+            var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+            Assert.Equal(
+                GenerationTaskStatus.Paused,
+                loaded!.Series.Single().Items
+                    .SelectMany(item => item.GenerationTasks)
+                    .Single(task => task.Id == prepared.TaskIds[1]).Status);
+        }
+        finally
+        {
+            if (Directory.Exists(outputDirectory))
+            {
+                Directory.Delete(outputDirectory, recursive: true);
+            }
+        }
     }
 
     [Fact]
@@ -422,6 +557,142 @@ public sealed class GenerationWorkflowApplicationServiceTests
         return project;
     }
 
+    [Fact]
+    public async Task ApprovedImageEdit_IssuesWithoutDispatchAndPersistsNonDestructiveCandidateLineage()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CapturedPaidImageEditProvider();
+        var service = new GenerationWorkflowApplicationService(repository, imageGenerationProvider: null, provider);
+        var root = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var sourcePath = Path.Combine(root, "source.png");
+        await File.WriteAllBytesAsync(sourcePath, [1, 2, 3, 4]);
+        var timestamp = DateTimeOffset.Parse("2026-08-03T08:00:00Z");
+        var project = ImageProject.Create("Approved edit", timestamp);
+        var series = project.AddSeries("Series", "Edit lineage", timestamp.AddMinutes(1));
+        var item = series.AddItem("Panel", "Source panel", timestamp.AddMinutes(2));
+        var profile = project.AddProviderProfile("Source provider", ProviderKind.Fake, timestamp.AddMinutes(3));
+        var prompt = item.AddPromptVersion(
+            "Original prompt",
+            new GenerationSettings(1024, 1024, "high", "png"),
+            profile.Id,
+            timestamp.AddMinutes(4));
+        var sourceCandidate = item.AddCandidateImage(
+            new CandidateImage(
+                Guid.NewGuid(),
+                item.Id,
+                prompt.Id,
+                Guid.NewGuid(),
+                profile.Id,
+                CandidateImageStatus.ReviewPending,
+                sourcePath,
+                Path.ChangeExtension(sourcePath, ".json"),
+                timestamp.AddMinutes(5)),
+            timestamp.AddMinutes(5));
+        await repository.SaveAsync(project, CancellationToken.None);
+        var request = new ImageEditWorkflowRequest(
+            project.Id,
+            item.Id,
+            sourceCandidate.Id,
+            sourcePath,
+            null,
+            "Preserve the subject; change the lighting.",
+            new GenerationSettings(1024, 1024, "high", "png"),
+            Path.Combine(root, "edited"),
+            "candidate-edited.png");
+
+        try
+        {
+            var receipt = await service.ApproveImageEditAsync(
+                request,
+                new ImageEditApprovalRequest(
+                    "paid-edit-v1",
+                    EstimatedCostUsd: 0.08m,
+                    MaximumCostUsd: 0.10m,
+                    ApprovedBy: "operator:test",
+                    AuthorityReference: "authority:edit-001",
+                    ExpiresAt: DateTimeOffset.UtcNow.AddMinutes(10),
+                    ExplicitPaidAuthorityConfirmed: true),
+                CancellationToken.None);
+
+            Assert.Equal(0, provider.CallCount);
+            var result = await service.RunApprovedImageEditAsync(request, receipt, CancellationToken.None);
+
+            Assert.Equal(1, provider.CallCount);
+            Assert.True(File.Exists(sourcePath));
+            Assert.NotEqual(Path.GetFullPath(sourcePath), Path.GetFullPath(result.AssetPath));
+            var saved = await repository.LoadAsync(project.Id, CancellationToken.None);
+            var savedItem = Assert.Single(Assert.Single(saved!.Series).Items);
+            Assert.Equal(2, savedItem.CandidateImages.Count);
+            var edited = savedItem.CandidateImages.Single(candidate => candidate.Id == result.CandidateImageId);
+            Assert.Null(edited.GenerationTaskId);
+            Assert.Equal(CandidateImageStatus.ReviewPending, edited.Status);
+            Assert.Equal(sourceCandidate.Id, edited.EditProvenance?.SourceCandidateImageId);
+            Assert.Equal("paid-image-edit", edited.EditProvenance?.ProviderId);
+            Assert.Equal("images/edits", edited.EditProvenance?.EndpointClass);
+            Assert.Equal(receipt.Id, edited.EditProvenance?.ApprovalReceiptId);
+            Assert.Equal(receipt.RequestSetHash, edited.EditProvenance?.ApprovalRequestSetHash);
+            Assert.DoesNotContain(sourcePath, System.Text.Json.JsonSerializer.Serialize(edited.EditProvenance), StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ApprovedImageEdit_RejectsSourceDriftBeforeProviderDispatch()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new CapturedPaidImageEditProvider();
+        var service = new GenerationWorkflowApplicationService(repository, imageGenerationProvider: null, provider);
+        var root = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        var sourcePath = Path.Combine(root, "source.png");
+        await File.WriteAllBytesAsync(sourcePath, [1, 2, 3]);
+        var timestamp = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var project = ImageProject.Create("Drift guard", timestamp);
+        var series = project.AddSeries("Series", "Edit lineage", timestamp);
+        var item = series.AddItem("Panel", "Source panel", timestamp);
+        var profile = project.AddProviderProfile("Source provider", ProviderKind.Fake, timestamp);
+        var prompt = item.AddPromptVersion("Original", new GenerationSettings(1024, 1024, "high", "png"), profile.Id, timestamp);
+        var source = item.AddCandidateImage(
+            new CandidateImage(Guid.NewGuid(), item.Id, prompt.Id, Guid.NewGuid(), profile.Id, CandidateImageStatus.ReviewPending, sourcePath, sourcePath + ".json", timestamp),
+            timestamp);
+        await repository.SaveAsync(project, CancellationToken.None);
+        var request = new ImageEditWorkflowRequest(
+            project.Id, item.Id, source.Id, sourcePath, null, "Edit", new GenerationSettings(1024, 1024, "high", "png"), Path.Combine(root, "edited"));
+
+        try
+        {
+            var receipt = await service.ApproveImageEditAsync(
+                request,
+                new ImageEditApprovalRequest("paid-edit-v1", 0.08m, 0.10m, "operator:test", "authority:edit-002", DateTimeOffset.UtcNow.AddMinutes(10), true),
+                CancellationToken.None);
+            await File.WriteAllBytesAsync(sourcePath, [9, 9, 9]);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                service.RunApprovedImageEditAsync(request, receipt, CancellationToken.None));
+            Assert.Equal(0, provider.CallCount);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    private static GenerationQueueApprovalRequest CreateLiveApprovalRequest(bool explicitAuthority)
+    {
+        return new GenerationQueueApprovalRequest(
+            "paid-image-v1",
+            EstimatedCostPerOperationUsd: 0.10m,
+            MaximumCostUsd: 0.25m,
+            ApprovalSource: "operator:test",
+            AuthorityReference: "authority:test-001",
+            ExpiresAt: DateTimeOffset.UtcNow.AddMinutes(10),
+            ExplicitPaidAuthorityConfirmed: explicitAuthority);
+    }
+
     private sealed class InMemoryProjectRepository : IProjectRepository
     {
         private readonly Dictionary<Guid, ImageProject> _projects = [];
@@ -517,6 +788,84 @@ public sealed class GenerationWorkflowApplicationServiceTests
         {
             CallCount++;
             throw new InvalidOperationException("This provider must not be called by the test.");
+        }
+    }
+
+    private sealed class CapturedPaidImageGenerationProvider : IImageGenerationProvider
+    {
+        private readonly FakeImageGenerationProvider _inner = new();
+
+        public IProviderCapabilities Capabilities { get; } = new ProviderCapabilities(
+            "paid-image",
+            "Captured paid provider",
+            ["paid-image-v1"],
+            SupportsTextPlanning: false,
+            SupportsImageGeneration: true,
+            SupportsVisionReview: false,
+            SupportsImageEditing: false,
+            SupportsStreaming: false);
+
+        public int CallCount { get; private set; }
+
+        public List<string> Prompts { get; } = [];
+
+        public Func<int, Task>? BeforeCompletion { get; set; }
+
+        public async Task<ImageGenerationResult> GenerateImageAsync(
+            ImageGenerationRequest request,
+            CancellationToken cancellationToken)
+        {
+            CallCount++;
+            Prompts.Add(request.PromptText);
+            if (BeforeCompletion is not null)
+            {
+                await BeforeCompletion(CallCount);
+            }
+
+            return await _inner.GenerateImageAsync(request, cancellationToken);
+        }
+    }
+
+    private sealed class CapturedPaidImageEditProvider : IImageEditProvider
+    {
+        public IProviderCapabilities Capabilities { get; } = new ProviderCapabilities(
+            "paid-image-edit",
+            "Captured paid image edit provider",
+            ["paid-edit-v1"],
+            SupportsTextPlanning: false,
+            SupportsImageGeneration: false,
+            SupportsVisionReview: false,
+            SupportsImageEditing: true,
+            SupportsStreaming: false,
+            supportedSizes: [new ImageOutputSize(1024, 1024)],
+            supportedQualities: ["high"],
+            supportedOutputFormats: ["png"],
+            supportedBackgroundModes: ["auto"],
+            supportsReferenceImages: true,
+            costHints: [new ProviderCostHint("paid-edit-v1", "captured")],
+            supportedReferenceImageRoles: [ReferenceImageRole.Subject],
+            supportsMaskEditing: true,
+            maxReferenceImageCount: 1,
+            maxReferenceImageBytes: 50L * 1024 * 1024);
+
+        public int CallCount { get; private set; }
+
+        public async Task<ImageGenerationResult> EditImageAsync(
+            ImageEditRequest request,
+            CancellationToken cancellationToken)
+        {
+            CallCount++;
+            var outputPath = Path.Combine(request.OutputDirectory, request.OutputFileName);
+            Directory.CreateDirectory(request.OutputDirectory);
+            await File.WriteAllBytesAsync(outputPath, [7, 8, 9], cancellationToken);
+            var metadataPath = Path.ChangeExtension(outputPath, ".json");
+            await File.WriteAllTextAsync(metadataPath, "{}", cancellationToken);
+            return new ImageGenerationResult(
+                Guid.NewGuid(),
+                outputPath,
+                metadataPath,
+                "captured-edit",
+                DateTimeOffset.UtcNow);
         }
     }
 

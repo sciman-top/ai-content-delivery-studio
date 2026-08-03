@@ -1,8 +1,8 @@
 # Roadmap
 
-Target upgrade: the product is now positioned as AI Content Delivery Studio, a multimodal content delivery workbench with image-series production as the core capability. The stable architecture is `Windows local workbench + replaceable cloud AI providers + local deterministic toolchain + versioned Workflow/Blueprint packs`.
+Target upgrade: the product is now positioned as AI Content Delivery Studio, a multimodal content delivery workbench with image-series production as the core capability. The stable architecture is `Windows local workbench + replaceable cloud AI providers + local deterministic toolchain + two production lanes with scenario profiles`.
 
-AI, providers, workflow packs, and output formats can evolve quickly. Core domain models and application use cases should evolve slowly and should not be reshaped for every model release.
+AI, providers, scenario profiles, and output formats can evolve quickly. Core domain models and application use cases should evolve slowly and should not be reshaped for every model release.
 
 ## Post-V1 Product Focus
 
@@ -19,8 +19,8 @@ Current queue readout on `2026-08-03`:
 
 - `FOCUS-001` records this authority and plan.
 - `FOCUS-002` and `FOCUS-003` remain blocked on named physics-expert and current paid/live authority respectively.
-- `FOCUS-004` and `FOCUS-006` are repo-side complete. `FOCUS-005` is the active repo-only task; `FOCUS-007` and `FOCUS-010` are dependency-ready.
-- `FOCUS-005` through `FOCUS-013` remain dependency-gated; their status must be read from the JSON queue rather than inferred from this narrative.
+- `FOCUS-004` through `FOCUS-011` are repo-side complete.
+- `FOCUS-002`, `FOCUS-003`, `FOCUS-012`, and `FOCUS-013` remain explicitly authority-gated; their status must be read from the JSON queue rather than inferred as production acceptance.
 
 ## Planning Readout
 
@@ -349,39 +349,38 @@ Exit gate:
 
 ## Phase 11: Workflow, Blueprint, And Industry Pack System
 
-Goal: make generalization come from versioned packs instead of hard-coded topic modes.
+Goal: historical experiment in versioned packs instead of hard-coded topic modes.
 
-Status: complete for the local pack foundation: provider-neutral pack metadata, semantic version, compatibility range, lifecycle state, migration notes, local registry validation, built-in starter packs, workflow stage definitions with completion criteria, pack-driven UI defaults using stable view slots, catalog invariant tests, and validated local JSON pack import/export. This does not by itself mean every pack-driven workflow is production-ready.
+Status: narrowed in FOCUS-007. The built-in starter catalog and JSON export surface were retired because no desktop runtime consumed them. `pack-package.v1` import/validation remains only as a legacy compatibility adapter; scenario IDs are descriptive profiles and do not imply a pack-driven or production-ready route.
 
-Deliverables:
+Retained compatibility surface:
 
 - `WorkflowPack`, `BlueprintPack`, `IndustryPack`, `RendererPack`, and `ReviewRubricPack` metadata schema.
 - Local pack registry with semantic version, compatibility range, deprecation state, and migration notes.
-- Built-in starter packs for generic image series, article illustration, document review/translation, courseware visual pack, and poster/report delivery.
-- Pack import/export with validation and fake execution.
+- Import-only validation for existing local `pack-package.v1` files.
 - Pack-declared workflow stages using a small stable vocabulary: `Source`, `Brief`, `Plan`, `Produce`, `Review`, `Repair`, `Deliver`.
-- Pack-driven UI defaults that do not leak pack-specific vocabulary into core entities.
+- Legacy UI-default fields remain parseable but do not compose the WPF shell.
 
-Exit gate:
+Current boundary:
 
-- A new pack can be added without changing core entity types.
-- A deprecated pack can still open old projects through compatibility metadata or migration notes.
-- A pack can select visible workflow stages without adding permanent global tabs.
+- A legacy compatible package can still open through the import adapter.
+- Courseware, poster, article, report, and social remain scenario labels within concrete production lanes.
+- Public marketplace, remote distribution, new export, and pack-driven UI composition remain frozen.
 
 ## Phase 12: Modular Maintenance And Use Case Split
 
 Goal: prevent the app from growing a central all-knowing orchestrator as capabilities expand.
 
-Status: the original modular-maintenance baseline landed focused application services and persistence mappings, but its repository-folder module catalog and fake-only remote-workflow seam were later retired because no persisted or user-visible consumer existed. The remaining active architecture work transfers workflow state out of `MainWindowViewModel`; coordinator count or file count alone no longer qualifies as modularity.
+Status: historical modular-maintenance baseline; the repository-folder module catalog, `FeatureViewModule` metadata contract, and fake remote-workflow runtime seam were retired in FOCUS-006 because the desktop workflow had no real consumer. Focused application-service and ViewModel ownership splits remain active where they own behavior or external boundaries.
 
 Deliverables:
 
 - Split WPF tabs into feature-owned views and view models where the current shell is becoming too large.
-- Keep only scenario and workflow-stage metadata consumed by the static desktop workflow; do not introduce a runtime feature-module system without a second real consumer.
+- Keep remote workflow execution and repository-folder module catalogs frozen until a new approved product boundary supplies a real user-visible consumer.
 - Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
 - Split provider configuration, secret storage, capability validation, and persistence configuration away from UI code.
 - Split EF Core mappings into `IEntityTypeConfiguration<T>` as model count grows.
-- Keep repository layout checks out of production runtime records.
+- Establish module folders and tests for source ingestion, artifact planning, pack registry, repair routing, and tool adapters.
 
 Exit gate:
 
@@ -454,7 +453,7 @@ Deliverables:
 - Clean application layer with command/query use cases and repository ports.
 - Cloud-first provider adapters with official SDKs where practical, resilient HTTP execution, secure local secret storage, and full request provenance.
 - Versioned design blueprints and workflow templates, then optional workflow graph import/export.
-- Versioned workflow, blueprint, industry, renderer, and review packs.
+- Scenario profiles inside the two concrete production lanes, with import-only legacy pack compatibility.
 - First-class source assets, extracted content, evidence anchors, output artifacts, and artifact packages.
 - Review, repair, and operator automation with risk-aware approval and audit records.
 - Product/repository identity aligned to `AI Content Delivery Studio` / `ai-content-delivery-studio`, with `ContentDeliveryStudio` kept only as documented historical or compatibility text.

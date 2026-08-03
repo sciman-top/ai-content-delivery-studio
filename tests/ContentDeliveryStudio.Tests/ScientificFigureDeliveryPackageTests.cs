@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
+using ContentDeliveryStudio.Core.ScientificFigures;
+using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -65,6 +67,93 @@ public sealed class ScientificFigureDeliveryPackageTests
         Assert.Equal(
             fixture.ScientificFixture.Exports.Artifacts.Count,
             manifest.RootElement.GetProperty("ArtifactSha256").EnumerateObject().Count());
+    }
+
+    [Fact]
+    public void ApprovedChartPackage_PreservesDataSpecPointAndApprovalProvenance()
+    {
+        var fixture = ScientificDeliveryTestFixture.Create();
+        var data = ScientificChartDataSet.Create(
+            Guid.Parse("dfc96345-ff7a-43fb-9846-77bc47e9fb72"),
+            "Sample",
+            [new ScientificChartNumericColumn("Force", "N")],
+            [
+                new ScientificChartDataRow(
+                    "row-a",
+                    "A",
+                    new Dictionary<string, double> { ["Force"] = 12.5 }),
+            ]);
+        var specification = ScientificChartSpec.Create(
+            Guid.Parse("1e5fe277-9330-47fe-a60b-01db35a92c00"),
+            data,
+            "Measured force",
+            "Sample",
+            "Force",
+            "N",
+            ["row-a"],
+            [new ScientificChartSeriesSpec("Force", "Measured force", ScientificChartTransform.None)]);
+        var approval = ScientificChartApproval.Approve(
+            data,
+            specification,
+            "chart-reviewer",
+            "Approved source row, unit, axes, and no transform.",
+            DateTimeOffset.Parse("2026-08-03T02:00:00Z"));
+        var chart = new DeterministicScientificChartRenderer().Render(data, specification, approval);
+
+        var result = fixture.Service.DecideGateTwo(
+            fixture.Request with { ChartProvenance = chart.Provenance });
+
+        using var stream = new MemoryStream(result.PackageBytes!);
+        using var archive = new ZipArchive(stream, ZipArchiveMode.Read);
+        var provenance = ReadJson(archive, "chart-provenance.json");
+        var manifest = ReadJson(archive, "manifest.json");
+        Assert.Equal(data.SourceSha256, provenance.RootElement.GetProperty("DataSha256").GetString());
+        Assert.Equal(specification.SpecificationSha256, provenance.RootElement.GetProperty("SpecificationSha256").GetString());
+        Assert.Equal("row-a", provenance.RootElement.GetProperty("Points")[0].GetProperty("RowId").GetString());
+        Assert.Equal("chart-reviewer", provenance.RootElement.GetProperty("Approval").GetProperty("Reviewer").GetString());
+        Assert.Equal(data.SourceSha256, manifest.RootElement.GetProperty("ChartDataSha256").GetString());
+        Assert.Equal(
+            DeterministicScientificChartRenderer.RendererVersion,
+            manifest.RootElement.GetProperty("ChartRendererVersion").GetString());
+    }
+
+    [Fact]
+    public void GateTwo_RejectsChartProvenanceThatDriftedFromApproval()
+    {
+        var fixture = ScientificDeliveryTestFixture.Create();
+        var data = ScientificChartDataSet.Create(
+            Guid.NewGuid(),
+            "Sample",
+            [new ScientificChartNumericColumn("Force", "N")],
+            [
+                new ScientificChartDataRow(
+                    "row-a",
+                    "A",
+                    new Dictionary<string, double> { ["Force"] = 12.5 }),
+            ]);
+        var specification = ScientificChartSpec.Create(
+            Guid.NewGuid(),
+            data,
+            "Measured force",
+            "Sample",
+            "Force",
+            "N",
+            ["row-a"],
+            [new ScientificChartSeriesSpec("Force", "Measured force", ScientificChartTransform.None)]);
+        var approval = ScientificChartApproval.Approve(
+            data,
+            specification,
+            "chart-reviewer",
+            "approved",
+            DateTimeOffset.UtcNow);
+        var chart = new DeterministicScientificChartRenderer().Render(data, specification, approval);
+        var drifted = chart.Provenance with
+        {
+            DataSha256 = $"sha256:{new string('0', 64)}",
+        };
+
+        Assert.Throws<InvalidOperationException>(() => fixture.Service.DecideGateTwo(
+            fixture.Request with { ChartProvenance = drifted }));
     }
 
     private static JsonDocument ReadJson(ZipArchive archive, string name)

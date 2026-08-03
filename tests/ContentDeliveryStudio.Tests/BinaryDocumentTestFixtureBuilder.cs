@@ -11,7 +11,21 @@ internal static class BinaryDocumentTestFixtureBuilder
         {
             using var stream = File.Create(outputPath);
             using var writer = new BinaryWriter(stream);
-            WritePdfDocument(writer, text);
+            WritePdfDocument(writer, [text]);
+        }, cancellationToken);
+    }
+
+    public static async Task CreateScholarlyPdfAsync(
+        string outputPath,
+        IReadOnlyList<string> lines,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(lines);
+        await Task.Run(() =>
+        {
+            using var stream = File.Create(outputPath);
+            using var writer = new BinaryWriter(stream);
+            WritePdfDocument(writer, lines);
         }, cancellationToken);
     }
 
@@ -66,7 +80,7 @@ internal static class BinaryDocumentTestFixtureBuilder
         await writer.WriteAsync(content.AsMemory(), cancellationToken);
     }
 
-    private static void WritePdfDocument(BinaryWriter writer, string text)
+    private static void WritePdfDocument(BinaryWriter writer, IReadOnlyList<string> lines)
     {
         static int WriteObject(BinaryWriter binaryWriter, int objectNumber, string body)
         {
@@ -78,8 +92,23 @@ internal static class BinaryDocumentTestFixtureBuilder
         writer.Write(Encoding.ASCII.GetBytes("%PDF-1.4\n"));
         var offsets = new List<int> { 0 };
 
-        var escapedText = text.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)");
-        var contentStream = $"BT /F1 24 Tf 72 140 Td ({escapedText}) Tj ET";
+        var content = new StringBuilder("BT /F1 12 Tf 72 720 Td ");
+        for (var index = 0; index < lines.Count; index++)
+        {
+            if (index > 0)
+            {
+                content.Append("0 -18 Td ");
+            }
+
+            var escapedText = lines[index]
+                .Replace("\\", "\\\\")
+                .Replace("(", "\\(")
+                .Replace(")", "\\)");
+            content.Append('(').Append(escapedText).Append(") Tj ");
+        }
+
+        content.Append("ET");
+        var contentStream = content.ToString();
 
         offsets.Add(WriteObject(writer, 1, "<< /Type /Catalog /Pages 2 0 R >>"));
         offsets.Add(WriteObject(writer, 2, "<< /Type /Pages /Count 1 /Kids [3 0 R] >>"));

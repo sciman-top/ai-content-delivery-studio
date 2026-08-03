@@ -5,47 +5,47 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <TextBlock Text="{Binding PromptEditorTitle}" FontWeight="SemiBold" Margin="0,0,0,10" />
-        <TextBlock Text="{Binding SelectedItemTitle}" Margin="0,0,0,4" />
-        <TextBlock Text="{Binding SelectedSeriesItemTitleText}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.PromptEditorTitle}" FontWeight="SemiBold" Margin="0,0,0,10" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.SelectedItemTitle}" Margin="0,0,0,4" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.SelectedSeriesItemTitleText}"
                    TextWrapping="Wrap"
                    Foreground="#4B5563"
                    Margin="0,0,0,8" />
-        <TextBlock Text="{Binding PromptTextLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewPromptText, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.PromptTextLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Planning.NewPromptText, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="PromptTextInput"
-                 AutomationProperties.Name="{Binding PromptTextLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.PromptTextLabel}"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  MinHeight="88"
                  Margin="0,0,0,6" />
-        <TextBlock Text="{Binding DefaultGenerationSettingsText}" Foreground="#5E6978" Margin="0,0,0,8" />
-        <Button Content="{Binding CreatePromptVersionText}"
-                Command="{Binding CreatePromptVersionCommand}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.DefaultGenerationSettingsText}" Foreground="#5E6978" Margin="0,0,0,8" />
+        <Button Content="{Binding ImageSeriesWorkspace.Planning.CreatePromptVersionText}"
+                Command="{Binding ImageSeriesWorkspace.Planning.CreatePromptVersionCommand}"
                 AutomationProperties.AutomationId="CreatePromptVersionButton"
-                AutomationProperties.Name="{Binding CreatePromptVersionText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.CreatePromptVersionText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,12" />
 
-        <TextBlock Text="{Binding PromptHistoryTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
-        <ListBox ItemsSource="{Binding PromptVersions}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.PromptHistoryTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <ListBox ItemsSource="{Binding ImageSeriesWorkspace.Planning.PromptVersions}"
                  DisplayMemberPath="VersionNumber"
                  AutomationProperties.AutomationId="PromptHistoryList"
-                 AutomationProperties.Name="{Binding PromptHistoryTitle}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.PromptHistoryTitle}"
                  MinHeight="82"
                  Margin="0,0,0,12" />
 
-        <Button Content="{Binding PrepareGenerationQueueText}"
-                Command="{Binding PrepareGenerationQueueCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.PrepareGenerationQueueText}"
+                Command="{Binding ImageSeriesWorkspace.PrepareGenerationQueueCommand}"
                 AutomationProperties.AutomationId="QueuePrepareButton"
-                AutomationProperties.Name="{Binding PrepareGenerationQueueText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.PrepareGenerationQueueText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,8" />
 
-        <Button Content="{Binding RunFakeGenerationText}"
-                Command="{Binding RunFakeGenerationCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.RunFakeGenerationText}"
+                Command="{Binding ImageSeriesWorkspace.RunFakeGenerationCommand}"
                 AutomationProperties.AutomationId="RunFakeGenerationButton"
-                AutomationProperties.Name="{Binding RunFakeGenerationText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.RunFakeGenerationText}"
                 HorizontalAlignment="Stretch" />
     </StackPanel>
 </UserControl>

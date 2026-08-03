@@ -4,6 +4,7 @@ using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.ScientificFigures;
 using ContentDeliveryStudio.Core.Sources;
 using UglyToad.PdfPig;
+using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 
 namespace ContentDeliveryStudio.Infrastructure.ScientificFigures;
 
@@ -46,13 +47,11 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
         }
 
         AddMissingRequiredContent(request.RequiredContent, blocks);
-        var requiredContent = HasMissingRequiredContent(blocks)
-            ? ScientificRequiredContentStatus.Missing
-            : ScientificRequiredContentStatus.Complete;
+        var requiredContent = DetermineRequiredContentStatus(blocks);
         var extraction = ScientificDocumentExtraction.Create(
             request.SourceAssetId,
             request.SourceSha256,
-            ScientificExtractorIdentity.Create("pdfpig-scientific-document-extractor", "1.0"),
+            ScientificExtractorIdentity.Create("pdfpig-scientific-document-extractor", "1.1"),
             ScientificExtractionQuality.Create(
                 request.IsScanned,
                 ocrApplied: false,
@@ -124,24 +123,44 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
         foreach (var page in document.GetPages())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            var text = NormalizeWhitespace(page.Text);
-            if (text.Length == 0)
+            var pageText = ContentOrderTextExtractor.GetText(page, true);
+            var pageBlocks = pageText
+                .Replace("\r\n", "\n", StringComparison.Ordinal)
+                .Replace('\r', '\n')
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(NormalizeWhitespace)
+                .Where(text => text.Length > 0)
+                .ToArray();
+            if (pageBlocks.Length == 0)
             {
                 continue;
             }
 
-            blocks.Add(ScientificSourceBlock.Create(
-                $"page-{page.Number}-paragraph-1",
-                ScientificSourceBlockKind.Paragraph,
-                ScientificSourceLocation.Create(
-                    page.Number,
-                    $"page {page.Number}",
-                    boundingRegion: null,
-                    ScientificCharacterRange.Create(offset, offset + text.Length)),
-                text,
-                isRequired: true,
-                ScientificRecoveryStatus.NotRequired));
-            offset += text.Length;
+            var section = $"page {page.Number}";
+            for (var index = 0; index < pageBlocks.Length; index++)
+            {
+                var text = pageBlocks[index];
+                var kind = ClassifyScholarlyBlock(SourceAssetKind.Pdf, text);
+                if (kind == ScientificSourceBlockKind.Heading)
+                {
+                    section = text;
+                }
+
+                var startOffset = offset;
+                var endOffset = startOffset + text.Length;
+                blocks.Add(ScientificSourceBlock.Create(
+                    $"page-{page.Number}-block-{index + 1}",
+                    kind,
+                    ScientificSourceLocation.Create(
+                        page.Number,
+                        section,
+                        boundingRegion: null,
+                        ScientificCharacterRange.Create(startOffset, endOffset)),
+                    text,
+                    isRequired: true,
+                    RecoveryStatusFor(kind)));
+                offset = endOffset + 1;
+            }
         }
 
         return blocks;
@@ -164,11 +183,8 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
             }
 
             index++;
-            var kind = ClassifyTextBlock(request.SourceKind, text);
-            var recoveryStatus = kind is ScientificSourceBlockKind.Formula
-                or ScientificSourceBlockKind.Table
-                ? ScientificRecoveryStatus.Recovered
-                : ScientificRecoveryStatus.NotRequired;
+            var kind = ClassifyScholarlyBlock(request.SourceKind, text);
+            var recoveryStatus = RecoveryStatusFor(kind);
             var startOffset = match.Index + match.Value.IndexOf(text, StringComparison.Ordinal);
             blocks.Add(ScientificSourceBlock.Create(
                 $"block-{index}",
@@ -186,25 +202,37 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
         return blocks;
     }
 
-    private static ScientificSourceBlockKind ClassifyTextBlock(
+    private static ScientificSourceBlockKind ClassifyScholarlyBlock(
         SourceAssetKind sourceKind,
         string text)
     {
-        if (sourceKind != SourceAssetKind.Markdown)
-        {
-            return ScientificSourceBlockKind.Paragraph;
-        }
-
-        if (text.StartsWith('#'))
+        if (sourceKind == SourceAssetKind.Markdown && text.StartsWith('#'))
         {
             return ScientificSourceBlockKind.Heading;
         }
 
+        if (text.StartsWith("TABLE:", StringComparison.OrdinalIgnoreCase)
+            || HasRepeatedTableDelimiter(text))
+        {
+            return ScientificSourceBlockKind.Table;
+        }
+
         if ((text.StartsWith("$$", StringComparison.Ordinal)
                 && text.EndsWith("$$", StringComparison.Ordinal))
-            || text.StartsWith("FORMULA:", StringComparison.Ordinal))
+            || text.StartsWith("FORMULA:", StringComparison.OrdinalIgnoreCase)
+            || FormulaRegex().IsMatch(text))
         {
             return ScientificSourceBlockKind.Formula;
+        }
+
+        if (CaptionRegex().IsMatch(text))
+        {
+            return ScientificSourceBlockKind.Caption;
+        }
+
+        if (CitationRegex().IsMatch(text))
+        {
+            return ScientificSourceBlockKind.Reference;
         }
 
         var lines = text.Split(
@@ -217,7 +245,27 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
             return ScientificSourceBlockKind.Table;
         }
 
+        if (lines.Length == 1 && HeadingRegex().IsMatch(text))
+        {
+            return ScientificSourceBlockKind.Heading;
+        }
+
         return ScientificSourceBlockKind.Paragraph;
+    }
+
+    private static ScientificRecoveryStatus RecoveryStatusFor(ScientificSourceBlockKind kind)
+    {
+        return kind is ScientificSourceBlockKind.Caption
+            or ScientificSourceBlockKind.Reference
+            or ScientificSourceBlockKind.Formula
+            or ScientificSourceBlockKind.Table
+            ? ScientificRecoveryStatus.Recovered
+            : ScientificRecoveryStatus.NotRequired;
+    }
+
+    private static bool HasRepeatedTableDelimiter(string text)
+    {
+        return text.Count(character => character is '|' or '\t') >= 2;
     }
 
     private static IReadOnlyList<ScientificExtractionDiagnostic> BuildDiagnostics(
@@ -239,6 +287,21 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
                 "reading-order-corrupted",
                 ScientificDiagnosticSeverity.Blocking,
                 "Source reading order is corrupted and cannot establish evidence order."));
+        }
+        else if (request.ReadingOrder == ScientificReadingOrderStatus.Uncertain)
+        {
+            diagnostics.Add(ScientificExtractionDiagnostic.Create(
+                "reading-order-uncertain",
+                ScientificDiagnosticSeverity.Blocking,
+                "Source reading order could not be established reliably."));
+        }
+
+        if (request.SourceKind == SourceAssetKind.Pdf && !hasNoText)
+        {
+            diagnostics.Add(ScientificExtractionDiagnostic.Create(
+                "pdfpig-content-order",
+                ScientificDiagnosticSeverity.Information,
+                "PDF text was read through PdfPig content-order extraction; scholarly structure remains heuristic and evidence-bound."));
         }
 
         if (hasNoText)
@@ -262,6 +325,8 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
             {
                 ScientificRequiredContentKind.Formula => ScientificSourceBlockKind.Formula,
                 ScientificRequiredContentKind.Table => ScientificSourceBlockKind.Table,
+                ScientificRequiredContentKind.Caption => ScientificSourceBlockKind.Caption,
+                ScientificRequiredContentKind.Citation => ScientificSourceBlockKind.Reference,
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(requirements),
                     requirement,
@@ -283,13 +348,21 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
         }
     }
 
-    private static bool HasMissingRequiredContent(
+    private static ScientificRequiredContentStatus DetermineRequiredContentStatus(
         IEnumerable<ScientificSourceBlock> blocks)
     {
-        return blocks.Any(block =>
+        var missing = blocks.Any(block =>
             block.IsRequired
-            && block.RecoveryStatus is ScientificRecoveryStatus.Missing
-                or ScientificRecoveryStatus.Uncertain);
+            && block.RecoveryStatus is ScientificRecoveryStatus.Missing);
+        if (missing)
+        {
+            return ScientificRequiredContentStatus.Missing;
+        }
+
+        return blocks.Any(block =>
+                block.IsRequired && block.RecoveryStatus is ScientificRecoveryStatus.Uncertain)
+            ? ScientificRequiredContentStatus.Uncertain
+            : ScientificRequiredContentStatus.Complete;
     }
 
     private static string SectionFor(ScientificSourceBlockKind kind, int index)
@@ -330,4 +403,16 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
 
     [GeneratedRegex(@"(?ms)(?:\A|\r?\n[ \t]*\r?\n)(?<block>.*?)(?=\r?\n[ \t]*\r?\n|\z)")]
     private static partial Regex TextBlockRegex();
+
+    [GeneratedRegex(@"^(?:fig(?:ure)?\.?|table)\s*(?:[a-z]?\d+|[ivx]+)\s*[\s.:\-]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex CaptionRegex();
+
+    [GeneratedRegex(@"^(?:\[\d+\]|\(\d+\)|doi\s*:)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex CitationRegex();
+
+    [GeneratedRegex(@"^[a-z][^.!?\r\n]{0,120}\s=\s[^.!?\r\n]{1,120}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex FormulaRegex();
+
+    [GeneratedRegex(@"^(?:\d+(?:\.\d+)*\s+)?(?:[A-Z][A-Za-z0-9\-]*\s*){1,8}$", RegexOptions.CultureInvariant)]
+    private static partial Regex HeadingRegex();
 }

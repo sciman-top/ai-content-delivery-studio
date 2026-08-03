@@ -33,16 +33,16 @@
                     <ColumnDefinition Width="2*" />
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0"
-                           Text="{Binding DataContext.BriefGoalLabel, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                           Text="{Binding DataContext.ImageSeriesWorkspace.Brief.BriefGoalLabel, RelativeSource={RelativeSource AncestorType=TabControl}}"
                            VerticalAlignment="Center"
                            FontWeight="SemiBold" />
                 <TextBlock Grid.Column="1"
-                           Text="{Binding DataContext.BriefAudienceLabel, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                           Text="{Binding DataContext.ImageSeriesWorkspace.Brief.BriefAudienceLabel, RelativeSource={RelativeSource AncestorType=TabControl}}"
                            VerticalAlignment="Center"
                            FontWeight="SemiBold"
                            Margin="10,0,0,0" />
                 <TextBlock Grid.Column="2"
-                           Text="{Binding DataContext.BriefStyleIntentLabel, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                           Text="{Binding DataContext.ImageSeriesWorkspace.Brief.BriefStyleIntentLabel, RelativeSource={RelativeSource AncestorType=TabControl}}"
                            VerticalAlignment="Center"
                            FontWeight="SemiBold"
                            Margin="10,0,0,0" />

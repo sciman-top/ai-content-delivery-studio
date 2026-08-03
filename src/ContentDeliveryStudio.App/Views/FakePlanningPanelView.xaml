@@ -5,31 +5,31 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <TextBlock Text="{Binding FakePlanningTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
-        <TextBlock Text="{Binding PlanningGoalLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewPlanningGoal, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Brief.FakePlanningTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Brief.PlanningGoalLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Brief.NewPlanningGoal, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="PlanningGoalInput"
-                 AutomationProperties.Name="{Binding PlanningGoalLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Brief.PlanningGoalLabel}"
                  Margin="0,0,0,6" />
-        <TextBlock Text="{Binding PlanningAudienceLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewPlanningAudience, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Brief.PlanningAudienceLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Brief.NewPlanningAudience, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="PlanningAudienceInput"
-                 AutomationProperties.Name="{Binding PlanningAudienceLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Brief.PlanningAudienceLabel}"
                  Margin="0,0,0,6" />
-        <TextBlock Text="{Binding PlanningItemCountLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewPlanningItemCount, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Brief.PlanningItemCountLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Brief.NewPlanningItemCount, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="PlanningItemCountInput"
-                 AutomationProperties.Name="{Binding PlanningItemCountLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Brief.PlanningItemCountLabel}"
                  Margin="0,0,0,6" />
-        <TextBlock Text="{Binding PlanningStyleBriefLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewPlanningStyleBrief, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Brief.PlanningStyleBriefLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Brief.NewPlanningStyleBrief, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="PlanningStyleBriefInput"
-                 AutomationProperties.Name="{Binding PlanningStyleBriefLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Brief.PlanningStyleBriefLabel}"
                  Margin="0,0,0,8" />
-        <Button Content="{Binding RunFakePlanningText}"
-                Command="{Binding RunFakePlanningCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.Brief.RunFakePlanningText}"
+                Command="{Binding ImageSeriesWorkspace.Brief.RunFakePlanningCommand}"
                 AutomationProperties.AutomationId="RunFakePlanningButton"
-                AutomationProperties.Name="{Binding RunFakePlanningText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Brief.RunFakePlanningText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,14" />
     </StackPanel>

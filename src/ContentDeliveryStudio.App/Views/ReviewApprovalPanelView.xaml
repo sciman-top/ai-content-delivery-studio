@@ -5,67 +5,67 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <Button Content="{Binding RunFakeReviewText}"
-                Command="{Binding RunFakeReviewCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.Review.RunFakeReviewText}"
+                Command="{Binding ImageSeriesWorkspace.Review.RunFakeReviewCommand}"
                 AutomationProperties.AutomationId="RunFakeReviewButton"
-                AutomationProperties.Name="{Binding RunFakeReviewText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Review.RunFakeReviewText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,8" />
-        <TextBlock Text="{Binding ImageSeries.FinalApprovalReviewerLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding ImageSeries.FinalApprovalReviewer, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Review.FinalApprovalReviewerLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Review.FinalApprovalReviewer, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="FinalApprovalReviewerInput"
-                 AutomationProperties.Name="{Binding ImageSeries.FinalApprovalReviewerLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Review.FinalApprovalReviewerLabel}"
                  Margin="0,0,0,6" />
-        <TextBlock Text="{Binding ImageSeries.FinalApprovalNotesLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding ImageSeries.FinalApprovalNotes, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Review.FinalApprovalNotesLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Review.FinalApprovalNotes, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="FinalApprovalNotesInput"
-                 AutomationProperties.Name="{Binding ImageSeries.FinalApprovalNotesLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Review.FinalApprovalNotesLabel}"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  MinHeight="64"
                  Margin="0,0,0,8" />
-        <Button Content="{Binding ApproveSelectedReviewText}"
-                Command="{Binding ApproveSelectedReviewCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.Review.ApproveSelectedReviewText}"
+                Command="{Binding ImageSeriesWorkspace.Review.ApproveSelectedReviewCommand}"
                 AutomationProperties.AutomationId="ApproveSelectedReviewButton"
-                AutomationProperties.Name="{Binding ApproveSelectedReviewText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Review.ApproveSelectedReviewText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,6" />
-        <Button Content="{Binding RejectSelectedReviewText}"
-                Command="{Binding RejectSelectedReviewCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.Review.RejectSelectedReviewText}"
+                Command="{Binding ImageSeriesWorkspace.Review.RejectSelectedReviewCommand}"
                 AutomationProperties.AutomationId="RejectSelectedReviewButton"
-                AutomationProperties.Name="{Binding RejectSelectedReviewText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Review.RejectSelectedReviewText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,8" />
-        <TextBlock Text="{Binding FinalDeliveryCategoryLabel}" Margin="0,0,0,4" />
-        <ComboBox ItemsSource="{Binding FinalDeliveryCategoryOptions}"
-                  SelectedItem="{Binding SelectedFinalDeliveryCategoryOption}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Delivery.FinalDeliveryCategoryLabel}" Margin="0,0,0,4" />
+        <ComboBox ItemsSource="{Binding ImageSeriesWorkspace.Delivery.FinalDeliveryCategoryOptions}"
+                  SelectedItem="{Binding ImageSeriesWorkspace.Delivery.SelectedFinalDeliveryCategoryOption}"
                   DisplayMemberPath="DisplayName"
                   AutomationProperties.AutomationId="FinalDeliveryCategorySelector"
-                  AutomationProperties.Name="{Binding FinalDeliveryCategoryLabel}"
+                  AutomationProperties.Name="{Binding ImageSeriesWorkspace.Delivery.FinalDeliveryCategoryLabel}"
                   Margin="0,0,0,6" />
-        <TextBlock Text="{Binding FinalDeliveryRootLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding FinalDeliveryRootPath, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Delivery.FinalDeliveryRootLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Delivery.FinalDeliveryRootPath, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="FinalDeliveryRootInput"
-                 AutomationProperties.Name="{Binding FinalDeliveryRootLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Delivery.FinalDeliveryRootLabel}"
                  Margin="0,0,0,6" />
-        <Button Content="{Binding BrowseFinalDeliveryRootText}"
-                Command="{Binding BrowseFinalDeliveryRootCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.Delivery.BrowseFinalDeliveryRootText}"
+                Command="{Binding ImageSeriesWorkspace.Delivery.BrowseFinalDeliveryRootCommand}"
                 AutomationProperties.AutomationId="BrowseFinalDeliveryRootButton"
-                AutomationProperties.Name="{Binding BrowseFinalDeliveryRootText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Delivery.BrowseFinalDeliveryRootText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,6" />
-        <TextBlock Text="{Binding FinalDeliveryDestinationLabel}" Margin="0,0,0,4" />
-        <TextBlock Text="{Binding FinalDeliveryDestinationPreview}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Delivery.FinalDeliveryDestinationLabel}" Margin="0,0,0,4" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Delivery.FinalDeliveryDestinationPreview}"
                    AutomationProperties.AutomationId="FinalDeliveryDestinationPreview"
-                   AutomationProperties.Name="{Binding FinalDeliveryDestinationLabel}"
+                   AutomationProperties.Name="{Binding ImageSeriesWorkspace.Delivery.FinalDeliveryDestinationLabel}"
                    AutomationProperties.LiveSetting="Polite"
                    Focusable="False"
                    TextWrapping="Wrap"
                    Margin="0,0,0,8" />
-        <Button Content="{Binding ExportDeliveryText}"
-                Command="{Binding ExportDeliveryCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.Delivery.ExportDeliveryText}"
+                Command="{Binding ImageSeriesWorkspace.Delivery.ExportDeliveryCommand}"
                 AutomationProperties.AutomationId="ExportDeliveryButton"
-                AutomationProperties.Name="{Binding ExportDeliveryText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Delivery.ExportDeliveryText}"
                 HorizontalAlignment="Stretch" />
     </StackPanel>
 </UserControl>

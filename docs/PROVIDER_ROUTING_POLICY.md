@@ -56,6 +56,24 @@ Only switch generation to Responses when the workflow gains meaningful value fro
 - Multi-turn image tool context.
 - Partial-image streaming in the workbench.
 
+#### Paid Queue Approval Boundary
+
+- Preparing, pausing, resuming, reordering, and constructing a retry remain local-only operations and never authorize or invoke a provider.
+- A live Images API queue requires a persisted `generation-approval-receipt.v1` whose canonical hash binds the project, ordered task and series identities, prompt-version content hashes, provider profile, direct provider identity, endpoint class, model, settings, retry ceiling, per-operation estimate, total estimate, cost ceiling, expiry, approval actor, and authority reference.
+- The current request set is rebuilt and checked immediately before every new provider dispatch. Missing, expired, inconsistent, or drifted receipts fail before the call.
+- Pause does not claim to cancel an in-flight request; it prevents later queued requests from starting. Interrupted `Running` work is recovered as failed and is never automatically replayed.
+- A retry is a new task identity and is unapproved. Reorder invalidates the whole batch receipt. Direct-provider approval does not cover a failover destination; live failover stays disabled until destination-specific receipt coverage exists.
+- The WPF queue displays request and receipt summaries but does not mint paid authority. Live Execute remains disabled in the desktop host until an explicit current authority source is wired.
+
+#### Reference And Edit Approval Boundary
+
+- A real image edit uses the primary image profile and `POST /images/edits`. The bounded request contains one persisted `Subject` source candidate and may include one same-size PNG mask.
+- Approval issues an immutable `image-edit-approval-receipt.v1` without calling the provider. It binds project, item, source candidate, source/mask/instruction hashes, provider, `images/edits`, model, output settings, reference roles, cost estimate, ceiling, actor, authority reference, issue time, and expiry.
+- Execution reloads the persisted source candidate and rebuilds that request identity immediately before dispatch. Path mismatch, source or mask drift, unsupported roles/counts, expired authority, model/provider change, destructive output, or mask format/dimension mismatch fails before transport.
+- A successful edit creates a new `ReviewPending` candidate with an explicit source-candidate edge. It never replaces the source asset. Delivery manifests retain the edit hashes, reference roles, provider operation, model, receipt identity, and request-set hash without copying private source or mask paths.
+- Multi-reference editing and live edit failover remain frozen. A different provider destination or expanded reference set requires a separately approved contract and receipt.
+- The desktop UI advertises capability and the missing-authority reason, but it cannot mint paid authority. Captured transport, fake editing, XML/UIA contracts, and package provenance are repo-side evidence only.
+
 The current repository now carries an explicit opt-in image-generation request path for those stateful cases. It stays fail-closed unless the image provider configuration also supplies a Responses-capable mainline model, and single-shot generation continues to default to the simpler Images API path.
 
 ## Statefulness Policy

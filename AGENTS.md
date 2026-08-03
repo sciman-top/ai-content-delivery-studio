@@ -33,9 +33,9 @@
 - build：`dotnet build ContentDeliveryStudio.sln`
 - test：`dotnet test ContentDeliveryStudio.sln --no-build`
 - quick feedback：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore`；只证明 solution build 与显式 focused tests，不能替代 full closeout。
-- contract/invariant：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1` 校验结构化 reference decision 与 parity，并运行 product-focus verifier；Full 以 range-aware `git diff --check` 收口轻量 diff hygiene。
-- hotspot：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`；它运行全部测试与完整 format 规则，再追加 placeholder/conflict、实际 publish/package 校验与 diff hygiene；format 优先限定到可信 diff/工作树的 changed C#，格式配置变化或无可信范围时才全仓扫描。
-- canonical full gate：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1`；它按 build、核心 test、reference/product contract、diff check 各执行一次。标记为 `Category=ReleaseOnly` 的性能、全语料、端到端、operator-script 与 gate-self-test 只由 Release/CI 或显式 focused filter 执行，不能被写成已由 Full 证明。
+- contract/invariant：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1` 校验结构化 reference decision 与 parity，并运行 product-focus verifier 和 format。
+- hotspot：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`；它只在 Full 之后追加 placeholder/conflict、实际 publish/package 校验与 diff hygiene。
+- canonical full gate：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1`；它按 build、完整 test、reference/product contract、format 各执行一次，不改变交付留痕中的固定阶段语义。
 - 触及 provider、observability、persistence/schema 或 operator/tooling 边界时，reference evidence 失败即阻断。
 - 证据放入 `docs/change-evidence/`；最低记录风险、命令、exit code、关键输出、兼容判断、N/A 与回滚。
 - 回滚只撤销本任务源码/规则/证据切片；生成输出和 workspace 需要时在 Git 外备份，不能用 Git 回滚伪装恢复。

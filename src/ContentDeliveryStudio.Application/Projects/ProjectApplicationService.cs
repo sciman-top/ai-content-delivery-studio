@@ -339,6 +339,30 @@ public sealed class ProjectApplicationService
             cancellationToken);
     }
 
+    public Task<GenerationApprovalReceipt> ApprovePreparedLiveGenerationQueueAsync(
+        Guid projectId,
+        GenerationQueueApprovalRequest request,
+        CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.ApprovePreparedLiveGenerationQueueAsync(
+            projectId,
+            request,
+            cancellationToken);
+    }
+
+    public Task<GenerationQueueRun> ExecuteApprovedLiveGenerationQueueAsync(
+        Guid projectId,
+        string outputDirectory,
+        Guid approvalReceiptId,
+        CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.ExecuteApprovedLiveGenerationQueueAsync(
+            projectId,
+            outputDirectory,
+            approvalReceiptId,
+            cancellationToken);
+    }
+
     public Task PauseGenerationTaskAsync(Guid projectId, Guid taskId, CancellationToken cancellationToken)
     {
         return _generationWorkflowApplicationService.PauseGenerationTaskAsync(projectId, taskId, cancellationToken);
@@ -373,6 +397,28 @@ public sealed class ProjectApplicationService
     {
         return await _generationWorkflowApplicationService.RunImageEditAsync(
             request,
+            cancellationToken);
+    }
+
+    public Task<ImageEditApprovalReceipt> ApproveImageEditAsync(
+        ImageEditWorkflowRequest request,
+        ImageEditApprovalRequest approval,
+        CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.ApproveImageEditAsync(
+            request,
+            approval,
+            cancellationToken);
+    }
+
+    public Task<ImageGenerationResult> RunApprovedImageEditAsync(
+        ImageEditWorkflowRequest request,
+        ImageEditApprovalReceipt receipt,
+        CancellationToken cancellationToken)
+    {
+        return _generationWorkflowApplicationService.RunApprovedImageEditAsync(
+            request,
+            receipt,
             cancellationToken);
     }
 

@@ -13,7 +13,6 @@ Starting observations:
 
 - `preflight-release.ps1` invoked reference-governance parity directly, invoked `verify-reference-evidence.ps1` which performed parity again, then invoked `verify-repo.ps1` which performed parity a third time.
 - `verify-repo.ps1` had only a full-repository path; AI inner-loop work had no canonical focused entrypoint.
-- `verify-repo.ps1` ran `dotnet build` and then invoked `dotnet test` without `--no-build` unless the caller also supplied `-NoRestore`; the default Full path could therefore build and restore twice, while format could restore again.
 - `MainWindowLayoutTests.cs` contained 797 lines, 22 tests, and 244 exact source-token assertions that primarily preserved historical file decomposition.
 - `WpfShellAccessibilityTests.cs` contained 94 lines, 4 tests, and 38 exact source-token assertions already overlapped by XML contract checks, ViewModel behavior, packaged UI Automation, and accepted native evidence.
 - `Phase7AccessibilityContractTests.PackagedProbe_VerifiesPackageAndKeepsManualBoundariesExplicit` asserted script literals rather than running the package/probe behavior.
@@ -62,8 +61,8 @@ Decision effect:
 | Lane | Interface | Required behavior |
 | --- | --- | --- |
 | Quick | `verify-repo.ps1 -Mode Quick -TestFilter <filter>` | Build the solution, run only the named focused tests, require an explicit filter, and omit format, reference, package, and release scans. |
-| Full | `verify-repo.ps1` | Build, run the core suite excluding explicit `Category=ReleaseOnly` long-tail tests, verify reference evidence/parity once, verify the product-focus queue, and run range-aware diff hygiene without Roslyn formatter startup. |
-| Release | `preflight-release.ps1` | Run release-inclusive repository verification once with all tests and full-solution format, then add placeholder/conflict scans, actual publish/package verification, and staged/unstaged diff hygiene. |
+| Full | `verify-repo.ps1` | Build, run all tests, verify reference evidence/parity once, verify the product-focus queue, and verify formatting. |
+| Release | `preflight-release.ps1` | Run Full once, then add placeholder/conflict scans, actual publish/package verification, and staged/unstaged diff hygiene. |
 
 ## Preserved Hard Guards
 
@@ -85,25 +84,23 @@ Decision effect:
 
 | Lane or contract | Command | Result |
 | --- | --- | --- |
-| Quick, script behavior | `verify-repo.ps1 -Mode Quick -TestFilter VerifyRepoScriptTests -NoRestore` | Exit 0; build 0 warnings/errors; 8/8 focused tests; 18.8 seconds. |
+| Quick, script behavior | `verify-repo.ps1 -Mode Quick -TestFilter VerifyRepoScriptTests -NoRestore` | Exit 0; build 0 warnings/errors; 7/7 focused tests; 22 seconds. |
 | Quick, retained WPF semantic structure | `verify-repo.ps1 -Mode Quick -TestFilter Phase7AccessibilityContractTests -NoRestore` | Exit 0; build 0 warnings/errors; 10/10 focused cases; 5.6 seconds. |
 | Quick fail-closed | `verify-repo.ps1 -Mode Quick -NoRestore` | Expected exit 1; rejected missing `-TestFilter` before build. |
 | Reference negative | Explicit WPF source path plus narrative-only `docs/ARCHITECTURE.md` | Expected exit 1; rejected missing structured decision. |
 | Reference positive | Explicit WPF source path plus this evidence file | Exit 0; verified `reject / source-structure-test-reduction`. |
-| Full | `verify-repo.ps1 -NoRestore` | Exit 0; build 0 warnings/errors; 739/739 core tests; one reference parity/evidence pass; product-focus contract; range-aware diff check; 26.0 seconds after the deep audit on 2026-08-03. |
-| Release | `preflight-release.ps1 -NoRestore` | Exit 0; release-inclusive verification ran once; 760/760 tests; complete changed-C# format rules; placeholder/conflict scans; actual package verification; diff hygiene; 71.8 seconds after the deep audit on 2026-08-03. |
+| Full | `verify-repo.ps1 -NoRestore` | Exit 0; build 0 warnings/errors; 759/759 tests; one reference parity/evidence pass; product-focus contract; format; 63.9 seconds. |
+| Release | `preflight-release.ps1 -NoRestore` | Exit 0; Full ran once; 759/759 tests; placeholder/conflict scans; actual package verification; diff hygiene; 73.9 seconds. |
 
 The release package contained 84 payload files, selected `ContentDeliveryStudio.App.exe`, and verified SHA-256 `2874644bd3ca7735aee5d3e290ed62b8c2f9a1fd2329ce0cb7fa61c94eaa1a4b` before cleanup.
 
 Test-governance result:
 
 - removed 27 source-token tests: 22 main-window file-placement tests, 4 duplicate shell accessibility token tests, and 1 packaged-probe script-literal test;
-- added 5 behavior tests for Quick filtering, single-build/single-restore Full composition, single Full composition inside Release, and structured reference evidence rejection/acceptance;
+- added 4 behavior tests for Quick filtering, single Full composition inside Release, and structured reference evidence rejection/acceptance;
 - retained 10 semantic WPF accessibility cases based on XML structure and static Windows declarations;
-- total suite changed from 782 to 760 tests while preserving scientific, provider, persistence, queue/no-replay, secret, package, backup/restore, and delivery coverage.
+- total suite changed from 782 to 759 tests while preserving scientific, provider, persistence, queue/no-replay, secret, package, backup/restore, and delivery coverage.
 
 During focused validation, the PowerShell fallback text scanner failed when `git ls-files` returned a deleted tracked test. The regression test exposed the exact missing path; the scanner now skips non-existent tracked paths before `Select-String`. The focused regression and Full/Release gates pass after the root fix.
-
-During the 2026-08-03 audit, a new red-green script contract exposed the remaining default-path duplication: before the fix the recorded invocation was `test ContentDeliveryStudio.sln`, without `--no-build`. Full now makes the build step the only restore/build point; test always uses `--no-build --no-restore`, and format always uses `--no-restore` against the explicit solution.
 
 No paid provider, external mutation, manual operator, or hardware action occurred. These results close only the repo-side `FOCUS-004` contract.
