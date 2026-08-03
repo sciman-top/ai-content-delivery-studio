@@ -66,7 +66,8 @@ public sealed record DeliveryExportItem(
     string? ArtifactRole = null,
     DeliveryBlueprintMetadata? Blueprint = null,
     IReadOnlyList<Guid>? OperatorRunIds = null,
-    string? DeterministicCompositionReportPath = null);
+    string? DeterministicCompositionReportPath = null,
+    CandidateImageEditProvenance? EditProvenance = null);
 
 public sealed record DeliveryBlueprintMetadata(
     Guid Id,

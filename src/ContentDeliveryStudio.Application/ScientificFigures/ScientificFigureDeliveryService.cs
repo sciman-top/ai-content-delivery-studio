@@ -59,7 +59,8 @@ public sealed record ScientificFigureDeliveryPackage(
     IReadOnlyList<ScientificRepairRecord> Repairs,
     IReadOnlyList<ScientificDeliveryProviderMetadata> Providers,
     ScientificGate1Approval GateOneApproval,
-    ScientificGateTwoApproval GateTwoApproval);
+    ScientificGateTwoApproval GateTwoApproval,
+    ScientificChartProvenance? ChartProvenance = null);
 
 public sealed record ScientificFigureDeliveryRequest(
     ScientificFigureWorkflow Workflow,
@@ -69,7 +70,8 @@ public sealed record ScientificFigureDeliveryRequest(
     ScientificMachineReviewDecision MachineReview,
     IReadOnlyList<ScientificRepairRecord> Repairs,
     IReadOnlyList<ScientificDeliveryProviderMetadata> Providers,
-    ScientificGateTwoDecision HumanDecision);
+    ScientificGateTwoDecision HumanDecision,
+    ScientificChartProvenance? ChartProvenance = null);
 
 public sealed record ScientificFigureDeliveryResult(
     bool Approved,
@@ -132,7 +134,8 @@ public sealed class ScientificFigureDeliveryService
             Array.AsReadOnly(request.Repairs.ToArray()),
             Array.AsReadOnly(request.Providers.ToArray()),
             request.Workflow.Gate1Approval!,
-            gateTwo);
+            gateTwo,
+            request.ChartProvenance);
         var bytes = _packageWriter.Write(package);
         if (bytes is null || bytes.Length == 0)
         {
@@ -204,6 +207,8 @@ public sealed class ScientificFigureDeliveryService
                 "Gate 2 provider metadata contains an invalid record.");
         }
 
+        ValidateChartProvenance(request.ChartProvenance);
+
         var providerLayers = request.Providers
             .Select(item => item.Layer)
             .ToHashSet();
@@ -256,6 +261,53 @@ public sealed class ScientificFigureDeliveryService
             throw new InvalidOperationException(
                 "Gate 2 human approval cannot precede Gate 1 approval.");
         }
+    }
+
+    private static void ValidateChartProvenance(ScientificChartProvenance? provenance)
+    {
+        if (provenance is null)
+        {
+            return;
+        }
+
+        if (provenance.SourceAssetId == Guid.Empty
+            || provenance.ChartId == Guid.Empty
+            || !IsSha256(provenance.DataSha256)
+            || !IsSha256(provenance.SpecificationSha256)
+            || string.IsNullOrWhiteSpace(provenance.RendererVersion)
+            || !string.Equals(provenance.Aggregation, "none", StringComparison.Ordinal)
+            || !string.Equals(provenance.UncertaintyRepresentation, "none", StringComparison.Ordinal)
+            || provenance.Points is null
+            || provenance.Points.Count == 0
+            || provenance.Points.Any(point =>
+                point is null
+                || string.IsNullOrWhiteSpace(point.RowId)
+                || string.IsNullOrWhiteSpace(point.SourceColumn)
+                || string.IsNullOrWhiteSpace(point.Unit)
+                || string.IsNullOrWhiteSpace(point.TransformLabel)
+                || !double.IsFinite(point.SourceValue)
+                || !double.IsFinite(point.RenderedValue))
+            || provenance.Approval is null
+            || provenance.Approval.ChartId != provenance.ChartId
+            || !string.Equals(provenance.Approval.DataSha256, provenance.DataSha256, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(
+                provenance.Approval.SpecificationSha256,
+                provenance.SpecificationSha256,
+                StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(provenance.Approval.Reviewer)
+            || string.IsNullOrWhiteSpace(provenance.Approval.Notes))
+        {
+            throw new InvalidOperationException(
+                "Gate 2 chart provenance is incomplete or does not match its approval.");
+        }
+    }
+
+    private static bool IsSha256(string value)
+    {
+        var normalized = value.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase)
+            ? value[7..]
+            : value;
+        return normalized.Length == 64 && normalized.All(Uri.IsHexDigit);
     }
 
     private static bool IsValidProviderMetadata(ScientificDeliveryProviderMetadata item)

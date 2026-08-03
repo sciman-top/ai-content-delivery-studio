@@ -15,31 +15,31 @@
                 <ColumnDefinition Width="1.4*" />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0"
-                       Text="{Binding DataContext.QueueItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.QueueItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold" />
             <TextBlock Grid.Column="1"
-                       Text="{Binding DataContext.QueuePositionColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.QueuePositionColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="2"
-                       Text="{Binding DataContext.QueueStatusColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.QueueStatusColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="3"
-                       Text="{Binding DataContext.QueueAttemptsColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.QueueAttemptsColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="4"
-                       Text="{Binding DataContext.QueueOutputColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.QueueOutputColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="5"
-                       Text="{Binding DataContext.QueueErrorColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.QueueErrorColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />

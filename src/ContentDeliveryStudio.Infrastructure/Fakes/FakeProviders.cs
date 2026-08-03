@@ -461,7 +461,11 @@ public sealed class FakeImageGenerationProvider : IImageGenerationProvider, IIma
         supportedOutputFormats: ["png"],
         supportedBackgroundModes: ["auto", "opaque"],
         supportsReferenceImages: true,
-        costHints: [new ProviderCostHint("fake-image-v1", "free")]);
+        costHints: [new ProviderCostHint("fake-image-v1", "free")],
+        supportedReferenceImageRoles: [ContentDeliveryStudio.Core.References.ReferenceImageRole.Subject],
+        supportsMaskEditing: true,
+        maxReferenceImageCount: 1,
+        maxReferenceImageBytes: 50L * 1024 * 1024);
 
     public async Task<ImageGenerationResult> GenerateImageAsync(
         ImageGenerationRequest request,

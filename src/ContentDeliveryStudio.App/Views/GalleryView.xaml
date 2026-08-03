@@ -25,7 +25,7 @@
         <views:GalleryHeaderView Grid.Row="0" />
 
         <TextBlock Grid.Row="1"
-                   Text="{Binding DataContext.NoGalleryRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                   Text="{Binding DataContext.ImageSeriesWorkspace.Gallery.NoGalleryRowsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
                    Foreground="#5E6978"
                    Margin="0,14,0,0"
                    TextWrapping="Wrap">
@@ -36,7 +36,7 @@
                         <MultiDataTrigger>
                             <MultiDataTrigger.Conditions>
                                 <Condition Binding="{Binding IsGallery}" Value="True" />
-                                <Condition Binding="{Binding DataContext.HasGalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False" />
+                                <Condition Binding="{Binding DataContext.ImageSeriesWorkspace.Gallery.HasGalleryRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="False" />
                             </MultiDataTrigger.Conditions>
                             <Setter Property="Visibility" Value="Visible" />
                         </MultiDataTrigger>

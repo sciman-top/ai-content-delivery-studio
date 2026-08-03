@@ -75,6 +75,7 @@ public sealed class ScientificFigureWorkspaceFactory
                 "fake-readiness-probe",
                 "Fake-first readiness probe.",
                 FixtureTime.AddMinutes(4)));
+        var chartWorkspace = CreateChartWorkspace();
 
         return new WorkbenchTabViewModel(
             WorkbenchTabKind.ScientificFigure,
@@ -108,7 +109,51 @@ public sealed class ScientificFigureWorkspaceFactory
                 deliveryRequest,
                 _packageExportRequested,
                 () => FixtureTime.AddMinutes(4),
-                _localizationService));
+                _localizationService),
+            chartWorkspace);
+    }
+
+    private static ScientificChartWorkspaceViewModel CreateChartWorkspace()
+    {
+        var data = ScientificChartDataSet.Create(
+            Guid.Parse("a507f529-3b31-46c5-9f1d-caf147bc97d1"),
+            "Sample",
+            [new ScientificChartNumericColumn("Acceleration", "m/s²")],
+            [
+                new ScientificChartDataRow(
+                    "sample-a",
+                    "A",
+                    new Dictionary<string, double> { ["Acceleration"] = 2.0 }),
+                new ScientificChartDataRow(
+                    "sample-b",
+                    "B",
+                    new Dictionary<string, double> { ["Acceleration"] = 3.5 }),
+            ]);
+        var specification = ScientificChartSpec.Create(
+            Guid.Parse("ae211fab-b2d8-4846-b951-afb0feee9d87"),
+            data,
+            "Measured acceleration",
+            "Sample",
+            "Acceleration",
+            "m/s²",
+            ["sample-a", "sample-b"],
+            [
+                new ScientificChartSeriesSpec(
+                    "Acceleration",
+                    "Measured acceleration",
+                    ScientificChartTransform.None),
+            ]);
+        var approval = ScientificChartApproval.Approve(
+            data,
+            specification,
+            "fake-chart-gate-one",
+            "Fake-first chart data, axes, units, rows, and transforms approved.",
+            FixtureTime.AddSeconds(30));
+        var artifact = new DeterministicScientificChartRenderer().Render(
+            data,
+            specification,
+            approval);
+        return new ScientificChartWorkspaceViewModel(data, specification, artifact);
     }
 
     private static ScientificDocumentExtraction CreateExtraction()

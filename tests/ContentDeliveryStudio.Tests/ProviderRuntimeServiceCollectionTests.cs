@@ -66,7 +66,10 @@ public sealed class ProviderRuntimeServiceCollectionTests
             using var provider = services.BuildServiceProvider();
             Assert.IsType<FailoverTextPlanningProvider>(provider.GetRequiredService<ITextPlanningProvider>());
             Assert.IsType<FailoverImageGenerationProvider>(provider.GetRequiredService<IImageGenerationProvider>());
-            Assert.IsType<FakeImageGenerationProvider>(provider.GetRequiredService<IImageEditProvider>());
+            var imageEditProvider = Assert.IsType<OpenAiImageEditProvider>(
+                provider.GetRequiredService<IImageEditProvider>());
+            Assert.Equal("openai-image-edit", imageEditProvider.Capabilities.ProviderId);
+            Assert.True(imageEditProvider.Capabilities.SupportsMaskEditing);
             Assert.IsType<FailoverVisionReviewProvider>(provider.GetRequiredService<IVisionReviewProvider>());
             Assert.IsType<OpenAiScientificUnderstandingProvider>(
                 provider.GetRequiredService<IScientificUnderstandingProvider>());

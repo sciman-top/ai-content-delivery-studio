@@ -66,6 +66,8 @@ public sealed class MainWindowLocalizationCoordinator
             RunFakeGenerationText = Text(LocalizationKey.RunFakeGeneration),
             PrepareGenerationQueueText = Text(LocalizationKey.PrepareGenerationQueue),
             ExecuteGenerationQueueText = Text(LocalizationKey.ExecuteGenerationQueue),
+            ExecuteApprovedLiveGenerationText = Text(LocalizationKey.ExecuteApprovedLiveGeneration),
+            LiveGenerationAuthorityRequiredText = Text(LocalizationKey.LiveGenerationAuthorityRequired),
             PauseGenerationTaskText = Text(LocalizationKey.PauseGenerationTask),
             ResumeGenerationTaskText = Text(LocalizationKey.ResumeGenerationTask),
             RetryGenerationTaskText = Text(LocalizationKey.RetryGenerationTask),
@@ -149,6 +151,9 @@ public sealed class MainWindowLocalizationCoordinator
             ImageEditPromptLabel = Text(LocalizationKey.ImageEditPrompt),
             ImageEditMaskPathLabel = Text(LocalizationKey.ImageEditMaskPath),
             RunFakeImageEditText = Text(LocalizationKey.RunFakeImageEdit),
+            RunApprovedImageEditText = Text(LocalizationKey.RunApprovedImageEdit),
+            ImageEditLiveApprovalRequiredText = Text(LocalizationKey.ImageEditLiveApprovalRequired),
+            ImageEditLiveUnsupportedText = Text(LocalizationKey.ImageEditLiveUnsupported),
             ImageEditResultText = Text(LocalizationKey.ImageEditResult),
             NavigationItems = BuildNavigationItems(),
             WorkbenchTabs = BuildWorkbenchTabs(),
@@ -391,6 +396,8 @@ public sealed class MainWindowLocalizationPayload
     public string RunFakeGenerationText { get; init; } = string.Empty;
     public string PrepareGenerationQueueText { get; init; } = string.Empty;
     public string ExecuteGenerationQueueText { get; init; } = string.Empty;
+    public string ExecuteApprovedLiveGenerationText { get; init; } = string.Empty;
+    public string LiveGenerationAuthorityRequiredText { get; init; } = string.Empty;
     public string PauseGenerationTaskText { get; init; } = string.Empty;
     public string ResumeGenerationTaskText { get; init; } = string.Empty;
     public string RetryGenerationTaskText { get; init; } = string.Empty;
@@ -474,6 +481,9 @@ public sealed class MainWindowLocalizationPayload
     public string ImageEditPromptLabel { get; init; } = string.Empty;
     public string ImageEditMaskPathLabel { get; init; } = string.Empty;
     public string RunFakeImageEditText { get; init; } = string.Empty;
+    public string RunApprovedImageEditText { get; init; } = string.Empty;
+    public string ImageEditLiveApprovalRequiredText { get; init; } = string.Empty;
+    public string ImageEditLiveUnsupportedText { get; init; } = string.Empty;
     public string ImageEditResultText { get; init; } = string.Empty;
     public IReadOnlyList<string> NavigationItems { get; init; } = [];
     public IReadOnlyList<WorkbenchTabViewModel> WorkbenchTabs { get; init; } = [];

@@ -19,7 +19,6 @@ using ContentDeliveryStudio.Infrastructure.Diagnostics;
 using ContentDeliveryStudio.Infrastructure.Backups;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
 using ContentDeliveryStudio.Infrastructure.Persistence;
-using ContentDeliveryStudio.Infrastructure.RemoteWorkflows;
 using ContentDeliveryStudio.Infrastructure.Sources;
 using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 using ContentDeliveryStudio.Infrastructure.ToolAdapters;
@@ -80,7 +79,6 @@ public partial class App : System.Windows.Application
         // Keep the currently executable local operator adapters wired into the desktop host, including the
         // read-only OpenAI launch preflight that only inspects readiness and writes local diagnostics.
         builder.Services.AddBuiltInLocalToolAdapters();
-        builder.Services.AddBuiltInRemoteWorkflowEngineAdapters();
         builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
         builder.Services.AddSingleton<IDiagnosticsPackageWriter, DiagnosticsPackageWriter>();
         builder.Services.AddTransient<DiagnosticsPackageApplicationService>();

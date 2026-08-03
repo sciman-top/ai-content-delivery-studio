@@ -8,6 +8,7 @@ using ContentDeliveryStudio.App.ViewModels;
 using ContentDeliveryStudio.Core.Documents;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Providers;
+using ContentDeliveryStudio.Core.References;
 using ContentDeliveryStudio.Core.Sources;
 using ContentDeliveryStudio.Infrastructure.Delivery;
 using ContentDeliveryStudio.Infrastructure.Fakes;
@@ -42,41 +43,48 @@ public sealed class MainWindowViewModelTests
         var projectId = viewModel.SelectedProject!.Id;
         try
         {
-            await viewModel.PrepareGenerationQueueCommand.ExecuteAsync(null);
+            var workspace = viewModel.ImageSeriesWorkspace;
+            Assert.False(workspace.IsLiveGenerationExecutionAvailable);
+            Assert.False(string.IsNullOrWhiteSpace(workspace.LiveGenerationAuthorityRequiredText));
+            Assert.Same(workspace.PrepareGenerationQueueCommand, viewModel.PrepareGenerationQueueCommand);
+            Assert.Same(workspace.QueueRows, viewModel.QueueRows);
 
-            Assert.Equal(2, viewModel.QueueRows.Count);
-            Assert.All(viewModel.QueueRows, row => Assert.Equal(GenerationTaskStatus.Queued, row.TaskStatus));
+            await workspace.PrepareGenerationQueueCommand.ExecuteAsync(null);
+
+            Assert.Equal(2, workspace.QueueRows.Count);
+            Assert.All(workspace.QueueRows, row => Assert.Equal(GenerationTaskStatus.Queued, row.TaskStatus));
             Assert.Empty(viewModel.GalleryRows);
-            Assert.False(viewModel.PrepareGenerationQueueCommand.CanExecute(null));
+            Assert.False(workspace.PrepareGenerationQueueCommand.CanExecute(null));
 
-            var firstTaskId = viewModel.QueueRows[0].TaskId;
-            var secondTaskId = viewModel.QueueRows[1].TaskId;
-            viewModel.SelectedQueueRow = viewModel.QueueRows[0];
-            await viewModel.PauseSelectedGenerationTaskCommand.ExecuteAsync(null);
+            var firstTaskId = workspace.QueueRows[0].TaskId;
+            var secondTaskId = workspace.QueueRows[1].TaskId;
+            workspace.SelectedQueueRow = workspace.QueueRows[0];
+            await workspace.PauseSelectedGenerationTaskCommand.ExecuteAsync(null);
 
             Assert.Equal(
                 GenerationTaskStatus.Paused,
-                viewModel.QueueRows.Single(row => row.TaskId == firstTaskId).TaskStatus);
+                workspace.QueueRows.Single(row => row.TaskId == firstTaskId).TaskStatus);
 
-            viewModel.SelectedQueueRow = viewModel.QueueRows.Single(row => row.TaskId == secondTaskId);
-            Assert.True(viewModel.MoveSelectedGenerationTaskUpCommand.CanExecute(null));
-            await viewModel.MoveSelectedGenerationTaskUpCommand.ExecuteAsync(null);
-            await viewModel.ExecutePreparedGenerationQueueCommand.ExecuteAsync(null);
+            workspace.SelectedQueueRow = workspace.QueueRows.Single(row => row.TaskId == secondTaskId);
+            Assert.True(workspace.MoveSelectedGenerationTaskUpCommand.CanExecute(null));
+            await workspace.MoveSelectedGenerationTaskUpCommand.ExecuteAsync(null);
+            await workspace.ExecutePreparedGenerationQueueCommand.ExecuteAsync(null);
 
             Assert.Single(viewModel.GalleryRows);
             Assert.Equal(
                 GenerationTaskStatus.Paused,
-                viewModel.QueueRows.Single(row => row.TaskId == firstTaskId).TaskStatus);
+                workspace.QueueRows.Single(row => row.TaskId == firstTaskId).TaskStatus);
             Assert.Equal(
                 GenerationTaskStatus.Succeeded,
-                viewModel.QueueRows.Single(row => row.TaskId == secondTaskId).TaskStatus);
+                workspace.QueueRows.Single(row => row.TaskId == secondTaskId).TaskStatus);
 
-            viewModel.SelectedQueueRow = viewModel.QueueRows.Single(row => row.TaskId == firstTaskId);
-            await viewModel.ResumeSelectedGenerationTaskCommand.ExecuteAsync(null);
-            await viewModel.ExecutePreparedGenerationQueueCommand.ExecuteAsync(null);
+            workspace.SelectedQueueRow = workspace.QueueRows.Single(row => row.TaskId == firstTaskId);
+            await workspace.ResumeSelectedGenerationTaskCommand.ExecuteAsync(null);
+            await workspace.ExecutePreparedGenerationQueueCommand.ExecuteAsync(null);
 
             Assert.Equal(2, viewModel.GalleryRows.Count);
-            Assert.All(viewModel.QueueRows, row => Assert.Equal(GenerationTaskStatus.Succeeded, row.TaskStatus));
+            Assert.All(workspace.QueueRows, row => Assert.Equal(GenerationTaskStatus.Succeeded, row.TaskStatus));
+            Assert.Same(workspace.QueueRows, viewModel.QueueRows);
         }
         finally
         {
@@ -93,16 +101,25 @@ public sealed class MainWindowViewModelTests
         viewModel.NewProjectName = "Kind UI demo";
         await viewModel.CreateProjectCommand.ExecuteAsync(null);
 
-        viewModel.NewSeriesTitle = "Storyboard";
-        await viewModel.CreateSeriesCommand.ExecuteAsync(null);
+        var planningWorkspace = viewModel.ImageSeriesWorkspace.Planning;
+        Assert.Same(planningWorkspace, viewModel.ImageSeriesPlanningWorkspace);
+        Assert.Same(planningWorkspace.CreateSeriesCommand, viewModel.CreateSeriesCommand);
+        planningWorkspace.NewSeriesTitle = "Storyboard";
+        await planningWorkspace.CreateSeriesCommand.ExecuteAsync(null);
 
-        viewModel.NewItemTitle = "Opening panel";
-        viewModel.NewItemBrief = "Opening visual for a panel-like sequence.";
-        await viewModel.AddItemCommand.ExecuteAsync(null);
+        planningWorkspace.NewItemTitle = "Opening panel";
+        planningWorkspace.NewItemBrief = "Opening visual for a panel-like sequence.";
+        await planningWorkspace.AddItemCommand.ExecuteAsync(null);
 
-        var row = Assert.Single(viewModel.PlanRows);
-        Assert.Equal("Kind", viewModel.PlanKindColumn);
+        Assert.Same(planningWorkspace.PlanRows, viewModel.PlanRows);
+        var row = Assert.Single(planningWorkspace.PlanRows);
+        Assert.Equal("Kind", planningWorkspace.PlanKindColumn);
         Assert.Equal("Standard", row.KindText);
+
+        planningWorkspace.NewPromptText = "Create the opening panel.";
+        await planningWorkspace.CreatePromptVersionCommand.ExecuteAsync(null);
+        Assert.Single(planningWorkspace.PromptRows);
+        Assert.Same(planningWorkspace.PromptRows, viewModel.PromptRows);
     }
 
     [Fact]
@@ -255,21 +272,27 @@ public sealed class MainWindowViewModelTests
         var sourceRow = Assert.Single(viewModel.GalleryRows);
         Assert.Equal(sourceRow, viewModel.SelectedGalleryRow);
 
-        viewModel.NewImageEditPrompt = "Clean the label area while preserving the composition.";
-        Assert.True(viewModel.RunFakeImageEditCommand.CanExecute(null));
+        var galleryWorkspace = viewModel.ImageSeriesWorkspace.Gallery;
+        Assert.Same(galleryWorkspace, viewModel.ImageSeriesGalleryWorkspace);
+        Assert.Same(galleryWorkspace.GalleryRows, viewModel.GalleryRows);
+        Assert.Same(galleryWorkspace.RunFakeImageEditCommand, viewModel.RunFakeImageEditCommand);
+        galleryWorkspace.NewImageEditPrompt = "Clean the label area while preserving the composition.";
+        Assert.True(galleryWorkspace.RunFakeImageEditCommand.CanExecute(null));
 
         try
         {
-            await viewModel.RunFakeImageEditCommand.ExecuteAsync(null);
+            await galleryWorkspace.RunFakeImageEditCommand.ExecuteAsync(null);
 
-            Assert.Equal(2, viewModel.GalleryRows.Count);
-            var editedRow = viewModel.GalleryRows.Single(row => row.CandidateImageId != sourceRow.CandidateImageId);
+            Assert.Equal(2, galleryWorkspace.GalleryRows.Count);
+            var editedRow = galleryWorkspace.GalleryRows.Single(row => row.CandidateImageId != sourceRow.CandidateImageId);
             Assert.Equal(sourceRow.SeriesItemId, editedRow.SeriesItemId);
             Assert.Contains("edited", editedRow.ItemTitle, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("Clean the label area", editedRow.PromptText);
             Assert.True(File.Exists(editedRow.AssetPath));
             Assert.True(File.Exists(editedRow.MetadataPath));
             Assert.Contains(viewModel.ImageEditResultText, viewModel.ActivityItems);
+            Assert.Equal(editedRow, galleryWorkspace.SelectedGalleryRow);
+            Assert.Same(galleryWorkspace.GalleryRows, viewModel.GalleryRows);
         }
         finally
         {
@@ -294,8 +317,10 @@ public sealed class MainWindowViewModelTests
         viewModel.NewItemBrief = "Opening visual for a short series.";
         await viewModel.AddItemCommand.ExecuteAsync(null);
 
-        Assert.Equal("Opening frame", viewModel.SelectedSeriesItemTitleText);
-        Assert.Equal("Educational poster / Default editorial guide / Fake standard PNG", viewModel.StyleRecipeSummaryText);
+        Assert.Equal("Opening frame", viewModel.ImageSeriesWorkspace.Planning.SelectedSeriesItemTitleText);
+        Assert.Equal(
+            "Educational poster / Default editorial guide / Fake standard PNG",
+            viewModel.ImageSeriesWorkspace.GenerationSettings.StyleRecipeSummaryText);
 
         viewModel.NewPromptText = "Create a clean opening frame.";
         await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
@@ -304,7 +329,7 @@ public sealed class MainWindowViewModelTests
         var selectedCandidate = Assert.Single(viewModel.GalleryRows);
         Assert.Equal(
             $"{selectedCandidate.ItemTitle} ({selectedCandidate.CandidateImageId:N})",
-            viewModel.SelectedCandidateSummary);
+            viewModel.ImageSeriesWorkspace.Gallery.SelectedCandidateSummary);
     }
 
     [Fact]
@@ -327,23 +352,29 @@ public sealed class MainWindowViewModelTests
         viewModel.NewPromptText = "Create a clean opening frame.";
         await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
         await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
-        await viewModel.RunFakeReviewCommand.ExecuteAsync(null);
+        var reviewWorkspace = viewModel.ImageSeriesWorkspace.Review;
+
+        Assert.Same(reviewWorkspace, viewModel.ImageSeriesReviewWorkspace);
+        Assert.Same(reviewWorkspace.RunFakeReviewCommand, viewModel.RunFakeReviewCommand);
+        await reviewWorkspace.RunFakeReviewCommand.ExecuteAsync(null);
 
         try
         {
-            var reviewRow = Assert.Single(viewModel.ReviewRows);
+            Assert.Same(reviewWorkspace.ReviewRows, viewModel.ReviewRows);
+            var reviewRow = Assert.Single(reviewWorkspace.ReviewRows);
             Assert.False(reviewRow.HumanApproved);
             Assert.Equal("None", reviewRow.RouteSummary);
             Assert.False(viewModel.ExportDeliveryCommand.CanExecute(null));
 
-            viewModel.SelectedReviewRow = reviewRow;
-            viewModel.FinalApprovalReviewer = "Teacher";
-            viewModel.FinalApprovalNotes = "Looks ready for delivery.";
+            reviewWorkspace.SelectedReviewRow = reviewRow;
+            reviewWorkspace.FinalApprovalReviewer = "Teacher";
+            reviewWorkspace.FinalApprovalNotes = "Looks ready for delivery.";
 
-            Assert.True(viewModel.ApproveSelectedReviewCommand.CanExecute(null));
-            await viewModel.ApproveSelectedReviewCommand.ExecuteAsync(null);
+            Assert.Same(reviewWorkspace.ApproveSelectedReviewCommand, viewModel.ApproveSelectedReviewCommand);
+            Assert.True(reviewWorkspace.ApproveSelectedReviewCommand.CanExecute(null));
+            await reviewWorkspace.ApproveSelectedReviewCommand.ExecuteAsync(null);
 
-            var approvedRow = Assert.Single(viewModel.ReviewRows);
+            var approvedRow = Assert.Single(reviewWorkspace.ReviewRows);
             Assert.True(approvedRow.HumanApproved);
             Assert.Equal("Teacher", approvedRow.FinalReviewer);
             Assert.Contains("approved", approvedRow.HumanApprovalStatus, StringComparison.OrdinalIgnoreCase);
@@ -372,12 +403,15 @@ public sealed class MainWindowViewModelTests
         var viewModel = CreateViewModel();
         await viewModel.BackgroundTask;
 
-        Assert.Equal(FinalImageDeliveryCategory.ImageSeries, viewModel.SelectedFinalDeliveryCategoryOption?.Category);
-        Assert.Equal(LocalStudioDataPaths.ResolveDeliveryRoot(), viewModel.FinalDeliveryRootPath);
+        var deliveryWorkspace = viewModel.ImageSeriesWorkspace.Delivery;
+        Assert.Same(deliveryWorkspace, viewModel.ImageSeriesDeliveryWorkspace);
+        Assert.Same(deliveryWorkspace.ExportDeliveryCommand, viewModel.ExportDeliveryCommand);
+        Assert.Equal(FinalImageDeliveryCategory.ImageSeries, deliveryWorkspace.SelectedFinalDeliveryCategoryOption?.Category);
+        Assert.Equal(LocalStudioDataPaths.ResolveDeliveryRoot(), deliveryWorkspace.FinalDeliveryRootPath);
         Assert.Equal(
             LocalStudioDataPaths.ResolveFinalDeliveryCategoryRoot(FinalImageDeliveryCategory.ImageSeries),
-            viewModel.FinalDeliveryDestinationPreview);
-        Assert.Equal(7, viewModel.FinalDeliveryCategoryOptions.Count);
+            deliveryWorkspace.FinalDeliveryDestinationPreview);
+        Assert.Equal(7, deliveryWorkspace.FinalDeliveryCategoryOptions.Count);
     }
 
     [Fact]
@@ -389,21 +423,22 @@ public sealed class MainWindowViewModelTests
         var viewModel = CreateViewModel(finalDeliveryRootPickerService: picker);
         await viewModel.BackgroundTask;
 
-        viewModel.SelectedFinalDeliveryCategoryOption = viewModel.FinalDeliveryCategoryOptions.Single(
+        var deliveryWorkspace = viewModel.ImageSeriesWorkspace.Delivery;
+        deliveryWorkspace.SelectedFinalDeliveryCategoryOption = deliveryWorkspace.FinalDeliveryCategoryOptions.Single(
             option => option.Category == FinalImageDeliveryCategory.DocumentIllustrations);
-        await viewModel.BrowseFinalDeliveryRootCommand.ExecuteAsync(null);
+        await deliveryWorkspace.BrowseFinalDeliveryRootCommand.ExecuteAsync(null);
 
         Assert.Equal(LocalStudioDataPaths.ResolveDeliveryRoot(), picker.InitialRoot);
-        Assert.Equal(selectedRoot, viewModel.FinalDeliveryRootPath);
+        Assert.Equal(selectedRoot, deliveryWorkspace.FinalDeliveryRootPath);
         Assert.Equal(
             Path.Combine(selectedRoot, "document-illustrations"),
-            viewModel.FinalDeliveryDestinationPreview);
+            deliveryWorkspace.FinalDeliveryDestinationPreview);
 
-        viewModel.FinalDeliveryRootPath = LocalStudioDataPaths.ResolveProjectDirectory(
+        deliveryWorkspace.FinalDeliveryRootPath = LocalStudioDataPaths.ResolveProjectDirectory(
             LocalStudioDataPaths.WorkspaceAreaName,
             Guid.NewGuid());
-        Assert.Empty(viewModel.FinalDeliveryDestinationPreview);
-        Assert.False(viewModel.ExportDeliveryCommand.CanExecute(null));
+        Assert.Empty(deliveryWorkspace.FinalDeliveryDestinationPreview);
+        Assert.False(deliveryWorkspace.ExportDeliveryCommand.CanExecute(null));
     }
 
     [Fact]
@@ -482,7 +517,7 @@ public sealed class MainWindowViewModelTests
             await viewModel.RunFakeReviewCommand.ExecuteAsync(null);
 
             var reviewRow = Assert.Single(viewModel.ReviewRows);
-            Assert.Equal("Repair route", viewModel.ReviewRouteColumn);
+            Assert.Equal("Repair route", viewModel.ImageSeriesWorkspace.Review.ReviewRouteColumn);
             Assert.Contains("Brief", reviewRow.RouteSummary);
             Assert.Contains("Regenerate", reviewRow.RouteSummary);
         }
@@ -658,26 +693,62 @@ public sealed class MainWindowViewModelTests
         viewModel.NewItemBrief = "Opening visual for teachers.";
         await viewModel.AddItemCommand.ExecuteAsync(null);
 
-        viewModel.NewPlanningGoal = "article illustration";
-        viewModel.NewPlanningAudience = "teachers";
-        viewModel.NewPlanningStyleBrief = "clean editorial";
+        var briefWorkspace = viewModel.ImageSeriesWorkspace.Brief;
+        Assert.Same(briefWorkspace, viewModel.ImageSeriesBriefWorkspace);
+        Assert.Same(briefWorkspace.CreateBriefCommand, viewModel.CreateBriefCommand);
+        briefWorkspace.NewPlanningGoal = "article illustration";
+        briefWorkspace.NewPlanningAudience = "teachers";
+        briefWorkspace.NewPlanningStyleBrief = "clean editorial";
 
-        await viewModel.CreateBriefCommand.ExecuteAsync(null);
-        await viewModel.GeneratePromptDirectionsCommand.ExecuteAsync(null);
+        await briefWorkspace.CreateBriefCommand.ExecuteAsync(null);
+        await briefWorkspace.GeneratePromptDirectionsCommand.ExecuteAsync(null);
 
         var row = Assert.Single(
-            viewModel.PromptDirectionRows,
+            briefWorkspace.PromptDirectionRows,
             direction => direction.DirectionKey == "conservative");
         Assert.Contains("article-inline-illustration", row.RecommendationSummary);
         Assert.Contains("1536x1024", row.RecommendationSummary);
         Assert.Contains("draft", row.RecommendationSummary);
         Assert.Contains("fake provider warning", row.CapabilityWarningSummary);
 
-        viewModel.SelectedPromptDirection = row;
-        await viewModel.PromotePromptDirectionCommand.ExecuteAsync(null);
+        briefWorkspace.SelectedPromptDirection = row;
+        await briefWorkspace.PromotePromptDirectionCommand.ExecuteAsync(null);
 
         var promptRow = Assert.Single(viewModel.PromptRows);
         Assert.Equal("1536x1024 draft png", promptRow.SettingsSummary);
+    }
+
+    [Fact]
+    public void ApprovedImageEditCapability_IsProjectedButFailsClosedWithoutDesktopAuthority()
+    {
+        var viewModel = CreateViewModel(imageEditRuntimeProvider: new CapabilityOnlyImageEditProvider());
+        var gallery = viewModel.ImageSeriesWorkspace.Gallery;
+
+        Assert.Contains("paid authority", gallery.ApprovedImageEditAvailabilityText, StringComparison.OrdinalIgnoreCase);
+        Assert.False(gallery.IsApprovedImageEditAvailable);
+        Assert.False(gallery.RunApprovedImageEditCommand.CanExecute(null));
+        Assert.Contains("approved real image edit", gallery.RunApprovedImageEditText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GenerationSettingsWorkspace_OwnsSelectionsAndRefreshesSummary()
+    {
+        var viewModel = CreateViewModel();
+        await viewModel.BackgroundTask;
+
+        var workspace = viewModel.ImageSeriesWorkspace.GenerationSettings;
+        Assert.Same(workspace, viewModel.ImageSeriesGenerationSettingsWorkspace);
+        Assert.NotEmpty(workspace.ImageTypePresetOptions);
+        Assert.NotEmpty(workspace.StyleGuideOptions);
+        Assert.NotEmpty(workspace.GenerationRecipeOptions);
+
+        workspace.SelectedImageTypePresetOption = workspace.ImageTypePresetOptions[^1];
+        workspace.SelectedStyleGuideOption = workspace.StyleGuideOptions[^1];
+        workspace.SelectedGenerationRecipeOption = workspace.GenerationRecipeOptions[^1];
+
+        Assert.Contains(workspace.SelectedImageTypePresetOption.DisplayName, workspace.StyleRecipeSummaryText);
+        Assert.Contains(workspace.SelectedStyleGuideOption.Name, workspace.StyleRecipeSummaryText);
+        Assert.Contains(workspace.SelectedGenerationRecipeOption.DisplayName, workspace.StyleRecipeSummaryText);
     }
 
     [Fact]
@@ -1079,7 +1150,8 @@ public sealed class MainWindowViewModelTests
         ProjectApplicationService? projectService = null,
         GalleryThumbnailWarmupService? galleryThumbnailWarmupService = null,
         IDocumentSourceFilePickerService? documentSourceFilePickerService = null,
-        IFinalDeliveryRootPickerService? finalDeliveryRootPickerService = null)
+        IFinalDeliveryRootPickerService? finalDeliveryRootPickerService = null,
+        IImageEditProvider? imageEditRuntimeProvider = null)
     {
         var fakeImageProvider = new FakeImageGenerationProvider();
 
@@ -1097,7 +1169,8 @@ public sealed class MainWindowViewModelTests
                     ProviderCenterSnapshot.MissingEnvironmentFile(".env"))),
             galleryThumbnailWarmupService ?? new NoopGalleryThumbnailWarmupService(),
             documentSourceFilePickerService,
-            finalDeliveryRootPickerService);
+            finalDeliveryRootPickerService,
+            imageEditProvider: imageEditRuntimeProvider);
     }
 
     private static ProjectApplicationService CreateProjectService(
@@ -1631,6 +1704,31 @@ public sealed class MainWindowViewModelTests
             {
                 Directory.Delete(directory, recursive: true);
             }
+        }
+    }
+
+    private sealed class CapabilityOnlyImageEditProvider : IImageEditProvider
+    {
+        public IProviderCapabilities Capabilities { get; } = new ProviderCapabilities(
+            "openai-image-edit",
+            "OpenAI image edit",
+            ["gpt-image-2"],
+            SupportsTextPlanning: false,
+            SupportsImageGeneration: false,
+            SupportsVisionReview: false,
+            SupportsImageEditing: true,
+            SupportsStreaming: false,
+            supportsReferenceImages: true,
+            supportedReferenceImageRoles: [ReferenceImageRole.Subject],
+            supportsMaskEditing: true,
+            maxReferenceImageCount: 1,
+            maxReferenceImageBytes: 50L * 1024 * 1024);
+
+        public Task<ImageGenerationResult> EditImageAsync(
+            ImageEditRequest request,
+            CancellationToken cancellationToken)
+        {
+            throw new InvalidOperationException("Capability projection must not dispatch the provider.");
         }
     }
 

@@ -48,6 +48,18 @@ public sealed class ProviderCapabilityValidatorTests
     }
 
     [Fact]
+    public void ValidateImageEditProvider_AcceptsBoundedOpenAiEditProvider()
+    {
+        using var httpClient = new HttpClient(new StaticHttpHandler());
+        var provider = new OpenAiImageEditProvider(
+            httpClient,
+            new OpenAiProviderOptions(),
+            new StaticSecretStore());
+
+        Assert.Empty(ProviderCapabilityValidator.ValidateImageEditProvider(provider));
+    }
+
+    [Fact]
     public void ValidateImageGenerationProvider_RejectsMissingOutputSettings()
     {
         var provider = new InvalidImageGenerationProvider(

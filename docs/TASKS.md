@@ -11,6 +11,9 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 
 ## Current Queue Status
 
+- The historical V1 execution queue remains closed, but the post-V1 product-focus queue is active. Its mutable truth is [product-focus-execution.json](./product-focus-execution.json); use the [post-V1 PRD](./PRD_POST_V1_PRODUCT_FOCUS.md), [design](./superpowers/specs/2026-08-02-product-focus-and-simplification-design.md), and [implementation plan](./superpowers/plans/2026-08-02-product-focus-and-simplification.md) to interpret each task.
+- Two production lanes are in scope: `image-series-production` and `trustworthy-scientific-figures`. Scenario labels are profiles, not independent platforms.
+- `FOCUS-004` through `FOCUS-011` are repo-side complete. `FOCUS-002`, `FOCUS-003`, `FOCUS-012`, and `FOCUS-013` require external human/live/hardware authority before further execution.
 - The recorded V1 implementation-plan surface remains closed and its launch evidence is unchanged.
 - The post-V1 trustworthy-scientific-figure flagship is accepted through Task 30 and Checkpoint 5. Tasks 6-20 and Checkpoint 3 establish the machine-trust loop; Tasks 21-25 and Checkpoint 4 provide the user-visible fake-first five-workspace flow; Task 26 accepts all 12 baselines plus 40 blocking mutations; Tasks 27-28 add opt-in OpenAI understanding and independent review; Task 29 records three live samples and their human Gate 2 approvals; Task 30 synchronizes documentation and final repository evidence. No scientific-figure implementation task remains open.
 - The active scope and authority live in [the scientific figure design](./superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md) and [implementation plan](./superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md).
@@ -18,6 +21,28 @@ Use [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) as the truth source for cur
 - Phase 7 product hardening is repo-side closed through the verified Windows ZIP, safe backup/restore, budgeted 1,000-row gallery benchmark, principal-form accessibility contracts, PerMonitorV2 declaration, and packaged-app UIA probe. Narrator, real system high-contrast switching, a non-default-DPI hardware matrix, touch/pen, subjective scroll quality, and real low-memory devices remain manual/live acceptance rather than repository tasks.
 - Reliability Hardening Wave 2 is closed: the `latest-wins`/`exclusive` operation gate, responsibility-focused ViewModel partials, race/failure guardrail tests, and repository-scan pruning landed in `ab3e42d`; its previously stale checklist was reconciled with fresh evidence on `2026-07-29`.
 - The unified final-image layout follow-through is repo-side complete: the generic WPF approval panel now selects the finite delivery category, defaults and browses a custom final root, previews the resolved category directory, rejects temporary-workspace roots, and still exports only human-approved `Pass` items. Article Gate 1/Gate 2 and live-provider acceptance remain separate pending authority boundaries.
+
+## Active Post-V1 Product-Focus Queue
+
+The status values below mirror `docs/product-focus-execution.json` as of `2026-08-03`. Update the JSON first whenever state changes, then synchronize this summary in the same slice.
+
+| Task | Priority | State | Authority | Dependency | Execution outcome |
+| --- | --- | --- | --- | --- | --- |
+| `FOCUS-001` | P0 | `completed` | repo-only | none | Establish the post-V1 PRD, design, detailed plan, machine queue, verifier, navigation, and evidence without changing the locked V1 snapshot. |
+| `FOCUS-002` | P0 | `blocked_external` | human-expert | `FOCUS-001` | Record a named physics-expert Gate 1 decision for all six reconstructed article figures. |
+| `FOCUS-003` | P0 | `blocked_external` | paid-live-approval | `FOCUS-002` | Run one explicitly authorized live scientific acceptance from the exact Gate-1 identity. |
+| `FOCUS-004` | P0 | `completed` | repo-only | `FOCUS-001` | Separate quick/full/release gates and remove low-signal governance and source-shape tests while retaining high-risk guards. |
+| `FOCUS-005` | P1 | `completed` | repo-only | `FOCUS-004` | Image-series stages now own state/commands under `ImageSeriesWorkspace`; scientific state remains isolated, MainWindow partials fell 34.9%, and public properties fell 42.1%. |
+| `FOCUS-006` | P1 | `completed` | repo-only | `FOCUS-004` | Removed unconsumed repository-folder module metadata and the fake-only remote-workflow contract/DI registration after persistence, package, runtime, and UI consumer inventory. |
+| `FOCUS-007` | P1 | `completed` | repo-only | `FOCUS-006` | Retired the unconsumed built-in starter catalog and export surface; retained import-only `pack-package.v1` validation with scenario IDs treated as descriptive profiles. |
+| `FOCUS-008` | P1 | `completed` | repo-only until live probe | `FOCUS-004`, `FOCUS-005` | Immutable approval receipts, additive reload, cost-bounded captured-provider dispatch, invalidation, pause, and no-replay behavior are repo-side complete; any paid probe still requires separate authority. |
+| `FOCUS-009` | P1 | `completed` | repo-only until live probe | `FOCUS-008` | Added a captured real Images edit provider, immutable approval, non-destructive persisted candidate lineage, capability-aware fail-closed UI, and path-safe delivery provenance; paid live proof remains separately gated. |
+| `FOCUS-010` | P1 | `completed` | repo-only | `FOCUS-004` | Recover scholarly reading order, captions, formulas, tables, and citations with explicit fail-closed states. |
+| `FOCUS-011` | P2 | `completed` | repo-only | `FOCUS-010` | Add deterministic charts whose values, units, transforms, axes, and provenance come from hashed structured data. |
+| `FOCUS-012` | P2 | `blocked_external` | manual-hardware | `FOCUS-005`, `FOCUS-008`, `FOCUS-009` | Replace high-value source assertions with packaged native UIA and named Windows/hardware acceptance. |
+| `FOCUS-013` | P2 | `blocked_external` | mixed-explicit | seven production dependencies | Publish a new truthful evidence snapshot without relabeling historical V1 or scientific evidence. |
+
+AI execution rule: run `scripts/verify-product-focus-plan.ps1`, select the lowest-order `ready` task, set only that task to `in_progress`, honor its authority and write-set, run focused verification before the full gate, create one bounded evidence record, then mark it `completed` and promote newly unblocked work. Never treat repo-only completion as human, live, paid, or hardware acceptance.
 
 ## Accepted Post-V1 Flagship Slice: Trustworthy Scientific Figures
 

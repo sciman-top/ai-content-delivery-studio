@@ -38,6 +38,92 @@ public sealed class ScientificDocumentExtractionTests
     }
 
     [Fact]
+    public async Task ExtractAsync_RecoversOrderedScholarlyStructuresFromTextBearingPdf()
+    {
+        await WithDirectoryAsync(async directory =>
+        {
+            var pdfPath = Path.Combine(directory, "scholarly-structures.pdf");
+            await BinaryDocumentTestFixtureBuilder.CreateScholarlyPdfAsync(
+                pdfPath,
+                [
+                    "1 Introduction",
+                    "Net force causes acceleration for constant mass.",
+                    "Figure 1. Force diagram for the bounded system.",
+                    "F = m a",
+                    "TABLE: quantity | value | unit",
+                    "[1] Newton, Principia, 1687.",
+                ],
+                CancellationToken.None);
+
+            var extraction = await new PdfPigScientificDocumentExtractor().ExtractAsync(
+                Request(
+                    SourceAssetKind.Pdf,
+                    originalPath: pdfPath,
+                    requiredContent:
+                    [
+                        ScientificRequiredContentKind.Caption,
+                        ScientificRequiredContentKind.Formula,
+                        ScientificRequiredContentKind.Table,
+                        ScientificRequiredContentKind.Citation,
+                    ]),
+                CancellationToken.None);
+
+            Assert.Equal(ScientificExtractionStatus.Ready, extraction.Status);
+            Assert.Equal(ScientificRequiredContentStatus.Complete, extraction.Quality.RequiredContent);
+            Assert.Contains(extraction.Blocks, block => block.Kind == ScientificSourceBlockKind.Caption
+                && block.RecoveryStatus == ScientificRecoveryStatus.Recovered);
+            Assert.Contains(extraction.Blocks, block => block.Kind == ScientificSourceBlockKind.Formula
+                && block.OriginalText == "F = m a");
+            Assert.Contains(extraction.Blocks, block => block.Kind == ScientificSourceBlockKind.Table
+                && block.RecoveryStatus == ScientificRecoveryStatus.Recovered);
+            Assert.Contains(extraction.Blocks, block => block.Kind == ScientificSourceBlockKind.Reference
+                && block.RecoveryStatus == ScientificRecoveryStatus.Recovered);
+            Assert.Equal(
+                extraction.Blocks.OrderBy(block => block.Location.CharacterRange!.StartOffset).Select(block => block.BlockId),
+                extraction.Blocks.Select(block => block.BlockId));
+            Assert.Contains(extraction.Diagnostics, diagnostic => diagnostic.Code == "pdfpig-content-order");
+        });
+    }
+
+    [Fact]
+    public async Task ExtractAsync_BlocksWhenRequiredCaptionOrCitationIsMissing()
+    {
+        var extraction = await new PdfPigScientificDocumentExtractor().ExtractAsync(
+            Request(
+                SourceAssetKind.Text,
+                sourceText: "A plain scientific paragraph without source structures.",
+                requiredContent:
+                [
+                    ScientificRequiredContentKind.Caption,
+                    ScientificRequiredContentKind.Citation,
+                ]),
+            CancellationToken.None);
+
+        Assert.Equal(ScientificExtractionStatus.Blocked, extraction.Status);
+        Assert.Contains("required-caption-missing", extraction.BlockingCodes);
+        Assert.Contains("required-reference-missing", extraction.BlockingCodes);
+        Assert.Contains(extraction.Blocks, block => block.Kind == ScientificSourceBlockKind.Caption
+            && block.RecoveryStatus == ScientificRecoveryStatus.Missing);
+        Assert.Contains(extraction.Blocks, block => block.Kind == ScientificSourceBlockKind.Reference
+            && block.RecoveryStatus == ScientificRecoveryStatus.Missing);
+    }
+
+    [Fact]
+    public async Task ExtractAsync_BlocksUncertainReadingOrderWithoutGuessing()
+    {
+        var extraction = await new PdfPigScientificDocumentExtractor().ExtractAsync(
+            Request(
+                SourceAssetKind.Text,
+                sourceText: "Column fragments could not be ordered reliably.",
+                readingOrder: ScientificReadingOrderStatus.Uncertain),
+            CancellationToken.None);
+
+        Assert.Equal(ScientificExtractionStatus.Blocked, extraction.Status);
+        Assert.Contains("uncertain-reading-order", extraction.BlockingCodes);
+        Assert.Contains(extraction.Diagnostics, diagnostic => diagnostic.Code == "reading-order-uncertain");
+    }
+
+    [Fact]
     public async Task ExtractAsync_PreservesMarkdownBlocksAndExplicitFormulaRecovery()
     {
         const string markdown =

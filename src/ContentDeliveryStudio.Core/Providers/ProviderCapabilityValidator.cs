@@ -30,6 +30,23 @@ public static class ProviderCapabilityValidator
         {
             errors.Add("Image edit provider must support source or reference images.");
         }
+        else
+        {
+            if (provider.Capabilities.MaxReferenceImageCount < 1)
+            {
+                errors.Add("Image edit provider must declare a positive reference-image count limit.");
+            }
+
+            if (provider.Capabilities.MaxReferenceImageBytes is <= 0)
+            {
+                errors.Add("Image edit provider reference-image byte limit must be positive when declared.");
+            }
+
+            if (provider.Capabilities.SupportedReferenceImageRoles.Count == 0)
+            {
+                errors.Add("Image edit provider must declare at least one supported reference-image role.");
+            }
+        }
 
         return errors;
     }

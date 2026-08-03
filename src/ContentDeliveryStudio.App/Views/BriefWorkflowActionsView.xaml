@@ -5,28 +5,28 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-        <Button Content="{Binding DataContext.CreateBriefText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                Command="{Binding DataContext.CreateBriefCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+        <Button Content="{Binding DataContext.ImageSeriesWorkspace.Brief.CreateBriefText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                Command="{Binding DataContext.ImageSeriesWorkspace.Brief.CreateBriefCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                 MinWidth="112"
                 Height="30"
                 Margin="0,0,8,0" />
-        <Button Content="{Binding DataContext.GenerateDesignBlueprintsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                Command="{Binding DataContext.GenerateDesignBlueprintsCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+        <Button Content="{Binding DataContext.ImageSeriesWorkspace.Brief.GenerateDesignBlueprintsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                Command="{Binding DataContext.ImageSeriesWorkspace.Brief.GenerateDesignBlueprintsCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                 MinWidth="132"
                 Height="30"
                 Margin="0,0,8,0" />
-        <Button Content="{Binding DataContext.PromoteDesignBlueprintText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                Command="{Binding DataContext.PromoteDesignBlueprintCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+        <Button Content="{Binding DataContext.ImageSeriesWorkspace.Brief.PromoteDesignBlueprintText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                Command="{Binding DataContext.ImageSeriesWorkspace.Brief.PromoteDesignBlueprintCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                 MinWidth="132"
                 Height="30"
                 Margin="0,0,8,0" />
-        <Button Content="{Binding DataContext.GeneratePromptDirectionsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                Command="{Binding DataContext.GeneratePromptDirectionsCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+        <Button Content="{Binding DataContext.ImageSeriesWorkspace.Brief.GeneratePromptDirectionsText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                Command="{Binding DataContext.ImageSeriesWorkspace.Brief.GeneratePromptDirectionsCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                 MinWidth="128"
                 Height="30"
                 Margin="0,0,8,0" />
-        <Button Content="{Binding DataContext.PromotePromptDirectionText, RelativeSource={RelativeSource AncestorType=TabControl}}"
-                Command="{Binding DataContext.PromotePromptDirectionCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
+        <Button Content="{Binding DataContext.ImageSeriesWorkspace.Brief.PromotePromptDirectionText, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                Command="{Binding DataContext.ImageSeriesWorkspace.Brief.PromotePromptDirectionCommand, RelativeSource={RelativeSource AncestorType=TabControl}}"
                 MinWidth="128"
                 Height="30" />
     </StackPanel>

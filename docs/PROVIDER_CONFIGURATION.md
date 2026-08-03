@@ -76,7 +76,23 @@ The desktop app keeps fake providers as the default runtime. To let the App host
 PROVIDER_MODE=live
 ```
 
-When live mode is enabled, startup reads the local `.env`, validates the text and image profiles, and registers live providers for text planning, image generation, vision review, and scientific understanding. Scientific understanding uses the primary text profile through bounded, strict, stateless Responses requests; generic text/image/vision retain their existing failover policies. Missing or invalid `.env` configuration fails closed at registration time instead of silently falling back to fake providers. Image edit remains fake until a separate live-edit provider slice is implemented and tested.
+When live mode is enabled, startup reads the local `.env`, validates the text and image profiles, and registers live providers for text planning, image generation, image editing, vision review, and scientific understanding. Scientific understanding uses the primary text profile through bounded, strict, stateless Responses requests; generic text/image/vision retain their existing failover policies. Missing or invalid `.env` configuration fails closed at registration time instead of silently falling back to fake providers. Image editing uses the primary image profile through `POST /images/edits`; it is not covered by generation failover because the approval receipt binds one provider identity and model.
+
+### Reference-Guided Image Edit Boundary
+
+The current production edit contract is intentionally narrow:
+
+- exactly one persisted source candidate with role `Subject`
+- optional PNG mask with the same format and decoded dimensions as the source
+- source/reference and mask inputs capped at 50 MB each
+- one output candidate created beside, never over, the source or mask
+- supported output sizes `1024x1024`, `1024x1536`, and `1536x1024`
+- `png`, `jpeg`, or `webp` output and `auto`, `low`, `medium`, or `high` quality
+- source, mask, instruction, provider, model, operation, and approval hashes persisted without absolute input paths
+
+Multi-reference composition/style editing remains frozen in this slice. The provider capability matrix exposes only `Subject`, a maximum reference count of one, and optional mask editing. Captured multipart transport tests prove the request shape without network access; they are not evidence that a paid call or visual result was accepted.
+
+The WPF gallery projects this capability but keeps the real-edit command disabled because the desktop host has no trusted paid-authority source. The existing fake edit button remains explicitly fake and is not evidence of live editing.
 
 ## Hard Boundaries
 

@@ -6,161 +6,27 @@ namespace ContentDeliveryStudio.App.ViewModels;
 
 public sealed partial class MainWindowViewModel
 {
-    [RelayCommand(CanExecute = nameof(CanRunFakeGeneration))]
-    private async Task RunFakeGenerationAsync()
+    private Task<bool> RunImageSeriesFakeGenerationAsync(IReadOnlyList<SeriesSummaryViewModel> series)
     {
-        await RunQueueProjectMutationAsync(async (projectId, ignoredTaskId, cancellationToken) =>
+        return RunImageSeriesQueueMutationAndReloadAsync(
+            SelectedQueueRow?.TaskId,
+            async (projectId, ignoredTaskId, cancellationToken) =>
         {
-            await _generationWorkflowCoordinator.RunFakeGenerationAsync(projectId, Series, cancellationToken);
+            await _generationWorkflowCoordinator.RunFakeGenerationAsync(projectId, series, cancellationToken);
         });
     }
 
-    private bool CanRunFakeGeneration()
-    {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && PromptRows.Count > 0
-            && QueueRows.All(row => row.TaskStatus is not (
-                GenerationTaskStatus.Queued
-                or GenerationTaskStatus.Paused
-                or GenerationTaskStatus.Running));
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunFakeGeneration))]
-    private async Task PrepareGenerationQueueAsync()
-    {
-        await RunQueueProjectMutationAsync((projectId, ignoredTaskId, cancellationToken) =>
-            _generationWorkflowCoordinator.PrepareFakeGenerationQueueAsync(projectId, cancellationToken));
-    }
-
-    [RelayCommand(CanExecute = nameof(CanExecutePreparedGenerationQueue))]
-    private async Task ExecutePreparedGenerationQueueAsync()
-    {
-        await RunQueueProjectMutationAsync(async (projectId, ignoredTaskId, cancellationToken) =>
-        {
-            await _generationWorkflowCoordinator.ExecuteFakeGenerationQueueAsync(projectId, cancellationToken);
-        });
-    }
-
-    private bool CanExecutePreparedGenerationQueue()
-    {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && QueueRows.Any(row => row.TaskStatus is GenerationTaskStatus.Queued);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanPauseSelectedGenerationTask))]
-    private Task PauseSelectedGenerationTaskAsync()
-    {
-        return RunSelectedQueueTaskMutationAsync((projectId, taskId, cancellationToken) =>
-            _generationWorkflowCoordinator.PauseGenerationTaskAsync(projectId, taskId, cancellationToken));
-    }
-
-    private bool CanPauseSelectedGenerationTask()
-    {
-        return CanRunMutation() && SelectedProject is not null && SelectedQueueRow?.CanPause is true;
-    }
-
-    [RelayCommand(CanExecute = nameof(CanResumeSelectedGenerationTask))]
-    private Task ResumeSelectedGenerationTaskAsync()
-    {
-        return RunSelectedQueueTaskMutationAsync((projectId, taskId, cancellationToken) =>
-            _generationWorkflowCoordinator.ResumeGenerationTaskAsync(projectId, taskId, cancellationToken));
-    }
-
-    private bool CanResumeSelectedGenerationTask()
-    {
-        return CanRunMutation() && SelectedProject is not null && SelectedQueueRow?.CanResume is true;
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRetrySelectedGenerationTask))]
-    private Task RetrySelectedGenerationTaskAsync()
-    {
-        return RunSelectedQueueTaskMutationAsync(async (projectId, taskId, cancellationToken) =>
-        {
-            await _generationWorkflowCoordinator.RetryGenerationTaskAsync(projectId, taskId, cancellationToken);
-        });
-    }
-
-    private bool CanRetrySelectedGenerationTask()
-    {
-        return CanRunMutation() && SelectedProject is not null && SelectedQueueRow?.CanRetry is true;
-    }
-
-    [RelayCommand(CanExecute = nameof(CanMoveSelectedGenerationTaskUp))]
-    private Task MoveSelectedGenerationTaskUpAsync()
-    {
-        return MoveSelectedGenerationTaskAsync(GenerationTaskMoveDirection.Up);
-    }
-
-    private bool CanMoveSelectedGenerationTaskUp()
-    {
-        return CanMoveSelectedGenerationTask(GenerationTaskMoveDirection.Up);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanMoveSelectedGenerationTaskDown))]
-    private Task MoveSelectedGenerationTaskDownAsync()
-    {
-        return MoveSelectedGenerationTaskAsync(GenerationTaskMoveDirection.Down);
-    }
-
-    private bool CanMoveSelectedGenerationTaskDown()
-    {
-        return CanMoveSelectedGenerationTask(GenerationTaskMoveDirection.Down);
-    }
-
-    private Task MoveSelectedGenerationTaskAsync(GenerationTaskMoveDirection direction)
-    {
-        return RunSelectedQueueTaskMutationAsync((projectId, taskId, cancellationToken) =>
-            _generationWorkflowCoordinator.MoveGenerationTaskAsync(
-                projectId,
-                taskId,
-                direction,
-                cancellationToken));
-    }
-
-    private bool CanMoveSelectedGenerationTask(GenerationTaskMoveDirection direction)
-    {
-        if (!CanRunMutation() || SelectedProject is null || SelectedQueueRow?.CanReorder is not true)
-        {
-            return false;
-        }
-
-        var activeRows = QueueRows
-            .Where(row => row.CanReorder)
-            .OrderBy(row => row.QueuePosition ?? int.MaxValue)
-            .ThenBy(row => row.TaskId)
-            .ToArray();
-        var index = Array.FindIndex(activeRows, row => row.TaskId == SelectedQueueRow.TaskId);
-        return direction is GenerationTaskMoveDirection.Up
-            ? index > 0
-            : index >= 0 && index < activeRows.Length - 1;
-    }
-
-    private Task RunSelectedQueueTaskMutationAsync(
-        Func<Guid, Guid, CancellationToken, Task> mutation)
-    {
-        if (SelectedQueueRow is null)
-        {
-            return Task.CompletedTask;
-        }
-
-        var taskId = SelectedQueueRow.TaskId;
-        return RunQueueProjectMutationAsync((projectId, _, cancellationToken) =>
-            mutation(projectId, taskId, cancellationToken));
-    }
-
-    private async Task RunQueueProjectMutationAsync(
+    private async Task<bool> RunImageSeriesQueueMutationAndReloadAsync(
+        Guid? selectedTaskId,
         Func<Guid, Guid?, CancellationToken, Task> mutation)
     {
         ArgumentNullException.ThrowIfNull(mutation);
         if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
         var projectId = SelectedProject.Id;
-        var selectedTaskId = SelectedQueueRow?.TaskId;
         var selectedSeriesId = SelectedSeries?.Id;
         var selectedItemId = SelectedSeriesItem?.Id;
         var result = await _operationGate.RunExclusiveAsync(async cancellationToken =>
@@ -175,157 +41,115 @@ public sealed partial class MainWindowViewModel
 
         if (!result.Executed || result.Value is null || !TryApplyProjectReloadSnapshot(result.Value))
         {
-            return;
+            return false;
         }
 
-        SelectedQueueRow = QueueRows.FirstOrDefault(row => row.TaskId == selectedTaskId)
-            ?? QueueRows.FirstOrDefault();
-        ReviewRows = [];
-        DeliveryRows = [];
-        RunFakeReviewCommand.NotifyCanExecuteChanged();
+        ImageSeriesReviewWorkspace.ApplyProjection([]);
+        ImageSeriesDeliveryWorkspace.ApplyProjection([]);
+        return true;
     }
 
-    private void NotifyQueueCommandStatesChanged()
+    private async Task<WorkbenchInspectorImageEditResult?> RunImageSeriesGalleryEditAsync(
+        GalleryRowViewModel selectedRow,
+        string editPrompt,
+        string? maskPath,
+        IReadOnlyList<GalleryRowViewModel> currentRows)
     {
-        RunFakeGenerationCommand.NotifyCanExecuteChanged();
-        PrepareGenerationQueueCommand.NotifyCanExecuteChanged();
-        ExecutePreparedGenerationQueueCommand.NotifyCanExecuteChanged();
-        PauseSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
-        ResumeSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
-        RetrySelectedGenerationTaskCommand.NotifyCanExecuteChanged();
-        MoveSelectedGenerationTaskUpCommand.NotifyCanExecuteChanged();
-        MoveSelectedGenerationTaskDownCommand.NotifyCanExecuteChanged();
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRunFakeImageEdit))]
-    private async Task RunFakeImageEditAsync()
-    {
-        if (SelectedProject is null || SelectedGalleryRow is null)
+        if (SelectedProject is null)
         {
-            return;
+            return null;
         }
 
         var projectId = SelectedProject.Id;
         var result = await _operationGate.RunExclusiveAsync(
             cancellationToken => _workbenchInspectorCoordinator.RunFakeImageEditAsync(
                 projectId,
-                SelectedGalleryRow,
-                NewImageEditPrompt,
-                NewImageEditMaskPath,
+                selectedRow,
+                editPrompt,
+                maskPath,
                 ImageEditResultText,
-                GalleryRows,
+                currentRows,
                 ActivityItems,
                 cancellationToken));
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return null;
         }
 
         if (SelectedProject?.Id != projectId)
         {
-            return;
+            return null;
         }
 
-        GalleryRows = result.Value.GalleryRows;
-        SelectedGalleryRow = result.Value.SelectedGalleryRow;
-        ReviewRows = [];
-        DeliveryRows = [];
-        ActivityItems = result.Value.ActivityItems;
+        return result.Value;
     }
 
-    private bool CanRunFakeImageEdit()
+    private void ApplyImageSeriesGalleryEditResult(WorkbenchInspectorImageEditResult result)
     {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && SelectedGalleryRow is not null
-            && !string.IsNullOrWhiteSpace(NewImageEditPrompt);
+        ImageSeriesReviewWorkspace.ApplyProjection([]);
+        ImageSeriesDeliveryWorkspace.ApplyProjection([]);
+        ActivityItems = result.ActivityItems;
     }
 
-    [RelayCommand(CanExecute = nameof(CanRunFakeReview))]
-    private async Task RunFakeReviewAsync()
+    private void OnImageSeriesGalleryProjectionChanged()
+    {
+        ImageSeriesReviewWorkspace.NotifyCommandStatesChanged();
+        RebuildWorkflowGraphRows();
+    }
+
+    private async Task<IReadOnlyList<ReviewRowViewModel>?> RunImageSeriesReviewAsync(
+        IReadOnlyList<GalleryRowViewModel> galleryRows)
     {
         if (SelectedProject is null)
         {
-            return;
+            return null;
         }
 
         var projectId = SelectedProject.Id;
         var result = await _operationGate.RunExclusiveAsync(
             cancellationToken => _reviewWorkflowCoordinator.RunFakeReviewAsync(
                 projectId,
-                GalleryRows,
+                galleryRows,
                 cancellationToken));
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return null;
         }
 
         if (SelectedProject?.Id != projectId)
         {
-            return;
+            return null;
         }
 
-        ReviewRows = result.Value;
-        DeliveryRows = [];
-        ExportDeliveryCommand.NotifyCanExecuteChanged();
+        return result.Value;
     }
 
-    private bool CanRunFakeReview()
+    private async Task<bool> RunImageSeriesFinalApprovalAsync(
+        ReviewRowViewModel selectedRow,
+        bool approve,
+        string reviewer,
+        string notes)
     {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && GalleryRows.Count > 0;
-    }
-
-    [RelayCommand(CanExecute = nameof(CanApproveSelectedReview))]
-    private Task ApproveSelectedReviewAsync()
-    {
-        return ApplyFinalApprovalAsync(approve: true);
-    }
-
-    private bool CanApproveSelectedReview()
-    {
-        return CanRunMutation()
-            && SelectedReviewRow is { Review.Decision: ReviewDecision.Pass, Review.NeedsRepair: false }
-            && !string.IsNullOrWhiteSpace(FinalApprovalReviewer);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanRejectSelectedReview))]
-    private Task RejectSelectedReviewAsync()
-    {
-        return ApplyFinalApprovalAsync(approve: false);
-    }
-
-    private bool CanRejectSelectedReview()
-    {
-        return CanRunMutation()
-            && SelectedReviewRow is not null
-            && !string.IsNullOrWhiteSpace(FinalApprovalReviewer)
-            && !string.IsNullOrWhiteSpace(FinalApprovalNotes);
-    }
-
-    private async Task ApplyFinalApprovalAsync(bool approve)
-    {
-        if (SelectedReviewRow is null || SelectedProject is null)
+        if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
         var projectId = SelectedProject.Id;
         var selectedSeriesId = SelectedSeries?.Id;
         var selectedItemId = SelectedSeriesItem?.Id;
-        var candidateImageId = SelectedReviewRow.CandidateImageId;
+        var candidateImageId = selectedRow.CandidateImageId;
         var result = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
                 await _reviewWorkflowCoordinator.ApplyFinalApprovalAsync(
                     projectId,
-                    SelectedReviewRow,
+                    selectedRow,
                     approve,
-                    FinalApprovalReviewer,
-                    FinalApprovalNotes,
+                    reviewer,
+                    notes,
                     cancellationToken);
 
                 var snapshot = await CaptureProjectReloadSnapshotAsync(
@@ -339,26 +163,39 @@ public sealed partial class MainWindowViewModel
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return false;
         }
 
         if (!TryApplyProjectReloadSnapshot(result.Value.Snapshot))
         {
-            return;
+            return false;
         }
 
-        SelectedReviewRow = ReviewRows.FirstOrDefault(row => row.CandidateImageId == result.Value.CandidateImageId)
-            ?? SelectedReviewRow;
-        DeliveryRows = [];
-        ExportDeliveryCommand.NotifyCanExecuteChanged();
+        ImageSeriesReviewWorkspace.SelectedReviewRow = ReviewRows.FirstOrDefault(
+            row => row.CandidateImageId == result.Value.CandidateImageId)
+            ?? ImageSeriesReviewWorkspace.SelectedReviewRow;
+        return true;
     }
 
-    [RelayCommand(CanExecute = nameof(CanExportDelivery))]
-    private async Task ExportDeliveryAsync()
+    private void OnImageSeriesReviewMutated()
+    {
+        ImageSeriesDeliveryWorkspace.ApplyProjection([]);
+        ImageSeriesDeliveryWorkspace.NotifyCommandStatesChanged();
+    }
+
+    private void OnImageSeriesReviewProjectionChanged()
+    {
+        ImageSeriesDeliveryWorkspace.NotifyCommandStatesChanged();
+        RebuildWorkflowGraphRows();
+    }
+
+    private async Task<IReadOnlyList<DeliveryRowViewModel>?> RunImageSeriesDeliveryAsync(
+        FinalImageDeliveryCategory category,
+        string deliveryRootPath)
     {
         if (SelectedProject is null)
         {
-            return;
+            return null;
         }
 
         var projectId = SelectedProject.Id;
@@ -371,56 +208,27 @@ public sealed partial class MainWindowViewModel
                 DesignBlueprintRows,
                 _activeCreativeBriefId,
                 cancellationToken,
-                SelectedFinalDeliveryCategoryOption?.Category ?? FinalImageDeliveryCategory.ImageSeries,
-                FinalDeliveryRootPath));
+                category,
+                deliveryRootPath));
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return null;
         }
 
-        DeliveryRows = result.Value.DeliveryRows;
+        return result.Value.DeliveryRows;
     }
 
-    private bool CanExportDelivery()
+    private void OnImageSeriesDeliveryProjectionChanged()
     {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && GalleryRows.Count > 0
-            && SelectedFinalDeliveryCategoryOption is not null
-            && !string.IsNullOrWhiteSpace(FinalDeliveryDestinationPreview)
-            && ReviewRows.Any(row => row.HumanApproved && row.Decision == ReviewDecision.Pass.ToString());
+        RebuildWorkflowGraphRows();
     }
 
-    [RelayCommand(CanExecute = nameof(CanBrowseFinalDeliveryRoot))]
-    private async Task BrowseFinalDeliveryRootAsync()
-    {
-        if (_finalDeliveryRootPickerService is null)
-        {
-            return;
-        }
-
-        var selectedRoot = await _finalDeliveryRootPickerService.PickAsync(
-            FinalDeliveryRootPath,
-            BrowseFinalDeliveryRootText,
-            CancellationToken.None);
-        if (!string.IsNullOrWhiteSpace(selectedRoot))
-        {
-            FinalDeliveryRootPath = selectedRoot;
-        }
-    }
-
-    private bool CanBrowseFinalDeliveryRoot()
-    {
-        return CanRunMutation() && _finalDeliveryRootPickerService is not null;
-    }
-
-    [RelayCommand(CanExecute = nameof(CanCreateSeries))]
-    private async Task CreateSeriesAsync()
+    private async Task<bool> RunImageSeriesCreateSeriesAsync(string title, string description)
     {
         if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
         var projectId = SelectedProject.Id;
@@ -429,8 +237,8 @@ public sealed partial class MainWindowViewModel
             {
                 var seriesId = await _planEditorWorkflowCoordinator.CreateSeriesAsync(
                     projectId,
-                    NewSeriesTitle,
-                    NewSeriesDescription,
+                    title,
+                    description,
                     cancellationToken);
                 var snapshot = await CaptureProjectReloadSnapshotAsync(
                     projectId,
@@ -443,39 +251,32 @@ public sealed partial class MainWindowViewModel
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return false;
         }
 
-        NewSeriesTitle = string.Empty;
-        NewSeriesDescription = string.Empty;
-        TryApplyProjectReloadSnapshot(result.Value.Snapshot);
+        return TryApplyProjectReloadSnapshot(result.Value.Snapshot);
     }
 
-    private bool CanCreateSeries()
+    private async Task<bool> RunImageSeriesAddItemAsync(
+        SeriesSummaryViewModel selectedSeries,
+        string title,
+        string brief)
     {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && !string.IsNullOrWhiteSpace(NewSeriesTitle);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanAddItem))]
-    private async Task AddItemAsync()
-    {
-        if (SelectedProject is null || SelectedSeries is null)
+        if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
         var projectId = SelectedProject.Id;
-        var selectedSeriesId = SelectedSeries.Id;
+        var selectedSeriesId = selectedSeries.Id;
         var result = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
                 var itemId = await _planEditorWorkflowCoordinator.AddItemAsync(
                     projectId,
                     selectedSeriesId,
-                    NewItemTitle,
-                    NewItemBrief,
+                    title,
+                    brief,
                     cancellationToken);
                 var snapshot = await CaptureProjectReloadSnapshotAsync(
                     projectId,
@@ -488,40 +289,32 @@ public sealed partial class MainWindowViewModel
 
         if (!result.Executed || result.Value is null)
         {
-            return;
+            return false;
         }
 
-        NewItemTitle = string.Empty;
-        NewItemBrief = string.Empty;
-        TryApplyProjectReloadSnapshot(result.Value.Snapshot);
+        return TryApplyProjectReloadSnapshot(result.Value.Snapshot);
     }
 
-    private bool CanAddItem()
+    private async Task<bool> RunImageSeriesCreatePromptVersionAsync(
+        SeriesSummaryViewModel selectedSeries,
+        SeriesItemViewModel selectedItem,
+        string promptText)
     {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && SelectedSeries is not null
-            && !string.IsNullOrWhiteSpace(NewItemTitle);
-    }
-
-    [RelayCommand(CanExecute = nameof(CanCreatePromptVersion))]
-    private async Task CreatePromptVersionAsync()
-    {
-        if (SelectedProject is null || SelectedSeries is null || SelectedSeriesItem is null)
+        if (SelectedProject is null)
         {
-            return;
+            return false;
         }
 
         var projectId = SelectedProject.Id;
-        var selectedSeriesId = SelectedSeries.Id;
-        var selectedItemId = SelectedSeriesItem.Id;
+        var selectedSeriesId = selectedSeries.Id;
+        var selectedItemId = selectedItem.Id;
         var operation = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
                 var promptVersionId = await _planEditorWorkflowCoordinator.CreatePromptVersionAsync(
                     projectId,
                     selectedItemId,
-                    NewPromptText,
+                    promptText,
                     cancellationToken);
 
                 var snapshot = await CaptureProjectReloadSnapshotAsync(
@@ -535,19 +328,25 @@ public sealed partial class MainWindowViewModel
 
         if (!operation.Executed || operation.Value is null)
         {
-            return;
+            return false;
         }
 
-        NewPromptText = string.Empty;
-        TryApplyProjectReloadSnapshot(operation.Value.Snapshot);
+        return TryApplyProjectReloadSnapshot(operation.Value.Snapshot);
     }
 
-    private bool CanCreatePromptVersion()
+    private void OnImageSeriesSelectedSeriesChanged(SeriesSummaryViewModel? selectedSeries)
     {
-        return CanRunMutation()
-            && SelectedProject is not null
-            && SelectedSeriesItem is not null
-            && !string.IsNullOrWhiteSpace(NewPromptText);
+        ImageSeriesBriefWorkspace.NotifyCommandStatesChanged();
+    }
+
+    private void OnImageSeriesSelectedItemChanged(SeriesItemViewModel? selectedItem)
+    {
+        ImageSeriesBriefWorkspace.NotifyCommandStatesChanged();
+    }
+
+    private void OnImageSeriesPromptProjectionChanged()
+    {
+        RunFakeGenerationCommand.NotifyCanExecuteChanged();
     }
 
     private sealed record AddItemReloadResult(Guid ItemId, ProjectReloadSnapshot Snapshot);

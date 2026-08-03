@@ -32,9 +32,10 @@
 - fixed order：`build -> test -> contract/invariant -> hotspot`。
 - build：`dotnet build ContentDeliveryStudio.sln`
 - test：`dotnet test ContentDeliveryStudio.sln --no-build`
-- contract/invariant：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1`，并运行 `dotnet format --verify-no-changes`。
-- hotspot：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`；它会追加 placeholder/conflict、publish WhatIf 与 diff hygiene。
-- canonical full gate：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1`；它聚合 reference evidence、build、test 与 format，不改变交付留痕中的固定阶段语义。
+- quick feedback：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore`；只证明 solution build 与显式 focused tests，不能替代 full closeout。
+- contract/invariant：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1` 校验结构化 reference decision 与 parity，并运行 product-focus verifier 和 format。
+- hotspot：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`；它只在 Full 之后追加 placeholder/conflict、实际 publish/package 校验与 diff hygiene。
+- canonical full gate：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1`；它按 build、完整 test、reference/product contract、format 各执行一次，不改变交付留痕中的固定阶段语义。
 - 触及 provider、observability、persistence/schema 或 operator/tooling 边界时，reference evidence 失败即阻断。
 - 证据放入 `docs/change-evidence/`；最低记录风险、命令、exit code、关键输出、兼容判断、N/A 与回滚。
 - 回滚只撤销本任务源码/规则/证据切片；生成输出和 workspace 需要时在 Git 外备份，不能用 Git 回滚伪装恢复。

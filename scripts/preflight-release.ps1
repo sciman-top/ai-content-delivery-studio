@@ -79,6 +79,10 @@ function Invoke-RgFilteredCheck {
                     continue
                 }
 
+                if (-not (Test-Path -LiteralPath $relativePath -PathType Leaf)) {
+                    continue
+                }
+
                 foreach ($match in @(Select-String -LiteralPath $relativePath -Pattern $Pattern -AllMatches -CaseSensitive -Encoding utf8)) {
                     "{0}:{1}:{2}" -f $relativePath, $match.LineNumber, $match.Line
                 }
@@ -103,8 +107,22 @@ function Invoke-RgFilteredCheck {
     return $lines
 }
 
-Invoke-Step -Label "Reference governance parity" -Action {
-    & ".\scripts\sync-reference-governance.ps1" -Check
+Invoke-Step -Label "Repository verification" -Action {
+    $verifyParams = @{}
+    if ($NoRestore) {
+        $verifyParams.NoRestore = $true
+    }
+    if ($SkipReferenceEvidence) {
+        $verifyParams.SkipReferenceEvidence = $true
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef)) {
+        $verifyParams.ReferenceEvidenceBaseRef = $ReferenceEvidenceBaseRef
+    }
+    if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
+        $verifyParams.ReferenceEvidenceHeadRef = $ReferenceEvidenceHeadRef
+    }
+
+    & ".\scripts\verify-repo.ps1" @verifyParams
 }
 
 Invoke-Step -Label "Placeholder scan" -Action {
@@ -124,33 +142,6 @@ Invoke-Step -Label "Merge conflict marker scan" -Action {
     if ($hits.Count -gt 0) {
         throw "Merge conflict markers detected."
     }
-}
-
-if (-not $SkipReferenceEvidence) {
-    Invoke-Step -Label "Reference evidence gate" -Action {
-        if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef) -or -not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
-            & ".\scripts\verify-reference-evidence.ps1" -BaseRef $ReferenceEvidenceBaseRef -HeadRef $ReferenceEvidenceHeadRef
-        } else {
-            & ".\scripts\verify-reference-evidence.ps1"
-        }
-    }
-}
-
-Invoke-Step -Label "Repository verification" -Action {
-    $verifyParams = @{
-        SkipReferenceEvidence = $true
-    }
-    if ($NoRestore) {
-        $verifyParams.NoRestore = $true
-    }
-    if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef)) {
-        $verifyParams.ReferenceEvidenceBaseRef = $ReferenceEvidenceBaseRef
-    }
-    if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
-        $verifyParams.ReferenceEvidenceHeadRef = $ReferenceEvidenceHeadRef
-    }
-
-    & ".\scripts\verify-repo.ps1" @verifyParams
 }
 
 if (-not $SkipPublishWhatIf) {

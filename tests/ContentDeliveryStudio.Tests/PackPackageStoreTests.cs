@@ -1,4 +1,3 @@
-using ContentDeliveryStudio.Application.Packs;
 using ContentDeliveryStudio.Core.Packs;
 using ContentDeliveryStudio.Infrastructure.Packs;
 
@@ -7,240 +6,131 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class PackPackageStoreTests
 {
     [Fact]
-    public async Task PackPackageStore_ExportsImportsAndValidatesPackRegistry()
+    public async Task ImportAsync_LoadsLegacyV1ScenarioProfileWithoutClaimingRuntimeComposition()
     {
-        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
-        var packagePath = Path.Combine(rootDirectory, "packs.json");
-        Directory.CreateDirectory(rootDirectory);
+        var packagePath = await WritePackageAsync(CreateLegacyPackageJson(includeBlueprint: true));
 
         try
         {
-            var timestamp = DateTimeOffset.Parse("2026-06-03T15:00:00Z");
-            var registry = BuiltInPackCatalog.CreateGenericImageSeriesRegistry("1.5.0", timestamp);
-            var package = PackPackage.FromRegistry("Generic image-series starter packs", timestamp, registry);
-            var store = new JsonPackPackageStore();
+            var package = await new JsonPackPackageStore()
+                .ImportAsync(packagePath, "1.5.0", CancellationToken.None);
+            var registry = package.CreateRegistry("1.5.0");
+            var workflow = registry.GetRequired<WorkflowPack>("legacy-image-series");
 
-            await store.ExportAsync(package, packagePath, CancellationToken.None);
-            var imported = await store.ImportAsync(packagePath, "1.5.0", CancellationToken.None);
-            var importedRegistry = imported.CreateRegistry("1.5.0");
-            var workflow = importedRegistry.GetRequired<WorkflowPack>(BuiltInPackCatalog.GenericImageSeriesWorkflowPackId);
-
-            Assert.True(File.Exists(packagePath));
-            Assert.Equal(PackPackage.CurrentSchemaVersion, imported.SchemaVersion);
-            Assert.Equal("Generic image-series starter packs", imported.Name);
-            Assert.Equal(5, importedRegistry.Packs.Count);
-            Assert.Contains(WorkflowViewSlotIds.StageWorkspace, workflow.UiDefaults.ViewSlots.Select(slot => slot.SlotId));
+            Assert.Equal("pack-package.v1", package.SchemaVersion);
+            Assert.Equal(["article-illustration"], workflow.ScenarioIds);
+            Assert.Equal(["legacy-blueprints"], workflow.BlueprintPackIds);
+            Assert.Equal("Brief", workflow.UiDefaults.DefaultStageId);
+            Assert.Contains(
+                workflow.UiDefaults.ViewSlots,
+                slot => slot.SlotId == WorkflowViewSlotIds.StageWorkspace && slot.StageId == "Brief");
         }
         finally
         {
-            if (Directory.Exists(rootDirectory))
-            {
-                Directory.Delete(rootDirectory, recursive: true);
-            }
+            Directory.Delete(Path.GetDirectoryName(packagePath)!, recursive: true);
         }
     }
 
     [Fact]
-    public async Task PackPackageStore_RejectsImportedPackWithMissingBlueprintReference()
+    public async Task ImportAsync_RejectsLegacyV1PackageWithMissingBlueprintReference()
     {
-        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
-        var packagePath = Path.Combine(rootDirectory, "bad-packs.json");
-        Directory.CreateDirectory(rootDirectory);
+        var packagePath = await WritePackageAsync(CreateLegacyPackageJson(includeBlueprint: false));
 
         try
         {
-            await File.WriteAllTextAsync(
-                packagePath,
-                """
-                {
-                  "schemaVersion": "pack-package.v1",
-                  "name": "Bad pack package",
-                  "exportedAt": "2026-06-03T15:00:00+00:00",
-                  "workflowPacks": [
-                    {
-                      "metadata": {
-                        "id": "bad-workflow",
-                        "displayName": "Bad Workflow",
-                        "version": { "major": 1, "minor": 0, "patch": 0 },
-                        "compatibility": {
-                          "minimumAppVersion": { "major": 1, "minor": 0, "patch": 0 },
-                          "maximumAppVersion": { "major": 2, "minor": 0, "patch": 0 }
-                        },
-                        "lifecycleState": "active",
-                        "migrationNotes": [],
-                        "createdAt": "2026-06-03T15:00:00+00:00"
-                      },
-                      "stageDefinitions": [
-                        {
-                          "id": "Source",
-                          "displayName": "Source",
-                          "completionCriteria": ["Source evidence is attached."],
-                          "required": true
-                        }
-                      ],
-                      "blueprintPackIds": ["missing-blueprints"],
-                      "uiDefaults": {
-                        "defaultStageId": "Source",
-                        "viewSlots": [
-                          {
-                            "slotId": "StageWorkspace",
-                            "stageId": "Source",
-                            "visibleByDefault": true,
-                            "order": 0
-                          }
-                        ]
-                      }
-                    }
-                  ],
-                  "blueprintPacks": [],
-                  "industryPacks": [],
-                  "rendererPacks": [],
-                  "reviewRubricPacks": []
-                }
-                """,
-                CancellationToken.None);
-            var store = new JsonPackPackageStore();
-
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                store.ImportAsync(packagePath, "1.5.0", CancellationToken.None));
+                new JsonPackPackageStore().ImportAsync(packagePath, "1.5.0", CancellationToken.None));
         }
         finally
         {
-            if (Directory.Exists(rootDirectory))
-            {
-                Directory.Delete(rootDirectory, recursive: true);
-            }
+            Directory.Delete(Path.GetDirectoryName(packagePath)!, recursive: true);
         }
     }
 
-    [Fact]
-    public async Task PackPackageStore_ExportsStarterRegistryWithArticlePolicyLinks()
+    private static async Task<string> WritePackageAsync(string json)
     {
-        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
-        var packagePath = Path.Combine(rootDirectory, "starter-packs.json");
-        Directory.CreateDirectory(rootDirectory);
-
-        try
-        {
-            var timestamp = DateTimeOffset.Parse("2026-06-03T15:30:00Z");
-            var registry = BuiltInPackCatalog.CreateStarterPackRegistry("1.5.0", timestamp);
-            var package = PackPackage.FromRegistry("Starter packs", timestamp, registry);
-            var store = new JsonPackPackageStore();
-
-            await store.ExportAsync(package, packagePath, CancellationToken.None);
-            var imported = await store.ImportAsync(packagePath, "1.5.0", CancellationToken.None);
-            var articleWorkflow = imported.CreateRegistry("1.5.0")
-                .GetRequired<WorkflowPack>(BuiltInPackCatalog.ArticleIllustrationWorkflowPackId);
-
-            Assert.Equal([BuiltInPackCatalog.ArticleIllustrationIndustryPackId], articleWorkflow.IndustryPackIds);
-            Assert.Equal([BuiltInPackCatalog.ArticleIllustrationRendererPackId], articleWorkflow.RendererPackIds);
-            Assert.Equal([BuiltInPackCatalog.ArticleIllustrationReviewRubricPackId], articleWorkflow.ReviewRubricPackIds);
-        }
-        finally
-        {
-            if (Directory.Exists(rootDirectory))
-            {
-                Directory.Delete(rootDirectory, recursive: true);
-            }
-        }
+        var directory = Path.Combine(
+            Path.GetTempPath(),
+            "ContentDeliveryStudio.Tests",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        var path = Path.Combine(directory, "legacy-pack.v1.json");
+        await File.WriteAllTextAsync(path, json);
+        return path;
     }
 
-    [Fact]
-    public async Task PackPackageStore_ExportsStarterRegistryWithDocumentReviewPolicyLinks()
+    private static string CreateLegacyPackageJson(bool includeBlueprint)
     {
-        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
-        var packagePath = Path.Combine(rootDirectory, "document-review-starter-packs.json");
-        Directory.CreateDirectory(rootDirectory);
+        var blueprint = includeBlueprint
+            ? """
+              {
+                "metadata": {
+                  "id": "legacy-blueprints",
+                  "displayName": "Legacy Blueprints",
+                  "version": { "major": 1, "minor": 0, "patch": 0 },
+                  "compatibility": {
+                    "minimumAppVersion": { "major": 1, "minor": 0, "patch": 0 },
+                    "maximumAppVersion": { "major": 2, "minor": 0, "patch": 0 }
+                  },
+                  "lifecycleState": "active",
+                  "migrationNotes": [],
+                  "createdAt": "2026-06-03T15:00:00+00:00"
+                },
+                "blueprintIds": ["article-illustration"]
+              }
+              """
+            : string.Empty;
 
-        try
-        {
-            var timestamp = DateTimeOffset.Parse("2026-06-03T15:45:00Z");
-            var registry = BuiltInPackCatalog.CreateStarterPackRegistry("1.5.0", timestamp);
-            var package = PackPackage.FromRegistry("Starter packs", timestamp, registry);
-            var store = new JsonPackPackageStore();
-
-            await store.ExportAsync(package, packagePath, CancellationToken.None);
-            var imported = await store.ImportAsync(packagePath, "1.5.0", CancellationToken.None);
-            var documentWorkflow = imported.CreateRegistry("1.5.0")
-                .GetRequired<WorkflowPack>(BuiltInPackCatalog.DocumentReviewTranslationWorkflowPackId);
-
-            Assert.Equal(["document-review-translation"], documentWorkflow.ScenarioIds);
-            Assert.Equal([BuiltInPackCatalog.DocumentReviewTranslationIndustryPackId], documentWorkflow.IndustryPackIds);
-            Assert.Equal([BuiltInPackCatalog.DocumentReviewTranslationRendererPackId], documentWorkflow.RendererPackIds);
-            Assert.Equal([BuiltInPackCatalog.DocumentReviewTranslationReviewRubricPackId], documentWorkflow.ReviewRubricPackIds);
-        }
-        finally
-        {
-            if (Directory.Exists(rootDirectory))
-            {
-                Directory.Delete(rootDirectory, recursive: true);
-            }
-        }
-    }
-
-    [Fact]
-    public async Task PackPackageStore_ExportsStarterRegistryWithCoursewarePolicyLinks()
-    {
-        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
-        var packagePath = Path.Combine(rootDirectory, "courseware-starter-packs.json");
-        Directory.CreateDirectory(rootDirectory);
-
-        try
-        {
-            var timestamp = DateTimeOffset.Parse("2026-06-03T15:50:00Z");
-            var registry = BuiltInPackCatalog.CreateStarterPackRegistry("1.5.0", timestamp);
-            var package = PackPackage.FromRegistry("Starter packs", timestamp, registry);
-            var store = new JsonPackPackageStore();
-
-            await store.ExportAsync(package, packagePath, CancellationToken.None);
-            var imported = await store.ImportAsync(packagePath, "1.5.0", CancellationToken.None);
-            var coursewareWorkflow = imported.CreateRegistry("1.5.0")
-                .GetRequired<WorkflowPack>(BuiltInPackCatalog.CoursewareVisualWorkflowPackId);
-
-            Assert.Equal(["courseware-visual"], coursewareWorkflow.ScenarioIds);
-            Assert.Equal([BuiltInPackCatalog.CoursewareVisualIndustryPackId], coursewareWorkflow.IndustryPackIds);
-            Assert.Equal([BuiltInPackCatalog.CoursewareVisualRendererPackId], coursewareWorkflow.RendererPackIds);
-            Assert.Equal([BuiltInPackCatalog.CoursewareVisualReviewRubricPackId], coursewareWorkflow.ReviewRubricPackIds);
-        }
-        finally
-        {
-            if (Directory.Exists(rootDirectory))
-            {
-                Directory.Delete(rootDirectory, recursive: true);
-            }
-        }
-    }
-
-    [Fact]
-    public async Task PackPackageStore_ExportsStarterRegistryWithPosterPolicyLinks()
-    {
-        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
-        var packagePath = Path.Combine(rootDirectory, "poster-starter-packs.json");
-        Directory.CreateDirectory(rootDirectory);
-
-        try
-        {
-            var timestamp = DateTimeOffset.Parse("2026-06-03T15:55:00Z");
-            var registry = BuiltInPackCatalog.CreateStarterPackRegistry("1.5.0", timestamp);
-            var package = PackPackage.FromRegistry("Starter packs", timestamp, registry);
-            var store = new JsonPackPackageStore();
-
-            await store.ExportAsync(package, packagePath, CancellationToken.None);
-            var imported = await store.ImportAsync(packagePath, "1.5.0", CancellationToken.None);
-            var posterWorkflow = imported.CreateRegistry("1.5.0")
-                .GetRequired<WorkflowPack>(BuiltInPackCatalog.PosterReportDeliveryWorkflowPackId);
-
-            Assert.Equal(["poster-report-delivery"], posterWorkflow.ScenarioIds);
-            Assert.Equal([BuiltInPackCatalog.PosterReportDeliveryIndustryPackId], posterWorkflow.IndustryPackIds);
-            Assert.Equal([BuiltInPackCatalog.PosterReportDeliveryRendererPackId], posterWorkflow.RendererPackIds);
-            Assert.Equal([BuiltInPackCatalog.PosterReportDeliveryReviewRubricPackId], posterWorkflow.ReviewRubricPackIds);
-        }
-        finally
-        {
-            if (Directory.Exists(rootDirectory))
-            {
-                Directory.Delete(rootDirectory, recursive: true);
-            }
-        }
+        return $$"""
+          {
+            "schemaVersion": "pack-package.v1",
+            "name": "Legacy scenario profile",
+            "exportedAt": "2026-06-03T15:00:00+00:00",
+            "workflowPacks": [
+              {
+                "metadata": {
+                  "id": "legacy-image-series",
+                  "displayName": "Legacy Image Series",
+                  "version": { "major": 1, "minor": 0, "patch": 0 },
+                  "compatibility": {
+                    "minimumAppVersion": { "major": 1, "minor": 0, "patch": 0 },
+                    "maximumAppVersion": { "major": 2, "minor": 0, "patch": 0 }
+                  },
+                  "lifecycleState": "active",
+                  "migrationNotes": [],
+                  "createdAt": "2026-06-03T15:00:00+00:00"
+                },
+                "stageDefinitions": [
+                  {
+                    "id": "Brief",
+                    "displayName": "Brief",
+                    "completionCriteria": ["Brief is ready."],
+                    "required": true
+                  }
+                ],
+                "blueprintPackIds": ["legacy-blueprints"],
+                "uiDefaults": {
+                  "defaultStageId": "Brief",
+                  "viewSlots": [
+                    {
+                      "slotId": "StageWorkspace",
+                      "stageId": "Brief",
+                      "visibleByDefault": true,
+                      "order": 0
+                    }
+                  ]
+                },
+                "scenarioIds": ["article-illustration"],
+                "industryPackIds": [],
+                "rendererPackIds": [],
+                "reviewRubricPackIds": []
+              }
+            ],
+            "blueprintPacks": [{{blueprint}}],
+            "industryPacks": [],
+            "rendererPacks": [],
+            "reviewRubricPacks": []
+          }
+          """;
     }
 }

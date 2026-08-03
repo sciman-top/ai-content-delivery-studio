@@ -1,4 +1,5 @@
 using ContentDeliveryStudio.Application.Projects;
+using ContentDeliveryStudio.Core.Generation;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -35,6 +36,8 @@ public sealed class GenerationQueuePersistenceRecoveryTests
                     "ALTER TABLE \"GenerationTasks\" DROP COLUMN \"QueuePosition\";");
                 await legacy.Database.ExecuteSqlRawAsync(
                     "ALTER TABLE \"GenerationTasks\" DROP COLUMN \"RetryOfTaskId\";");
+                await legacy.Database.ExecuteSqlRawAsync(
+                    "ALTER TABLE \"GenerationTasks\" DROP COLUMN \"ApprovalReceipt\";");
             }
 
             await using (var upgrade = new AppDbContext(options))
@@ -53,6 +56,7 @@ public sealed class GenerationQueuePersistenceRecoveryTests
                 Assert.Contains("interrupted", recoveredTask.ErrorMessage, StringComparison.OrdinalIgnoreCase);
                 Assert.Null(recoveredTask.QueuePosition);
                 Assert.Null(recoveredTask.RetryOfTaskId);
+                Assert.Null(recoveredTask.ApprovalReceipt);
             }
 
             await using (var verify = new AppDbContext(options))
@@ -64,7 +68,8 @@ public sealed class GenerationQueuePersistenceRecoveryTests
                 Assert.Contains("interrupted", persistedTask.ErrorMessage, StringComparison.OrdinalIgnoreCase);
                 Assert.Null(persistedTask.QueuePosition);
                 Assert.Null(persistedTask.RetryOfTaskId);
-                Assert.Equal(["ErrorMessage", "QueuePosition", "RetryOfTaskId"], compatibilityColumns);
+                Assert.Null(persistedTask.ApprovalReceipt);
+                Assert.Equal(["ApprovalReceipt", "ErrorMessage", "QueuePosition", "RetryOfTaskId"], compatibilityColumns);
             }
         }
         finally
@@ -77,7 +82,7 @@ public sealed class GenerationQueuePersistenceRecoveryTests
     }
 
     [Fact]
-    public async Task NewSchema_RoundTripsPausedPositionAndRetryProvenance()
+    public async Task NewSchema_RoundTripsPausedPositionRetryProvenanceAndApprovalReceipt()
     {
         var databasePath = Path.Combine(
             Path.GetTempPath(),
@@ -104,6 +109,8 @@ public sealed class GenerationQueuePersistenceRecoveryTests
             Assert.Equal(GenerationTaskStatus.Paused, task.Status);
             Assert.Equal(3, task.QueuePosition);
             Assert.NotNull(task.RetryOfTaskId);
+            Assert.NotNull(task.ApprovalReceipt);
+            Assert.Equal("paid-image-v1", task.ApprovalReceipt.ModelId);
         }
         finally
         {
@@ -126,7 +133,7 @@ public sealed class GenerationQueuePersistenceRecoveryTests
             new GenerationSettings(1024, 1024, "standard", "png"),
             profile.Id,
             timestamp.AddMinutes(4));
-        item.AddGenerationTask(
+        var task = item.AddGenerationTask(
             new GenerationTask(
                 Guid.NewGuid(),
                 item.Id,
@@ -155,7 +162,7 @@ public sealed class GenerationQueuePersistenceRecoveryTests
             new GenerationSettings(1024, 1024, "standard", "png"),
             profile.Id,
             timestamp.AddMinutes(4));
-        item.AddGenerationTask(
+        var task = item.AddGenerationTask(
             new GenerationTask(
                 Guid.NewGuid(),
                 item.Id,
@@ -168,6 +175,36 @@ public sealed class GenerationQueuePersistenceRecoveryTests
                 timestamp.AddMinutes(5),
                 queuePosition: 3,
                 retryOfTaskId: Guid.NewGuid()),
+            timestamp.AddMinutes(5));
+        var requestSet = new GenerationApprovalRequestSet(
+            project.Id,
+            "paid-image",
+            "images",
+            "paid-image-v1",
+            [new GenerationApprovalOperation(
+                task.Id,
+                item.SeriesId!.Value,
+                prompt.Id,
+                profile.Id,
+                prompt.PromptText,
+                "prompt-sha",
+                prompt.Settings.Width,
+                prompt.Settings.Height,
+                prompt.Settings.Quality,
+                prompt.Settings.OutputFormat,
+                "auto",
+                prompt.Settings.Seed,
+                task.MaxRetries,
+                0.10m)]);
+        task.AttachApproval(
+            GenerationApprovalReceipt.Issue(
+                requestSet,
+                0.10m,
+                0.20m,
+                "operator:test",
+                "authority:test-001",
+                timestamp.AddMinutes(5),
+                timestamp.AddHours(1)),
             timestamp.AddMinutes(5));
         return project;
     }
@@ -183,7 +220,7 @@ public sealed class GenerationQueuePersistenceRecoveryTests
         while (await reader.ReadAsync())
         {
             var name = reader.GetString(1);
-            if (name is "ErrorMessage" or "QueuePosition" or "RetryOfTaskId")
+            if (name is "ErrorMessage" or "QueuePosition" or "RetryOfTaskId" or "ApprovalReceipt")
             {
                 columns.Add(name);
             }

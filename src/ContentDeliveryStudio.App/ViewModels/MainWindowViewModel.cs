@@ -1,4 +1,5 @@
 using System.IO;
+using System.ComponentModel;
 using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -33,7 +34,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly MainWindowSelectionSummaryCoordinator _mainWindowSelectionSummaryCoordinator;
     private readonly GalleryThumbnailWarmupService _galleryThumbnailWarmupService;
     private readonly IDocumentSourceFilePickerService? _documentSourceFilePickerService;
-    private readonly IFinalDeliveryRootPickerService? _finalDeliveryRootPickerService;
     private readonly MainWindowOperationGate _operationGate;
     private bool _isMutatingOperationActive;
     private bool _suppressSelectedProjectLoad;
@@ -53,21 +53,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private LanguageOptionViewModel? _selectedLanguageOption;
     private ProjectSummaryViewModel? _selectedProject;
     private string _newProjectName = string.Empty;
-    private string _newPlanningGoal = string.Empty;
-    private string _newPlanningAudience = string.Empty;
-    private string _newPlanningItemCount = "3";
-    private string _newPlanningStyleBrief = string.Empty;
     private string _projectNameLabel = string.Empty;
     private string _newProjectNamePlaceholder = string.Empty;
     private string _createProjectText = string.Empty;
     private string _availableProjectsTitle = string.Empty;
     private string _currentProjectTitle = string.Empty;
     private string _currentProjectSummary = string.Empty;
-    private string _fakePlanningTitle = string.Empty;
-    private string _planningGoalLabel = string.Empty;
-    private string _planningAudienceLabel = string.Empty;
-    private string _planningItemCountLabel = string.Empty;
-    private string _planningStyleBriefLabel = string.Empty;
     private string _documentIllustrationTitle = string.Empty;
     private string _documentSourceFilePathLabel = string.Empty;
     private string _documentSourceTextLabel = string.Empty;
@@ -86,145 +77,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _defaultDocumentAudience = string.Empty;
     private IReadOnlyList<DocumentStrictnessOptionViewModel> _documentStrictnessOptions = [];
     private DocumentStrictnessOptionViewModel? _selectedDocumentStrictnessOption;
-    private string _briefGoalLabel = string.Empty;
-    private string _briefAudienceLabel = string.Empty;
-    private string _briefStyleIntentLabel = string.Empty;
-    private string _createBriefText = string.Empty;
-    private string _generateDesignBlueprintsText = string.Empty;
-    private string _promoteDesignBlueprintText = string.Empty;
-    private string _blueprintRoutesHeader = string.Empty;
-    private string _noBlueprintRowsText = string.Empty;
-    private string _generatePromptDirectionsText = string.Empty;
-    private string _promotePromptDirectionText = string.Empty;
-    private string _promptDirectionsHeader = string.Empty;
-    private string _noPromptDirectionRowsText = string.Empty;
-    private string _runFakePlanningText = string.Empty;
-    private string _runFakeGenerationText = string.Empty;
-    private string _prepareGenerationQueueText = string.Empty;
-    private string _executeGenerationQueueText = string.Empty;
-    private string _pauseGenerationTaskText = string.Empty;
-    private string _resumeGenerationTaskText = string.Empty;
-    private string _retryGenerationTaskText = string.Empty;
-    private string _moveGenerationTaskUpText = string.Empty;
-    private string _moveGenerationTaskDownText = string.Empty;
-    private string _queueItemColumn = string.Empty;
-    private string _queuePositionColumn = string.Empty;
-    private string _queueStatusColumn = string.Empty;
-    private string _queueAttemptsColumn = string.Empty;
-    private string _queueOutputColumn = string.Empty;
-    private string _queueErrorColumn = string.Empty;
-    private string _noQueueRowsText = string.Empty;
-    private string _galleryItemColumn = string.Empty;
-    private string _galleryImageColumn = string.Empty;
-    private string _galleryMetadataColumn = string.Empty;
-    private string _noGalleryRowsText = string.Empty;
-    private string _runFakeReviewText = string.Empty;
-    private string _reviewItemColumn = string.Empty;
-    private string _reviewDecisionColumn = string.Empty;
-    private string _reviewScoreColumn = string.Empty;
-    private string _reviewCommentsColumn = string.Empty;
-    private string _reviewFixColumn = string.Empty;
-    private string _reviewRouteColumn = string.Empty;
-    private string _noReviewRowsText = string.Empty;
-    private string _humanApprovalColumn = string.Empty;
-    private string _finalApprovalReviewerLabel = string.Empty;
-    private string _finalApprovalNotesLabel = string.Empty;
-    private string _approveSelectedReviewText = string.Empty;
-    private string _rejectSelectedReviewText = string.Empty;
-    private string _exportDeliveryText = string.Empty;
-    private string _finalDeliveryCategoryLabel = string.Empty;
-    private string _finalDeliveryRootLabel = string.Empty;
-    private string _browseFinalDeliveryRootText = string.Empty;
-    private string _finalDeliveryDestinationLabel = string.Empty;
-    private string _finalDeliveryRootPath = LocalStudioDataPaths.ResolveDeliveryRoot();
-    private string _deliveryPackageColumn = string.Empty;
-    private string _deliveryManifestColumn = string.Empty;
-    private string _deliveryReportColumn = string.Empty;
-    private string _deliveryFinalImagesColumn = string.Empty;
-    private string _noDeliveryRowsText = string.Empty;
     private string _graphNodeColumn = string.Empty;
     private string _graphSummaryColumn = string.Empty;
     private string _graphLinksColumn = string.Empty;
     private string _noGraphRowsText = string.Empty;
-    private string _planEditorTitle = string.Empty;
-    private string _seriesTitleLabel = string.Empty;
-    private string _seriesDescriptionLabel = string.Empty;
-    private string _createSeriesText = string.Empty;
-    private string _availableSeriesTitle = string.Empty;
-    private string _itemTitleLabel = string.Empty;
-    private string _itemBriefLabel = string.Empty;
-    private string _addItemText = string.Empty;
-    private string _seriesItemsTitle = string.Empty;
-    private string _noSeriesSelectedText = string.Empty;
-    private string _planSeriesColumn = string.Empty;
-    private string _planItemColumn = string.Empty;
-    private string _planBriefColumn = string.Empty;
-    private string _planKindColumn = string.Empty;
-    private string _planStatusColumn = string.Empty;
-    private string _noPlanRowsText = string.Empty;
-    private string _noItemsInSeriesText = string.Empty;
-    private string _promptEditorTitle = string.Empty;
-    private string _selectedItemTitle = string.Empty;
-    private string _promptTextLabel = string.Empty;
-    private string _defaultGenerationSettingsText = string.Empty;
-    private string _createPromptVersionText = string.Empty;
-    private string _promptHistoryTitle = string.Empty;
-    private string _promptVersionColumn = string.Empty;
-    private string _promptItemColumn = string.Empty;
-    private string _promptTextColumn = string.Empty;
-    private string _promptSettingsColumn = string.Empty;
-    private string _promptCreatedColumn = string.Empty;
-    private string _noPromptRowsText = string.Empty;
-    private string _noItemSelectedForPromptText = string.Empty;
-    private string _styleRecipeInspectorTitle = string.Empty;
-    private string _imageTypePresetLabel = string.Empty;
-    private string _styleGuideLabel = string.Empty;
-    private string _generationRecipeLabel = string.Empty;
-    private string _styleRecipeSummaryTitle = string.Empty;
-    private string _styleRecipeSummaryText = string.Empty;
-    private string _selectedSeriesItemTitleText = string.Empty;
-    private string _imageEditTitle = string.Empty;
-    private string _selectedCandidateLabel = string.Empty;
-    private string _imageEditPromptLabel = string.Empty;
-    private string _imageEditMaskPathLabel = string.Empty;
-    private string _runFakeImageEditText = string.Empty;
     private string _imageEditResultText = string.Empty;
-    private string _newSeriesTitle = string.Empty;
-    private string _newSeriesDescription = string.Empty;
-    private string _newItemTitle = string.Empty;
-    private string _newItemBrief = string.Empty;
-    private string _newPromptText = string.Empty;
-    private string _newImageEditPrompt = string.Empty;
-    private string _newImageEditMaskPath = string.Empty;
-    private string _finalApprovalReviewer = string.Empty;
-    private string _finalApprovalNotes = string.Empty;
-    private IReadOnlyList<SeriesSummaryViewModel> _series = [];
-    private IReadOnlyList<SeriesItemViewModel> _seriesItems = [];
-    private IReadOnlyList<PlanRowViewModel> _planRows = [];
-    private IReadOnlyList<PromptVersionViewModel> _promptVersions = [];
-    private IReadOnlyList<DesignBlueprintRowViewModel> _designBlueprintRows = [];
-    private IReadOnlyList<PromptDirectionRowViewModel> _promptDirectionRows = [];
-    private IReadOnlyList<PromptRowViewModel> _promptRows = [];
-    private IReadOnlyList<QueueRowViewModel> _queueRows = [];
-    private IReadOnlyList<GalleryRowViewModel> _galleryRows = [];
-    private IReadOnlyList<ReviewRowViewModel> _reviewRows = [];
-    private IReadOnlyList<DeliveryRowViewModel> _deliveryRows = [];
     private IReadOnlyList<WorkflowGraphRowViewModel> _workflowGraphRows = [];
-    private IReadOnlyList<ImageTypePresetOptionViewModel> _imageTypePresetOptions = [];
-    private IReadOnlyList<StyleGuideOptionViewModel> _styleGuideOptions = [];
-    private IReadOnlyList<GenerationRecipeOptionViewModel> _generationRecipeOptions = [];
-    private IReadOnlyList<FinalImageDeliveryCategoryOptionViewModel> _finalDeliveryCategoryOptions = [];
-    private SeriesSummaryViewModel? _selectedSeries;
-    private SeriesItemViewModel? _selectedSeriesItem;
-    private ImageTypePresetOptionViewModel? _selectedImageTypePresetOption;
-    private StyleGuideOptionViewModel? _selectedStyleGuideOption;
-    private GenerationRecipeOptionViewModel? _selectedGenerationRecipeOption;
-    private DesignBlueprintRowViewModel? _selectedDesignBlueprint;
-    private PromptDirectionRowViewModel? _selectedPromptDirection;
-    private QueueRowViewModel? _selectedQueueRow;
-    private GalleryRowViewModel? _selectedGalleryRow;
-    private ReviewRowViewModel? _selectedReviewRow;
-    private FinalImageDeliveryCategoryOptionViewModel? _selectedFinalDeliveryCategoryOption;
     private Guid? _activeCreativeBriefId;
 
     public MainWindowViewModel(
@@ -236,13 +94,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IFinalDeliveryRootPickerService? finalDeliveryRootPickerService = null,
         IScientificDeliveryPackageSaveService? scientificDeliveryPackageSaveService = null,
         DiagnosticsPanelViewModel? diagnostics = null,
-        BackupRestorePanelViewModel? backupRestore = null)
+        BackupRestorePanelViewModel? backupRestore = null,
+        IImageEditProvider? imageEditProvider = null)
     {
         _localizationService = localizationService;
         _projectService = projectService;
         _galleryThumbnailWarmupService = galleryThumbnailWarmupService;
         _documentSourceFilePickerService = documentSourceFilePickerService;
-        _finalDeliveryRootPickerService = finalDeliveryRootPickerService;
         _projectWorkspaceCoordinator = new ProjectWorkspaceCoordinator(projectService);
         _planningWorkflowCoordinator = new PlanningWorkflowCoordinator(projectService, localizationService);
         _briefWorkflowCoordinator = new BriefWorkflowCoordinator(projectService);
@@ -266,6 +124,80 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 ? null
                 : bytes => scientificDeliveryPackageSaveService.SavePackage(bytes));
         _mainWindowSelectionSummaryCoordinator = new MainWindowSelectionSummaryCoordinator();
+        var generationSettingsWorkspace = new ImageSeriesGenerationSettingsWorkspaceViewModel(
+            _mainWindowSelectionSummaryCoordinator.BuildStyleRecipeSummary);
+        var planningWorkspace = new ImageSeriesPlanningWorkspaceViewModel(
+            RunImageSeriesCreateSeriesAsync,
+            RunImageSeriesAddItemAsync,
+            RunImageSeriesCreatePromptVersionAsync,
+            CanRunMutation,
+            () => SelectedProject is not null,
+            item => _mainWindowSelectionSummaryCoordinator.BuildSelectedSeriesItemTitle(
+                item,
+                Text(LocalizationKey.NoItemSelectedForPrompt)),
+            OnImageSeriesSelectedSeriesChanged,
+            OnImageSeriesSelectedItemChanged,
+            OnImageSeriesPromptProjectionChanged);
+        var briefWorkspace = new ImageSeriesBriefWorkspaceViewModel(
+            RunImageSeriesFakePlanningAsync,
+            RunImageSeriesCreateBriefAsync,
+            RunImageSeriesGenerateDesignBlueprintsAsync,
+            RunImageSeriesGeneratePromptDirectionsAsync,
+            RunImageSeriesPromoteDesignBlueprintAsync,
+            RunImageSeriesPromotePromptDirectionAsync,
+            CanRunMutation,
+            () => SelectedProject is not null,
+            () => planningWorkspace.SelectedSeries,
+            () => planningWorkspace.SelectedSeriesItem);
+        var galleryWorkspace = new ImageSeriesGalleryWorkspaceViewModel(
+            RunImageSeriesGalleryEditAsync,
+            CanRunMutation,
+            () => SelectedProject is not null,
+            QueueGalleryWarmup,
+            ApplyImageSeriesGalleryEditResult,
+            row => _mainWindowSelectionSummaryCoordinator.BuildSelectedCandidateSummary(
+                row,
+                Text(LocalizationKey.NoCandidateSelectedForEdit)),
+            OnImageSeriesGalleryProjectionChanged);
+        galleryWorkspace.ApplyProviderCapability(imageEditProvider?.Capabilities);
+        var reviewWorkspace = new ImageSeriesReviewWorkspaceViewModel(
+            RunImageSeriesReviewAsync,
+            RunImageSeriesFinalApprovalAsync,
+            CanRunMutation,
+            () => SelectedProject is not null,
+            () => galleryWorkspace.GalleryRows,
+            OnImageSeriesReviewMutated,
+            OnImageSeriesReviewProjectionChanged);
+        var deliveryWorkspace = new ImageSeriesDeliveryWorkspaceViewModel(
+            RunImageSeriesDeliveryAsync,
+            finalDeliveryRootPickerService,
+            CanRunMutation,
+            () => SelectedProject is not null,
+            () => galleryWorkspace.GalleryRows,
+            () => reviewWorkspace.ReviewRows,
+            BuildFinalDeliveryCategoryOptions,
+            OnImageSeriesDeliveryProjectionChanged);
+        ImageSeriesWorkspace = new ImageSeriesWorkspaceViewModel(
+            _generationWorkflowCoordinator,
+            RunImageSeriesQueueMutationAndReloadAsync,
+            RunImageSeriesFakeGenerationAsync,
+            CanRunMutation,
+            () => SelectedProject is not null,
+            () => false,
+            () => RunFakeGenerationCommand.NotifyCanExecuteChanged(),
+            planningWorkspace,
+            briefWorkspace,
+            generationSettingsWorkspace,
+            galleryWorkspace,
+            reviewWorkspace,
+            deliveryWorkspace);
+        ImageSeriesWorkspace.PropertyChanged += OnImageSeriesWorkspacePropertyChanged;
+        ImageSeriesPlanningWorkspace.PropertyChanged += OnImageSeriesWorkspacePropertyChanged;
+        ImageSeriesBriefWorkspace.PropertyChanged += OnImageSeriesWorkspacePropertyChanged;
+        ImageSeriesGenerationSettingsWorkspace.PropertyChanged += OnImageSeriesWorkspacePropertyChanged;
+        ImageSeriesGalleryWorkspace.PropertyChanged += OnImageSeriesWorkspacePropertyChanged;
+        ImageSeriesReviewWorkspace.PropertyChanged += OnImageSeriesWorkspacePropertyChanged;
+        ImageSeriesDeliveryWorkspace.PropertyChanged += OnImageSeriesWorkspacePropertyChanged;
         _operationGate = new MainWindowOperationGate(SetExclusiveBusyState);
         ProviderCenter = providerCenter;
         Diagnostics = diagnostics;
@@ -280,9 +212,32 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public ProviderCenterViewModel ProviderCenter { get; }
 
+    public ImageSeriesWorkspaceViewModel ImageSeriesWorkspace { get; }
+
+    public ImageSeriesGalleryWorkspaceViewModel ImageSeriesGalleryWorkspace => ImageSeriesWorkspace.Gallery;
+
+    public ImageSeriesPlanningWorkspaceViewModel ImageSeriesPlanningWorkspace => ImageSeriesWorkspace.Planning;
+
+    public ImageSeriesBriefWorkspaceViewModel ImageSeriesBriefWorkspace => ImageSeriesWorkspace.Brief;
+
+    public ImageSeriesGenerationSettingsWorkspaceViewModel ImageSeriesGenerationSettingsWorkspace =>
+        ImageSeriesWorkspace.GenerationSettings;
+
+    public ImageSeriesReviewWorkspaceViewModel ImageSeriesReviewWorkspace => ImageSeriesWorkspace.Review;
+
+    public ImageSeriesDeliveryWorkspaceViewModel ImageSeriesDeliveryWorkspace => ImageSeriesWorkspace.Delivery;
+
     public DiagnosticsPanelViewModel? Diagnostics { get; }
 
     public BackupRestorePanelViewModel? BackupRestore { get; }
+
+    private void OnImageSeriesWorkspacePropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (!string.IsNullOrWhiteSpace(eventArgs.PropertyName))
+        {
+            OnPropertyChanged(eventArgs.PropertyName);
+        }
+    }
 
     public string AppTitle
     {
@@ -374,23 +329,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 NewPlanningGoal = value.Name;
             }
 
-            QueueRows = [];
-            GalleryRows = [];
-            ReviewRows = [];
-            DeliveryRows = [];
-            DesignBlueprintRows = [];
-            PromptDirectionRows = [];
+            ImageSeriesWorkspace.ApplyProjection([]);
+            ImageSeriesGalleryWorkspace.ApplyProjection([]);
+            ImageSeriesReviewWorkspace.ApplyProjection([]);
+            ImageSeriesDeliveryWorkspace.ApplyProjection([]);
+            ImageSeriesBriefWorkspace.ApplyProjection([], [], null, null);
             DocumentPlanningResultSummary = string.Empty;
-            SelectedDesignBlueprint = null;
-            SelectedPromptDirection = null;
             _activeCreativeBriefId = null;
             RebuildWorkflowGraphRows();
-            CreateBriefCommand.NotifyCanExecuteChanged();
-            GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
-            PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
-            GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
-            PromotePromptDirectionCommand.NotifyCanExecuteChanged();
-            RunFakePlanningCommand.NotifyCanExecuteChanged();
+            ImageSeriesBriefWorkspace.NotifyCommandStatesChanged();
             RunFakeDocumentPlanningCommand.NotifyCanExecuteChanged();
             RunFakeGenerationCommand.NotifyCanExecuteChanged();
             QueueSelectedProjectLoad(value);
@@ -411,58 +358,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public string NewPlanningGoal
     {
-        get => _newPlanningGoal;
-        set
-        {
-            if (SetProperty(ref _newPlanningGoal, value))
-            {
-                RunFakePlanningCommand.NotifyCanExecuteChanged();
-                CreateBriefCommand.NotifyCanExecuteChanged();
-                GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
-                GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesBriefWorkspace.NewPlanningGoal;
+        set => ImageSeriesBriefWorkspace.NewPlanningGoal = value;
     }
 
     public string NewPlanningAudience
     {
-        get => _newPlanningAudience;
-        set
-        {
-            if (SetProperty(ref _newPlanningAudience, value))
-            {
-                RunFakePlanningCommand.NotifyCanExecuteChanged();
-                CreateBriefCommand.NotifyCanExecuteChanged();
-                GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
-                GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesBriefWorkspace.NewPlanningAudience;
+        set => ImageSeriesBriefWorkspace.NewPlanningAudience = value;
     }
 
     public string NewPlanningItemCount
     {
-        get => _newPlanningItemCount;
-        set
-        {
-            if (SetProperty(ref _newPlanningItemCount, value))
-            {
-                RunFakePlanningCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesBriefWorkspace.NewPlanningItemCount;
+        set => ImageSeriesBriefWorkspace.NewPlanningItemCount = value;
     }
 
     public string NewPlanningStyleBrief
     {
-        get => _newPlanningStyleBrief;
-        set
-        {
-            if (SetProperty(ref _newPlanningStyleBrief, value))
-            {
-                CreateBriefCommand.NotifyCanExecuteChanged();
-                GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
-                GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesBriefWorkspace.NewPlanningStyleBrief;
+        set => ImageSeriesBriefWorkspace.NewPlanningStyleBrief = value;
     }
 
     public string ProjectNameLabel
@@ -499,42 +414,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _currentProjectSummary;
         private set => SetProperty(ref _currentProjectSummary, value);
-    }
-
-    public string FakePlanningTitle
-    {
-        get => _fakePlanningTitle;
-        private set => SetProperty(ref _fakePlanningTitle, value);
-    }
-
-    public string PlanningGoalLabel
-    {
-        get => _planningGoalLabel;
-        private set => SetProperty(ref _planningGoalLabel, value);
-    }
-
-    public string PlanningAudienceLabel
-    {
-        get => _planningAudienceLabel;
-        private set => SetProperty(ref _planningAudienceLabel, value);
-    }
-
-    public string PlanningItemCountLabel
-    {
-        get => _planningItemCountLabel;
-        private set => SetProperty(ref _planningItemCountLabel, value);
-    }
-
-    public string PlanningStyleBriefLabel
-    {
-        get => _planningStyleBriefLabel;
-        private set => SetProperty(ref _planningStyleBriefLabel, value);
-    }
-
-    public string RunFakePlanningText
-    {
-        get => _runFakePlanningText;
-        private set => SetProperty(ref _runFakePlanningText, value);
     }
 
     public string DocumentIllustrationTitle
@@ -645,258 +524,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         set => SetProperty(ref _selectedDocumentStrictnessOption, value);
     }
 
-    public string RunFakeGenerationText
-    {
-        get => _runFakeGenerationText;
-        private set => SetProperty(ref _runFakeGenerationText, value);
-    }
-
-    public string PrepareGenerationQueueText
-    {
-        get => _prepareGenerationQueueText;
-        private set => SetProperty(ref _prepareGenerationQueueText, value);
-    }
-
-    public string ExecuteGenerationQueueText
-    {
-        get => _executeGenerationQueueText;
-        private set => SetProperty(ref _executeGenerationQueueText, value);
-    }
-
-    public string PauseGenerationTaskText
-    {
-        get => _pauseGenerationTaskText;
-        private set => SetProperty(ref _pauseGenerationTaskText, value);
-    }
-
-    public string ResumeGenerationTaskText
-    {
-        get => _resumeGenerationTaskText;
-        private set => SetProperty(ref _resumeGenerationTaskText, value);
-    }
-
-    public string RetryGenerationTaskText
-    {
-        get => _retryGenerationTaskText;
-        private set => SetProperty(ref _retryGenerationTaskText, value);
-    }
-
-    public string MoveGenerationTaskUpText
-    {
-        get => _moveGenerationTaskUpText;
-        private set => SetProperty(ref _moveGenerationTaskUpText, value);
-    }
-
-    public string MoveGenerationTaskDownText
-    {
-        get => _moveGenerationTaskDownText;
-        private set => SetProperty(ref _moveGenerationTaskDownText, value);
-    }
-
-    public string QueueItemColumn
-    {
-        get => _queueItemColumn;
-        private set => SetProperty(ref _queueItemColumn, value);
-    }
-
-    public string QueuePositionColumn
-    {
-        get => _queuePositionColumn;
-        private set => SetProperty(ref _queuePositionColumn, value);
-    }
-
-    public string QueueStatusColumn
-    {
-        get => _queueStatusColumn;
-        private set => SetProperty(ref _queueStatusColumn, value);
-    }
-
-    public string QueueAttemptsColumn
-    {
-        get => _queueAttemptsColumn;
-        private set => SetProperty(ref _queueAttemptsColumn, value);
-    }
-
-    public string QueueOutputColumn
-    {
-        get => _queueOutputColumn;
-        private set => SetProperty(ref _queueOutputColumn, value);
-    }
-
-    public string QueueErrorColumn
-    {
-        get => _queueErrorColumn;
-        private set => SetProperty(ref _queueErrorColumn, value);
-    }
-
-    public string NoQueueRowsText
-    {
-        get => _noQueueRowsText;
-        private set => SetProperty(ref _noQueueRowsText, value);
-    }
-
-    public string GalleryItemColumn
-    {
-        get => _galleryItemColumn;
-        private set => SetProperty(ref _galleryItemColumn, value);
-    }
-
-    public string GalleryImageColumn
-    {
-        get => _galleryImageColumn;
-        private set => SetProperty(ref _galleryImageColumn, value);
-    }
-
-    public string GalleryMetadataColumn
-    {
-        get => _galleryMetadataColumn;
-        private set => SetProperty(ref _galleryMetadataColumn, value);
-    }
-
-    public string NoGalleryRowsText
-    {
-        get => _noGalleryRowsText;
-        private set => SetProperty(ref _noGalleryRowsText, value);
-    }
-
-    public string RunFakeReviewText
-    {
-        get => _runFakeReviewText;
-        private set => SetProperty(ref _runFakeReviewText, value);
-    }
-
-    public string ReviewItemColumn
-    {
-        get => _reviewItemColumn;
-        private set => SetProperty(ref _reviewItemColumn, value);
-    }
-
-    public string ReviewDecisionColumn
-    {
-        get => _reviewDecisionColumn;
-        private set => SetProperty(ref _reviewDecisionColumn, value);
-    }
-
-    public string ReviewScoreColumn
-    {
-        get => _reviewScoreColumn;
-        private set => SetProperty(ref _reviewScoreColumn, value);
-    }
-
-    public string ReviewCommentsColumn
-    {
-        get => _reviewCommentsColumn;
-        private set => SetProperty(ref _reviewCommentsColumn, value);
-    }
-
-    public string ReviewFixColumn
-    {
-        get => _reviewFixColumn;
-        private set => SetProperty(ref _reviewFixColumn, value);
-    }
-
-    public string ReviewRouteColumn
-    {
-        get => _reviewRouteColumn;
-        private set => SetProperty(ref _reviewRouteColumn, value);
-    }
-
-    public string HumanApprovalColumn
-    {
-        get => _humanApprovalColumn;
-        private set => SetProperty(ref _humanApprovalColumn, value);
-    }
-
-    public string NoReviewRowsText
-    {
-        get => _noReviewRowsText;
-        private set => SetProperty(ref _noReviewRowsText, value);
-    }
-
-    public string FinalApprovalReviewerLabel
-    {
-        get => _finalApprovalReviewerLabel;
-        private set => SetProperty(ref _finalApprovalReviewerLabel, value);
-    }
-
-    public string FinalApprovalNotesLabel
-    {
-        get => _finalApprovalNotesLabel;
-        private set => SetProperty(ref _finalApprovalNotesLabel, value);
-    }
-
-    public string ApproveSelectedReviewText
-    {
-        get => _approveSelectedReviewText;
-        private set => SetProperty(ref _approveSelectedReviewText, value);
-    }
-
-    public string RejectSelectedReviewText
-    {
-        get => _rejectSelectedReviewText;
-        private set => SetProperty(ref _rejectSelectedReviewText, value);
-    }
-
-    public string ExportDeliveryText
-    {
-        get => _exportDeliveryText;
-        private set => SetProperty(ref _exportDeliveryText, value);
-    }
-
-    public string FinalDeliveryCategoryLabel
-    {
-        get => _finalDeliveryCategoryLabel;
-        private set => SetProperty(ref _finalDeliveryCategoryLabel, value);
-    }
-
-    public string FinalDeliveryRootLabel
-    {
-        get => _finalDeliveryRootLabel;
-        private set => SetProperty(ref _finalDeliveryRootLabel, value);
-    }
-
-    public string BrowseFinalDeliveryRootText
-    {
-        get => _browseFinalDeliveryRootText;
-        private set => SetProperty(ref _browseFinalDeliveryRootText, value);
-    }
-
-    public string FinalDeliveryDestinationLabel
-    {
-        get => _finalDeliveryDestinationLabel;
-        private set => SetProperty(ref _finalDeliveryDestinationLabel, value);
-    }
-
-    public string DeliveryPackageColumn
-    {
-        get => _deliveryPackageColumn;
-        private set => SetProperty(ref _deliveryPackageColumn, value);
-    }
-
-    public string DeliveryManifestColumn
-    {
-        get => _deliveryManifestColumn;
-        private set => SetProperty(ref _deliveryManifestColumn, value);
-    }
-
-    public string DeliveryReportColumn
-    {
-        get => _deliveryReportColumn;
-        private set => SetProperty(ref _deliveryReportColumn, value);
-    }
-
-    public string DeliveryFinalImagesColumn
-    {
-        get => _deliveryFinalImagesColumn;
-        private set => SetProperty(ref _deliveryFinalImagesColumn, value);
-    }
-
-    public string NoDeliveryRowsText
-    {
-        get => _noDeliveryRowsText;
-        private set => SetProperty(ref _noDeliveryRowsText, value);
-    }
-
     public string GraphNodeColumn
     {
         get => _graphNodeColumn;
@@ -921,334 +548,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _noGraphRowsText, value);
     }
 
-    public string PlanEditorTitle
-    {
-        get => _planEditorTitle;
-        private set => SetProperty(ref _planEditorTitle, value);
-    }
-
-    public string SeriesTitleLabel
-    {
-        get => _seriesTitleLabel;
-        private set => SetProperty(ref _seriesTitleLabel, value);
-    }
-
-    public string SeriesDescriptionLabel
-    {
-        get => _seriesDescriptionLabel;
-        private set => SetProperty(ref _seriesDescriptionLabel, value);
-    }
-
-    public string CreateSeriesText
-    {
-        get => _createSeriesText;
-        private set => SetProperty(ref _createSeriesText, value);
-    }
-
-    public string AvailableSeriesTitle
-    {
-        get => _availableSeriesTitle;
-        private set => SetProperty(ref _availableSeriesTitle, value);
-    }
-
-    public string ItemTitleLabel
-    {
-        get => _itemTitleLabel;
-        private set => SetProperty(ref _itemTitleLabel, value);
-    }
-
-    public string ItemBriefLabel
-    {
-        get => _itemBriefLabel;
-        private set => SetProperty(ref _itemBriefLabel, value);
-    }
-
-    public string AddItemText
-    {
-        get => _addItemText;
-        private set => SetProperty(ref _addItemText, value);
-    }
-
-    public string SeriesItemsTitle
-    {
-        get => _seriesItemsTitle;
-        private set => SetProperty(ref _seriesItemsTitle, value);
-    }
-
-    public string NoSeriesSelectedText
-    {
-        get => _noSeriesSelectedText;
-        private set => SetProperty(ref _noSeriesSelectedText, value);
-    }
-
-    public string PlanSeriesColumn
-    {
-        get => _planSeriesColumn;
-        private set => SetProperty(ref _planSeriesColumn, value);
-    }
-
-    public string PlanItemColumn
-    {
-        get => _planItemColumn;
-        private set => SetProperty(ref _planItemColumn, value);
-    }
-
-    public string PlanBriefColumn
-    {
-        get => _planBriefColumn;
-        private set => SetProperty(ref _planBriefColumn, value);
-    }
-
-    public string PlanKindColumn
-    {
-        get => _planKindColumn;
-        private set => SetProperty(ref _planKindColumn, value);
-    }
-
-    public string PlanStatusColumn
-    {
-        get => _planStatusColumn;
-        private set => SetProperty(ref _planStatusColumn, value);
-    }
-
-    public string NoPlanRowsText
-    {
-        get => _noPlanRowsText;
-        private set => SetProperty(ref _noPlanRowsText, value);
-    }
-
-    public string NoItemsInSeriesText
-    {
-        get => _noItemsInSeriesText;
-        private set => SetProperty(ref _noItemsInSeriesText, value);
-    }
-
-    public string BriefGoalLabel
-    {
-        get => _briefGoalLabel;
-        private set => SetProperty(ref _briefGoalLabel, value);
-    }
-
-    public string BriefAudienceLabel
-    {
-        get => _briefAudienceLabel;
-        private set => SetProperty(ref _briefAudienceLabel, value);
-    }
-
-    public string BriefStyleIntentLabel
-    {
-        get => _briefStyleIntentLabel;
-        private set => SetProperty(ref _briefStyleIntentLabel, value);
-    }
-
-    public string CreateBriefText
-    {
-        get => _createBriefText;
-        private set => SetProperty(ref _createBriefText, value);
-    }
-
-    public string GenerateDesignBlueprintsText
-    {
-        get => _generateDesignBlueprintsText;
-        private set => SetProperty(ref _generateDesignBlueprintsText, value);
-    }
-
-    public string PromoteDesignBlueprintText
-    {
-        get => _promoteDesignBlueprintText;
-        private set => SetProperty(ref _promoteDesignBlueprintText, value);
-    }
-
-    public string BlueprintRoutesHeader
-    {
-        get => _blueprintRoutesHeader;
-        private set => SetProperty(ref _blueprintRoutesHeader, value);
-    }
-
-    public string NoBlueprintRowsText
-    {
-        get => _noBlueprintRowsText;
-        private set => SetProperty(ref _noBlueprintRowsText, value);
-    }
-
-    public string GeneratePromptDirectionsText
-    {
-        get => _generatePromptDirectionsText;
-        private set => SetProperty(ref _generatePromptDirectionsText, value);
-    }
-
-    public string PromotePromptDirectionText
-    {
-        get => _promotePromptDirectionText;
-        private set => SetProperty(ref _promotePromptDirectionText, value);
-    }
-
-    public string PromptDirectionsHeader
-    {
-        get => _promptDirectionsHeader;
-        private set => SetProperty(ref _promptDirectionsHeader, value);
-    }
-
-    public string NoPromptDirectionRowsText
-    {
-        get => _noPromptDirectionRowsText;
-        private set => SetProperty(ref _noPromptDirectionRowsText, value);
-    }
-
-    public string PromptEditorTitle
-    {
-        get => _promptEditorTitle;
-        private set => SetProperty(ref _promptEditorTitle, value);
-    }
-
-    public string SelectedItemTitle
-    {
-        get => _selectedItemTitle;
-        private set => SetProperty(ref _selectedItemTitle, value);
-    }
-
-    public string PromptTextLabel
-    {
-        get => _promptTextLabel;
-        private set => SetProperty(ref _promptTextLabel, value);
-    }
-
-    public string DefaultGenerationSettingsText
-    {
-        get => _defaultGenerationSettingsText;
-        private set => SetProperty(ref _defaultGenerationSettingsText, value);
-    }
-
-    public string CreatePromptVersionText
-    {
-        get => _createPromptVersionText;
-        private set => SetProperty(ref _createPromptVersionText, value);
-    }
-
-    public string PromptHistoryTitle
-    {
-        get => _promptHistoryTitle;
-        private set => SetProperty(ref _promptHistoryTitle, value);
-    }
-
-    public string PromptVersionColumn
-    {
-        get => _promptVersionColumn;
-        private set => SetProperty(ref _promptVersionColumn, value);
-    }
-
-    public string PromptItemColumn
-    {
-        get => _promptItemColumn;
-        private set => SetProperty(ref _promptItemColumn, value);
-    }
-
-    public string PromptTextColumn
-    {
-        get => _promptTextColumn;
-        private set => SetProperty(ref _promptTextColumn, value);
-    }
-
-    public string PromptSettingsColumn
-    {
-        get => _promptSettingsColumn;
-        private set => SetProperty(ref _promptSettingsColumn, value);
-    }
-
-    public string PromptCreatedColumn
-    {
-        get => _promptCreatedColumn;
-        private set => SetProperty(ref _promptCreatedColumn, value);
-    }
-
-    public string NoPromptRowsText
-    {
-        get => _noPromptRowsText;
-        private set => SetProperty(ref _noPromptRowsText, value);
-    }
-
-    public string NoItemSelectedForPromptText
-    {
-        get => _noItemSelectedForPromptText;
-        private set => SetProperty(ref _noItemSelectedForPromptText, value);
-    }
-
-    public string StyleRecipeInspectorTitle
-    {
-        get => _styleRecipeInspectorTitle;
-        private set => SetProperty(ref _styleRecipeInspectorTitle, value);
-    }
-
-    public string ImageTypePresetLabel
-    {
-        get => _imageTypePresetLabel;
-        private set => SetProperty(ref _imageTypePresetLabel, value);
-    }
-
-    public string StyleGuideLabel
-    {
-        get => _styleGuideLabel;
-        private set => SetProperty(ref _styleGuideLabel, value);
-    }
-
-    public string GenerationRecipeLabel
-    {
-        get => _generationRecipeLabel;
-        private set => SetProperty(ref _generationRecipeLabel, value);
-    }
-
-    public string StyleRecipeSummaryTitle
-    {
-        get => _styleRecipeSummaryTitle;
-        private set => SetProperty(ref _styleRecipeSummaryTitle, value);
-    }
-
-    public string StyleRecipeSummaryText
-    {
-        get => _styleRecipeSummaryText;
-        private set => SetProperty(ref _styleRecipeSummaryText, value);
-    }
-
-    public string SelectedSeriesItemTitleText
-    {
-        get => _selectedSeriesItemTitleText;
-        private set => SetProperty(ref _selectedSeriesItemTitleText, value);
-    }
-
-    public string ImageEditTitle
-    {
-        get => _imageEditTitle;
-        private set => SetProperty(ref _imageEditTitle, value);
-    }
-
-    public string SelectedCandidateLabel
-    {
-        get => _selectedCandidateLabel;
-        private set => SetProperty(ref _selectedCandidateLabel, value);
-    }
-
-    public string SelectedCandidateSummary => _mainWindowSelectionSummaryCoordinator.BuildSelectedCandidateSummary(
-        SelectedGalleryRow,
-        Text(LocalizationKey.NoCandidateSelectedForEdit));
-
-    public string ImageEditPromptLabel
-    {
-        get => _imageEditPromptLabel;
-        private set => SetProperty(ref _imageEditPromptLabel, value);
-    }
-
-    public string ImageEditMaskPathLabel
-    {
-        get => _imageEditMaskPathLabel;
-        private set => SetProperty(ref _imageEditMaskPathLabel, value);
-    }
-
-    public string RunFakeImageEditText
-    {
-        get => _runFakeImageEditText;
-        private set => SetProperty(ref _runFakeImageEditText, value);
-    }
-
     public string ImageEditResultText
     {
         get => _imageEditResultText;
@@ -1257,439 +556,245 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public string NewSeriesTitle
     {
-        get => _newSeriesTitle;
-        set
-        {
-            if (SetProperty(ref _newSeriesTitle, value))
-            {
-                CreateSeriesCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesPlanningWorkspace.NewSeriesTitle;
+        set => ImageSeriesPlanningWorkspace.NewSeriesTitle = value;
     }
 
     public string NewSeriesDescription
     {
-        get => _newSeriesDescription;
-        set => SetProperty(ref _newSeriesDescription, value);
+        get => ImageSeriesPlanningWorkspace.NewSeriesDescription;
+        set => ImageSeriesPlanningWorkspace.NewSeriesDescription = value;
     }
 
     public string NewItemTitle
     {
-        get => _newItemTitle;
-        set
-        {
-            if (SetProperty(ref _newItemTitle, value))
-            {
-                AddItemCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesPlanningWorkspace.NewItemTitle;
+        set => ImageSeriesPlanningWorkspace.NewItemTitle = value;
     }
 
     public string NewItemBrief
     {
-        get => _newItemBrief;
-        set => SetProperty(ref _newItemBrief, value);
+        get => ImageSeriesPlanningWorkspace.NewItemBrief;
+        set => ImageSeriesPlanningWorkspace.NewItemBrief = value;
     }
 
     public string NewPromptText
     {
-        get => _newPromptText;
-        set
-        {
-            if (SetProperty(ref _newPromptText, value))
-            {
-                CreatePromptVersionCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesPlanningWorkspace.NewPromptText;
+        set => ImageSeriesPlanningWorkspace.NewPromptText = value;
     }
 
     public string NewImageEditPrompt
     {
-        get => _newImageEditPrompt;
-        set
-        {
-            if (SetProperty(ref _newImageEditPrompt, value))
-            {
-                RunFakeImageEditCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesGalleryWorkspace.NewImageEditPrompt;
+        set => ImageSeriesGalleryWorkspace.NewImageEditPrompt = value;
     }
 
     public string NewImageEditMaskPath
     {
-        get => _newImageEditMaskPath;
-        set => SetProperty(ref _newImageEditMaskPath, value);
+        get => ImageSeriesGalleryWorkspace.NewImageEditMaskPath;
+        set => ImageSeriesGalleryWorkspace.NewImageEditMaskPath = value;
     }
 
     public string FinalApprovalReviewer
     {
-        get => _finalApprovalReviewer;
-        set
-        {
-            if (SetProperty(ref _finalApprovalReviewer, value))
-            {
-                ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
-                RejectSelectedReviewCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesReviewWorkspace.FinalApprovalReviewer;
+        set => ImageSeriesReviewWorkspace.FinalApprovalReviewer = value;
     }
 
     public string FinalApprovalNotes
     {
-        get => _finalApprovalNotes;
-        set
-        {
-            if (SetProperty(ref _finalApprovalNotes, value))
-            {
-                RejectSelectedReviewCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesReviewWorkspace.FinalApprovalNotes;
+        set => ImageSeriesReviewWorkspace.FinalApprovalNotes = value;
     }
 
-    public IReadOnlyList<FinalImageDeliveryCategoryOptionViewModel> FinalDeliveryCategoryOptions
-    {
-        get => _finalDeliveryCategoryOptions;
-        private set => SetProperty(ref _finalDeliveryCategoryOptions, value);
-    }
+    public IReadOnlyList<FinalImageDeliveryCategoryOptionViewModel> FinalDeliveryCategoryOptions =>
+        ImageSeriesDeliveryWorkspace.FinalDeliveryCategoryOptions;
 
     public FinalImageDeliveryCategoryOptionViewModel? SelectedFinalDeliveryCategoryOption
     {
-        get => _selectedFinalDeliveryCategoryOption;
-        set
-        {
-            if (SetProperty(ref _selectedFinalDeliveryCategoryOption, value))
-            {
-                OnPropertyChanged(nameof(FinalDeliveryDestinationPreview));
-                ExportDeliveryCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesDeliveryWorkspace.SelectedFinalDeliveryCategoryOption;
+        set => ImageSeriesDeliveryWorkspace.SelectedFinalDeliveryCategoryOption = value;
     }
 
     public string FinalDeliveryRootPath
     {
-        get => _finalDeliveryRootPath;
-        set
-        {
-            if (SetProperty(ref _finalDeliveryRootPath, value))
-            {
-                OnPropertyChanged(nameof(FinalDeliveryDestinationPreview));
-                ExportDeliveryCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesDeliveryWorkspace.FinalDeliveryRootPath;
+        set => ImageSeriesDeliveryWorkspace.FinalDeliveryRootPath = value;
     }
 
-    public string FinalDeliveryDestinationPreview => ResolveFinalDeliveryDestinationPreview();
+    public string FinalDeliveryDestinationPreview => ImageSeriesDeliveryWorkspace.FinalDeliveryDestinationPreview;
 
-    public IReadOnlyList<SeriesSummaryViewModel> Series
-    {
-        get => _series;
-        private set => SetProperty(ref _series, value);
-    }
+    public IReadOnlyList<SeriesSummaryViewModel> Series => ImageSeriesPlanningWorkspace.Series;
 
     public SeriesSummaryViewModel? SelectedSeries
     {
-        get => _selectedSeries;
-        set
-        {
-            if (!SetProperty(ref _selectedSeries, value))
-            {
-                return;
-            }
-
-            SeriesItems = value?.Items ?? [];
-            SelectedSeriesItem = SeriesItems.FirstOrDefault();
-            AddItemCommand.NotifyCanExecuteChanged();
-            CreateBriefCommand.NotifyCanExecuteChanged();
-            GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
-            PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
-            GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
-        }
+        get => ImageSeriesPlanningWorkspace.SelectedSeries;
+        set => ImageSeriesPlanningWorkspace.SelectedSeries = value;
     }
 
-    public IReadOnlyList<SeriesItemViewModel> SeriesItems
-    {
-        get => _seriesItems;
-        private set => SetProperty(ref _seriesItems, value);
-    }
+    public IReadOnlyList<SeriesItemViewModel> SeriesItems => ImageSeriesPlanningWorkspace.SeriesItems;
 
-    public IReadOnlyList<ImageTypePresetOptionViewModel> ImageTypePresetOptions
-    {
-        get => _imageTypePresetOptions;
-        private set => SetProperty(ref _imageTypePresetOptions, value);
-    }
+    public IReadOnlyList<ImageTypePresetOptionViewModel> ImageTypePresetOptions =>
+        ImageSeriesGenerationSettingsWorkspace.ImageTypePresetOptions;
 
     public ImageTypePresetOptionViewModel? SelectedImageTypePresetOption
     {
-        get => _selectedImageTypePresetOption;
-        set
-        {
-            if (SetProperty(ref _selectedImageTypePresetOption, value))
-            {
-                RefreshStyleRecipeSummary();
-            }
-        }
+        get => ImageSeriesGenerationSettingsWorkspace.SelectedImageTypePresetOption;
+        set => ImageSeriesGenerationSettingsWorkspace.SelectedImageTypePresetOption = value;
     }
 
-    public IReadOnlyList<StyleGuideOptionViewModel> StyleGuideOptions
-    {
-        get => _styleGuideOptions;
-        private set => SetProperty(ref _styleGuideOptions, value);
-    }
+    public IReadOnlyList<StyleGuideOptionViewModel> StyleGuideOptions =>
+        ImageSeriesGenerationSettingsWorkspace.StyleGuideOptions;
 
     public StyleGuideOptionViewModel? SelectedStyleGuideOption
     {
-        get => _selectedStyleGuideOption;
-        set
-        {
-            if (SetProperty(ref _selectedStyleGuideOption, value))
-            {
-                RefreshStyleRecipeSummary();
-            }
-        }
+        get => ImageSeriesGenerationSettingsWorkspace.SelectedStyleGuideOption;
+        set => ImageSeriesGenerationSettingsWorkspace.SelectedStyleGuideOption = value;
     }
 
-    public IReadOnlyList<GenerationRecipeOptionViewModel> GenerationRecipeOptions
-    {
-        get => _generationRecipeOptions;
-        private set => SetProperty(ref _generationRecipeOptions, value);
-    }
+    public IReadOnlyList<GenerationRecipeOptionViewModel> GenerationRecipeOptions =>
+        ImageSeriesGenerationSettingsWorkspace.GenerationRecipeOptions;
 
     public GenerationRecipeOptionViewModel? SelectedGenerationRecipeOption
     {
-        get => _selectedGenerationRecipeOption;
-        set
-        {
-            if (SetProperty(ref _selectedGenerationRecipeOption, value))
-            {
-                RefreshStyleRecipeSummary();
-            }
-        }
+        get => ImageSeriesGenerationSettingsWorkspace.SelectedGenerationRecipeOption;
+        set => ImageSeriesGenerationSettingsWorkspace.SelectedGenerationRecipeOption = value;
     }
 
     public SeriesItemViewModel? SelectedSeriesItem
     {
-        get => _selectedSeriesItem;
-        set
-        {
-            if (!SetProperty(ref _selectedSeriesItem, value))
-            {
-                return;
-            }
-
-            PromptVersions = value?.PromptVersions ?? [];
-            SelectedSeriesItemTitleText = _mainWindowSelectionSummaryCoordinator.BuildSelectedSeriesItemTitle(
-                value,
-                NoItemSelectedForPromptText);
-            CreatePromptVersionCommand.NotifyCanExecuteChanged();
-            PromotePromptDirectionCommand.NotifyCanExecuteChanged();
-        }
+        get => ImageSeriesPlanningWorkspace.SelectedSeriesItem;
+        set => ImageSeriesPlanningWorkspace.SelectedSeriesItem = value;
     }
 
-    public IReadOnlyList<PlanRowViewModel> PlanRows
-    {
-        get => _planRows;
-        private set
-        {
-            if (SetProperty(ref _planRows, value))
-            {
-                OnPropertyChanged(nameof(HasPlanRows));
-            }
-        }
-    }
+    public IReadOnlyList<PlanRowViewModel> PlanRows => ImageSeriesPlanningWorkspace.PlanRows;
 
-    public bool HasPlanRows => PlanRows.Count > 0;
+    public bool HasPlanRows => ImageSeriesPlanningWorkspace.HasPlanRows;
 
-    public IReadOnlyList<DesignBlueprintRowViewModel> DesignBlueprintRows
-    {
-        get => _designBlueprintRows;
-        private set
-        {
-            if (SetProperty(ref _designBlueprintRows, value))
-            {
-                OnPropertyChanged(nameof(HasDesignBlueprintRows));
-                GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
-            }
-        }
-    }
+    public IReadOnlyList<DesignBlueprintRowViewModel> DesignBlueprintRows =>
+        ImageSeriesBriefWorkspace.DesignBlueprintRows;
 
-    public bool HasDesignBlueprintRows => DesignBlueprintRows.Count > 0;
+    public bool HasDesignBlueprintRows => ImageSeriesBriefWorkspace.HasDesignBlueprintRows;
 
     public DesignBlueprintRowViewModel? SelectedDesignBlueprint
     {
-        get => _selectedDesignBlueprint;
-        set
-        {
-            if (SetProperty(ref _selectedDesignBlueprint, value))
-            {
-                PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesBriefWorkspace.SelectedDesignBlueprint;
+        set => ImageSeriesBriefWorkspace.SelectedDesignBlueprint = value;
     }
 
-    public IReadOnlyList<PromptDirectionRowViewModel> PromptDirectionRows
-    {
-        get => _promptDirectionRows;
-        private set
-        {
-            if (SetProperty(ref _promptDirectionRows, value))
-            {
-                OnPropertyChanged(nameof(HasPromptDirectionRows));
-                GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
-            }
-        }
-    }
+    public IReadOnlyList<PromptDirectionRowViewModel> PromptDirectionRows =>
+        ImageSeriesBriefWorkspace.PromptDirectionRows;
 
-    public bool HasPromptDirectionRows => PromptDirectionRows.Count > 0;
+    public bool HasPromptDirectionRows => ImageSeriesBriefWorkspace.HasPromptDirectionRows;
 
     public PromptDirectionRowViewModel? SelectedPromptDirection
     {
-        get => _selectedPromptDirection;
-        set
-        {
-            if (SetProperty(ref _selectedPromptDirection, value))
-            {
-                PromotePromptDirectionCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesBriefWorkspace.SelectedPromptDirection;
+        set => ImageSeriesBriefWorkspace.SelectedPromptDirection = value;
     }
 
-    public IReadOnlyList<PromptVersionViewModel> PromptVersions
-    {
-        get => _promptVersions;
-        private set => SetProperty(ref _promptVersions, value);
-    }
+    public IAsyncRelayCommand RunFakePlanningCommand => ImageSeriesBriefWorkspace.RunFakePlanningCommand;
 
-    public IReadOnlyList<PromptRowViewModel> PromptRows
-    {
-        get => _promptRows;
-        private set
-        {
-            if (SetProperty(ref _promptRows, value))
-            {
-                OnPropertyChanged(nameof(HasPromptRows));
-                RunFakeGenerationCommand.NotifyCanExecuteChanged();
-            }
-        }
-    }
+    public IAsyncRelayCommand CreateBriefCommand => ImageSeriesBriefWorkspace.CreateBriefCommand;
 
-    public bool HasPromptRows => PromptRows.Count > 0;
+    public IAsyncRelayCommand GenerateDesignBlueprintsCommand =>
+        ImageSeriesBriefWorkspace.GenerateDesignBlueprintsCommand;
 
-    public IReadOnlyList<QueueRowViewModel> QueueRows
-    {
-        get => _queueRows;
-        private set
-        {
-            var selectedTaskId = SelectedQueueRow?.TaskId;
-            if (SetProperty(ref _queueRows, value))
-            {
-                OnPropertyChanged(nameof(HasQueueRows));
-                SelectedQueueRow = value.FirstOrDefault(row => row.TaskId == selectedTaskId)
-                    ?? value.FirstOrDefault();
-                NotifyQueueCommandStatesChanged();
-            }
-        }
-    }
+    public IAsyncRelayCommand PromoteDesignBlueprintCommand =>
+        ImageSeriesBriefWorkspace.PromoteDesignBlueprintCommand;
 
-    public bool HasQueueRows => QueueRows.Count > 0;
+    public IAsyncRelayCommand GeneratePromptDirectionsCommand =>
+        ImageSeriesBriefWorkspace.GeneratePromptDirectionsCommand;
+
+    public IAsyncRelayCommand PromotePromptDirectionCommand =>
+        ImageSeriesBriefWorkspace.PromotePromptDirectionCommand;
+
+    public IReadOnlyList<PromptVersionViewModel> PromptVersions => ImageSeriesPlanningWorkspace.PromptVersions;
+
+    public IReadOnlyList<PromptRowViewModel> PromptRows => ImageSeriesPlanningWorkspace.PromptRows;
+
+    public bool HasPromptRows => ImageSeriesPlanningWorkspace.HasPromptRows;
+
+    public IAsyncRelayCommand CreateSeriesCommand => ImageSeriesPlanningWorkspace.CreateSeriesCommand;
+
+    public IAsyncRelayCommand AddItemCommand => ImageSeriesPlanningWorkspace.AddItemCommand;
+
+    public IAsyncRelayCommand CreatePromptVersionCommand =>
+        ImageSeriesPlanningWorkspace.CreatePromptVersionCommand;
+
+    public IReadOnlyList<QueueRowViewModel> QueueRows => ImageSeriesWorkspace.QueueRows;
+
+    public bool HasQueueRows => ImageSeriesWorkspace.HasQueueRows;
 
     public QueueRowViewModel? SelectedQueueRow
     {
-        get => _selectedQueueRow;
-        set
-        {
-            if (SetProperty(ref _selectedQueueRow, value))
-            {
-                NotifyQueueCommandStatesChanged();
-            }
-        }
+        get => ImageSeriesWorkspace.SelectedQueueRow;
+        set => ImageSeriesWorkspace.SelectedQueueRow = value;
     }
 
-    public IReadOnlyList<GalleryRowViewModel> GalleryRows
-    {
-        get => _galleryRows;
-        private set
-        {
-            if (SetProperty(ref _galleryRows, value))
-            {
-                OnPropertyChanged(nameof(HasGalleryRows));
-                if (value.Count == 0)
-                {
-                    SelectedGalleryRow = null;
-                }
-                else if (SelectedGalleryRow is null
-                    || !value.Any(row => row.CandidateImageId == SelectedGalleryRow.CandidateImageId))
-                {
-                    SelectedGalleryRow = value[0];
-                }
+    public IAsyncRelayCommand PrepareGenerationQueueCommand =>
+        ImageSeriesWorkspace.PrepareGenerationQueueCommand;
 
-                RunFakeReviewCommand.NotifyCanExecuteChanged();
-                RunFakeImageEditCommand.NotifyCanExecuteChanged();
-                RebuildWorkflowGraphRows();
-                QueueGalleryWarmup(value.Select(row => row.AssetPath));
-            }
-        }
-    }
+    public IAsyncRelayCommand RunFakeGenerationCommand => ImageSeriesWorkspace.RunFakeGenerationCommand;
 
-    public bool HasGalleryRows => GalleryRows.Count > 0;
+    public IAsyncRelayCommand ExecutePreparedGenerationQueueCommand =>
+        ImageSeriesWorkspace.ExecutePreparedGenerationQueueCommand;
+
+    public IAsyncRelayCommand PauseSelectedGenerationTaskCommand =>
+        ImageSeriesWorkspace.PauseSelectedGenerationTaskCommand;
+
+    public IAsyncRelayCommand ResumeSelectedGenerationTaskCommand =>
+        ImageSeriesWorkspace.ResumeSelectedGenerationTaskCommand;
+
+    public IAsyncRelayCommand RetrySelectedGenerationTaskCommand =>
+        ImageSeriesWorkspace.RetrySelectedGenerationTaskCommand;
+
+    public IAsyncRelayCommand MoveSelectedGenerationTaskUpCommand =>
+        ImageSeriesWorkspace.MoveSelectedGenerationTaskUpCommand;
+
+    public IAsyncRelayCommand MoveSelectedGenerationTaskDownCommand =>
+        ImageSeriesWorkspace.MoveSelectedGenerationTaskDownCommand;
+
+    public IReadOnlyList<GalleryRowViewModel> GalleryRows => ImageSeriesGalleryWorkspace.GalleryRows;
+
+    public bool HasGalleryRows => ImageSeriesGalleryWorkspace.HasGalleryRows;
 
     public GalleryRowViewModel? SelectedGalleryRow
     {
-        get => _selectedGalleryRow;
-        set
-        {
-            if (SetProperty(ref _selectedGalleryRow, value))
-            {
-                OnPropertyChanged(nameof(SelectedCandidateSummary));
-                RunFakeImageEditCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesGalleryWorkspace.SelectedGalleryRow;
+        set => ImageSeriesGalleryWorkspace.SelectedGalleryRow = value;
     }
 
-    public IReadOnlyList<ReviewRowViewModel> ReviewRows
-    {
-        get => _reviewRows;
-        private set
-        {
-            if (SetProperty(ref _reviewRows, value))
-            {
-                OnPropertyChanged(nameof(HasReviewRows));
-                SelectedReviewRow = value.FirstOrDefault(row =>
-                    SelectedReviewRow is null || row.CandidateImageId == SelectedReviewRow.CandidateImageId);
-                ExportDeliveryCommand.NotifyCanExecuteChanged();
-                RebuildWorkflowGraphRows();
-            }
-        }
-    }
+    public IAsyncRelayCommand RunFakeImageEditCommand =>
+        ImageSeriesGalleryWorkspace.RunFakeImageEditCommand;
 
-    public bool HasReviewRows => ReviewRows.Count > 0;
+    public IReadOnlyList<ReviewRowViewModel> ReviewRows => ImageSeriesReviewWorkspace.ReviewRows;
+
+    public bool HasReviewRows => ImageSeriesReviewWorkspace.HasReviewRows;
 
     public ReviewRowViewModel? SelectedReviewRow
     {
-        get => _selectedReviewRow;
-        set
-        {
-            if (SetProperty(ref _selectedReviewRow, value))
-            {
-                ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
-                RejectSelectedReviewCommand.NotifyCanExecuteChanged();
-            }
-        }
+        get => ImageSeriesReviewWorkspace.SelectedReviewRow;
+        set => ImageSeriesReviewWorkspace.SelectedReviewRow = value;
     }
 
-    public IReadOnlyList<DeliveryRowViewModel> DeliveryRows
-    {
-        get => _deliveryRows;
-        private set
-        {
-            if (SetProperty(ref _deliveryRows, value))
-            {
-                OnPropertyChanged(nameof(HasDeliveryRows));
-                RebuildWorkflowGraphRows();
-            }
-        }
-    }
+    public IAsyncRelayCommand RunFakeReviewCommand => ImageSeriesReviewWorkspace.RunFakeReviewCommand;
 
-    public bool HasDeliveryRows => DeliveryRows.Count > 0;
+    public IAsyncRelayCommand ApproveSelectedReviewCommand =>
+        ImageSeriesReviewWorkspace.ApproveSelectedReviewCommand;
+
+    public IAsyncRelayCommand RejectSelectedReviewCommand =>
+        ImageSeriesReviewWorkspace.RejectSelectedReviewCommand;
+
+    public IReadOnlyList<DeliveryRowViewModel> DeliveryRows => ImageSeriesDeliveryWorkspace.DeliveryRows;
+
+    public bool HasDeliveryRows => ImageSeriesDeliveryWorkspace.HasDeliveryRows;
+
+    public IAsyncRelayCommand BrowseFinalDeliveryRootCommand =>
+        ImageSeriesDeliveryWorkspace.BrowseFinalDeliveryRootCommand;
+
+    public IAsyncRelayCommand ExportDeliveryCommand => ImageSeriesDeliveryWorkspace.ExportDeliveryCommand;
 
     public IReadOnlyList<WorkflowGraphRowViewModel> WorkflowGraphRows
     {
@@ -1731,8 +836,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         var previousPresetId = SelectedImageTypePresetOption?.Id;
         var previousStyleGuideId = SelectedStyleGuideOption?.Id;
         var previousRecipeId = SelectedGenerationRecipeOption?.Id;
-        var previousFinalDeliveryCategory = SelectedFinalDeliveryCategoryOption?.Category
-            ?? FinalImageDeliveryCategory.ImageSeries;
         var payload = _mainWindowLocalizationCoordinator.BuildPayload();
         var restoredSelections = _mainWindowLocalizationCoordinator.RestoreSelectionState(
             payload,
@@ -1758,11 +861,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         CreateProjectText = payload.CreateProjectText;
         AvailableProjectsTitle = payload.AvailableProjectsTitle;
         CurrentProjectTitle = payload.CurrentProjectTitle;
-        FakePlanningTitle = payload.FakePlanningTitle;
-        PlanningGoalLabel = payload.PlanningGoalLabel;
-        PlanningAudienceLabel = payload.PlanningAudienceLabel;
-        PlanningItemCountLabel = payload.PlanningItemCountLabel;
-        PlanningStyleBriefLabel = payload.PlanningStyleBriefLabel;
         DocumentIllustrationTitle = payload.DocumentIllustrationTitle;
         DocumentSourceFilePathLabel = payload.DocumentSourceFilePathLabel;
         DocumentSourceTextLabel = payload.DocumentSourceTextLabel;
@@ -1774,120 +872,29 @@ public sealed partial class MainWindowViewModel : ObservableObject
         DocumentPlanningResultText = payload.DocumentPlanningResultText;
         _defaultDocumentSourceText = payload.DefaultDocumentSourceText;
         _defaultDocumentAudience = payload.DefaultDocumentAudience;
-        BriefGoalLabel = payload.BriefGoalLabel;
-        BriefAudienceLabel = payload.BriefAudienceLabel;
-        BriefStyleIntentLabel = payload.BriefStyleIntentLabel;
-        CreateBriefText = payload.CreateBriefText;
-        GenerateDesignBlueprintsText = payload.GenerateDesignBlueprintsText;
-        PromoteDesignBlueprintText = payload.PromoteDesignBlueprintText;
-        BlueprintRoutesHeader = payload.BlueprintRoutesHeader;
-        NoBlueprintRowsText = payload.NoBlueprintRowsText;
-        GeneratePromptDirectionsText = payload.GeneratePromptDirectionsText;
-        PromotePromptDirectionText = payload.PromotePromptDirectionText;
-        PromptDirectionsHeader = payload.PromptDirectionsHeader;
-        NoPromptDirectionRowsText = payload.NoPromptDirectionRowsText;
-        RunFakePlanningText = payload.RunFakePlanningText;
-        RunFakeGenerationText = payload.RunFakeGenerationText;
-        PrepareGenerationQueueText = payload.PrepareGenerationQueueText;
-        ExecuteGenerationQueueText = payload.ExecuteGenerationQueueText;
-        PauseGenerationTaskText = payload.PauseGenerationTaskText;
-        ResumeGenerationTaskText = payload.ResumeGenerationTaskText;
-        RetryGenerationTaskText = payload.RetryGenerationTaskText;
-        MoveGenerationTaskUpText = payload.MoveGenerationTaskUpText;
-        MoveGenerationTaskDownText = payload.MoveGenerationTaskDownText;
-        QueueItemColumn = payload.QueueItemColumn;
-        QueuePositionColumn = payload.QueuePositionColumn;
-        QueueStatusColumn = payload.QueueStatusColumn;
-        QueueAttemptsColumn = payload.QueueAttemptsColumn;
-        QueueOutputColumn = payload.QueueOutputColumn;
-        QueueErrorColumn = payload.QueueErrorColumn;
-        NoQueueRowsText = payload.NoQueueRowsText;
-        GalleryItemColumn = payload.GalleryItemColumn;
-        GalleryImageColumn = payload.GalleryImageColumn;
-        GalleryMetadataColumn = payload.GalleryMetadataColumn;
-        NoGalleryRowsText = payload.NoGalleryRowsText;
-        RunFakeReviewText = payload.RunFakeReviewText;
-        ReviewItemColumn = payload.ReviewItemColumn;
-        ReviewDecisionColumn = payload.ReviewDecisionColumn;
-        ReviewScoreColumn = payload.ReviewScoreColumn;
-        ReviewCommentsColumn = payload.ReviewCommentsColumn;
-        ReviewFixColumn = payload.ReviewFixColumn;
-        ReviewRouteColumn = payload.ReviewRouteColumn;
-        HumanApprovalColumn = payload.HumanApprovalColumn;
-        NoReviewRowsText = payload.NoReviewRowsText;
-        FinalApprovalReviewerLabel = payload.FinalApprovalReviewerLabel;
-        FinalApprovalNotesLabel = payload.FinalApprovalNotesLabel;
-        ApproveSelectedReviewText = payload.ApproveSelectedReviewText;
-        RejectSelectedReviewText = payload.RejectSelectedReviewText;
-        ExportDeliveryText = payload.ExportDeliveryText;
-        FinalDeliveryCategoryLabel = payload.FinalDeliveryCategoryLabel;
-        FinalDeliveryRootLabel = payload.FinalDeliveryRootLabel;
-        BrowseFinalDeliveryRootText = payload.BrowseFinalDeliveryRootText;
-        FinalDeliveryDestinationLabel = payload.FinalDeliveryDestinationLabel;
-        DeliveryPackageColumn = payload.DeliveryPackageColumn;
-        DeliveryManifestColumn = payload.DeliveryManifestColumn;
-        DeliveryReportColumn = payload.DeliveryReportColumn;
-        DeliveryFinalImagesColumn = payload.DeliveryFinalImagesColumn;
-        NoDeliveryRowsText = payload.NoDeliveryRowsText;
+        ImageSeriesWorkspace.ApplyLocalization(payload);
+        ImageSeriesPlanningWorkspace.ApplyLocalization(payload);
+        ImageSeriesBriefWorkspace.ApplyLocalization(payload);
+        ImageSeriesGalleryWorkspace.ApplyLocalization(payload);
+        ImageSeriesReviewWorkspace.ApplyLocalization(payload);
+        ImageSeriesDeliveryWorkspace.ApplyLocalization(payload);
+        ImageSeriesGenerationSettingsWorkspace.ApplyLocalization(payload);
         GraphNodeColumn = payload.GraphNodeColumn;
         GraphSummaryColumn = payload.GraphSummaryColumn;
         GraphLinksColumn = payload.GraphLinksColumn;
         NoGraphRowsText = payload.NoGraphRowsText;
-        PlanEditorTitle = payload.PlanEditorTitle;
-        SeriesTitleLabel = payload.SeriesTitleLabel;
-        SeriesDescriptionLabel = payload.SeriesDescriptionLabel;
-        CreateSeriesText = payload.CreateSeriesText;
-        AvailableSeriesTitle = payload.AvailableSeriesTitle;
-        ItemTitleLabel = payload.ItemTitleLabel;
-        ItemBriefLabel = payload.ItemBriefLabel;
-        AddItemText = payload.AddItemText;
-        SeriesItemsTitle = payload.SeriesItemsTitle;
-        NoSeriesSelectedText = payload.NoSeriesSelectedText;
-        PlanSeriesColumn = payload.PlanSeriesColumn;
-        PlanItemColumn = payload.PlanItemColumn;
-        PlanBriefColumn = payload.PlanBriefColumn;
-        PlanKindColumn = payload.PlanKindColumn;
-        PlanStatusColumn = payload.PlanStatusColumn;
-        NoPlanRowsText = payload.NoPlanRowsText;
-        NoItemsInSeriesText = payload.NoItemsInSeriesText;
-        PromptEditorTitle = payload.PromptEditorTitle;
-        SelectedItemTitle = payload.SelectedItemTitle;
-        PromptTextLabel = payload.PromptTextLabel;
-        DefaultGenerationSettingsText = payload.DefaultGenerationSettingsText;
-        CreatePromptVersionText = payload.CreatePromptVersionText;
-        PromptHistoryTitle = payload.PromptHistoryTitle;
-        PromptVersionColumn = payload.PromptVersionColumn;
-        PromptItemColumn = payload.PromptItemColumn;
-        PromptTextColumn = payload.PromptTextColumn;
-        PromptSettingsColumn = payload.PromptSettingsColumn;
-        PromptCreatedColumn = payload.PromptCreatedColumn;
-        NoPromptRowsText = payload.NoPromptRowsText;
-        NoItemSelectedForPromptText = payload.NoItemSelectedForPromptText;
-        StyleRecipeInspectorTitle = payload.StyleRecipeInspectorTitle;
-        ImageTypePresetLabel = payload.ImageTypePresetLabel;
-        StyleGuideLabel = payload.StyleGuideLabel;
-        GenerationRecipeLabel = payload.GenerationRecipeLabel;
-        StyleRecipeSummaryTitle = payload.StyleRecipeSummaryTitle;
-        ImageEditTitle = payload.ImageEditTitle;
-        SelectedCandidateLabel = payload.SelectedCandidateLabel;
-        ImageEditPromptLabel = payload.ImageEditPromptLabel;
-        ImageEditMaskPathLabel = payload.ImageEditMaskPathLabel;
-        RunFakeImageEditText = payload.RunFakeImageEditText;
         ImageEditResultText = payload.ImageEditResultText;
-        OnPropertyChanged(nameof(SelectedCandidateSummary));
         NewDocumentSourceText = restoredSelections.DocumentSourceText;
         NewDocumentAudience = restoredSelections.DocumentAudience;
         DocumentStrictnessOptions = restoredSelections.DocumentStrictnessOptions;
         SelectedDocumentStrictnessOption = restoredSelections.SelectedDocumentStrictnessOption;
-        ImageTypePresetOptions = restoredSelections.ImageTypePresetOptions;
-        SelectedImageTypePresetOption = restoredSelections.SelectedImageTypePresetOption;
-        StyleGuideOptions = restoredSelections.StyleGuideOptions;
-        SelectedStyleGuideOption = restoredSelections.SelectedStyleGuideOption;
-        GenerationRecipeOptions = restoredSelections.GenerationRecipeOptions;
-        SelectedGenerationRecipeOption = restoredSelections.SelectedGenerationRecipeOption;
-        FinalDeliveryCategoryOptions = BuildFinalDeliveryCategoryOptions();
-        SelectedFinalDeliveryCategoryOption = FinalDeliveryCategoryOptions.First(
-            option => option.Category == previousFinalDeliveryCategory);
+        ImageSeriesGenerationSettingsWorkspace.ApplyOptions(
+            restoredSelections.ImageTypePresetOptions,
+            restoredSelections.SelectedImageTypePresetOption,
+            restoredSelections.StyleGuideOptions,
+            restoredSelections.SelectedStyleGuideOption,
+            restoredSelections.GenerationRecipeOptions,
+            restoredSelections.SelectedGenerationRecipeOption);
         CurrentProjectSummary = _mainWindowSelectionSummaryCoordinator.BuildCurrentProjectSummary(
             SelectedProject,
             Text(LocalizationKey.NoProjectLoaded));
@@ -1908,20 +915,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         _selectedLanguageOption = restoredSelections.SelectedLanguageOption;
         OnPropertyChanged(nameof(SelectedLanguageOption));
-        SelectedSeriesItemTitleText = _mainWindowSelectionSummaryCoordinator.BuildSelectedSeriesItemTitle(
-            SelectedSeriesItem,
-            NoItemSelectedForPromptText);
         RebuildPlanRows();
         RebuildPromptRows();
         RebuildWorkflowGraphRows();
-    }
-
-    private void RefreshStyleRecipeSummary()
-    {
-        StyleRecipeSummaryText = _mainWindowSelectionSummaryCoordinator.BuildStyleRecipeSummary(
-            SelectedImageTypePresetOption,
-            SelectedStyleGuideOption,
-            SelectedGenerationRecipeOption);
     }
 
     private IReadOnlyList<FinalImageDeliveryCategoryOptionViewModel> BuildFinalDeliveryCategoryOptions()
@@ -1936,30 +932,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
             new(FinalImageDeliveryCategory.CoursewareVisuals, Text(LocalizationKey.FinalDeliveryCoursewareVisuals)),
             new(FinalImageDeliveryCategory.PosterReportVisuals, Text(LocalizationKey.FinalDeliveryPosterReportVisuals)),
         ];
-    }
-
-    private string ResolveFinalDeliveryDestinationPreview()
-    {
-        if (SelectedFinalDeliveryCategoryOption is null)
-        {
-            return string.Empty;
-        }
-
-        try
-        {
-            return LocalStudioDataPaths.ResolveFinalDeliveryCategoryRoot(
-                SelectedFinalDeliveryCategoryOption.Category,
-                FinalDeliveryRootPath);
-        }
-        catch (ArgumentException)
-        {
-            return string.Empty;
-        }
-    }
-
-    private bool TryGetPlanningItemCount(out int itemCount)
-    {
-        return int.TryParse(NewPlanningItemCount, out itemCount) && itemCount > 0;
     }
 
     private static bool SupportsDocumentSourceFile(string? filePath)
@@ -2002,44 +974,44 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private void ApplyEmptyPlanState()
     {
         ApplyWorkbenchState(_projectWorkbenchStateCoordinator.CreateEmptyState());
-        QueueRows = [];
+        ImageSeriesWorkspace.ApplyProjection([]);
         _activeCreativeBriefId = null;
         RebuildWorkflowGraphRows();
-        CreateSeriesCommand.NotifyCanExecuteChanged();
-        AddItemCommand.NotifyCanExecuteChanged();
-        CreatePromptVersionCommand.NotifyCanExecuteChanged();
-        CreateBriefCommand.NotifyCanExecuteChanged();
-        GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
-        PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
-        GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
-        PromotePromptDirectionCommand.NotifyCanExecuteChanged();
+        ImageSeriesPlanningWorkspace.NotifyCommandStatesChanged();
+        ImageSeriesBriefWorkspace.NotifyCommandStatesChanged();
     }
 
     private void ApplyWorkbenchState(ProjectWorkbenchStateResult state)
     {
-        Series = state.Series;
-        DesignBlueprintRows = state.DesignBlueprintRows;
-        PromptDirectionRows = state.PromptDirectionRows;
-        PlanRows = state.PlanRows;
-        PromptRows = state.PromptRows;
-        QueueRows = state.QueueRows;
-        GalleryRows = state.GalleryRows;
-        ReviewRows = state.ReviewRows;
-        DeliveryRows = state.DeliveryRows;
-        SelectedSeries = state.SelectedSeries;
-        SelectedSeriesItem = state.SelectedSeriesItem;
-        SelectedPromptDirection = state.SelectedPromptDirection;
-        SelectedDesignBlueprint = state.SelectedDesignBlueprint;
+        ImageSeriesPlanningWorkspace.ApplyProjection(
+            state.Series,
+            state.PlanRows,
+            state.PromptRows,
+            state.SelectedSeries,
+            state.SelectedSeriesItem);
+        ImageSeriesBriefWorkspace.ApplyProjection(
+            state.DesignBlueprintRows,
+            state.PromptDirectionRows,
+            state.SelectedDesignBlueprint,
+            state.SelectedPromptDirection);
+        ImageSeriesWorkspace.ApplyProjection(state.QueueRows);
+        ImageSeriesGalleryWorkspace.ApplyProjection(state.GalleryRows);
+        ImageSeriesReviewWorkspace.ApplyProjection(state.ReviewRows);
+        ImageSeriesDeliveryWorkspace.ApplyProjection(state.DeliveryRows);
     }
 
     private void RebuildPlanRows()
     {
-        PlanRows = _projectWorkbenchProjectionCoordinator.BuildPlanRows(Series, NoItemsInSeriesText);
+        ImageSeriesPlanningWorkspace.ApplyPlanRows(
+            _projectWorkbenchProjectionCoordinator.BuildPlanRows(
+                ImageSeriesWorkspace.Planning.Series,
+                ImageSeriesWorkspace.Planning.NoItemsInSeriesText));
     }
 
     private void RebuildPromptRows()
     {
-        PromptRows = _projectWorkbenchProjectionCoordinator.BuildPromptRows(Series);
+        ImageSeriesPlanningWorkspace.ApplyPromptRows(
+            _projectWorkbenchProjectionCoordinator.BuildPromptRows(Series));
     }
 
     private void RebuildWorkflowGraphRows()
@@ -2078,7 +1050,8 @@ public sealed record WorkbenchTabViewModel(
     ScientificSourceUnderstandingViewModel? ScientificSourceUnderstanding = null,
     ScientificFigureSpecViewModel? ScientificFigureSpec = null,
     ScientificRenderReviewViewModel? ScientificRenderReview = null,
-    ScientificDeliveryViewModel? ScientificDelivery = null)
+    ScientificDeliveryViewModel? ScientificDelivery = null,
+    ScientificChartWorkspaceViewModel? ScientificChartWorkspace = null)
 {
     public bool IsBrief => Kind is WorkbenchTabKind.Brief;
 
@@ -2198,7 +1171,9 @@ public sealed record QueueRowViewModel(
     string Attempts,
     string OutputPath,
     string ErrorMessage,
-    Guid? RetryOfTaskId)
+    Guid? RetryOfTaskId,
+    string RequestSummary = "",
+    string ApprovalSummary = "")
 {
     public string Status => TaskStatus.ToString();
 
@@ -2219,7 +1194,8 @@ public sealed record GalleryRowViewModel(
     string ItemTitle,
     string AssetPath,
     string MetadataPath,
-    string PromptText);
+    string PromptText,
+    CandidateImageEditProvenance? EditProvenance = null);
 
 public sealed record ReviewRowViewModel(
     Guid CandidateImageId,

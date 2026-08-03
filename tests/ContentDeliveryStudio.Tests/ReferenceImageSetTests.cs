@@ -5,6 +5,35 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class ReferenceImageSetTests
 {
     [Fact]
+    public void AddImage_PreservesNormalizedSha256WithoutExposingAbsolutePath()
+    {
+        var set = ReferenceImageSet.Create(Guid.NewGuid(), "References", DateTimeOffset.UtcNow);
+        var image = set.AddImage(
+            "references/subject.png",
+            ReferenceImageRole.Subject,
+            "Subject identity",
+            new string('A', 64),
+            DateTimeOffset.UtcNow);
+
+        Assert.Equal(new string('a', 64), image.Sha256);
+        Assert.Equal("references/subject.png", image.AssetPath);
+        Assert.False(Path.IsPathRooted(image.AssetPath));
+    }
+
+    [Fact]
+    public void AddImage_RejectsMalformedSha256()
+    {
+        var set = ReferenceImageSet.Create(Guid.NewGuid(), "References", DateTimeOffset.UtcNow);
+
+        Assert.Throws<ArgumentException>(() => set.AddImage(
+            "references/subject.png",
+            ReferenceImageRole.Subject,
+            string.Empty,
+            "not-a-hash",
+            DateTimeOffset.UtcNow));
+    }
+
+    [Fact]
     public void AddImage_NormalizesWorkspaceRelativePathAndTracksRole()
     {
         var timestamp = new DateTimeOffset(2026, 6, 1, 10, 0, 0, TimeSpan.Zero);

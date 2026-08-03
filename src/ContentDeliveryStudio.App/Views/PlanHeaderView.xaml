@@ -14,26 +14,26 @@
                 <ColumnDefinition Width="110" />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0"
-                       Text="{Binding DataContext.PlanSeriesColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PlanSeriesColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold" />
             <TextBlock Grid.Column="1"
-                       Text="{Binding DataContext.PlanItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PlanItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="2"
-                       Text="{Binding DataContext.PlanBriefColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PlanBriefColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="3"
-                       Text="{Binding DataContext.PlanKindColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PlanKindColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="4"
-                       Text="{Binding DataContext.PlanStatusColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeriesWorkspace.Planning.PlanStatusColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />

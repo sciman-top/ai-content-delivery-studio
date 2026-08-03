@@ -9,14 +9,14 @@
             <Style TargetType="Border">
                 <Setter Property="Visibility" Value="Collapsed" />
                 <Style.Triggers>
-                    <DataTrigger Binding="{Binding DataContext.HasPromptRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
+                    <DataTrigger Binding="{Binding DataContext.ImageSeriesWorkspace.Planning.HasPromptRows, RelativeSource={RelativeSource AncestorType=TabControl}}" Value="True">
                         <Setter Property="Visibility" Value="Visible" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
         </Border.Style>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding DataContext.PromptRows, RelativeSource={RelativeSource AncestorType=TabControl}}">
+            <ItemsControl ItemsSource="{Binding DataContext.ImageSeriesWorkspace.Planning.PromptRows, RelativeSource={RelativeSource AncestorType=TabControl}}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
                         <Border BorderBrush="#E3E7EF" BorderThickness="0,0,0,1" Padding="12,10">

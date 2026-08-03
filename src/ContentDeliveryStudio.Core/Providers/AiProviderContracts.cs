@@ -1,5 +1,6 @@
 using ContentDeliveryStudio.Core.Documents;
 using ContentDeliveryStudio.Core.Projects;
+using ContentDeliveryStudio.Core.References;
 using ContentDeliveryStudio.Core.Styles;
 
 namespace ContentDeliveryStudio.Core.Providers;
@@ -73,6 +74,14 @@ public interface IProviderCapabilities
     bool SupportsReferenceImages { get; }
 
     IReadOnlyList<ProviderCostHint> CostHints { get; }
+
+    IReadOnlyList<ReferenceImageRole> SupportedReferenceImageRoles { get; }
+
+    bool SupportsMaskEditing { get; }
+
+    int MaxReferenceImageCount { get; }
+
+    long MaxReferenceImageBytes { get; }
 }
 
 public sealed class ProviderCapabilities : IProviderCapabilities
@@ -91,7 +100,11 @@ public sealed class ProviderCapabilities : IProviderCapabilities
         IReadOnlyList<string>? supportedOutputFormats = null,
         IReadOnlyList<string>? supportedBackgroundModes = null,
         bool supportsReferenceImages = false,
-        IReadOnlyList<ProviderCostHint>? costHints = null)
+        IReadOnlyList<ProviderCostHint>? costHints = null,
+        IReadOnlyList<ReferenceImageRole>? supportedReferenceImageRoles = null,
+        bool supportsMaskEditing = false,
+        int maxReferenceImageCount = 0,
+        long maxReferenceImageBytes = 0)
     {
         ProviderId = providerId;
         DisplayName = displayName;
@@ -107,6 +120,10 @@ public sealed class ProviderCapabilities : IProviderCapabilities
         SupportedBackgroundModes = supportedBackgroundModes ?? [];
         SupportsReferenceImages = supportsReferenceImages;
         CostHints = costHints ?? [];
+        SupportedReferenceImageRoles = supportedReferenceImageRoles ?? [];
+        SupportsMaskEditing = supportsMaskEditing;
+        MaxReferenceImageCount = maxReferenceImageCount;
+        MaxReferenceImageBytes = maxReferenceImageBytes;
     }
 
     public string ProviderId { get; }
@@ -136,6 +153,14 @@ public sealed class ProviderCapabilities : IProviderCapabilities
     public bool SupportsReferenceImages { get; }
 
     public IReadOnlyList<ProviderCostHint> CostHints { get; }
+
+    public IReadOnlyList<ReferenceImageRole> SupportedReferenceImageRoles { get; }
+
+    public bool SupportsMaskEditing { get; }
+
+    public int MaxReferenceImageCount { get; }
+
+    public long MaxReferenceImageBytes { get; }
 }
 
 public sealed record ImageOutputSize(int Width, int Height);
@@ -248,10 +273,19 @@ public sealed record ImageEditRequest(
     GenerationSettings Settings,
     string OutputDirectory,
     string OutputFileName = "",
-    GenerationRecipe? Recipe = null)
+    GenerationRecipe? Recipe = null,
+    IReadOnlyList<ImageEditReferenceInput>? References = null)
 {
     public bool IsMaskEdit => !string.IsNullOrWhiteSpace(MaskImagePath);
+
+    public IReadOnlyList<ImageEditReferenceInput> References { get; init; } = References ?? [];
 }
+
+public sealed record ImageEditReferenceInput(
+    Guid ReferenceId,
+    ReferenceImageRole Role,
+    string AssetPath,
+    string Sha256);
 
 public sealed record ImageGenerationResult(
     Guid CandidateImageId,

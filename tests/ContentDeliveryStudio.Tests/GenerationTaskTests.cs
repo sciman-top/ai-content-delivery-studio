@@ -1,3 +1,4 @@
+using ContentDeliveryStudio.Core.Generation;
 using ContentDeliveryStudio.Core.Projects;
 
 namespace ContentDeliveryStudio.Tests;
@@ -36,6 +37,51 @@ public sealed class GenerationTaskTests
         task.Succeed(timestamp.AddSeconds(4));
 
         Assert.Throws<InvalidOperationException>(() => task.MoveTo(4, timestamp.AddSeconds(5)));
+    }
+
+    [Fact]
+    public void GenerationTask_ReorderInvalidatesApprovalWhilePauseAndResumePreserveIt()
+    {
+        var timestamp = DateTimeOffset.Parse("2026-08-03T09:00:00Z");
+        var task = CreateTask(GenerationTaskStatus.Queued, timestamp, queuePosition: 2);
+        var requestSet = new GenerationApprovalRequestSet(
+            Guid.NewGuid(),
+            "paid-image",
+            "images",
+            "paid-image-v1",
+            [new GenerationApprovalOperation(
+                task.Id,
+                Guid.NewGuid(),
+                task.PromptVersionId,
+                task.ProviderProfileId,
+                "prompt",
+                "prompt-sha",
+                1024,
+                1024,
+                "standard",
+                "png",
+                "auto",
+                null,
+                task.MaxRetries,
+                0.10m)]);
+        var receipt = GenerationApprovalReceipt.Issue(
+            requestSet,
+            0.10m,
+            0.15m,
+            "operator:test",
+            "authority:test-001",
+            timestamp,
+            timestamp.AddMinutes(10));
+
+        task.AttachApproval(receipt, timestamp.AddSeconds(1));
+        task.Pause(timestamp.AddSeconds(2));
+        task.Resume(timestamp.AddSeconds(3));
+
+        Assert.Equal(receipt, task.ApprovalReceipt);
+
+        task.MoveTo(1, timestamp.AddSeconds(4));
+
+        Assert.Null(task.ApprovalReceipt);
     }
 
     [Fact]

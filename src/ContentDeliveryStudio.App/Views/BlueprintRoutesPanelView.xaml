@@ -12,7 +12,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0"
-                   Text="{Binding DataContext.BlueprintRoutesHeader, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                   Text="{Binding DataContext.ImageSeriesWorkspace.Brief.BlueprintRoutesHeader, RelativeSource={RelativeSource AncestorType=TabControl}}"
                    FontWeight="SemiBold"
                    Margin="0,18,0,8" />
 

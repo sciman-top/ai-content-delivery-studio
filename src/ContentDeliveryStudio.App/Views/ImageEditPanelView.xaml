@@ -5,30 +5,41 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <TextBlock Text="{Binding ImageEditTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
-        <TextBlock Text="{Binding SelectedCandidateLabel}" Margin="0,0,0,4" />
-        <TextBlock Text="{Binding SelectedCandidateSummary}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Gallery.ImageEditTitle}" FontWeight="SemiBold" Margin="0,0,0,8" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Gallery.SelectedCandidateLabel}" Margin="0,0,0,4" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Gallery.SelectedCandidateSummary}"
                    TextWrapping="Wrap"
                    Foreground="#4B5563"
                    Margin="0,0,0,8" />
-        <TextBlock Text="{Binding ImageEditPromptLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewImageEditPrompt, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Gallery.ImageEditPromptLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Gallery.NewImageEditPrompt, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="ImageEditPromptInput"
-                 AutomationProperties.Name="{Binding ImageEditPromptLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Gallery.ImageEditPromptLabel}"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  MinHeight="76"
                  Margin="0,0,0,6" />
-        <TextBlock Text="{Binding ImageEditMaskPathLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewImageEditMaskPath, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Gallery.ImageEditMaskPathLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Gallery.NewImageEditMaskPath, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="ImageEditMaskPathInput"
-                 AutomationProperties.Name="{Binding ImageEditMaskPathLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Gallery.ImageEditMaskPathLabel}"
                  TextWrapping="NoWrap"
                  Margin="0,0,0,8" />
-        <Button Content="{Binding RunFakeImageEditText}"
-                Command="{Binding RunFakeImageEditCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.Gallery.RunFakeImageEditText}"
+                Command="{Binding ImageSeriesWorkspace.Gallery.RunFakeImageEditCommand}"
                 AutomationProperties.AutomationId="RunFakeImageEditButton"
-                AutomationProperties.Name="{Binding RunFakeImageEditText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Gallery.RunFakeImageEditText}"
+                HorizontalAlignment="Stretch" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Gallery.ApprovedImageEditAvailabilityText}"
+                   AutomationProperties.AutomationId="ApprovedImageEditCapabilitySummary"
+                   TextWrapping="Wrap"
+                   Foreground="#4B5563"
+                   Margin="0,8,0,4" />
+        <Button Content="{Binding ImageSeriesWorkspace.Gallery.RunApprovedImageEditText}"
+                Command="{Binding ImageSeriesWorkspace.Gallery.RunApprovedImageEditCommand}"
+                AutomationProperties.AutomationId="RunApprovedImageEditButton"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Gallery.RunApprovedImageEditText}"
+                ToolTip="{Binding ImageSeriesWorkspace.Gallery.ApprovedImageEditAvailabilityText}"
                 HorizontalAlignment="Stretch" />
     </StackPanel>
 </UserControl>

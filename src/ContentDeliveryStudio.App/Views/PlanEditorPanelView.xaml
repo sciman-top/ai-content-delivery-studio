@@ -5,56 +5,56 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d">
     <StackPanel>
-        <TextBlock Text="{Binding PlanEditorTitle}" FontWeight="SemiBold" Margin="0,0,0,10" />
-        <TextBlock Text="{Binding SeriesTitleLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewSeriesTitle, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.PlanEditorTitle}" FontWeight="SemiBold" Margin="0,0,0,10" />
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.SeriesTitleLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Planning.NewSeriesTitle, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="SeriesTitleInput"
-                 AutomationProperties.Name="{Binding SeriesTitleLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.SeriesTitleLabel}"
                  Margin="0,0,0,6" />
-        <TextBlock Text="{Binding SeriesDescriptionLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewSeriesDescription, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.SeriesDescriptionLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Planning.NewSeriesDescription, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="SeriesDescriptionInput"
-                 AutomationProperties.Name="{Binding SeriesDescriptionLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.SeriesDescriptionLabel}"
                  Margin="0,0,0,8" />
-        <Button Content="{Binding CreateSeriesText}"
-                Command="{Binding CreateSeriesCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.Planning.CreateSeriesText}"
+                Command="{Binding ImageSeriesWorkspace.Planning.CreateSeriesCommand}"
                 AutomationProperties.AutomationId="CreateSeriesButton"
-                AutomationProperties.Name="{Binding CreateSeriesText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.CreateSeriesText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,12" />
 
-        <TextBlock Text="{Binding AvailableSeriesTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
-        <ListBox ItemsSource="{Binding Series}"
-                 SelectedItem="{Binding SelectedSeries, Mode=TwoWay}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.AvailableSeriesTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <ListBox ItemsSource="{Binding ImageSeriesWorkspace.Planning.Series}"
+                 SelectedItem="{Binding ImageSeriesWorkspace.Planning.SelectedSeries, Mode=TwoWay}"
                  DisplayMemberPath="Title"
                  AutomationProperties.AutomationId="AvailableSeriesList"
-                 AutomationProperties.Name="{Binding AvailableSeriesTitle}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.AvailableSeriesTitle}"
                  MinHeight="82"
                  Margin="0,0,0,12" />
 
-        <TextBlock Text="{Binding ItemTitleLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewItemTitle, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.ItemTitleLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Planning.NewItemTitle, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="SeriesItemTitleInput"
-                 AutomationProperties.Name="{Binding ItemTitleLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.ItemTitleLabel}"
                  Margin="0,0,0,6" />
-        <TextBlock Text="{Binding ItemBriefLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding NewItemBrief, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.ItemBriefLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeriesWorkspace.Planning.NewItemBrief, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="SeriesItemBriefInput"
-                 AutomationProperties.Name="{Binding ItemBriefLabel}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.ItemBriefLabel}"
                  Margin="0,0,0,8" />
-        <Button Content="{Binding AddItemText}"
-                Command="{Binding AddItemCommand}"
+        <Button Content="{Binding ImageSeriesWorkspace.Planning.AddItemText}"
+                Command="{Binding ImageSeriesWorkspace.Planning.AddItemCommand}"
                 AutomationProperties.AutomationId="AddSeriesItemButton"
-                AutomationProperties.Name="{Binding AddItemText}"
+                AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.AddItemText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,12" />
 
-        <TextBlock Text="{Binding SeriesItemsTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
-        <ListBox ItemsSource="{Binding SeriesItems}"
-                 SelectedItem="{Binding SelectedSeriesItem, Mode=TwoWay}"
+        <TextBlock Text="{Binding ImageSeriesWorkspace.Planning.SeriesItemsTitle}" FontWeight="SemiBold" Margin="0,0,0,6" />
+        <ListBox ItemsSource="{Binding ImageSeriesWorkspace.Planning.SeriesItems}"
+                 SelectedItem="{Binding ImageSeriesWorkspace.Planning.SelectedSeriesItem, Mode=TwoWay}"
                  DisplayMemberPath="Title"
                  AutomationProperties.AutomationId="SeriesItemsList"
-                 AutomationProperties.Name="{Binding SeriesItemsTitle}"
+                 AutomationProperties.Name="{Binding ImageSeriesWorkspace.Planning.SeriesItemsTitle}"
                  MinHeight="82" />
     </StackPanel>
 </UserControl>

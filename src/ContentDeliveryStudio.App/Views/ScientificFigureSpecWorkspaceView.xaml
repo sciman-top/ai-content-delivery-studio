@@ -131,6 +131,53 @@
                 <Run Text=" / " />
                 <Run Text="{Binding ScientificFigureSpec.FrozenSpecificationVersion, Mode=OneWay}" />
             </TextBlock>
+            <Border Margin="0,12,0,0"
+                    Padding="10"
+                    BorderBrush="#C7D2E0"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    automation:AutomationProperties.AutomationId="ScientificChartSpecificationSummary">
+                <StackPanel>
+                    <TextBlock Text="Data-grounded chart specification"
+                               FontWeight="SemiBold" />
+                    <TextBlock Margin="0,3,0,0"
+                               Text="{Binding ScientificChartWorkspace.Title}"
+                               FontWeight="SemiBold" />
+                    <TextBlock Margin="0,3,0,0"
+                               Text="{Binding ScientificChartWorkspace.AxesSummary}"
+                               TextWrapping="Wrap" />
+                    <TextBlock Margin="0,3,0,0"
+                               Text="{Binding ScientificChartWorkspace.SelectionSummary}"
+                               TextWrapping="Wrap" />
+                    <TextBlock Margin="0,3,0,0"
+                               Text="{Binding ScientificChartWorkspace.TransformSummary}"
+                               TextWrapping="Wrap" />
+                    <ItemsControl Margin="0,5,0,0"
+                                  ItemsSource="{Binding ScientificChartWorkspace.Rows}"
+                                  automation:AutomationProperties.AutomationId="ScientificChartSourceRows">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock TextWrapping="Wrap">
+                                    <Run Text="{Binding RowId, Mode=OneWay}" />
+                                    <Run Text=" / " />
+                                    <Run Text="{Binding Category, Mode=OneWay}" />
+                                    <Run Text=": " />
+                                    <Run Text="{Binding Values, Mode=OneWay}" />
+                                </TextBlock>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Margin="0,5,0,0"
+                               FontFamily="Consolas"
+                               FontSize="10"
+                               Text="{Binding ScientificChartWorkspace.SourceHash}"
+                               TextWrapping="Wrap" />
+                    <TextBlock Margin="0,2,0,0"
+                               Text="{Binding ScientificChartWorkspace.ApprovalSummary}"
+                               Foreground="#245D3A"
+                               TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

@@ -1,4 +1,7 @@
 param(
+    [ValidateSet("Quick", "Full")]
+    [string]$Mode = "Full",
+    [string]$TestFilter,
     [switch]$SkipReferenceEvidence,
     [switch]$NoRestore,
     [string]$ReferenceEvidenceBaseRef,
@@ -15,6 +18,14 @@ if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($repoRoot)) {
 
 $repoRoot = $repoRoot.Trim()
 Set-Location $repoRoot
+
+if ($Mode -eq "Quick" -and [string]::IsNullOrWhiteSpace($TestFilter)) {
+    throw "Quick mode requires -TestFilter so it cannot masquerade as full repository verification."
+}
+
+if ($Mode -eq "Full" -and -not [string]::IsNullOrWhiteSpace($TestFilter)) {
+    throw "-TestFilter is available only in Quick mode. Full mode always runs the complete test suite."
+}
 
 function Invoke-Step {
     param(
@@ -89,22 +100,8 @@ function Invoke-DotNetBuildWithRetry {
     }
 }
 
-Invoke-Step -Label "Reference governance parity" -Action {
-    & ".\scripts\sync-reference-governance.ps1" -Check
-}
-
-if (-not $SkipReferenceEvidence) {
-    Invoke-Step -Label "Reference evidence gate" -Action {
-        if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef) -or -not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
-            & ".\scripts\verify-reference-evidence.ps1" -BaseRef $ReferenceEvidenceBaseRef -HeadRef $ReferenceEvidenceHeadRef
-        } else {
-            & ".\scripts\verify-reference-evidence.ps1"
-        }
-    }
-}
-
-$buildArgs = @("build")
-$testArgs = @("test")
+$buildArgs = @("build", "ContentDeliveryStudio.sln")
+$testArgs = @("test", "ContentDeliveryStudio.sln")
 if ($NoRestore) {
     $buildArgs += "--no-restore"
     $testArgs += @("--no-build", "--no-restore")
@@ -114,8 +111,31 @@ Invoke-Step -Label "dotnet build" -Action {
     Invoke-DotNetBuildWithRetry -Arguments $buildArgs
 }
 
+if ($Mode -eq "Quick") {
+    $testArgs += @("--filter", $TestFilter)
+}
+
 Invoke-Step -Label "dotnet test" -Action {
     & dotnet @testArgs
+}
+
+if ($Mode -eq "Quick") {
+    Write-Host "Quick verification passed for filter: $TestFilter" -ForegroundColor Green
+    exit 0
+}
+
+Invoke-Step -Label "Reference evidence and governance" -Action {
+    if ($SkipReferenceEvidence) {
+        & ".\scripts\verify-reference-evidence.ps1" -ParityOnly
+    } elseif (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef) -or -not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
+        & ".\scripts\verify-reference-evidence.ps1" -BaseRef $ReferenceEvidenceBaseRef -HeadRef $ReferenceEvidenceHeadRef
+    } else {
+        & ".\scripts\verify-reference-evidence.ps1"
+    }
+}
+
+Invoke-Step -Label "Product focus plan contract" -Action {
+    & ".\scripts\verify-product-focus-plan.ps1"
 }
 
 Invoke-Step -Label "dotnet format --verify-no-changes" -Action {

@@ -37,6 +37,21 @@ public sealed class DeliveryPackageTests
             var sourceAssetId = Guid.NewGuid();
             var evidenceAnchorId = Guid.NewGuid();
             var operatorRunId = Guid.NewGuid();
+            var editSourceCandidateId = Guid.NewGuid();
+            var editApprovalReceiptId = Guid.NewGuid();
+            var editProvenance = new CandidateImageEditProvenance(
+                Guid.NewGuid(),
+                editSourceCandidateId,
+                new string('a', 64),
+                new string('b', 64),
+                new string('c', 64),
+                "openai-image-edit",
+                "images/edits",
+                "gpt-image-2",
+                [new CandidateImageEditReferenceProvenance(editSourceCandidateId, "Subject", new string('a', 64))],
+                editApprovalReceiptId,
+                new string('d', 64),
+                DateTimeOffset.Parse("2026-08-03T09:00:00Z"));
             var result = await writer.WriteAsync(
                 new DeliveryPackageRequest(
                     "Sample project",
@@ -72,7 +87,8 @@ public sealed class DeliveryPackageTests
                                 "panel_sequence",
                                 "same main character; consistent scene grammar",
                                 "alternate camera distance"),
-                            OperatorRunIds: [operatorRunId]),
+                            OperatorRunIds: [operatorRunId],
+                            EditProvenance: editProvenance),
                         new DeliveryPackageItem(
                             "alt",
                             "Rejected alternate",
@@ -125,9 +141,19 @@ public sealed class DeliveryPackageTests
             Assert.Equal("panel_sequence", blueprint.GetProperty("sequenceMode").GetString());
             Assert.Contains("same main character", blueprint.GetProperty("consistencySummary").GetString());
             Assert.Equal("alternate camera distance", blueprint.GetProperty("variationSummary").GetString());
+            var manifestEdit = items[0].GetProperty("editProvenance");
+            Assert.Equal(editSourceCandidateId, manifestEdit.GetProperty("sourceCandidateImageId").GetGuid());
+            Assert.Equal("openai-image-edit", manifestEdit.GetProperty("providerId").GetString());
+            Assert.Equal("images/edits", manifestEdit.GetProperty("endpointClass").GetString());
+            Assert.Equal(editApprovalReceiptId, manifestEdit.GetProperty("approvalReceiptId").GetGuid());
 
             var manifestCsv = await File.ReadAllTextAsync(result.ManifestCsvPath, CancellationToken.None);
             Assert.Contains("outputArtifactId", manifestCsv);
+            Assert.Contains("editApprovalRequestSetHash", manifestCsv);
+            Assert.Contains("openai-image-edit", manifestCsv);
+            var manifestJson = await File.ReadAllTextAsync(result.ManifestJsonPath, CancellationToken.None);
+            Assert.DoesNotContain(Path.GetFullPath(approvedImage), manifestJson, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(Path.GetFullPath(sourceDirectory), manifestJson, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("sourceAssetIds", manifestCsv);
             Assert.Contains("evidenceAnchorIds", manifestCsv);
             Assert.Contains(outputArtifactId.ToString(), manifestCsv);

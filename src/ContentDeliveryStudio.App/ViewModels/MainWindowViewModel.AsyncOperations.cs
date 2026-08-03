@@ -61,31 +61,14 @@ public sealed partial class MainWindowViewModel
     private void NotifyMutationBusyStateChanged()
     {
         CreateProjectCommand.NotifyCanExecuteChanged();
-        RunFakePlanningCommand.NotifyCanExecuteChanged();
+        ImageSeriesBriefWorkspace.NotifyCommandStatesChanged();
         RunFakeDocumentPlanningCommand.NotifyCanExecuteChanged();
         ImportDocumentSourceFileCommand.NotifyCanExecuteChanged();
-        CreateBriefCommand.NotifyCanExecuteChanged();
-        GeneratePromptDirectionsCommand.NotifyCanExecuteChanged();
-        GenerateDesignBlueprintsCommand.NotifyCanExecuteChanged();
-        PromoteDesignBlueprintCommand.NotifyCanExecuteChanged();
-        PromotePromptDirectionCommand.NotifyCanExecuteChanged();
-        RunFakeGenerationCommand.NotifyCanExecuteChanged();
-        PrepareGenerationQueueCommand.NotifyCanExecuteChanged();
-        ExecutePreparedGenerationQueueCommand.NotifyCanExecuteChanged();
-        PauseSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
-        ResumeSelectedGenerationTaskCommand.NotifyCanExecuteChanged();
-        RetrySelectedGenerationTaskCommand.NotifyCanExecuteChanged();
-        MoveSelectedGenerationTaskUpCommand.NotifyCanExecuteChanged();
-        MoveSelectedGenerationTaskDownCommand.NotifyCanExecuteChanged();
-        RunFakeImageEditCommand.NotifyCanExecuteChanged();
-        RunFakeReviewCommand.NotifyCanExecuteChanged();
-        ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
-        RejectSelectedReviewCommand.NotifyCanExecuteChanged();
-        BrowseFinalDeliveryRootCommand.NotifyCanExecuteChanged();
-        ExportDeliveryCommand.NotifyCanExecuteChanged();
-        CreateSeriesCommand.NotifyCanExecuteChanged();
-        AddItemCommand.NotifyCanExecuteChanged();
-        CreatePromptVersionCommand.NotifyCanExecuteChanged();
+        ImageSeriesWorkspace.NotifyCommandStatesChanged();
+        ImageSeriesGalleryWorkspace.NotifyCommandStatesChanged();
+        ImageSeriesReviewWorkspace.NotifyCommandStatesChanged();
+        ImageSeriesDeliveryWorkspace.NotifyCommandStatesChanged();
+        ImageSeriesPlanningWorkspace.NotifyCommandStatesChanged();
     }
 
     private bool CanRunMutation() => !_isMutatingOperationActive;
@@ -177,7 +160,7 @@ public sealed partial class MainWindowViewModel
             selectedSeriesId,
             selectedItemId,
             activeCreativeBriefId ?? _activeCreativeBriefId,
-            NoItemsInSeriesText,
+            ImageSeriesWorkspace.Planning.NoItemsInSeriesText,
             cancellationToken);
     }
 
@@ -190,7 +173,7 @@ public sealed partial class MainWindowViewModel
         }
 
         ApplyWorkbenchState(state);
-        CreateSeriesCommand.NotifyCanExecuteChanged();
+        ImageSeriesPlanningWorkspace.NotifyCommandStatesChanged();
         RebuildWorkflowGraphRows();
     }
 

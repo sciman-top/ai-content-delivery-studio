@@ -94,17 +94,33 @@ Use `Matt Pocock`-style contract-first thinking where it helps:
 
 ### Phase 4: Verify
 
-Default verification command:
+Use the smallest lane that proves the current claim.
+
+Quick inner-loop feedback requires an explicit focused test filter:
+
+```powershell
+.\scripts\verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore
+```
+
+Quick builds the solution and runs only the selected tests. It does not run reference evidence, product-plan contracts, formatting, release scans, or packaging, so it cannot be cited as repository closeout.
+
+Canonical Full verification:
 
 ```powershell
 .\scripts\verify-repo.ps1
 ```
 
-Stronger closeout gate:
+Full runs exactly one `build -> complete test -> reference/product contracts -> format` sequence.
+
+Release closeout:
 
 ```powershell
 .\scripts\preflight-release.ps1
 ```
+
+Release runs Full once, then adds placeholder/conflict scans, actual publish/package verification, and staged/unstaged diff hygiene. It must not repeat Full or reference-governance work.
+
+Tests should observe domain behavior, persisted state, provider requests, packages, public ViewModel behavior, parsed semantic structure, or native UI Automation. Exact source-token and file-placement assertions are retained only when the source declaration itself is the externally meaningful contract and no stronger probe exists.
 
 High-requirement slices must also synchronize:
 

@@ -100,7 +100,9 @@ public sealed class ScientificSourceModelTests
     [Theory]
     [InlineData(true, false, ScientificReadingOrderStatus.Reliable, ScientificRequiredContentStatus.Complete, "scanned-without-ocr")]
     [InlineData(false, false, ScientificReadingOrderStatus.Corrupted, ScientificRequiredContentStatus.Complete, "corrupted-reading-order")]
+    [InlineData(false, false, ScientificReadingOrderStatus.Uncertain, ScientificRequiredContentStatus.Complete, "uncertain-reading-order")]
     [InlineData(false, false, ScientificReadingOrderStatus.Reliable, ScientificRequiredContentStatus.Missing, "missing-required-content")]
+    [InlineData(false, false, ScientificReadingOrderStatus.Reliable, ScientificRequiredContentStatus.Uncertain, "uncertain-required-content")]
     public void ScientificDocumentExtraction_ProducesExplicitBlockedOutcomes(
         bool isScanned,
         bool ocrApplied,
@@ -127,6 +129,8 @@ public sealed class ScientificSourceModelTests
     [Theory]
     [InlineData(ScientificSourceBlockKind.Formula, ScientificRecoveryStatus.Missing, "required-formula-missing")]
     [InlineData(ScientificSourceBlockKind.Table, ScientificRecoveryStatus.Uncertain, "required-table-uncertain")]
+    [InlineData(ScientificSourceBlockKind.Caption, ScientificRecoveryStatus.Missing, "required-caption-missing")]
+    [InlineData(ScientificSourceBlockKind.Reference, ScientificRecoveryStatus.Uncertain, "required-reference-uncertain")]
     public void ScientificDocumentExtraction_BlocksRequiredFormulaOrTableRecovery(
         ScientificSourceBlockKind kind,
         ScientificRecoveryStatus recoveryStatus,

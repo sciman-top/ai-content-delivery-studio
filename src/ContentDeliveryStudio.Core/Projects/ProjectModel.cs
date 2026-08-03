@@ -1,5 +1,6 @@
 using ContentDeliveryStudio.Core.Artifacts;
 using ContentDeliveryStudio.Core.Documents;
+using ContentDeliveryStudio.Core.Generation;
 using ContentDeliveryStudio.Core.Sources;
 using ContentDeliveryStudio.Core.Styles;
 
@@ -647,7 +648,8 @@ public sealed class GenerationTask
         DateTimeOffset updatedAt,
         string? errorMessage = null,
         int? queuePosition = null,
-        Guid? retryOfTaskId = null)
+        Guid? retryOfTaskId = null,
+        GenerationApprovalReceipt? approvalReceipt = null)
     {
         if (queuePosition is <= 0)
         {
@@ -671,6 +673,7 @@ public sealed class GenerationTask
         ErrorMessage = errorMessage;
         QueuePosition = queuePosition;
         RetryOfTaskId = retryOfTaskId;
+        ApprovalReceipt = approvalReceipt;
     }
 
     public Guid Id { get; private set; }
@@ -696,6 +699,28 @@ public sealed class GenerationTask
     public int? QueuePosition { get; private set; }
 
     public Guid? RetryOfTaskId { get; private set; }
+
+    public GenerationApprovalReceipt? ApprovalReceipt { get; private set; }
+
+    public void AttachApproval(GenerationApprovalReceipt receipt, DateTimeOffset timestamp)
+    {
+        ArgumentNullException.ThrowIfNull(receipt);
+        if (Status is not (GenerationTaskStatus.Queued or GenerationTaskStatus.Paused))
+        {
+            throw new InvalidOperationException($"Cannot approve a generation task in status {Status}.");
+        }
+
+        RequireNonDecreasingTimestamp(timestamp);
+        ApprovalReceipt = receipt;
+        UpdatedAt = timestamp;
+    }
+
+    public void InvalidateApproval(DateTimeOffset timestamp)
+    {
+        RequireNonDecreasingTimestamp(timestamp);
+        ApprovalReceipt = null;
+        UpdatedAt = timestamp;
+    }
 
     public void Pause(DateTimeOffset timestamp)
     {
@@ -729,6 +754,7 @@ public sealed class GenerationTask
 
         RequireNonDecreasingTimestamp(timestamp);
         QueuePosition = queuePosition;
+        ApprovalReceipt = null;
         UpdatedAt = timestamp;
     }
 
@@ -841,12 +867,13 @@ public sealed class CandidateImage
         Guid id,
         Guid seriesItemId,
         Guid promptVersionId,
-        Guid generationTaskId,
+        Guid? generationTaskId,
         Guid providerProfileId,
         CandidateImageStatus status,
         string assetPath,
         string metadataPath,
-        DateTimeOffset createdAt)
+        DateTimeOffset createdAt,
+        CandidateImageEditProvenance? editProvenance = null)
     {
         Id = id;
         SeriesItemId = seriesItemId;
@@ -857,6 +884,7 @@ public sealed class CandidateImage
         AssetPath = assetPath;
         MetadataPath = metadataPath;
         CreatedAt = createdAt;
+        EditProvenance = editProvenance;
     }
 
     public Guid Id { get; private set; }
@@ -865,7 +893,7 @@ public sealed class CandidateImage
 
     public Guid PromptVersionId { get; private set; }
 
-    public Guid GenerationTaskId { get; private set; }
+    public Guid? GenerationTaskId { get; private set; }
 
     public Guid ProviderProfileId { get; private set; }
 
@@ -876,6 +904,8 @@ public sealed class CandidateImage
     public string MetadataPath { get; private set; }
 
     public IReadOnlyCollection<ReviewResult> ReviewResults => _reviewResults.AsReadOnly();
+
+    public CandidateImageEditProvenance? EditProvenance { get; private set; }
 
     public DateTimeOffset CreatedAt { get; private set; }
 
@@ -899,6 +929,25 @@ public sealed class CandidateImage
         return existing;
     }
 }
+
+public sealed record CandidateImageEditReferenceProvenance(
+    Guid ReferenceId,
+    string Role,
+    string Sha256);
+
+public sealed record CandidateImageEditProvenance(
+    Guid OperationId,
+    Guid SourceCandidateImageId,
+    string SourceSha256,
+    string? MaskSha256,
+    string InstructionSha256,
+    string ProviderId,
+    string EndpointClass,
+    string ModelId,
+    IReadOnlyList<CandidateImageEditReferenceProvenance> References,
+    Guid ApprovalReceiptId,
+    string ApprovalRequestSetHash,
+    DateTimeOffset CreatedAt);
 
 public enum CandidateImageStatus
 {

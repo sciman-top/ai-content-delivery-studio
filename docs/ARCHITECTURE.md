@@ -110,18 +110,14 @@ Language preference is `System`, `Chinese`, or `English`. The application layer 
 
 User-visible WPF labels, validation messages, review summaries, delivery reports, prompt templates, and export descriptions must not be hard-coded in view models or infrastructure. New strings should be added through the localization catalog and covered by tests for both supported languages.
 
-## Pack-Driven UI Composition
+## Scenario-Profile UI Composition
 
-The UI shell should be stable even as task types grow. New scenarios should not add permanent top-level tabs by default.
+The UI shell is implemented around the two production lanes and must remain stable as scenario labels grow. Courseware, poster, article, report, and social are profiles of those lanes, not independent runtimes and not proof of production maturity.
 
-Recommended composition model:
-
-- `WorkflowStageDefinition`: stable stage ID, display key, required domain objects, visible panels, command groups, and completion criteria.
-- `WorkflowViewSlot`: reusable shell slot such as `SourceList`, `StageWorkspace`, `Inspector`, `ActivityPanel`, `ApprovalPanel`, or `ArtifactPreview`.
-- `FeatureViewModule`: WPF view, view model, localization keys, commands, and tests for one stage or artifact family.
-- `InspectorSection`: context-sensitive metadata and actions for selected source, plan, prompt, artifact, review, repair, operator run, or delivery package.
-
-The WPF shell owns layout slots and navigation state. Workflow packs select stages and modules. Feature modules own their own views and view models. Application use cases own behavior. Provider and tool adapters remain outside the UI layer.
+The WPF shell and its state-owning workspace ViewModels own the actual tabs,
+layout, navigation, and command surface. Application use cases own behavior;
+provider and tool adapters remain outside the UI layer. The desktop does not
+compose views or commands from pack metadata.
 
 The trustworthy scientific-figure module follows this split through five
 feature-owned workspaces: Source, Understanding, Figure Spec, Render & Review,
@@ -139,10 +135,10 @@ UI complexity rules:
 
 - Keep the canonical stage vocabulary small: `Source`, `Brief`, `Plan`, `Produce`, `Review`, `Repair`, `Deliver`.
 - Hide irrelevant stages for the active workflow instead of showing disabled global tabs.
-- Put advanced provider settings, pack metadata, manifest details, and operator logs behind inspector sections or advanced views.
+- Put advanced provider settings, manifest details, and operator logs behind inspector sections or advanced views.
 - Prefer task-first commands such as `Generate directions`, `Run extraction`, `Approve repair`, or `Export package` over raw tool names.
-- Each new task pack must declare which stage modules it needs before any UI is added.
-- A new UI module must be testable with fake application services and must not depend on a real provider.
+- A new scenario profile must reuse a concrete production lane unless a separately approved product boundary proves a new workspace is necessary.
+- New UI must be testable with fake application services and must not depend on a real provider.
 - Scientific workspace visibility is enabled only after the complete fake-first
   five-workspace flow, both human gates, cross-format hash checks, WPF layout,
   screenshot, and UI Automation contract have passed. Corpus and live-provider
@@ -198,19 +194,19 @@ Within that bounded matrix, the current supported local source-ingestion path su
 
 The current WPF shell exposes that bounded path through the existing document-illustration inspector surface: the user can now point the source-text entry to a local `pdf` or `docx` file, import the extracted text into the same planning textbox, and then continue through the existing fake-first document-illustration route without opening a second source-management surface.
 
-## Versioned Workflow And Blueprint Packs
+## Legacy Pack Compatibility
 
-Generalization should come from versioned packs rather than new hard-coded product modes.
+`pack-package.v1` remains an import-only compatibility format. Its workflow,
+blueprint, industry, renderer, rubric, UI-default, semantic-version, and
+migration fields are retained so an existing local package can still be parsed
+and validated. They do not drive the current WPF composition and are not an
+active marketplace/plugin contract.
 
-Recommended pack families:
-
-- `WorkflowPack`: stages, required inputs, tool permissions, review gates, repair routes, and delivery outputs.
-- `BlueprintPack`: reusable visual/content strategies and artifact patterns.
-- `IndustryPack`: domain vocabulary, source conventions, output conventions, compliance hints, and default rubrics.
-- `RendererPack`: deterministic recipes for image composition, PDF, DOCX, slide, markdown, or web-ready exports.
-- `ReviewRubricPack`: structured quality gates and AI/human review criteria.
-
-Pack metadata must include stable ID, semantic version, compatibility range, provider/tool requirements, migration notes, and deprecation state. Packs can evolve quickly; `Core` and `Application` contracts should evolve slowly.
+The built-in starter catalog and JSON export surface were retired in FOCUS-007
+because no desktop, persistence, delivery, or user-visible consumer used them.
+Scenario IDs read from an old package are descriptive profile labels only. New
+public distribution, remote installation, or pack-driven UI work remains frozen
+until a real consumer and migration plan are approved.
 
 ## Local Deterministic Toolchain
 
@@ -388,7 +384,7 @@ Operator surfaces must be small and auditable:
 Every operator action should declare risk level, dry-run support, input files, output files, side effects, required approvals, timeout, and rollback or cleanup path.
 
 The execution boundary and first real low-risk operator slice are defined in [OPERATOR_RISK_POLICY.md](./OPERATOR_RISK_POLICY.md).
-The same host-owned execution boundary now includes a provider-neutral `IRemoteWorkflowEngineAdapter` seam with a fake no-network default registration, so future hosted workflow engines can plug into the app without requiring local model installs or changing the current fake-first safety posture.
+Remote workflow-engine execution is intentionally not a desktop runtime capability. The former fake-only adapter and repository module metadata were removed in FOCUS-006 after a source, persistence, package, DI, and user-visible consumer inventory found no live consumer. Reopening that capability requires a new approved PRD/ADR and a real end-to-end consumer.
 
 ## Physics Project Migration Limits
 
@@ -453,6 +449,13 @@ The codebase should now enter a modular maintenance period:
 - Provider Center now follows that pattern through `ProviderCenterPresentationCoordinator`, which owns provider-row construction and health-summary composition while `ProviderCenterViewModel` keeps state and command entrypoints.
 - Apply the same rule to shell localization: keep payload construction and localized selection restoration in dedicated coordinators instead of burying option-reset logic inside `MainWindowViewModel`.
 - Apply the same rule to workbench reload paths: keep project-to-workbench state composition in a focused coordinator so `MainWindowViewModel` applies projected state and command enablement without rebuilding plan, prompt, gallery, review, delivery, and active-brief selections inline.
+- `ImageSeriesWorkspaceViewModel` is the state owner for the queue slice: it owns queue rows, selected task, localized queue strings, pause/resume/retry/reorder/prepare/execute command state, and queue projection after reload. `MainWindowViewModel` remains the shell-level exclusive-operation and cross-workspace reload boundary because executing a queue can also update gallery and invalidate review/delivery projections. Its queue facade is temporary compatibility only; remove it after all direct non-XAML consumers bind through `ImageSeriesWorkspace` and the next image-series state-owner slice has migrated its public contract.
+- `ImageSeriesWorkspaceViewModel.Gallery` owns candidate rows, selection, thumbnail-warmup requests, image-edit inputs/localization, and the fake edit command. The shell still owns the exclusive gate, global activity feed, and downstream review/delivery invalidation. Gallery and image-edit XAML bind through the single `ImageSeriesWorkspace` root; the direct `ImageSeriesGalleryWorkspace` property is a temporary compatibility facade with the same removal condition.
+- `ImageSeriesWorkspaceViewModel.Review` owns review rows and selection, final-reviewer inputs, review localization, fake review, and approve/reject command state. The shell remains the exclusive operation/reload boundary and invalidates delivery after any review mutation. Human approval remains an explicit persisted gate; review XAML binds through the state owner, while the direct `ImageSeriesReviewWorkspace` and legacy review properties are temporary compatibility facades until all non-XAML consumers move to the workspace root and the remaining image-series state families are migrated.
+- `ImageSeriesWorkspaceViewModel.Delivery` owns final-category/root selection, resolved destination preview, browse/export command state, delivery rows, and localization. MainWindow supplies the selected project plus gallery/review/blueprint snapshot to the existing export coordinator under the exclusive gate and rebuilds only the global workflow graph when delivery projection changes. Delivery views and the delivery portion of the approval inspector bind through the owner; direct MainWindow delivery aliases remain temporary compatibility facades under the same cutover condition.
+- `ImageSeriesWorkspaceViewModel.Planning` owns series/item/prompt rows and selection, plan/prompt editor inputs and localization, plus create-series/add-item/create-prompt command state. MainWindow retains the exclusive project mutation/reload bridge and notifies the still-separate brief/blueprint state when series or item selection changes. Plan, prompt, and their inspector editors bind through the owner; legacy MainWindow aliases remain temporary until brief/generation-settings ownership and direct-consumer migration are complete.
+- `ImageSeriesWorkspaceViewModel.Brief` owns fake-planning inputs, brief/blueprint/prompt-direction rows and selection, localized labels, and the create/generate/promote commands. MainWindow remains the persisted mutation/reload and cross-stage selection boundary. Brief, blueprint, and prompt-direction XAML bind through the owner.
+- `ImageSeriesWorkspaceViewModel.GenerationSettings` owns image-type/style-guide/recipe option state, selection, localization, and the derived recipe summary. The root image-series workspace owns one-click fake generation and queue preparation because both operate on planning state and project the queue. Their XAML now binds through these owners; MainWindow no longer exposes workflow label/column facades. Remaining state/command aliases exist only for non-XAML compatibility and are removed when shell-internal and test consumers use the workspace root in a separately verified cutover.
 - Split `ProjectApplicationService` into use-case services once a use case has independent state or tests.
 - Split EF Core mapping into `IEntityTypeConfiguration<T>` as models grow.
 - Keep provider configuration, secret storage, capability validation, and persistence configuration outside WPF.
@@ -487,7 +490,7 @@ The best end state is a modular local desktop product:
 - Application use cases can be tested without WPF, SQLite, or network access.
 - WPF shell can be replaced without rewriting core logic.
 - Provider adapters can be swapped or added.
-- Workflow, blueprint, industry, renderer, and review packs can be added, removed, versioned, and deprecated.
+- Scenario profiles reuse concrete production lanes; legacy v1 pack packages remain import-compatible without becoming a runtime composition system.
 - Source assets, extracted content, output artifacts, and delivery packages are traceable through evidence anchors.
 - Requirement capture, blueprint selection, and prompt generation stay distinct and traceable.
 - Chinese and English are selectable across UI, prompts, review reports, and delivery output.

@@ -41,6 +41,16 @@ public sealed class ReferenceImageSet
         string description,
         DateTimeOffset timestamp)
     {
+        return AddImage(assetPath, role, description, sha256: string.Empty, timestamp);
+    }
+
+    public ReferenceImage AddImage(
+        string assetPath,
+        ReferenceImageRole role,
+        string description,
+        string sha256,
+        DateTimeOffset timestamp)
+    {
         var normalizedPath = NormalizeWorkspaceRelativePath(assetPath);
         if (_images.Any(image => image.AssetPath.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase)))
         {
@@ -53,11 +63,28 @@ public sealed class ReferenceImageSet
             normalizedPath,
             role,
             description.Trim(),
+            NormalizeSha256(sha256),
             timestamp);
 
         _images.Add(image);
         UpdatedAt = timestamp;
         return image;
+    }
+
+    private static string NormalizeSha256(string value)
+    {
+        var normalized = value.Trim().ToLowerInvariant();
+        if (normalized.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        if (normalized.Length != 64 || normalized.Any(character => !Uri.IsHexDigit(character)))
+        {
+            throw new ArgumentException("Reference image SHA-256 must contain 64 hexadecimal characters.", nameof(value));
+        }
+
+        return normalized;
     }
 
     private static string NormalizeWorkspaceRelativePath(string assetPath)
@@ -105,6 +132,7 @@ public sealed class ReferenceImage
         string assetPath,
         ReferenceImageRole role,
         string description,
+        string sha256,
         DateTimeOffset createdAt)
     {
         Id = id;
@@ -112,6 +140,7 @@ public sealed class ReferenceImage
         AssetPath = assetPath;
         Role = role;
         Description = description;
+        Sha256 = sha256;
         CreatedAt = createdAt;
     }
 
@@ -124,6 +153,8 @@ public sealed class ReferenceImage
     public ReferenceImageRole Role { get; private set; }
 
     public string Description { get; private set; }
+
+    public string Sha256 { get; private set; } = string.Empty;
 
     public DateTimeOffset CreatedAt { get; private set; }
 }
