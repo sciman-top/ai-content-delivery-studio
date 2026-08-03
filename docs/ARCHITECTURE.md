@@ -110,18 +110,19 @@ Language preference is `System`, `Chinese`, or `English`. The application layer 
 
 User-visible WPF labels, validation messages, review summaries, delivery reports, prompt templates, and export descriptions must not be hard-coded in view models or infrastructure. New strings should be added through the localization catalog and covered by tests for both supported languages.
 
-## Pack-Driven UI Composition
+## Scenario Configuration And UI Ownership
 
 The UI shell should be stable even as task types grow. New scenarios should not add permanent top-level tabs by default.
 
-Recommended composition model:
+Current composition boundary:
 
-- `WorkflowStageDefinition`: stable stage ID, display key, required domain objects, visible panels, command groups, and completion criteria.
-- `WorkflowViewSlot`: reusable shell slot such as `SourceList`, `StageWorkspace`, `Inspector`, `ActivityPanel`, `ApprovalPanel`, or `ArtifactPreview`.
-- `FeatureViewModule`: WPF view, view model, localization keys, commands, and tests for one stage or artifact family.
-- `InspectorSection`: context-sensitive metadata and actions for selected source, plan, prompt, artifact, review, repair, operator run, or delivery package.
+- `WorkflowStageDefinition` and retained pack defaults describe planning and compatibility metadata that the current product actually consumes.
+- WPF views are statically composed and owned by feature ViewModels; pack view-slot metadata is not presented as a dynamic module system.
+- `InspectorSection` remains a presentation pattern for context-sensitive metadata and actions, not a runtime plugin contract.
 
-The WPF shell owns layout slots and navigation state. Workflow packs select stages and modules. Feature modules own their own views and view models. Application use cases own behavior. Provider and tool adapters remain outside the UI layer.
+The WPF shell owns global navigation. Feature ViewModels own workflow state, application use cases own behavior, and provider/tool adapters remain outside the UI layer. Scenario configuration may select supported defaults and stages, but it does not load repository modules or dynamically compose views.
+
+`ImageSeriesWorkspaceViewModel` is the incremental owner for ordinary image-series state. The migrated gallery/review families own candidates and review rows, current selections, empty-state derivation, approval inputs, and presentation text. `MainWindowViewModel` observes that owner only for genuinely cross-workflow consequences such as command availability, workflow-graph projection, and thumbnail warmup; subsequent queue and delivery families must move into the same owner rather than creating more forwarding coordinators.
 
 The trustworthy scientific-figure module follows this split through five
 feature-owned workspaces: Source, Understanding, Figure Spec, Render & Review,
@@ -388,7 +389,7 @@ Operator surfaces must be small and auditable:
 Every operator action should declare risk level, dry-run support, input files, output files, side effects, required approvals, timeout, and rollback or cleanup path.
 
 The execution boundary and first real low-risk operator slice are defined in [OPERATOR_RISK_POLICY.md](./OPERATOR_RISK_POLICY.md).
-The same host-owned execution boundary now includes a provider-neutral `IRemoteWorkflowEngineAdapter` seam with a fake no-network default registration, so future hosted workflow engines can plug into the app without requiring local model installs or changing the current fake-first safety posture.
+Remote workflow execution is frozen and has no desktop registration. A future integration requires a new approved product decision and a concrete user-visible consumer; the repository no longer carries a fake-only production seam for that hypothetical capability.
 
 ## Physics Project Migration Limits
 

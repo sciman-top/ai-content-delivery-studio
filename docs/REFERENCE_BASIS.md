@@ -53,7 +53,7 @@ This section is generated from `scripts/reference-basis.json` by `scripts/sync-r
 Do not edit this block by hand. Update the JSON manifest and rerun the sync script instead.
 
 - Manifest version: `1`
-- Manifest updatedAt: `2026-07-06T12:48:35+08:00`
+- Manifest updatedAt: `2026-08-03T18:05:00+08:00`
 
 ### `openai-provider`
 
@@ -113,7 +113,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 ### `workflow-and-ux-architecture`
 
 - `required`: `true`
-- Source rules: `src/ContentDeliveryStudio.App/MainWindow.xaml`, `src/ContentDeliveryStudio.App/MainWindow.xaml.cs`, `src/ContentDeliveryStudio.App/ViewModels/`, `src/ContentDeliveryStudio.App/Views/`, `src/ContentDeliveryStudio.Application/Modules/`, `src/ContentDeliveryStudio.Application/Workflows/`
+- Source rules: `src/ContentDeliveryStudio.App/MainWindow.xaml`, `src/ContentDeliveryStudio.App/MainWindow.xaml.cs`, `src/ContentDeliveryStudio.App/ViewModels/MainWindowViewModel.cs`, `src/ContentDeliveryStudio.App/ViewModels/MainWindowOperationGate.cs`, `src/ContentDeliveryStudio.Application/Modules/`, `src/ContentDeliveryStudio.Application/Workflows/`
 - Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `large-viewmodel-split`, `large-view-split`, `shell-view-structure`, `source-structure-test-reduction`, `workflow-graph`, `queue-gallery-stage-composition`, `module-boundary-change`
 - Local references:

@@ -46,7 +46,7 @@ public sealed class MainWindowViewModelTests
 
             Assert.Equal(2, viewModel.QueueRows.Count);
             Assert.All(viewModel.QueueRows, row => Assert.Equal(GenerationTaskStatus.Queued, row.TaskStatus));
-            Assert.Empty(viewModel.GalleryRows);
+            Assert.Empty(viewModel.ImageSeries.GalleryRows);
             Assert.False(viewModel.PrepareGenerationQueueCommand.CanExecute(null));
 
             var firstTaskId = viewModel.QueueRows[0].TaskId;
@@ -63,7 +63,7 @@ public sealed class MainWindowViewModelTests
             await viewModel.MoveSelectedGenerationTaskUpCommand.ExecuteAsync(null);
             await viewModel.ExecutePreparedGenerationQueueCommand.ExecuteAsync(null);
 
-            Assert.Single(viewModel.GalleryRows);
+            Assert.Single(viewModel.ImageSeries.GalleryRows);
             Assert.Equal(
                 GenerationTaskStatus.Paused,
                 viewModel.QueueRows.Single(row => row.TaskId == firstTaskId).TaskStatus);
@@ -75,7 +75,7 @@ public sealed class MainWindowViewModelTests
             await viewModel.ResumeSelectedGenerationTaskCommand.ExecuteAsync(null);
             await viewModel.ExecutePreparedGenerationQueueCommand.ExecuteAsync(null);
 
-            Assert.Equal(2, viewModel.GalleryRows.Count);
+            Assert.Equal(2, viewModel.ImageSeries.GalleryRows.Count);
             Assert.All(viewModel.QueueRows, row => Assert.Equal(GenerationTaskStatus.Succeeded, row.TaskStatus));
         }
         finally
@@ -252,8 +252,8 @@ public sealed class MainWindowViewModelTests
         await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
         await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
 
-        var sourceRow = Assert.Single(viewModel.GalleryRows);
-        Assert.Equal(sourceRow, viewModel.SelectedGalleryRow);
+        var sourceRow = Assert.Single(viewModel.ImageSeries.GalleryRows);
+        Assert.Equal(sourceRow, viewModel.ImageSeries.SelectedGalleryRow);
 
         viewModel.NewImageEditPrompt = "Clean the label area while preserving the composition.";
         Assert.True(viewModel.RunFakeImageEditCommand.CanExecute(null));
@@ -262,8 +262,8 @@ public sealed class MainWindowViewModelTests
         {
             await viewModel.RunFakeImageEditCommand.ExecuteAsync(null);
 
-            Assert.Equal(2, viewModel.GalleryRows.Count);
-            var editedRow = viewModel.GalleryRows.Single(row => row.CandidateImageId != sourceRow.CandidateImageId);
+            Assert.Equal(2, viewModel.ImageSeries.GalleryRows.Count);
+            var editedRow = viewModel.ImageSeries.GalleryRows.Single(row => row.CandidateImageId != sourceRow.CandidateImageId);
             Assert.Equal(sourceRow.SeriesItemId, editedRow.SeriesItemId);
             Assert.Contains("edited", editedRow.ItemTitle, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("Clean the label area", editedRow.PromptText);
@@ -301,7 +301,7 @@ public sealed class MainWindowViewModelTests
         await viewModel.CreatePromptVersionCommand.ExecuteAsync(null);
         await viewModel.RunFakeGenerationCommand.ExecuteAsync(null);
 
-        var selectedCandidate = Assert.Single(viewModel.GalleryRows);
+        var selectedCandidate = Assert.Single(viewModel.ImageSeries.GalleryRows);
         Assert.Equal(
             $"{selectedCandidate.ItemTitle} ({selectedCandidate.CandidateImageId:N})",
             viewModel.SelectedCandidateSummary);
@@ -331,19 +331,19 @@ public sealed class MainWindowViewModelTests
 
         try
         {
-            var reviewRow = Assert.Single(viewModel.ReviewRows);
+            var reviewRow = Assert.Single(viewModel.ImageSeries.ReviewRows);
             Assert.False(reviewRow.HumanApproved);
             Assert.Equal("None", reviewRow.RouteSummary);
             Assert.False(viewModel.ExportDeliveryCommand.CanExecute(null));
 
-            viewModel.SelectedReviewRow = reviewRow;
-            viewModel.FinalApprovalReviewer = "Teacher";
-            viewModel.FinalApprovalNotes = "Looks ready for delivery.";
+            viewModel.ImageSeries.SelectedReviewRow = reviewRow;
+            viewModel.ImageSeries.FinalApprovalReviewer = "Teacher";
+            viewModel.ImageSeries.FinalApprovalNotes = "Looks ready for delivery.";
 
             Assert.True(viewModel.ApproveSelectedReviewCommand.CanExecute(null));
             await viewModel.ApproveSelectedReviewCommand.ExecuteAsync(null);
 
-            var approvedRow = Assert.Single(viewModel.ReviewRows);
+            var approvedRow = Assert.Single(viewModel.ImageSeries.ReviewRows);
             Assert.True(approvedRow.HumanApproved);
             Assert.Equal("Teacher", approvedRow.FinalReviewer);
             Assert.Contains("approved", approvedRow.HumanApprovalStatus, StringComparison.OrdinalIgnoreCase);
@@ -428,9 +428,9 @@ public sealed class MainWindowViewModelTests
 
         try
         {
-            viewModel.SelectedReviewRow = Assert.Single(viewModel.ReviewRows);
-            viewModel.FinalApprovalReviewer = "Teacher";
-            viewModel.FinalApprovalNotes = "Approved for document delivery.";
+            viewModel.ImageSeries.SelectedReviewRow = Assert.Single(viewModel.ImageSeries.ReviewRows);
+            viewModel.ImageSeries.FinalApprovalReviewer = "Teacher";
+            viewModel.ImageSeries.FinalApprovalNotes = "Approved for document delivery.";
             await viewModel.ApproveSelectedReviewCommand.ExecuteAsync(null);
             viewModel.SelectedFinalDeliveryCategoryOption = viewModel.FinalDeliveryCategoryOptions.Single(
                 option => option.Category == FinalImageDeliveryCategory.DocumentIllustrations);
@@ -481,8 +481,8 @@ public sealed class MainWindowViewModelTests
         {
             await viewModel.RunFakeReviewCommand.ExecuteAsync(null);
 
-            var reviewRow = Assert.Single(viewModel.ReviewRows);
-            Assert.Equal("Repair route", viewModel.ReviewRouteColumn);
+            var reviewRow = Assert.Single(viewModel.ImageSeries.ReviewRows);
+            Assert.Equal("Repair route", viewModel.ImageSeries.ReviewRouteColumn);
             Assert.Contains("Brief", reviewRow.RouteSummary);
             Assert.Contains("Regenerate", reviewRow.RouteSummary);
         }
@@ -525,9 +525,9 @@ public sealed class MainWindowViewModelTests
 
         try
         {
-            viewModel.SelectedReviewRow = Assert.Single(viewModel.ReviewRows);
-            viewModel.FinalApprovalReviewer = "Teacher";
-            viewModel.FinalApprovalNotes = "Ready for package.";
+            viewModel.ImageSeries.SelectedReviewRow = Assert.Single(viewModel.ImageSeries.ReviewRows);
+            viewModel.ImageSeries.FinalApprovalReviewer = "Teacher";
+            viewModel.ImageSeries.FinalApprovalNotes = "Ready for package.";
             await viewModel.ApproveSelectedReviewCommand.ExecuteAsync(null);
             await viewModel.ExportDeliveryCommand.ExecuteAsync(null);
 
@@ -575,15 +575,15 @@ public sealed class MainWindowViewModelTests
 
         try
         {
-            var reviewRow = Assert.Single(viewModel.ReviewRows);
-            viewModel.SelectedReviewRow = reviewRow;
-            viewModel.FinalApprovalReviewer = "Teacher";
-            viewModel.FinalApprovalNotes = "Needs a clearer composition.";
+            var reviewRow = Assert.Single(viewModel.ImageSeries.ReviewRows);
+            viewModel.ImageSeries.SelectedReviewRow = reviewRow;
+            viewModel.ImageSeries.FinalApprovalReviewer = "Teacher";
+            viewModel.ImageSeries.FinalApprovalNotes = "Needs a clearer composition.";
 
             Assert.True(viewModel.RejectSelectedReviewCommand.CanExecute(null));
             await viewModel.RejectSelectedReviewCommand.ExecuteAsync(null);
 
-            var rejectedRow = Assert.Single(viewModel.ReviewRows);
+            var rejectedRow = Assert.Single(viewModel.ImageSeries.ReviewRows);
             Assert.False(rejectedRow.HumanApproved);
             Assert.Equal("Teacher", rejectedRow.FinalReviewer);
             Assert.Contains("rejected", rejectedRow.HumanApprovalStatus, StringComparison.OrdinalIgnoreCase);
@@ -620,18 +620,18 @@ public sealed class MainWindowViewModelTests
 
         try
         {
-            viewModel.SelectedReviewRow = Assert.Single(viewModel.ReviewRows);
-            viewModel.FinalApprovalReviewer = "Teacher";
-            viewModel.FinalApprovalNotes = "Approved after reload test.";
+            viewModel.ImageSeries.SelectedReviewRow = Assert.Single(viewModel.ImageSeries.ReviewRows);
+            viewModel.ImageSeries.FinalApprovalReviewer = "Teacher";
+            viewModel.ImageSeries.FinalApprovalNotes = "Approved after reload test.";
             await viewModel.ApproveSelectedReviewCommand.ExecuteAsync(null);
 
             viewModel.SelectedProject = null;
-            await WaitForConditionAsync(() => viewModel.ReviewRows.Count == 0 && viewModel.GalleryRows.Count == 0);
+            await WaitForConditionAsync(() => viewModel.ImageSeries.ReviewRows.Count == 0 && viewModel.ImageSeries.GalleryRows.Count == 0);
 
             viewModel.SelectedProject = Assert.Single(viewModel.Projects);
-            await WaitForConditionAsync(() => viewModel.ReviewRows.Count == 1 && viewModel.GalleryRows.Count == 1);
+            await WaitForConditionAsync(() => viewModel.ImageSeries.ReviewRows.Count == 1 && viewModel.ImageSeries.GalleryRows.Count == 1);
 
-            var restoredRow = Assert.Single(viewModel.ReviewRows);
+            var restoredRow = Assert.Single(viewModel.ImageSeries.ReviewRows);
             Assert.True(restoredRow.HumanApproved);
             Assert.Equal("Teacher", restoredRow.FinalReviewer);
             Assert.Equal("Approved after reload test.", restoredRow.FinalApprovalNotes);

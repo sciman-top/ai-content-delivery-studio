@@ -15,11 +15,11 @@ The product now concentrates on two production lanes:
 
 Document illustration is an input adapter. Courseware, poster, article, report, and social outputs are scenario profiles inside the production lanes, not separate platforms. Remote workflows, a public pack ecosystem, a general operator platform, additional provider abstractions, a graph editor, and partial-image streaming are frozen until a new approved PRD or ADR reopens them.
 
-Current queue readout on `2026-08-02`:
+Current queue readout on `2026-08-03`:
 
 - `FOCUS-001` records this authority and plan.
 - `FOCUS-002` and `FOCUS-003` remain blocked on named physics-expert and current paid/live authority respectively.
-- `FOCUS-004` is repo-side complete. `FOCUS-005` is the active repo-only task; `FOCUS-006` and `FOCUS-010` remain dependency-ready.
+- `FOCUS-004` and `FOCUS-006` are repo-side complete. `FOCUS-005` is the active repo-only task; `FOCUS-007` and `FOCUS-010` are dependency-ready.
 - `FOCUS-005` through `FOCUS-013` remain dependency-gated; their status must be read from the JSON queue rather than inferred from this narrative.
 
 ## Planning Readout
@@ -372,16 +372,16 @@ Exit gate:
 
 Goal: prevent the app from growing a central all-knowing orchestrator as capabilities expand.
 
-Status: complete for the current modular maintenance baseline with a tested application module catalog for source ingestion, artifact planning, pack registry, repair routing, and tool adapters with repository-folder existence guards, stable workflow view slot names for reusable shell placement, a `FeatureViewModule` contract for future WPF view/view model splits, focused `ProjectApplicationService` extractions for project workspace, series workflow, brief workflow, generation workflow, review workflow, review/repair routing, delivery export, and document illustration planning while preserving facade compatibility, incremental `MainWindowViewModel` orchestration splits into `ProjectWorkspaceCoordinator`, `PlanningWorkflowCoordinator`, `BriefWorkflowCoordinator`, `GenerationWorkflowCoordinator`, `ReviewWorkflowCoordinator`, `DeliveryWorkflowCoordinator`, `PlanEditorWorkflowCoordinator`, `WorkflowGraphCoordinator`, and `ProjectWorkbenchProjectionCoordinator`, plus the extracted `ProviderCenterPresentationCoordinator` for provider configuration row building and health-summary composition, and completed `IEntityTypeConfiguration<T>` persistence mapping splits so `AppDbContext` no longer carries inline entity mapping blocks.
+Status: the original modular-maintenance baseline landed focused application services and persistence mappings, but its repository-folder module catalog and fake-only remote-workflow seam were later retired because no persisted or user-visible consumer existed. The remaining active architecture work transfers workflow state out of `MainWindowViewModel`; coordinator count or file count alone no longer qualifies as modularity.
 
 Deliverables:
 
 - Split WPF tabs into feature-owned views and view models where the current shell is becoming too large.
-- Add reusable `WorkflowViewSlot` and `FeatureViewModule` concepts for source lists, stage workspace, inspector, activity panel, approval panel, and artifact preview.
+- Keep only scenario and workflow-stage metadata consumed by the static desktop workflow; do not introduce a runtime feature-module system without a second real consumer.
 - Split `ProjectApplicationService` into focused use-case services for sources, briefs, blueprints, queue, review/repair, operator, and delivery.
 - Split provider configuration, secret storage, capability validation, and persistence configuration away from UI code.
 - Split EF Core mappings into `IEntityTypeConfiguration<T>` as model count grows.
-- Establish module folders and tests for source ingestion, artifact planning, pack registry, repair routing, and tool adapters.
+- Keep repository layout checks out of production runtime records.
 
 Exit gate:
 

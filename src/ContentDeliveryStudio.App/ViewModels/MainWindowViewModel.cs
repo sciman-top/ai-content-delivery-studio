@@ -1,4 +1,5 @@
 using System.IO;
+using System.ComponentModel;
 using System.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -114,21 +115,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _queueOutputColumn = string.Empty;
     private string _queueErrorColumn = string.Empty;
     private string _noQueueRowsText = string.Empty;
-    private string _galleryItemColumn = string.Empty;
-    private string _galleryImageColumn = string.Empty;
-    private string _galleryMetadataColumn = string.Empty;
-    private string _noGalleryRowsText = string.Empty;
     private string _runFakeReviewText = string.Empty;
-    private string _reviewItemColumn = string.Empty;
-    private string _reviewDecisionColumn = string.Empty;
-    private string _reviewScoreColumn = string.Empty;
-    private string _reviewCommentsColumn = string.Empty;
-    private string _reviewFixColumn = string.Empty;
-    private string _reviewRouteColumn = string.Empty;
-    private string _noReviewRowsText = string.Empty;
-    private string _humanApprovalColumn = string.Empty;
-    private string _finalApprovalReviewerLabel = string.Empty;
-    private string _finalApprovalNotesLabel = string.Empty;
     private string _approveSelectedReviewText = string.Empty;
     private string _rejectSelectedReviewText = string.Empty;
     private string _exportDeliveryText = string.Empty;
@@ -196,8 +183,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private string _newPromptText = string.Empty;
     private string _newImageEditPrompt = string.Empty;
     private string _newImageEditMaskPath = string.Empty;
-    private string _finalApprovalReviewer = string.Empty;
-    private string _finalApprovalNotes = string.Empty;
     private IReadOnlyList<SeriesSummaryViewModel> _series = [];
     private IReadOnlyList<SeriesItemViewModel> _seriesItems = [];
     private IReadOnlyList<PlanRowViewModel> _planRows = [];
@@ -206,8 +191,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private IReadOnlyList<PromptDirectionRowViewModel> _promptDirectionRows = [];
     private IReadOnlyList<PromptRowViewModel> _promptRows = [];
     private IReadOnlyList<QueueRowViewModel> _queueRows = [];
-    private IReadOnlyList<GalleryRowViewModel> _galleryRows = [];
-    private IReadOnlyList<ReviewRowViewModel> _reviewRows = [];
     private IReadOnlyList<DeliveryRowViewModel> _deliveryRows = [];
     private IReadOnlyList<WorkflowGraphRowViewModel> _workflowGraphRows = [];
     private IReadOnlyList<ImageTypePresetOptionViewModel> _imageTypePresetOptions = [];
@@ -222,8 +205,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private DesignBlueprintRowViewModel? _selectedDesignBlueprint;
     private PromptDirectionRowViewModel? _selectedPromptDirection;
     private QueueRowViewModel? _selectedQueueRow;
-    private GalleryRowViewModel? _selectedGalleryRow;
-    private ReviewRowViewModel? _selectedReviewRow;
     private FinalImageDeliveryCategoryOptionViewModel? _selectedFinalDeliveryCategoryOption;
     private Guid? _activeCreativeBriefId;
 
@@ -270,6 +251,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ProviderCenter = providerCenter;
         Diagnostics = diagnostics;
         BackupRestore = backupRestore;
+        ImageSeries = new ImageSeriesWorkspaceViewModel();
+        ImageSeries.PropertyChanged += OnImageSeriesPropertyChanged;
         RefreshLocalizedText();
         SelectedLanguageOption = LanguageOptions.First(option => option.Preference == _localizationService.Preference);
         NewProjectName = NewProjectNamePlaceholder;
@@ -283,6 +266,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public DiagnosticsPanelViewModel? Diagnostics { get; }
 
     public BackupRestorePanelViewModel? BackupRestore { get; }
+
+    public ImageSeriesWorkspaceViewModel ImageSeries { get; }
 
     public string AppTitle
     {
@@ -375,8 +360,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             }
 
             QueueRows = [];
-            GalleryRows = [];
-            ReviewRows = [];
+            ImageSeries.GalleryRows = [];
+            ImageSeries.ReviewRows = [];
             DeliveryRows = [];
             DesignBlueprintRows = [];
             PromptDirectionRows = [];
@@ -735,94 +720,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         private set => SetProperty(ref _noQueueRowsText, value);
     }
 
-    public string GalleryItemColumn
-    {
-        get => _galleryItemColumn;
-        private set => SetProperty(ref _galleryItemColumn, value);
-    }
-
-    public string GalleryImageColumn
-    {
-        get => _galleryImageColumn;
-        private set => SetProperty(ref _galleryImageColumn, value);
-    }
-
-    public string GalleryMetadataColumn
-    {
-        get => _galleryMetadataColumn;
-        private set => SetProperty(ref _galleryMetadataColumn, value);
-    }
-
-    public string NoGalleryRowsText
-    {
-        get => _noGalleryRowsText;
-        private set => SetProperty(ref _noGalleryRowsText, value);
-    }
-
     public string RunFakeReviewText
     {
         get => _runFakeReviewText;
         private set => SetProperty(ref _runFakeReviewText, value);
-    }
-
-    public string ReviewItemColumn
-    {
-        get => _reviewItemColumn;
-        private set => SetProperty(ref _reviewItemColumn, value);
-    }
-
-    public string ReviewDecisionColumn
-    {
-        get => _reviewDecisionColumn;
-        private set => SetProperty(ref _reviewDecisionColumn, value);
-    }
-
-    public string ReviewScoreColumn
-    {
-        get => _reviewScoreColumn;
-        private set => SetProperty(ref _reviewScoreColumn, value);
-    }
-
-    public string ReviewCommentsColumn
-    {
-        get => _reviewCommentsColumn;
-        private set => SetProperty(ref _reviewCommentsColumn, value);
-    }
-
-    public string ReviewFixColumn
-    {
-        get => _reviewFixColumn;
-        private set => SetProperty(ref _reviewFixColumn, value);
-    }
-
-    public string ReviewRouteColumn
-    {
-        get => _reviewRouteColumn;
-        private set => SetProperty(ref _reviewRouteColumn, value);
-    }
-
-    public string HumanApprovalColumn
-    {
-        get => _humanApprovalColumn;
-        private set => SetProperty(ref _humanApprovalColumn, value);
-    }
-
-    public string NoReviewRowsText
-    {
-        get => _noReviewRowsText;
-        private set => SetProperty(ref _noReviewRowsText, value);
-    }
-
-    public string FinalApprovalReviewerLabel
-    {
-        get => _finalApprovalReviewerLabel;
-        private set => SetProperty(ref _finalApprovalReviewerLabel, value);
-    }
-
-    public string FinalApprovalNotesLabel
-    {
-        get => _finalApprovalNotesLabel;
-        private set => SetProperty(ref _finalApprovalNotesLabel, value);
     }
 
     public string ApproveSelectedReviewText
@@ -1228,7 +1129,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     public string SelectedCandidateSummary => _mainWindowSelectionSummaryCoordinator.BuildSelectedCandidateSummary(
-        SelectedGalleryRow,
+        ImageSeries.SelectedGalleryRow,
         Text(LocalizationKey.NoCandidateSelectedForEdit));
 
     public string ImageEditPromptLabel
@@ -1319,31 +1220,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => _newImageEditMaskPath;
         set => SetProperty(ref _newImageEditMaskPath, value);
-    }
-
-    public string FinalApprovalReviewer
-    {
-        get => _finalApprovalReviewer;
-        set
-        {
-            if (SetProperty(ref _finalApprovalReviewer, value))
-            {
-                ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
-                RejectSelectedReviewCommand.NotifyCanExecuteChanged();
-            }
-        }
-    }
-
-    public string FinalApprovalNotes
-    {
-        get => _finalApprovalNotes;
-        set
-        {
-            if (SetProperty(ref _finalApprovalNotes, value))
-            {
-                RejectSelectedReviewCommand.NotifyCanExecuteChanged();
-            }
-        }
     }
 
     public IReadOnlyList<FinalImageDeliveryCategoryOptionViewModel> FinalDeliveryCategoryOptions
@@ -1604,78 +1480,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    public IReadOnlyList<GalleryRowViewModel> GalleryRows
-    {
-        get => _galleryRows;
-        private set
-        {
-            if (SetProperty(ref _galleryRows, value))
-            {
-                OnPropertyChanged(nameof(HasGalleryRows));
-                if (value.Count == 0)
-                {
-                    SelectedGalleryRow = null;
-                }
-                else if (SelectedGalleryRow is null
-                    || !value.Any(row => row.CandidateImageId == SelectedGalleryRow.CandidateImageId))
-                {
-                    SelectedGalleryRow = value[0];
-                }
-
-                RunFakeReviewCommand.NotifyCanExecuteChanged();
-                RunFakeImageEditCommand.NotifyCanExecuteChanged();
-                RebuildWorkflowGraphRows();
-                QueueGalleryWarmup(value.Select(row => row.AssetPath));
-            }
-        }
-    }
-
-    public bool HasGalleryRows => GalleryRows.Count > 0;
-
-    public GalleryRowViewModel? SelectedGalleryRow
-    {
-        get => _selectedGalleryRow;
-        set
-        {
-            if (SetProperty(ref _selectedGalleryRow, value))
-            {
-                OnPropertyChanged(nameof(SelectedCandidateSummary));
-                RunFakeImageEditCommand.NotifyCanExecuteChanged();
-            }
-        }
-    }
-
-    public IReadOnlyList<ReviewRowViewModel> ReviewRows
-    {
-        get => _reviewRows;
-        private set
-        {
-            if (SetProperty(ref _reviewRows, value))
-            {
-                OnPropertyChanged(nameof(HasReviewRows));
-                SelectedReviewRow = value.FirstOrDefault(row =>
-                    SelectedReviewRow is null || row.CandidateImageId == SelectedReviewRow.CandidateImageId);
-                ExportDeliveryCommand.NotifyCanExecuteChanged();
-                RebuildWorkflowGraphRows();
-            }
-        }
-    }
-
-    public bool HasReviewRows => ReviewRows.Count > 0;
-
-    public ReviewRowViewModel? SelectedReviewRow
-    {
-        get => _selectedReviewRow;
-        set
-        {
-            if (SetProperty(ref _selectedReviewRow, value))
-            {
-                ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
-                RejectSelectedReviewCommand.NotifyCanExecuteChanged();
-            }
-        }
-    }
-
     public IReadOnlyList<DeliveryRowViewModel> DeliveryRows
     {
         get => _deliveryRows;
@@ -1802,21 +1606,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
         QueueOutputColumn = payload.QueueOutputColumn;
         QueueErrorColumn = payload.QueueErrorColumn;
         NoQueueRowsText = payload.NoQueueRowsText;
-        GalleryItemColumn = payload.GalleryItemColumn;
-        GalleryImageColumn = payload.GalleryImageColumn;
-        GalleryMetadataColumn = payload.GalleryMetadataColumn;
-        NoGalleryRowsText = payload.NoGalleryRowsText;
+        ImageSeries.ApplyLocalization(
+            payload.GalleryItemColumn,
+            payload.GalleryImageColumn,
+            payload.GalleryMetadataColumn,
+            payload.NoGalleryRowsText,
+            payload.ReviewItemColumn,
+            payload.ReviewDecisionColumn,
+            payload.ReviewScoreColumn,
+            payload.ReviewCommentsColumn,
+            payload.ReviewFixColumn,
+            payload.ReviewRouteColumn,
+            payload.HumanApprovalColumn,
+            payload.NoReviewRowsText,
+            payload.FinalApprovalReviewerLabel,
+            payload.FinalApprovalNotesLabel);
         RunFakeReviewText = payload.RunFakeReviewText;
-        ReviewItemColumn = payload.ReviewItemColumn;
-        ReviewDecisionColumn = payload.ReviewDecisionColumn;
-        ReviewScoreColumn = payload.ReviewScoreColumn;
-        ReviewCommentsColumn = payload.ReviewCommentsColumn;
-        ReviewFixColumn = payload.ReviewFixColumn;
-        ReviewRouteColumn = payload.ReviewRouteColumn;
-        HumanApprovalColumn = payload.HumanApprovalColumn;
-        NoReviewRowsText = payload.NoReviewRowsText;
-        FinalApprovalReviewerLabel = payload.FinalApprovalReviewerLabel;
-        FinalApprovalNotesLabel = payload.FinalApprovalNotesLabel;
         ApproveSelectedReviewText = payload.ApproveSelectedReviewText;
         RejectSelectedReviewText = payload.RejectSelectedReviewText;
         ExportDeliveryText = payload.ExportDeliveryText;
@@ -2023,8 +1828,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PlanRows = state.PlanRows;
         PromptRows = state.PromptRows;
         QueueRows = state.QueueRows;
-        GalleryRows = state.GalleryRows;
-        ReviewRows = state.ReviewRows;
+        ImageSeries.GalleryRows = state.GalleryRows;
+        ImageSeries.ReviewRows = state.ReviewRows;
         DeliveryRows = state.DeliveryRows;
         SelectedSeries = state.SelectedSeries;
         SelectedSeriesItem = state.SelectedSeriesItem;
@@ -2047,9 +1852,49 @@ public sealed partial class MainWindowViewModel : ObservableObject
         WorkflowGraphRows = _workflowGraphCoordinator.BuildRows(
             SelectedProject,
             Series,
-            GalleryRows,
-            ReviewRows,
+            ImageSeries.GalleryRows,
+            ImageSeries.ReviewRows,
             DeliveryRows);
+    }
+
+    private void OnImageSeriesPropertyChanged(object? sender, PropertyChangedEventArgs eventArgs)
+    {
+        if (eventArgs.PropertyName == nameof(ImageSeriesWorkspaceViewModel.GalleryRows))
+        {
+            RunFakeReviewCommand.NotifyCanExecuteChanged();
+            RunFakeImageEditCommand.NotifyCanExecuteChanged();
+            RebuildWorkflowGraphRows();
+            QueueGalleryWarmup(ImageSeries.GalleryRows.Select(row => row.AssetPath));
+        }
+
+        if (eventArgs.PropertyName == nameof(ImageSeriesWorkspaceViewModel.SelectedGalleryRow))
+        {
+            OnPropertyChanged(nameof(SelectedCandidateSummary));
+            RunFakeImageEditCommand.NotifyCanExecuteChanged();
+        }
+
+        if (eventArgs.PropertyName == nameof(ImageSeriesWorkspaceViewModel.ReviewRows))
+        {
+            ExportDeliveryCommand.NotifyCanExecuteChanged();
+            RebuildWorkflowGraphRows();
+        }
+
+        if (eventArgs.PropertyName == nameof(ImageSeriesWorkspaceViewModel.SelectedReviewRow))
+        {
+            ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
+            RejectSelectedReviewCommand.NotifyCanExecuteChanged();
+        }
+
+        if (eventArgs.PropertyName == nameof(ImageSeriesWorkspaceViewModel.FinalApprovalReviewer))
+        {
+            ApproveSelectedReviewCommand.NotifyCanExecuteChanged();
+            RejectSelectedReviewCommand.NotifyCanExecuteChanged();
+        }
+
+        if (eventArgs.PropertyName == nameof(ImageSeriesWorkspaceViewModel.FinalApprovalNotes))
+        {
+            RejectSelectedReviewCommand.NotifyCanExecuteChanged();
+        }
     }
 
     private static string FormatList(IReadOnlyList<string>? values)

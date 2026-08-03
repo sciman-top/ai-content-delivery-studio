@@ -523,6 +523,39 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
         }
     }
 
+    [Fact]
+    public async Task ReferenceEvidenceScript_DoesNotRequireEvidenceForOrdinaryViewModelChanges()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var shimDirectory = Path.Combine(tempRoot, "shim");
+        Directory.CreateDirectory(shimDirectory);
+
+        try
+        {
+            var result = await RunPowerShellAsync(
+                repositoryRoot,
+                shimDirectory,
+                Path.Combine(tempRoot, "unused.log"),
+                Path.Combine(tempRoot, "unused-state.txt"),
+                Path.Combine(repositoryRoot, "scripts", "verify-reference-evidence.ps1"),
+                "-Paths",
+                "src/ContentDeliveryStudio.App/ViewModels/DiagnosticsPanelViewModel.cs");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains(
+                "No enforced engineering area was touched",
+                result.StandardOutput);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

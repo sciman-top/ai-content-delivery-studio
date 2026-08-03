@@ -11,15 +11,15 @@
                 AutomationProperties.Name="{Binding RunFakeReviewText}"
                 HorizontalAlignment="Stretch"
                 Margin="0,0,0,8" />
-        <TextBlock Text="{Binding FinalApprovalReviewerLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding FinalApprovalReviewer, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeries.FinalApprovalReviewerLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeries.FinalApprovalReviewer, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="FinalApprovalReviewerInput"
-                 AutomationProperties.Name="{Binding FinalApprovalReviewerLabel}"
+                 AutomationProperties.Name="{Binding ImageSeries.FinalApprovalReviewerLabel}"
                  Margin="0,0,0,6" />
-        <TextBlock Text="{Binding FinalApprovalNotesLabel}" Margin="0,0,0,4" />
-        <TextBox Text="{Binding FinalApprovalNotes, UpdateSourceTrigger=PropertyChanged}"
+        <TextBlock Text="{Binding ImageSeries.FinalApprovalNotesLabel}" Margin="0,0,0,4" />
+        <TextBox Text="{Binding ImageSeries.FinalApprovalNotes, UpdateSourceTrigger=PropertyChanged}"
                  AutomationProperties.AutomationId="FinalApprovalNotesInput"
-                 AutomationProperties.Name="{Binding FinalApprovalNotesLabel}"
+                 AutomationProperties.Name="{Binding ImageSeries.FinalApprovalNotesLabel}"
                  AcceptsReturn="True"
                  TextWrapping="Wrap"
                  MinHeight="64"

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "planId": "post-v1-product-focus-2026-08",
   "title": "Post-V1 Product Focus And Simplification",
-  "updatedAt": "2026-08-02",
+  "updatedAt": "2026-08-03",
   "prd": "docs/PRD_POST_V1_PRODUCT_FOCUS.md",
   "spec": "docs/superpowers/specs/2026-08-02-product-focus-and-simplification-design.md",
   "implementationPlan": "docs/superpowers/plans/2026-08-02-product-focus-and-simplification.md",
@@ -189,7 +189,7 @@
         "Main-window public workflow property count and touched-line surface decrease measurably.",
         "No new coordinator is accepted unless it owns state or an external boundary."
       ],
-      "evidence": "new bounded WPF ownership evidence path selected at execution time",
+      "evidence": "docs/change-evidence/20260803-image-series-gallery-state-ownership.md",
       "rollback": "Revert one workspace migration slice at a time while preserving public bindings through a temporary compatibility facade."
     },
     {
@@ -197,7 +197,7 @@
       "order": 6,
       "title": "Retire unused module and remote-workflow runtime abstractions",
       "priority": "P1",
-      "state": "ready",
+      "state": "completed",
       "lane": "shared-foundation",
       "goal": "Remove production runtime code that only describes repository folders or a fake remote workflow, after proving no persisted or user-visible consumer requires it.",
       "dependencies": ["FOCUS-004"],
@@ -223,7 +223,7 @@
         "Persisted compatibility is preserved or an explicit migration decision proves it is unnecessary.",
         "No replacement abstraction is introduced without a real consumer."
       ],
-      "evidence": "new bounded abstraction-retirement evidence path selected at execution time",
+      "evidence": "docs/change-evidence/20260803-abstraction-retirement-and-governance-scope.md",
       "rollback": "Restore only the removed registration and contracts if a proven consumer is found."
     },
     {
@@ -231,7 +231,7 @@
       "order": 7,
       "title": "Reduce pack infrastructure to the consumed scenario-profile surface",
       "priority": "P1",
-      "state": "proposed",
+      "state": "ready",
       "lane": "shared-foundation",
       "goal": "Keep only pack metadata that is consumed by a user-visible route or persisted compatibility contract; represent ordinary courseware, poster, article, and social variants as scenario profiles.",
       "dependencies": ["FOCUS-006"],

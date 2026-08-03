@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updatedAt": "2026-07-06T12:48:35+08:00",
+  "updatedAt": "2026-08-03T18:05:00+08:00",
   "areas": [
     {
       "name": "openai-provider",
@@ -248,8 +248,8 @@
       "sourceRules": [
         "src/ContentDeliveryStudio.App/MainWindow.xaml",
         "src/ContentDeliveryStudio.App/MainWindow.xaml.cs",
-        "src/ContentDeliveryStudio.App/ViewModels/",
-        "src/ContentDeliveryStudio.App/Views/",
+        "src/ContentDeliveryStudio.App/ViewModels/MainWindowViewModel.cs",
+        "src/ContentDeliveryStudio.App/ViewModels/MainWindowOperationGate.cs",
         "src/ContentDeliveryStudio.Application/Modules/",
         "src/ContentDeliveryStudio.Application/Workflows/"
       ],

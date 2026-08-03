@@ -17,7 +17,7 @@ This policy applies when a change touches one or more of these engineering areas
 - `tooling-and-operator`
 - `workflow-and-ux-architecture`
 
-It does **not** apply to every small edit. Docs-only wording changes, localization text tweaks, and unrelated tiny view-level cleanup should not be blocked by this policy unless they also touch one of the enforced areas below. Large WPF shell, view-model, or workflow-boundary changes are intentionally enforced through `workflow-and-ux-architecture`.
+It does **not** apply to every small edit. Docs-only wording changes, localization text tweaks, ordinary feature ViewModel or view edits, and unrelated view-level cleanup are not blocked by this policy. Large WPF shell, central orchestration, or workflow-boundary changes are intentionally enforced through `workflow-and-ux-architecture`.
 
 ## Enforced Change Areas
 
@@ -27,7 +27,7 @@ It does **not** apply to every small edit. Docs-only wording changes, localizati
 | `host-and-observability` | `src/ContentDeliveryStudio.App/App.xaml.cs`, `src/ContentDeliveryStudio.App/Telemetry/`, `src/ContentDeliveryStudio.App/Services/ProviderCenterServices.cs`, `src/ContentDeliveryStudio.Infrastructure/Diagnostics/` | Host lifetime, resilience, diagnostics, and telemetry behavior should stay aligned with official .NET guidance. |
 | `persistence-and-schema` | `src/ContentDeliveryStudio.Infrastructure/Persistence/`, `src/ContentDeliveryStudio.Core/Projects/`, `src/ContentDeliveryStudio.Core/Artifacts/`, `src/ContentDeliveryStudio.Core/Sources/` | Schema and persistence changes are easy to get subtly wrong without explicit design and provider evidence. |
 | `tooling-and-operator` | `src/ContentDeliveryStudio.Application/ToolAdapters/`, `src/ContentDeliveryStudio.Infrastructure/ToolAdapters/`, `src/ContentDeliveryStudio.Core/Operators/` | Local tool execution and operator boundaries need explicit risk and evidence discipline, not ad hoc behavior drift. |
-| `workflow-and-ux-architecture` | `src/ContentDeliveryStudio.App/MainWindow.xaml*`, `src/ContentDeliveryStudio.App/ViewModels/`, `src/ContentDeliveryStudio.App/Views/`, `src/ContentDeliveryStudio.Application/Modules/`, `src/ContentDeliveryStudio.Application/Workflows/` | Large WPF shell and workflow-boundary changes need explicit MVVM and modular-composition evidence so the UI does not regress into one giant orchestrator. |
+| `workflow-and-ux-architecture` | `src/ContentDeliveryStudio.App/MainWindow.xaml*`, central `MainWindowViewModel`/operation-gate files, `src/ContentDeliveryStudio.Application/Modules/`, `src/ContentDeliveryStudio.Application/Workflows/` | Large WPF shell, central orchestration, and workflow-boundary changes need explicit MVVM and modular-composition evidence. Ordinary feature ViewModel/view edits use focused behavior tests and do not require a ceremonial reference record. |
 
 ## What Counts As Evidence
 
@@ -72,7 +72,7 @@ The right evidence file depends on the change. For example:
 - provider transport or readiness changes should usually update provider docs, launch evidence, or a new spec
 - operator boundary changes should usually update operator policy or a new spec
 - persistence boundary changes should usually update architecture or research notes
-- workflow/view-model split slices should usually update architecture state, reference basis, or a focused plan/spec
+- central shell or workflow-ownership split slices should usually update architecture state or one bounded evidence record; ordinary feature ViewModel/view changes need no reference record
 
 ## Local Reference Shelf Priority
 

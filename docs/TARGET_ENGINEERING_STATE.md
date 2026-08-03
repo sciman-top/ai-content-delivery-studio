@@ -65,7 +65,7 @@ AI 推荐: keep the current Windows desktop stack and harden it rather than chas
 ### Deferred Or Optional
 
 - `WinUI 3` shell migration
-- Real remote workflow engine integration beyond the current host-registered fake no-network adapter boundary
+- Real remote workflow engine integration; the current desktop host intentionally registers no remote adapter
 - Local heavyweight model runtimes
 - Graph authoring surface
 

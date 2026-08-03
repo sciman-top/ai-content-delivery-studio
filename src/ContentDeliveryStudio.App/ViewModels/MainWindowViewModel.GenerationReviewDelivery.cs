@@ -180,7 +180,7 @@ public sealed partial class MainWindowViewModel
 
         SelectedQueueRow = QueueRows.FirstOrDefault(row => row.TaskId == selectedTaskId)
             ?? QueueRows.FirstOrDefault();
-        ReviewRows = [];
+        ImageSeries.ReviewRows = [];
         DeliveryRows = [];
         RunFakeReviewCommand.NotifyCanExecuteChanged();
     }
@@ -200,7 +200,7 @@ public sealed partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(CanRunFakeImageEdit))]
     private async Task RunFakeImageEditAsync()
     {
-        if (SelectedProject is null || SelectedGalleryRow is null)
+        if (SelectedProject is null || ImageSeries.SelectedGalleryRow is null)
         {
             return;
         }
@@ -209,11 +209,11 @@ public sealed partial class MainWindowViewModel
         var result = await _operationGate.RunExclusiveAsync(
             cancellationToken => _workbenchInspectorCoordinator.RunFakeImageEditAsync(
                 projectId,
-                SelectedGalleryRow,
+                ImageSeries.SelectedGalleryRow,
                 NewImageEditPrompt,
                 NewImageEditMaskPath,
                 ImageEditResultText,
-                GalleryRows,
+                ImageSeries.GalleryRows,
                 ActivityItems,
                 cancellationToken));
 
@@ -227,9 +227,9 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        GalleryRows = result.Value.GalleryRows;
-        SelectedGalleryRow = result.Value.SelectedGalleryRow;
-        ReviewRows = [];
+        ImageSeries.GalleryRows = result.Value.GalleryRows;
+        ImageSeries.SelectedGalleryRow = result.Value.SelectedGalleryRow;
+        ImageSeries.ReviewRows = [];
         DeliveryRows = [];
         ActivityItems = result.Value.ActivityItems;
     }
@@ -238,7 +238,7 @@ public sealed partial class MainWindowViewModel
     {
         return CanRunMutation()
             && SelectedProject is not null
-            && SelectedGalleryRow is not null
+            && ImageSeries.SelectedGalleryRow is not null
             && !string.IsNullOrWhiteSpace(NewImageEditPrompt);
     }
 
@@ -254,7 +254,7 @@ public sealed partial class MainWindowViewModel
         var result = await _operationGate.RunExclusiveAsync(
             cancellationToken => _reviewWorkflowCoordinator.RunFakeReviewAsync(
                 projectId,
-                GalleryRows,
+                ImageSeries.GalleryRows,
                 cancellationToken));
 
         if (!result.Executed || result.Value is null)
@@ -267,7 +267,7 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        ReviewRows = result.Value;
+        ImageSeries.ReviewRows = result.Value;
         DeliveryRows = [];
         ExportDeliveryCommand.NotifyCanExecuteChanged();
     }
@@ -276,7 +276,7 @@ public sealed partial class MainWindowViewModel
     {
         return CanRunMutation()
             && SelectedProject is not null
-            && GalleryRows.Count > 0;
+            && ImageSeries.GalleryRows.Count > 0;
     }
 
     [RelayCommand(CanExecute = nameof(CanApproveSelectedReview))]
@@ -288,8 +288,8 @@ public sealed partial class MainWindowViewModel
     private bool CanApproveSelectedReview()
     {
         return CanRunMutation()
-            && SelectedReviewRow is { Review.Decision: ReviewDecision.Pass, Review.NeedsRepair: false }
-            && !string.IsNullOrWhiteSpace(FinalApprovalReviewer);
+            && ImageSeries.SelectedReviewRow is { Review.Decision: ReviewDecision.Pass, Review.NeedsRepair: false }
+            && !string.IsNullOrWhiteSpace(ImageSeries.FinalApprovalReviewer);
     }
 
     [RelayCommand(CanExecute = nameof(CanRejectSelectedReview))]
@@ -301,14 +301,14 @@ public sealed partial class MainWindowViewModel
     private bool CanRejectSelectedReview()
     {
         return CanRunMutation()
-            && SelectedReviewRow is not null
-            && !string.IsNullOrWhiteSpace(FinalApprovalReviewer)
-            && !string.IsNullOrWhiteSpace(FinalApprovalNotes);
+            && ImageSeries.SelectedReviewRow is not null
+            && !string.IsNullOrWhiteSpace(ImageSeries.FinalApprovalReviewer)
+            && !string.IsNullOrWhiteSpace(ImageSeries.FinalApprovalNotes);
     }
 
     private async Task ApplyFinalApprovalAsync(bool approve)
     {
-        if (SelectedReviewRow is null || SelectedProject is null)
+        if (ImageSeries.SelectedReviewRow is null || SelectedProject is null)
         {
             return;
         }
@@ -316,16 +316,16 @@ public sealed partial class MainWindowViewModel
         var projectId = SelectedProject.Id;
         var selectedSeriesId = SelectedSeries?.Id;
         var selectedItemId = SelectedSeriesItem?.Id;
-        var candidateImageId = SelectedReviewRow.CandidateImageId;
+        var candidateImageId = ImageSeries.SelectedReviewRow.CandidateImageId;
         var result = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
                 await _reviewWorkflowCoordinator.ApplyFinalApprovalAsync(
                     projectId,
-                    SelectedReviewRow,
+                    ImageSeries.SelectedReviewRow,
                     approve,
-                    FinalApprovalReviewer,
-                    FinalApprovalNotes,
+                    ImageSeries.FinalApprovalReviewer,
+                    ImageSeries.FinalApprovalNotes,
                     cancellationToken);
 
                 var snapshot = await CaptureProjectReloadSnapshotAsync(
@@ -347,8 +347,9 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        SelectedReviewRow = ReviewRows.FirstOrDefault(row => row.CandidateImageId == result.Value.CandidateImageId)
-            ?? SelectedReviewRow;
+        ImageSeries.SelectedReviewRow = ImageSeries.ReviewRows.FirstOrDefault(
+                row => row.CandidateImageId == result.Value.CandidateImageId)
+            ?? ImageSeries.SelectedReviewRow;
         DeliveryRows = [];
         ExportDeliveryCommand.NotifyCanExecuteChanged();
     }
@@ -366,8 +367,8 @@ public sealed partial class MainWindowViewModel
             cancellationToken => _deliveryWorkflowCoordinator.ExportDeliveryAsync(
                 projectId,
                 SelectedProject.Name,
-                GalleryRows,
-                ReviewRows,
+                ImageSeries.GalleryRows,
+                ImageSeries.ReviewRows,
                 DesignBlueprintRows,
                 _activeCreativeBriefId,
                 cancellationToken,
@@ -386,10 +387,10 @@ public sealed partial class MainWindowViewModel
     {
         return CanRunMutation()
             && SelectedProject is not null
-            && GalleryRows.Count > 0
+            && ImageSeries.GalleryRows.Count > 0
             && SelectedFinalDeliveryCategoryOption is not null
             && !string.IsNullOrWhiteSpace(FinalDeliveryDestinationPreview)
-            && ReviewRows.Any(row => row.HumanApproved && row.Decision == ReviewDecision.Pass.ToString());
+            && ImageSeries.ReviewRows.Any(row => row.HumanApproved && row.Decision == ReviewDecision.Pass.ToString());
     }
 
     [RelayCommand(CanExecute = nameof(CanBrowseFinalDeliveryRoot))]

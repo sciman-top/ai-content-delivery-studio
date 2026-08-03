@@ -12,16 +12,16 @@
                 <ColumnDefinition Width="2.3*" />
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0"
-                       Text="{Binding DataContext.GalleryItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeries.GalleryItemColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold" />
             <TextBlock Grid.Column="1"
-                       Text="{Binding DataContext.GalleryImageColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeries.GalleryImageColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
             <TextBlock Grid.Column="2"
-                       Text="{Binding DataContext.GalleryMetadataColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
+                       Text="{Binding DataContext.ImageSeries.GalleryMetadataColumn, RelativeSource={RelativeSource AncestorType=TabControl}}"
                        VerticalAlignment="Center"
                        FontWeight="SemiBold"
                        Margin="10,0,0,0" />
