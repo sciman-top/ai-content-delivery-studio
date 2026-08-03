@@ -2,7 +2,8 @@ param(
     [string[]]$Paths,
     [string]$BaseRef,
     [string]$HeadRef,
-    [switch]$RequireReferenceBasisFile
+    [switch]$RequireReferenceBasisFile,
+    [switch]$ParityOnly
 )
 
 Set-StrictMode -Version Latest
@@ -113,6 +114,112 @@ function Test-MatchAnyRule {
     return $false
 }
 
+function Test-HasProperty {
+    param(
+        [Parameter(Mandatory = $true)]$Object,
+        [Parameter(Mandatory = $true)][string]$Name
+    )
+
+    return $null -ne $Object -and $Object.PSObject.Properties.Name -contains $Name
+}
+
+function Test-NonEmptyText {
+    param($Value)
+
+    return $Value -is [string] -and -not [string]::IsNullOrWhiteSpace($Value)
+}
+
+function Get-StructuredReferenceDecisions {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepoRoot,
+        [Parameter(Mandatory = $true)][string[]]$EvidencePaths
+    )
+
+    $decisions = @()
+    foreach ($evidencePath in $EvidencePaths) {
+        $fullPath = Join-Path $RepoRoot $evidencePath
+        if (-not (Test-Path -LiteralPath $fullPath -PathType Leaf)) {
+            continue
+        }
+
+        $content = Get-Content -LiteralPath $fullPath -Raw -Encoding utf8
+        $matches = [regex]::Matches(
+            $content,
+            '(?ms)```reference-decision\s*(.*?)\s*```')
+        foreach ($match in $matches) {
+            try {
+                $decision = $match.Groups[1].Value | ConvertFrom-Json
+            } catch {
+                throw "Invalid reference-decision JSON in $evidencePath`: $($_.Exception.Message)"
+            }
+
+            $decisions += [pscustomobject]@{
+                EvidencePath = $evidencePath
+                Decision = $decision
+            }
+        }
+    }
+
+    return @($decisions)
+}
+
+function Get-ReferenceDecisionErrors {
+    param(
+        [Parameter(Mandatory = $true)]$Decision,
+        [Parameter(Mandatory = $true)]$Area
+    )
+
+    $validationErrors = [System.Collections.Generic.List[string]]::new()
+    if (-not (Test-HasProperty $Decision "schemaVersion") -or $Decision.schemaVersion -ne 1) {
+        $validationErrors.Add("schemaVersion must be 1")
+    }
+    if (-not (Test-HasProperty $Decision "area") -or $Decision.area -ne $Area.Name) {
+        $validationErrors.Add("area must equal $($Area.Name)")
+    }
+    if (-not (Test-HasProperty $Decision "trigger") -or -not (Test-NonEmptyText $Decision.trigger)) {
+        $validationErrors.Add("trigger must be non-empty")
+    } elseif ($Decision.trigger -notin $Area.RequiredTriggers) {
+        $validationErrors.Add("trigger must be one of the area's declared trigger families")
+    }
+    if (-not (Test-HasProperty $Decision "observedBehavior") -or -not (Test-NonEmptyText $Decision.observedBehavior)) {
+        $validationErrors.Add("observedBehavior must be non-empty")
+    }
+    if (-not (Test-HasProperty $Decision "decision") -or $Decision.decision -notin @("adopt", "adapt", "reject")) {
+        $validationErrors.Add("decision must be adopt, adapt, or reject")
+    }
+    if (-not (Test-HasProperty $Decision "affectedContract") -or -not (Test-NonEmptyText $Decision.affectedContract)) {
+        $validationErrors.Add("affectedContract must be non-empty")
+    }
+
+    $focusedVerification = if (Test-HasProperty $Decision "focusedVerification") { @($Decision.focusedVerification) } else { @() }
+    if ($focusedVerification.Count -eq 0 -or @($focusedVerification | Where-Object { -not (Test-NonEmptyText $_) }).Count -gt 0) {
+        $validationErrors.Add("focusedVerification must contain at least one non-empty command or probe")
+    }
+
+    $consultedSources = if (Test-HasProperty $Decision "consultedSources") { @($Decision.consultedSources) } else { @() }
+    $invalidSources = @($consultedSources | Where-Object {
+        -not (Test-HasProperty $_ "path") -or -not (Test-NonEmptyText $_.path) -or
+        -not (Test-HasProperty $_ "revision") -or -not (Test-NonEmptyText $_.revision)
+    })
+    if ($invalidSources.Count -gt 0) {
+        $validationErrors.Add("every consultedSources entry must contain non-empty path and revision")
+    }
+
+    if ($consultedSources.Count -eq 0) {
+        if (-not (Test-HasProperty $Decision "unavailableEvidence")) {
+            $validationErrors.Add("consultedSources is empty, so unavailableEvidence is required")
+        } else {
+            foreach ($property in @("reason", "expiresAt", "recoveryCondition")) {
+                if (-not (Test-HasProperty $Decision.unavailableEvidence $property) -or -not (Test-NonEmptyText $Decision.unavailableEvidence.$property)) {
+                    $validationErrors.Add("unavailableEvidence.$property must be non-empty")
+                }
+            }
+        }
+    }
+
+    return @($validationErrors)
+}
+
 function Invoke-ReferenceGovernanceSyncCheck {
     param(
         [Parameter(Mandatory = $true)]
@@ -162,11 +269,21 @@ function Get-AreaDefinitions {
 }
 
 $repoRoot = Get-RepoRoot
+$Paths = @(
+    $Paths |
+        ForEach-Object { $_ -split ',' } |
+        ForEach-Object { $_.Trim() } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+)
 $hasExplicitPaths = $Paths -and $Paths.Count -gt 0
 $hasDiffRange = -not [string]::IsNullOrWhiteSpace($BaseRef) -or -not [string]::IsNullOrWhiteSpace($HeadRef)
 
 if ($hasExplicitPaths -and $hasDiffRange) {
     throw "Use either -Paths or -BaseRef/-HeadRef, not both."
+}
+
+if ($ParityOnly -and ($hasExplicitPaths -or $hasDiffRange)) {
+    throw "-ParityOnly cannot be combined with -Paths or diff-range mode."
 }
 
 if ($hasDiffRange -and ([string]::IsNullOrWhiteSpace($BaseRef) -or [string]::IsNullOrWhiteSpace($HeadRef))) {
@@ -187,12 +304,17 @@ $changedPaths = if ($hasExplicitPaths) {
 }
 $changedPaths = @($changedPaths)
 
+Invoke-ReferenceGovernanceSyncCheck -RepoRoot $repoRoot
+
+if ($ParityOnly) {
+    Write-Host "[OK] Reference governance parity passed."
+    exit 0
+}
+
 if (-not $changedPaths -or $changedPaths.Count -eq 0) {
     Write-Host "[OK] No changed paths detected. Reference evidence gate passed."
     exit 0
 }
-
-Invoke-ReferenceGovernanceSyncCheck -RepoRoot $repoRoot
 
 $areas = Get-AreaDefinitions -RepoRoot $repoRoot
 $touchedAreas = @()
@@ -226,25 +348,37 @@ if ($touchedAreas.Count -eq 0) {
     exit 0
 }
 
-$failedAreas = @(
-    $touchedAreas | Where-Object {
-        @($_.EvidenceHits).Count -eq 0 -or ($RequireReferenceBasisFile -and -not $_.HasReferenceBasisHit)
-    }
-)
+$failedAreas = @()
 
 foreach ($area in $touchedAreas) {
-    $hasEvidence = @($area.EvidenceHits).Count -gt 0
+    $structuredDecisions = Get-StructuredReferenceDecisions -RepoRoot $repoRoot -EvidencePaths @($area.EvidenceHits)
+    $matchingDecisions = @($structuredDecisions | Where-Object {
+        (Test-HasProperty $_.Decision "area") -and $_.Decision.area -eq $area.Name
+    })
+    $validDecisions = @()
+    $invalidDecisionMessages = @()
+    foreach ($candidate in $matchingDecisions) {
+        $candidateErrors = @(Get-ReferenceDecisionErrors -Decision $candidate.Decision -Area $area)
+        if ($candidateErrors.Count -eq 0) {
+            $validDecisions += $candidate
+        } else {
+            $invalidDecisionMessages += "$($candidate.EvidencePath): $($candidateErrors -join '; ')"
+        }
+    }
+
+    $hasEvidence = $validDecisions.Count -gt 0
     $hasRequiredBasis = -not $RequireReferenceBasisFile -or $area.HasReferenceBasisHit
     if ($hasEvidence -and $hasRequiredBasis) {
-        Write-Host "[OK] $($area.Name): evidence update detected." -ForegroundColor Green
-        foreach ($hit in $area.EvidenceHits) {
-            Write-Host "  - $hit"
+        Write-Host "[OK] $($area.Name): structured reference decision verified." -ForegroundColor Green
+        foreach ($decision in $validDecisions) {
+            Write-Host "  - $($decision.EvidencePath): $($decision.Decision.decision) / $($decision.Decision.trigger)"
         }
         if ($RequireReferenceBasisFile) {
             Write-Host "  - docs/REFERENCE_BASIS.md or scripts/reference-basis.json updated"
         }
     } else {
-        Write-Host "[FAIL] $($area.Name): required reference evidence is incomplete." -ForegroundColor Red
+        $failedAreas += $area
+        Write-Host "[FAIL] $($area.Name): required structured reference decision is incomplete." -ForegroundColor Red
         Write-Host "  Triggering paths:"
         foreach ($path in $area.TriggeringPaths) {
             Write-Host "  - $path"
@@ -256,6 +390,13 @@ foreach ($area in $touchedAreas) {
         Write-Host "  Acceptable evidence updates:"
         foreach ($rule in $area.EvidenceRules) {
             Write-Host "  - $rule"
+        }
+        Write-Host "  Required reference-decision fields:"
+        Write-Host "  - area, trigger, consultedSources(path/revision), observedBehavior"
+        Write-Host "  - decision(adopt/adapt/reject), affectedContract, focusedVerification"
+        Write-Host "  - unavailableEvidence(reason/expiresAt/recoveryCondition) when no source is available"
+        foreach ($message in $invalidDecisionMessages) {
+            Write-Host "  Invalid decision: $message"
         }
         if ($RequireReferenceBasisFile) {
             Write-Host "  Required basis updates:"
@@ -272,7 +413,7 @@ foreach ($area in $touchedAreas) {
 }
 
 if ($failedAreas.Count -gt 0) {
-    throw "Reference evidence gate failed for $($failedAreas.Count) area(s). Update in-repo evidence before closing the change."
+    throw "Reference evidence gate failed for $($failedAreas.Count) area(s). Add a valid structured reference decision before closing the change."
 }
 
 Write-Host "[OK] Reference evidence gate passed for all touched enforced areas." -ForegroundColor Green

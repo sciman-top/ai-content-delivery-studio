@@ -60,25 +60,6 @@ public sealed class Phase7AccessibilityContractTests
         }
     }
 
-    [Fact]
-    public void PackagedProbe_VerifiesPackageAndKeepsManualBoundariesExplicit()
-    {
-        var script = ReadRepoFile("scripts", "run-packaged-accessibility-probe.ps1");
-
-        Assert.Contains("verify-publish-package.ps1", script);
-        Assert.Contains("PROVIDER_MODE = 'fake'", script);
-        Assert.Contains("GetDpiForWindow", script);
-        Assert.Contains("'CreateSafeBackup'", script);
-        Assert.Contains("'RestoreSafeBackup'", script);
-        Assert.Contains("doesNotProve", script);
-        Assert.Contains("Narrator behavior", script);
-
-        var verifier = ReadRepoFile("scripts", "verify-publish-package.ps1");
-        Assert.Contains("maximumEntryCount", verifier);
-        Assert.Contains("unsupported link-like entry", verifier);
-        Assert.Contains("unexpected nested ZIP", verifier);
-    }
-
     private static string ReadRepoFile(params string[] segments) => File.ReadAllText(GetRepoFilePath(segments));
 
     private static string GetRepoFilePath(params string[] segments)

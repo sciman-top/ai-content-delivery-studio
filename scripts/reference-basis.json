@@ -15,6 +15,7 @@
         "docs/PROVIDER_ROUTING_POLICY.md",
         "docs/V1_LAUNCH_EVIDENCE.md",
         "docs/REFERENCE_BASIS.md",
+        "docs/change-evidence/",
         "docs/superpowers/specs/",
         "docs/superpowers/plans/"
       ],
@@ -60,6 +61,7 @@
         "docs/TARGET_ENGINEERING_STATE.md",
         "docs/V1_LAUNCH_EVIDENCE.md",
         "docs/REFERENCE_BASIS.md",
+        "docs/change-evidence/",
         "docs/superpowers/specs/",
         "docs/superpowers/plans/"
       ],
@@ -127,6 +129,7 @@
         "docs/ROADMAP.md",
         "docs/TARGET_ENGINEERING_STATE.md",
         "docs/REFERENCE_BASIS.md",
+        "docs/change-evidence/",
         "docs/superpowers/specs/",
         "docs/superpowers/plans/"
       ],
@@ -168,6 +171,7 @@
         "docs/OPERATOR_RISK_POLICY.md",
         "docs/V1_LAUNCH_EVIDENCE.md",
         "docs/REFERENCE_BASIS.md",
+        "docs/change-evidence/",
         "docs/superpowers/specs/",
         "docs/superpowers/plans/"
       ],
@@ -253,6 +257,7 @@
         "docs/ARCHITECTURE.md",
         "docs/TARGET_ENGINEERING_STATE.md",
         "docs/REFERENCE_BASIS.md",
+        "docs/change-evidence/",
         "docs/superpowers/specs/",
         "docs/superpowers/plans/"
       ],
@@ -287,6 +292,7 @@
         "large-viewmodel-split",
         "large-view-split",
         "shell-view-structure",
+        "source-structure-test-reduction",
         "workflow-graph",
         "queue-gallery-stage-composition",
         "module-boundary-change"
@@ -308,6 +314,7 @@
         "docs/ROADMAP.md",
         "docs/TASKS.md",
         "docs/REFERENCE_BASIS.md",
+        "docs/change-evidence/",
         "docs/superpowers/specs/",
         "docs/superpowers/plans/"
       ],
@@ -353,6 +360,7 @@
         "docs/REFERENCE_EVIDENCE_POLICY.md",
         "docs/ROADMAP.md",
         "docs/TASKS.md",
+        "docs/change-evidence/",
         "docs/superpowers/specs/",
         "docs/superpowers/plans/"
       ],
@@ -402,6 +410,7 @@
         "docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md",
         "docs/REFERENCE_BASIS.md",
         "docs/REFERENCE_EVIDENCE_POLICY.md",
+        "docs/change-evidence/",
         "docs/superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md",
         "docs/superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md"
       ],

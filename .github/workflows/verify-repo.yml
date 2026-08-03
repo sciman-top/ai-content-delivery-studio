@@ -5,8 +5,6 @@ on:
     branches:
       - main
       - master
-      - "codex/**"
-      - "feature/**"
   pull_request:
 
 permissions:
@@ -46,13 +44,20 @@ jobs:
 
           "USE_DIFF_RANGE=0" >> $env:GITHUB_ENV
 
-      - name: Run release-style preflight
+      - name: Run pull-request verification
+        if: github.event_name == 'pull_request'
+        shell: pwsh
+        run: |
+          .\scripts\verify-repo.ps1 -ReferenceEvidenceBaseRef $env:REFERENCE_BASE_REF -ReferenceEvidenceHeadRef $env:REFERENCE_HEAD_REF
+
+      - name: Run mainline release preflight
+        if: github.event_name == 'push'
         shell: pwsh
         run: |
           if ($env:USE_DIFF_RANGE -eq "1") {
             .\scripts\preflight-release.ps1 -ReferenceEvidenceBaseRef $env:REFERENCE_BASE_REF -ReferenceEvidenceHeadRef $env:REFERENCE_HEAD_REF
           }
           else {
-            Write-Host "No reliable diff range available; running repository verification without the diff-range reference gate."
+            Write-Host "No reliable diff range available; running release preflight with parity-only reference verification."
             .\scripts\preflight-release.ps1 -SkipReferenceEvidence
           }

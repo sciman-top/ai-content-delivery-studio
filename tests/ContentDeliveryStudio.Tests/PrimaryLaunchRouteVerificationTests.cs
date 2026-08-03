@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ContentDeliveryStudio.Tests;
 
+[Trait("Category", "ReleaseOnly")]
 public sealed class PrimaryLaunchRouteVerificationTests
 {
     [Fact]

@@ -10,6 +10,7 @@ using SkiaSharp;
 
 namespace ContentDeliveryStudio.Tests;
 
+[Trait("Category", "ReleaseOnly")]
 public sealed class LargeGalleryPerformanceBenchmarkTests
 {
     private static readonly GalleryBenchmarkBudgets Budgets = new(

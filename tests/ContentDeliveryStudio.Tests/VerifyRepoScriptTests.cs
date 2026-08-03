@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 namespace ContentDeliveryStudio.Tests;
 
+[Trait("Category", "ReleaseOnly")]
 public sealed class VerifyRepoScriptTests
 {
     [Fact]
@@ -99,6 +100,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
 
             Assert.Equal(0, result.ExitCode);
             Assert.Contains("Repository verification passed.", result.StandardOutput);
+            Assert.True(
+                result.StandardOutput.IndexOf("==> dotnet build", StringComparison.Ordinal) <
+                result.StandardOutput.IndexOf("==> dotnet test", StringComparison.Ordinal));
+            Assert.True(
+                result.StandardOutput.IndexOf("==> dotnet test", StringComparison.Ordinal) <
+                result.StandardOutput.IndexOf("==> Reference evidence and governance", StringComparison.Ordinal));
+            Assert.True(
+                result.StandardOutput.IndexOf("==> Reference evidence and governance", StringComparison.Ordinal) <
+                result.StandardOutput.IndexOf("==> git diff --check", StringComparison.Ordinal));
 
             var buildInvocations = await File.ReadAllLinesAsync(logPath);
             Assert.Equal(2, buildInvocations.Count(line => line.StartsWith("build", StringComparison.OrdinalIgnoreCase)));
@@ -301,6 +311,218 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
         }
     }
 
+    [Fact]
+    public async Task VerifyRepoScript_QuickModeRequiresAndUsesFocusedFilter()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var shimDirectory = Path.Combine(tempRoot, "shim");
+        var logPath = Path.Combine(tempRoot, "dotnet-invocations.log");
+        var statePath = Path.Combine(tempRoot, "unused-state.txt");
+        Directory.CreateDirectory(shimDirectory);
+
+        try
+        {
+            await WriteSuccessfulDotNetShimAsync(shimDirectory);
+
+            var result = await RunPowerShellAsync(
+                repositoryRoot,
+                shimDirectory,
+                logPath,
+                statePath,
+                Path.Combine(repositoryRoot, "scripts", "verify-repo.ps1"),
+                "-Mode",
+                "Quick",
+                "-TestFilter",
+                "VerifyRepoScriptTests",
+                "-NoRestore");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains("Quick verification passed for filter: VerifyRepoScriptTests", result.StandardOutput);
+
+            var invocations = await File.ReadAllLinesAsync(logPath);
+            Assert.Single(invocations, line => line.StartsWith("build", StringComparison.OrdinalIgnoreCase));
+            var testInvocation = Assert.Single(
+                invocations,
+                line => line.StartsWith("test", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains("--filter VerifyRepoScriptTests", testInvocation);
+            Assert.DoesNotContain(invocations, line => line.StartsWith("format", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task VerifyRepoScript_FullModeBuildsAndRestoresOnlyOnce()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var shimDirectory = Path.Combine(tempRoot, "shim");
+        var logPath = Path.Combine(tempRoot, "dotnet-invocations.log");
+        var statePath = Path.Combine(tempRoot, "unused-state.txt");
+        Directory.CreateDirectory(shimDirectory);
+
+        try
+        {
+            await WriteSuccessfulDotNetShimAsync(shimDirectory);
+
+            var result = await RunPowerShellAsync(
+                repositoryRoot,
+                shimDirectory,
+                logPath,
+                statePath,
+                Path.Combine(repositoryRoot, "scripts", "verify-repo.ps1"),
+                "-SkipReferenceEvidence");
+
+            Assert.Equal(0, result.ExitCode);
+            var invocations = await File.ReadAllLinesAsync(logPath);
+            Assert.Single(invocations, line => line.StartsWith("build", StringComparison.OrdinalIgnoreCase));
+
+            var testInvocation = Assert.Single(
+                invocations,
+                line => line.StartsWith("test", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains("--no-build", testInvocation);
+            Assert.Contains("--no-restore", testInvocation);
+            Assert.Contains("--filter Category!=ReleaseOnly", testInvocation);
+
+            Assert.DoesNotContain(
+                invocations,
+                line => line.StartsWith("format", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains("==> git diff --check", result.StandardOutput);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task PreflightReleaseScript_RunsFullVerificationOnceBeforeReleaseOnlyChecks()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var shimDirectory = Path.Combine(tempRoot, "shim");
+        var logPath = Path.Combine(tempRoot, "dotnet-invocations.log");
+        var statePath = Path.Combine(tempRoot, "unused-state.txt");
+        Directory.CreateDirectory(shimDirectory);
+
+        try
+        {
+            await WriteSuccessfulDotNetShimAsync(shimDirectory);
+
+            var result = await RunPowerShellAsync(
+                repositoryRoot,
+                shimDirectory,
+                logPath,
+                statePath,
+                Path.Combine(repositoryRoot, "scripts", "preflight-release.ps1"),
+                "-SkipPublishWhatIf",
+                "-NoRestore",
+                "-ForcePowerShellTextScan");
+
+            Assert.True(
+                result.ExitCode == 0,
+                result.StandardOutput + Environment.NewLine + result.StandardError);
+            Assert.Contains("Release preflight passed.", result.StandardOutput);
+            Assert.Equal(
+                1,
+                CountOccurrences(result.StandardOutput, "[OK] Reference governance files are in sync."));
+
+            var invocations = await File.ReadAllLinesAsync(logPath);
+            Assert.Single(invocations, line => line.StartsWith("build", StringComparison.OrdinalIgnoreCase));
+            var testInvocation = Assert.Single(
+                invocations,
+                line => line.StartsWith("test", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain("Category!=ReleaseOnly", testInvocation);
+            var formatInvocation = Assert.Single(
+                invocations,
+                line => line.StartsWith("format", StringComparison.OrdinalIgnoreCase));
+            Assert.DoesNotContain("format whitespace", formatInvocation);
+            Assert.Contains("format ContentDeliveryStudio.sln", formatInvocation);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ReferenceEvidenceScript_RejectsNarrativeOnlyEvidence()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var shimDirectory = Path.Combine(tempRoot, "shim");
+        Directory.CreateDirectory(shimDirectory);
+
+        try
+        {
+            var result = await RunPowerShellAsync(
+                repositoryRoot,
+                shimDirectory,
+                Path.Combine(tempRoot, "unused.log"),
+                Path.Combine(tempRoot, "unused-state.txt"),
+                Path.Combine(repositoryRoot, "scripts", "verify-reference-evidence.ps1"),
+                "-Paths",
+                "src/ContentDeliveryStudio.App/ViewModels/MainWindowViewModel.cs,docs/ARCHITECTURE.md");
+
+            Assert.Equal(1, result.ExitCode);
+            Assert.Contains(
+                "required structured reference decision is incomplete",
+                result.StandardOutput + result.StandardError);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task ReferenceEvidenceScript_AcceptsMatchingStructuredDecision()
+    {
+        var repositoryRoot = FindRepositoryRoot();
+        var tempRoot = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var shimDirectory = Path.Combine(tempRoot, "shim");
+        Directory.CreateDirectory(shimDirectory);
+
+        try
+        {
+            var result = await RunPowerShellAsync(
+                repositoryRoot,
+                shimDirectory,
+                Path.Combine(tempRoot, "unused.log"),
+                Path.Combine(tempRoot, "unused-state.txt"),
+                Path.Combine(repositoryRoot, "scripts", "verify-reference-evidence.ps1"),
+                "-Paths",
+                "src/ContentDeliveryStudio.App/ViewModels/MainWindowViewModel.cs,docs/change-evidence/20260802-lean-verification-lanes.md");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains(
+                "workflow-and-ux-architecture: structured reference decision verified",
+                result.StandardOutput);
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
     private static string FindRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
@@ -315,6 +537,44 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
         }
 
         throw new DirectoryNotFoundException("Could not find ContentDeliveryStudio.sln from the test output path.");
+    }
+
+    private static async Task WriteSuccessfulDotNetShimAsync(string shimDirectory)
+    {
+        await File.WriteAllTextAsync(
+            Path.Combine(shimDirectory, "dotnet.ps1"),
+            """
+param(
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$Arguments
+)
+
+if (-not [string]::IsNullOrWhiteSpace($env:DOTNET_SHIM_LOG_PATH)) {
+    Add-Content -LiteralPath $env:DOTNET_SHIM_LOG_PATH -Value (($Arguments -join ' ').Trim())
+}
+
+Write-Output "dotnet shim passed: $($Arguments -join ' ')"
+exit 0
+""");
+        await File.WriteAllTextAsync(
+            Path.Combine(shimDirectory, "dotnet.cmd"),
+            """
+@echo off
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
+""");
+    }
+
+    private static int CountOccurrences(string value, string needle)
+    {
+        var count = 0;
+        var index = 0;
+        while ((index = value.IndexOf(needle, index, StringComparison.Ordinal)) >= 0)
+        {
+            count++;
+            index += needle.Length;
+        }
+
+        return count;
     }
 
     private static async Task<ProcessResult> RunPowerShellAsync(

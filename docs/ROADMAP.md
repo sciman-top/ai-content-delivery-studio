@@ -4,6 +4,24 @@ Target upgrade: the product is now positioned as AI Content Delivery Studio, a m
 
 AI, providers, workflow packs, and output formats can evolve quickly. Core domain models and application use cases should evolve slowly and should not be reshaped for every model release.
 
+## Post-V1 Product Focus
+
+The current implementation program is governed by [PRD_POST_V1_PRODUCT_FOCUS.md](./PRD_POST_V1_PRODUCT_FOCUS.md), the [product-focus design](./superpowers/specs/2026-08-02-product-focus-and-simplification-design.md), the [detailed implementation plan](./superpowers/plans/2026-08-02-product-focus-and-simplification.md), and the machine-readable [product-focus-execution.json](./product-focus-execution.json). The JSON queue is the mutable source for task state, dependencies, authority, and next-task selection.
+
+The product now concentrates on two production lanes:
+
+- `image-series-production`: requirement/source -> brief -> blueprint -> approved queue -> provider-capability-aware generation or edit -> review/repair -> categorized delivery.
+- `trustworthy-scientific-figures`: scholarly source -> structured evidence -> Gate 1 -> deterministic figure or data-grounded chart -> contract/semantic/visual review -> Gate 2 -> evidence-backed delivery.
+
+Document illustration is an input adapter. Courseware, poster, article, report, and social outputs are scenario profiles inside the production lanes, not separate platforms. Remote workflows, a public pack ecosystem, a general operator platform, additional provider abstractions, a graph editor, and partial-image streaming are frozen until a new approved PRD or ADR reopens them.
+
+Current queue readout on `2026-08-02`:
+
+- `FOCUS-001` records this authority and plan.
+- `FOCUS-002` and `FOCUS-003` remain blocked on named physics-expert and current paid/live authority respectively.
+- `FOCUS-004` is repo-side complete. `FOCUS-005` is the active repo-only task; `FOCUS-006` and `FOCUS-010` remain dependency-ready.
+- `FOCUS-005` through `FOCUS-013` remain dependency-gated; their status must be read from the JSON queue rather than inferred from this narrative.
+
 ## Planning Readout
 
 - Historical phase numbers capture how major slices were introduced. They are not the recommended remaining execution order.
@@ -12,7 +30,7 @@ AI, providers, workflow packs, and output formats can evolve quickly. Core domai
 - A workflow is production-ready only when approval evidence, deterministic rendering or composition where required, and real-provider behavior are verified.
 - Current V1 release-claim truth lives in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md); roadmap phase status and completed backlog items do not count as launch proof by themselves.
 - The latest recorded launch snapshot remains `2026-06-23`: it keeps all `5 / 5` V1 launch metrics verified and captured the then-current `433 / 433` automated gate plus the `2026-06-11` live-provider artifact set. The newer repo-only baseline is `734 / 734` in Phase 7 evidence; it does not refresh or relabel that historical live-provider snapshot. This does not mean every roadmap phase is complete or that future release snapshots never need refresh.
-- The recorded V1 repo-side execution queue remains closed. The post-V1 trustworthy-scientific-figure flagship implementation, fake/live verification, human acceptance, Task 30 documentation, and Checkpoint 5 final-gate closeout are accepted.
+- The recorded V1 repo-side execution queue remains closed. The original post-V1 trustworthy-scientific-figure Tasks 1-30 and Checkpoint 5 remain accepted, while the newer product-focus queue is active and does not rewrite those historical closures.
 
 ## V1 Release Frame
 
@@ -64,7 +82,7 @@ V1 is ready only when all of these are true:
 
 The current recorded answer is "yes" for the `2026-06-23` snapshot in [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md). Keep this gate as the standard for future refreshes instead of treating the existing proof as a permanent exemption.
 
-## Frozen Until Post-V1
+## Historical V1 Freeze Decisions
 
 - Additional physical repository or namespace rename work beyond the completed mechanical rename and bounded compatibility posture.
 - Broad pack-catalog growth beyond launch routes.
@@ -97,19 +115,20 @@ Trustworthy scientific figures have reached the accepted implementation boundary
 - Excluded boundary: OCR-heavy sources, measured or fabricated data plots, microscope-like observations, automatic scientific-meaning repair, and generated visuals represented as experimental evidence are not accepted capabilities.
 - Completion boundary: design, plan, domain skeleton, fake provider, or UI shell alone never counted. Acceptance is based on fixed-corpus replay, fail-closed mutations, opt-in live samples, both human gates, and fresh repository evidence.
 
-## Future Trigger Lanes
+## Product-Focus Follow-Through
 
 - Reuse the text-planning low-502 execution policy if future real-provider brief or blueprint planning moves beyond the current fake-first boundary.
 - Extend Responses image workflows only when a route gains meaningful provenance, revision, or preview value beyond the current opt-in stateful path.
-- Keep the current built-in starter scenarios on the stronger pack/policy contract, and open a new scenario-specific slice only when a real additional scenario has a repo-owned spec and a bounded implementation plan.
-- Continue Phase 12 modular splits only where new feature slices touch large WPF or application services.
-- Expand mixed artifact delivery and pack coverage only after the launch routes are reliable.
-- Extend the completed per-item queue controls to live providers only through a separate approval-receipt and cost-summary slice; background workers and automatic replay remain excluded.
-- Extend the completed native shell/Diagnostics accessibility baseline only through bounded slices for Narrator, system high contrast, non-default DPI, full-form controls, virtualized gallery/grid focus, touch/pen, or packaged-app behavior.
+- Reduce the current built-in scenarios to a consumed profile surface through `FOCUS-007`; no new scenario platform is authorized.
+- Move image-series and scientific state ownership out of the main window through vertical, behavior-preserving slices in `FOCUS-005`.
+- Extend queue controls to live providers only through the approval-receipt and cost-summary contract in `FOCUS-008`; background workers and automatic replay remain excluded.
+- Add one capability-aware reference/edit provider operation through `FOCUS-009`; unsupported provider capabilities must fail before dispatch.
+- Extend scholarly extraction and deterministic scientific charts only through `FOCUS-010` and `FOCUS-011` with fixed corpora and fail-closed evidence rules.
+- Replace high-value source-shape assertions with packaged native UIA or named manual/hardware evidence through `FOCUS-012`.
 
-## Longer-Term Lanes
+## Frozen Or Excluded Longer-Term Lanes
 
-- Broaden advanced workflow coverage, optional graph-style workflow views, and optional remote workflow-engine integrations.
+- Do not broaden into public pack distribution, a general operator platform, graph editing, remote workflow execution, provider abstraction growth, or partial-image streaming without a separately approved reopening decision.
 - Run the medium-term physical repository and namespace rename only through the dedicated gate in ADR 0008 and only after V1 launch hardening is complete.
 
 ## Phase 0: Product And Architecture Foundation

@@ -7,6 +7,7 @@ using System.Text.Json.Nodes;
 
 namespace ContentDeliveryStudio.Tests;
 
+[Trait("Category", "ReleaseOnly")]
 public sealed class ScientificFigureOperatorTrialScriptTests
 {
     [Fact]

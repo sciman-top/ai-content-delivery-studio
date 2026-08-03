@@ -59,7 +59,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 
 - `required`: `true`
 - Source rules: `src/ContentDeliveryStudio.Infrastructure/OpenAI/`, `src/ContentDeliveryStudio.Core/Providers/`
-- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/PROVIDER_CONFIGURATION.md`, `docs/PROVIDER_ROUTING_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/PROVIDER_CONFIGURATION.md`, `docs/PROVIDER_ROUTING_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `request-response-shape`, `images-vs-responses-routing`, `store-or-previous-response-id`, `structured-output`, `vision-review`, `real-provider-enablement`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/01-openai/openai-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
@@ -70,7 +70,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 
 - `required`: `true`
 - Source rules: `src/ContentDeliveryStudio.App/App.xaml.cs`, `src/ContentDeliveryStudio.App/Telemetry/`, `src/ContentDeliveryStudio.App/Services/ProviderCenterServices.cs`, `src/ContentDeliveryStudio.App/Properties/launchSettings.json`, `src/ContentDeliveryStudio.Infrastructure/Diagnostics/`
-- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `host-startup`, `dependency-injection`, `telemetry-registration`, `otlp-export`, `aspire-dashboard`, `http-resilience`, `health-diagnostics`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/docs-desktop` (kind: `official-doc-source`; reuse: `direct-pattern`)
@@ -85,7 +85,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 
 - `required`: `true`
 - Source rules: `src/ContentDeliveryStudio.Infrastructure/Persistence/`, `src/ContentDeliveryStudio.Core/Projects/`, `src/ContentDeliveryStudio.Core/Artifacts/`, `src/ContentDeliveryStudio.Core/Sources/`, `src/ContentDeliveryStudio.Core/Documents/`, `src/ContentDeliveryStudio.Core/Packs/`
-- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `entity-configuration`, `aggregate-shape`, `migration-behavior`, `sqlite-limitation`, `project-load-save-contract`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/03-data-persistence/EntityFramework.Docs` (kind: `official-doc-source`; reuse: `direct-pattern`)
@@ -95,7 +95,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 
 - `required`: `true`
 - Source rules: `src/ContentDeliveryStudio.Application/ToolAdapters/`, `src/ContentDeliveryStudio.Infrastructure/ToolAdapters/`, `src/ContentDeliveryStudio.Core/Operators/`, `src/ContentDeliveryStudio.Infrastructure/Composition/`, `src/ContentDeliveryStudio.Infrastructure/Delivery/`, `src/ContentDeliveryStudio.Infrastructure/Import/`, `src/ContentDeliveryStudio.Infrastructure/Sources/`
-- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/OPERATOR_RISK_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/OPERATOR_RISK_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `deterministic-composition`, `document-conversion`, `artifact-validation`, `delivery-packaging`, `diagnostics-export`, `browser-automation`, `desktop-automation`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown` (kind: `official-source`; reuse: `direct-pattern`)
@@ -114,8 +114,8 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 
 - `required`: `true`
 - Source rules: `src/ContentDeliveryStudio.App/MainWindow.xaml`, `src/ContentDeliveryStudio.App/MainWindow.xaml.cs`, `src/ContentDeliveryStudio.App/ViewModels/`, `src/ContentDeliveryStudio.App/Views/`, `src/ContentDeliveryStudio.Application/Modules/`, `src/ContentDeliveryStudio.Application/Workflows/`
-- Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
-- Required triggers: `large-viewmodel-split`, `large-view-split`, `shell-view-structure`, `workflow-graph`, `queue-gallery-stage-composition`, `module-boundary-change`
+- Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Required triggers: `large-viewmodel-split`, `large-view-split`, `shell-view-structure`, `source-structure-test-reduction`, `workflow-graph`, `queue-gallery-stage-composition`, `module-boundary-change`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/docs-desktop` (kind: `official-doc-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet` (kind: `official-toolkit-source`; reuse: `direct-pattern`)
@@ -127,7 +127,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 
 - `required`: `true`
 - Source rules: `src/ContentDeliveryStudio.Core/Packs/`, `src/ContentDeliveryStudio.Application/Packs/`, `src/ContentDeliveryStudio.Core/Projects/ReviewRubricTemplates.cs`, `src/ContentDeliveryStudio.Application/Artifacts/`, `src/ContentDeliveryStudio.Application/Workflows/`
-- Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/REFERENCE_BASIS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `pack-schema-contract`, `workflow-pack-boundary`, `industry-policy-shape`, `renderer-policy-shape`, `review-rubric-policy-shape`, `scenario-selection-contract`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet` (kind: `official-toolkit-source`; reuse: `direct-pattern`)
@@ -138,7 +138,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 
 - `required`: `true`
 - Source rules: `src/ContentDeliveryStudio.Core/Documents/`, `src/ContentDeliveryStudio.Infrastructure/Sources/`, `src/ContentDeliveryStudio.Infrastructure/Import/`, `src/ContentDeliveryStudio.Application/Artifacts/`, `src/ContentDeliveryStudio.Application/ToolAdapters/`
-- Evidence rules: `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
+- Evidence rules: `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
 - Required triggers: `pdf-structure-extraction`, `docx-structure-extraction`, `ocr-introduction`, `citation-span-evidence`, `scholarly-figure-source-extraction`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown` (kind: `official-source`; reuse: `direct-pattern`)
@@ -150,7 +150,7 @@ Do not edit this block by hand. Update the JSON manifest and rerun the sync scri
 
 - `required`: `true`
 - Source rules: `src/ContentDeliveryStudio.Core/ScientificFigures/`, `src/ContentDeliveryStudio.Application/ScientificFigures/`, `src/ContentDeliveryStudio.Infrastructure/ScientificFigures/`, `src/ContentDeliveryStudio.App/Views/ScientificFigures/`, `src/ContentDeliveryStudio.App/ViewModels/ScientificFigures/`
-- Evidence rules: `docs/research/SCIENTIFIC_FIGURE_WORKFLOW_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md`, `docs/superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md`
+- Evidence rules: `docs/research/SCIENTIFIC_FIGURE_WORKFLOW_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/change-evidence/`, `docs/superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md`, `docs/superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md`
 - Required triggers: `scholarly-source-extraction`, `claim-evidence-authority`, `formula-to-svg`, `deterministic-svg-generation`, `svg-to-png-pdf-export`, `scientific-contract-review`, `scientific-workflow-ui`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/GROBID` (kind: `community-source`; reuse: `adapt-with-review`)

@@ -42,8 +42,30 @@ Accepted evidence files:
 - `docs/PROVIDER_ROUTING_POLICY.md`
 - `docs/OPERATOR_RISK_POLICY.md`
 - `docs/V1_LAUNCH_EVIDENCE.md`
+- a new or updated bounded record under `docs/change-evidence/`
 - a new or updated file under `docs/superpowers/specs/`
 - a new or updated file under `docs/superpowers/plans/`
+
+An accepted path is only a candidate evidence carrier. For each touched enforced area, at least one changed candidate must contain a valid fenced `reference-decision` JSON block:
+
+````markdown
+```reference-decision
+{
+  "schemaVersion": 1,
+  "area": "workflow-and-ux-architecture",
+  "trigger": "large-viewmodel-split",
+  "consultedSources": [
+    { "path": "D:/CODE/external/...", "revision": "exact-revision" }
+  ],
+  "observedBehavior": "What the source and repository currently do.",
+  "decision": "adapt",
+  "affectedContract": "The repository interface or invariant affected.",
+  "focusedVerification": ["exact command or probe"]
+}
+```
+````
+
+`decision` is one of `adopt`, `adapt`, or `reject`. `trigger` must be a declared trigger family for the area. Every consulted source records a path and revision. If no source is available, `consultedSources` may be empty only when `unavailableEvidence` records `reason`, `expiresAt`, and `recoveryCondition`.
 
 The right evidence file depends on the change. For example:
 
@@ -93,7 +115,7 @@ Run:
 .\scripts\verify-reference-evidence.ps1
 ```
 
-The gate inspects the current change set by default. It also accepts explicit paths if a narrower review is needed.
+The gate inspects the current change set by default. It also accepts explicit paths if a narrower review is needed. A comma-separated `-Paths` value is supported for process-level `pwsh -File` calls.
 
 For the normal repository-wide local gate, run:
 
@@ -101,7 +123,7 @@ For the normal repository-wide local gate, run:
 .\scripts\verify-repo.ps1
 ```
 
-That wrapper runs this reference-evidence gate first, then the standard `build -> test -> format` sequence.
+That wrapper runs `build -> complete test -> reference evidence and governance -> product-focus contract -> format`. `-Mode Quick` stops after build and an explicitly filtered test run and cannot substitute for Full.
 
 For a stronger release-style preflight, run:
 
@@ -109,14 +131,14 @@ For a stronger release-style preflight, run:
 .\scripts\preflight-release.ps1
 ```
 
-The repository also includes a GitHub Actions workflow at `.github/workflows/verify-repo.yml`. On normal `push` and `pull_request` events with a usable git diff range, that workflow reuses the same gate before running the standard repository verification sequence.
+Release preflight runs release-inclusive repository verification once, including all `Category=ReleaseOnly` tests and complete format rules over the trustworthy changed-C# scope, then adds release-only text scans, actual package verification, and diff hygiene. Formatting-configuration changes or an unknown clean range trigger a full-solution format scan. The GitHub Actions workflow runs Full on pull requests and Release only on pushes to `main` or `master`, avoiding duplicate feature-push and PR release jobs.
 
 The gate passes when:
 
 - no enforced engineering area is touched
-- or the change set contains at least one acceptable evidence-file update for each touched area
+- or the change set contains at least one valid, matching structured reference decision for each touched area
 
-Before area matching runs, the repository also checks reference-governance parity through:
+Before area matching runs, the same reference gate checks reference-governance parity once through:
 
 ```powershell
 .\scripts\sync-reference-governance.ps1 -Check
@@ -130,7 +152,7 @@ That parity check currently enforces two repository-owned truths:
 The gate fails when:
 
 - an enforced engineering area is touched
-- and the change set contains no acceptable evidence-file update for that area
+- and the change set contains no valid matching structured reference decision for that area
 
 ## Relationship To Other Docs
 
@@ -141,4 +163,4 @@ The gate fails when:
 
 ## Current Limitation
 
-This policy is now enforced both locally and in GitHub Actions, but the CI path still depends on having a usable git diff range from the event payload. In rare cases such as an initial push without a meaningful base SHA, the workflow falls back to the standard repository verification sequence without diff-range reference enforcement.
+This policy is enforced both locally and in GitHub Actions. Pull requests always use their base/head range. In rare mainline pushes without a meaningful base SHA, Release falls back to parity-only reference verification and a full format scope rather than inventing a diff range.
