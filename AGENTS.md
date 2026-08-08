@@ -1,7 +1,7 @@
 # AGENTS.md - ai-content-delivery-studio
 **项目契约**: 2.0
-**全局规则复核**: 9.62
-**最后更新**: 2026-08-03
+**全局规则复核**: 9.71
+**最后更新**: 2026-08-08
 
 ## 1. 当前落点与目标归宿
 - 当前落点：`D:\CODE\ai-content-delivery-studio` 是 AI Content Delivery Studio 的实现仓，图像系列与科学图解是当前生产路径。
