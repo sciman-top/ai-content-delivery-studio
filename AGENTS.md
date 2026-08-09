@@ -1,6 +1,6 @@
 # AGENTS.md - ai-content-delivery-studio
 **项目契约**: 2.0
-**全局规则复核**: 9.73
+**全局规则复核**: 9.75
 **最后更新**: 2026-08-08
 
 ## 1. 当前落点与目标归宿
@@ -35,22 +35,22 @@
 - fixed order：`build -> test -> contract/invariant -> hotspot`。
 - build：`dotnet build ContentDeliveryStudio.sln`
 - test：`dotnet test ContentDeliveryStudio.sln --no-build`
-- quick feedback：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore`；只证明 solution build 与显式 focused tests，不能替代 full closeout。
+- focused closeout：未触及 provider、observability、persistence/schema、document/image rendering、publish/package/release 的规则、文档、测试、verifier、script/config，运行 `git diff --check` 与受影响 verifier/test；需要 solution feedback 时才运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore`，不机械叠加。
 - contract/invariant：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1` 校验结构化 reference decision 与 parity，并运行 product-focus verifier 和 format。
-- hotspot：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`；它只在 Full 之后追加 placeholder/conflict、实际 publish/package 校验与 diff hygiene。
-- canonical full gate：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1`；它按 build、完整 test、reference/product contract、format 各执行一次，不改变交付留痕中的固定阶段语义。
+- hotspot：publish/package/release 切片在 Full 之后运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`，追加 placeholder/conflict、实际 publish/package 与 diff hygiene。
+- full closeout：触及上述运行/交付风险，或 focused 发现跨面风险时运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1`；它按 build、完整 test、reference/product contract、format 各执行一次。
 - 触及 provider、observability、persistence/schema 或 operator/tooling 边界时，reference evidence 失败即阻断。
 - 证据放入 `docs/change-evidence/`；最低记录风险、命令、exit code、关键输出、兼容判断、N/A 与回滚。
 - 回滚只撤销本任务源码/规则/证据切片；生成输出和 workspace 需要时在 Git 外备份，不能用 Git 回滚伪装恢复。
 
 ## D. Global Rule -> Repo Action
-- Git profile: baseline=`main`; upstream=`origin/main`; closeout=`push_after_full_gate`。
+- Git profile: baseline=`main`; upstream=`origin/main`; closeout=`proportional_focused_or_full`。
 - `R1`：先声明 `src/`、provider adapter、workflow 或 docs 落点及验收命令。
-- `R2`：每步先跑受影响测试，再由 `scripts/verify-repo.ps1` 收口。
+- `R2`：每步跑受影响验证，closeout 只走 focused 或 full 中最低充分路径。
 - `R3`：临时 provider/交付兼容必须在 `docs/change-evidence/` 写回收条件。
 - `R4`：fake-first；live provider、凭据与外部发布须显式授权并可回滚。
 - `R5`：无两个真实消费者或失败证据，不新增 provider/workflow 抽象。
-- `R6`：C 章固定顺序与 canonical gate 都要满足；quick/单测不能替代 full closeout。
+- `R6`：C 章按风险匹配 focused/full；进入 full 时固定顺序不可绕过。
 - `R7`：保持 provider、schema、reference basis 与交付行为兼容；变化必须有迁移说明。
 - `R8`：`docs/change-evidence/` 记录依据、命令、证据与回滚。
 - `S1`：先跑通输入到可验收交付物的最薄真实链。
