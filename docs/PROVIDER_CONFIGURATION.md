@@ -11,8 +11,10 @@ The default configuration path is now single-key friendly: if no image-specific 
 TEXT_PROVIDER_KIND=openai_compatible
 TEXT_PROVIDER_BASE_URL=https://text.example/v1
 TEXT_PROVIDER_API_KEY=sk-text-provider-key
+TEXT_PROVIDER_ROUTING_MODE=auto
+TEXT_PROVIDER_PRESET=sol-xhigh
 TEXT_PROVIDER_MODEL=gpt-5.6-sol
-TEXT_PROVIDER_REASONING_EFFORT=medium
+TEXT_PROVIDER_REASONING_EFFORT=xhigh
 
 IMAGE_PROVIDER_KIND=openai_compatible_image_only
 IMAGE_PROVIDER_BASE_URL=https://image.example/v1
@@ -28,6 +30,35 @@ IMAGE_PROVIDER_CONCURRENCY_PER_KEY=10
 IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 ```
 
+`TEXT_PROVIDER_ROUTING_MODE` accepts `auto` or `fixed` and fails closed for any other value. The backward-compatible default is `fixed`. In `fixed` mode, `TEXT_PROVIDER_PRESET` is an optional selector for the active text-planning and vision-review tier; when present, it takes precedence over `TEXT_PROVIDER_MODEL` and `TEXT_PROVIDER_REASONING_EFFORT`:
+
+| Preset | Model | Reasoning effort |
+| --- | --- | --- |
+| `sol-xhigh` | `gpt-5.6-sol` | `xhigh` |
+| `sol-medium` | `gpt-5.6-sol` | `medium` |
+| `terra-xhigh` | `gpt-5.6-terra` | `xhigh` |
+| `terra-high` | `gpt-5.6-terra` | `high` |
+
+Use only one active preset per text endpoint. Numbered failover endpoints may set their own `TEXT_PROVIDER_FALLBACK_N_PRESET`; failover remains reserved for transient gateway failures and is not a model-tier selector. Existing configurations without a preset continue to use the explicit model and reasoning fields.
+
+In `auto` mode, the runtime chooses only among those four registered pairs from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity:
+
+| Workload | Selected preset |
+| --- | --- |
+| Routine series or document plan | `terra-high` |
+| Series with at least 6 items or 2,400 estimated input characters | `terra-xhigh` |
+| Series with at least 12 items or 3,600 estimated input characters | `sol-medium` |
+| Complex educational document with at least 4,500 input weight or 8 evidence rows | `terra-xhigh` |
+| Scholarly draft planning | `sol-medium` |
+| Scientific understanding chunk | `terra-xhigh` |
+| Scientific semantic review | `sol-medium`; high risk uses `sol-xhigh` |
+| Full-resolution scientific visual review | `sol-xhigh` |
+| General vision review | `terra-high`; 5 signals uses `terra-xhigh`; 8 signals uses `sol-medium` |
+
+The selected model and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. `TEXT_PROVIDER_PRESET=sol-xhigh` remains the operator rollback/default tier when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
+
+The preset pairs follow [OpenAI's GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model) and the [GPT-5.6 Terra model contract](https://developers.openai.com/api/docs/models/gpt-5.6-terra). Gateway-specific availability must still be confirmed through that gateway's model catalog.
+
 ## Optional Gateway Failover
 
 Provider failover is profile-scoped. Use the primary provider keys above for the preferred gateway, then append numbered fallback profiles when another gateway is allowed to serve the same role.
@@ -42,6 +73,7 @@ TEXT_PROVIDER_REASONING_EFFORT=medium
 
 TEXT_PROVIDER_FALLBACK_1_BASE_URL=https://backup-gateway.example/v1
 TEXT_PROVIDER_FALLBACK_1_API_KEY=sk-backup
+TEXT_PROVIDER_FALLBACK_1_PRESET=sol-medium
 TEXT_PROVIDER_FALLBACK_1_MODEL=gpt-5.6-sol
 TEXT_PROVIDER_FALLBACK_1_REASONING_EFFORT=medium
 ```
@@ -64,7 +96,7 @@ IMAGE_PROVIDER_FALLBACK_1_API_KEY_1=sk-backup
 
 `IMAGE_PROVIDER_IMAGE_SURFACE=responses` means ordinary image-generation requests default to `POST /responses` with the configured `IMAGE_PROVIDER_RESPONSES_MODEL` and an `image_generation` tool. `IMAGE_PROVIDER_IMAGE_SURFACE=images` means ordinary image-generation requests use `POST /images/generations` with `IMAGE_PROVIDER_MODEL`.
 
-The OpenAI Responses defaults are `gpt-5.6-sol` with explicit `reasoning.effort=medium`. Each profile may override `*_REASONING_EFFORT` with `none`, `low`, `medium`, `high`, `xhigh`, or `max`; image-only `/images/generations` requests do not receive a reasoning field. Fake providers remain the desktop default until `PROVIDER_MODE=live` is explicitly selected.
+The active local fixed preset defaults to `sol-xhigh` in the recommended `.env` shape above. Without `*_PRESET`, the legacy OpenAI Responses defaults remain `gpt-5.6-sol` with explicit `reasoning.effort=medium`. Each profile may override `*_REASONING_EFFORT` with `none`, `low`, `medium`, `high`, `xhigh`, or `max`; image-only `/images/generations` requests do not receive a reasoning field. Automatic text routing does not alter `gpt-image-2`, `IMAGE_PROVIDER_IMAGE_SURFACE=images`, or `POST /images/generations`. Fake providers remain the desktop default until `PROVIDER_MODE=live` is explicitly selected.
 
 Failover should be used only for transient or reachability failures: network failure, timeout, `408`, `429`, or `5xx`. Do not fail over on `400`, `401`, or `403`; those indicate request, credential, or authorization problems that should fail closed.
 

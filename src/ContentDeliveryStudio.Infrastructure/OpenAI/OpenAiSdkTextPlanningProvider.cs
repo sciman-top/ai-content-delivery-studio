@@ -61,7 +61,7 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
         Capabilities = new ProviderCapabilities(
             "openai-text-sdk",
             "OpenAI SDK Text Planning Provider",
-            [_options.TextPlanningModel],
+            OpenAiTaskModelRouter.ModelsForCapabilities(_options, _options.TextPlanningModel),
             SupportsTextPlanning: true,
             SupportsImageGeneration: false,
             SupportsVisionReview: false,
@@ -82,6 +82,7 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
             cancellationToken);
 
         var client = await _clientFactory(cancellationToken);
+        var route = OpenAiTaskModelRouter.ForPlanning(_options, request);
         var sdkOptions = OpenAiSdkResponseOptionsFactory.CreateTextPlanningOptions(_options, request);
         var endpoint = new Uri(_options.BaseUri, OpenAiRoutingDefaults.PlanningEndpointPath);
         var stopwatch = Stopwatch.StartNew();
@@ -94,14 +95,14 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
                 ?? throw new InvalidOperationException("OpenAI SDK text planning response did not include a JSON body.");
             var providerTraceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(body);
 
-            RecordTelemetry(endpoint, response, providerTraceId, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, response, providerTraceId, stopwatch.Elapsed, route);
 
             return OpenAiTextPlanningResponseMapper.ParseSeriesPlan(body);
         }
         catch (OpenAiResponsesClientException exception)
         {
             stopwatch.Stop();
-            RecordTelemetry(endpoint, exception.Result, providerTraceId: null, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, exception.Result, null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
                 $"OpenAI SDK text planning request failed with status {exception.Result.StatusCode} {exception.Result.ReasonPhrase}.",
                 exception);
@@ -171,12 +172,13 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
         Uri endpoint,
         OpenAiResponsesClientResult response,
         string? providerTraceId,
-        TimeSpan latency)
+        TimeSpan latency,
+        OpenAiTaskModelRoute? route = null)
     {
         _telemetrySink.Record(OpenAiProviderTelemetry.Create(
             Capabilities.ProviderId,
             "text-planning",
-            _options.TextPlanningModel,
+            route?.Model ?? _options.TextPlanningModel,
             endpoint,
             response.StatusCode,
             response.IsSuccessStatusCode,
@@ -199,6 +201,7 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
             cancellationToken);
 
         var client = await _clientFactory(cancellationToken);
+        var route = OpenAiTaskModelRouter.ForDocumentPlanning(_options, request);
         var sdkOptions = OpenAiSdkResponseOptionsFactory.CreateDocumentIllustrationPlanningOptions(_options, request);
         var endpoint = new Uri(_options.BaseUri, OpenAiRoutingDefaults.PlanningEndpointPath);
         var stopwatch = Stopwatch.StartNew();
@@ -211,14 +214,14 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
                 ?? throw new InvalidOperationException("OpenAI SDK document illustration response did not include a JSON body.");
             var providerTraceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(body);
 
-            RecordTelemetry(endpoint, response, providerTraceId, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, response, providerTraceId, stopwatch.Elapsed, route);
 
             return OpenAiTextPlanningResponseMapper.ParseDocumentIllustrationPlan(body);
         }
         catch (OpenAiResponsesClientException exception)
         {
             stopwatch.Stop();
-            RecordTelemetry(endpoint, exception.Result, providerTraceId: null, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, exception.Result, null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
                 $"OpenAI SDK text planning request failed with status {exception.Result.StatusCode} {exception.Result.ReasonPhrase}.",
                 exception);

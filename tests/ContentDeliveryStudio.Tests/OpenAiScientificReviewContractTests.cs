@@ -71,6 +71,34 @@ public sealed class OpenAiScientificReviewContractTests
     }
 
     [Fact]
+    public async Task VisualReview_AutoRouteKeepsPayloadAndCheckpointIdentityAligned()
+    {
+        var fixture = ScientificReviewTestFixture.Create();
+        var handler = new CapturingHandler(Response("Pass", []));
+        var checkpointStore = new CapturingCheckpointStore();
+        var provider = Provider(
+            handler,
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                TextRoutingMode = OpenAiTextRoutingMode.Auto,
+            },
+            checkpointStore);
+
+        await provider.ReviewAsync(fixture.VisualRequest, CancellationToken.None);
+
+        Assert.NotNull(checkpointStore.LoadIdentity);
+        Assert.Equal(checkpointStore.LoadIdentity, checkpointStore.SaveIdentity);
+        Assert.Equal("gpt-5.6-sol", checkpointStore.LoadIdentity!.Model);
+        Assert.Equal("xhigh", checkpointStore.LoadIdentity.ReasoningEffort);
+        using var payload = JsonDocument.Parse(handler.Body!);
+        Assert.Equal("gpt-5.6-sol", payload.RootElement.GetProperty("model").GetString());
+        Assert.Equal(
+            "xhigh",
+            payload.RootElement.GetProperty("reasoning").GetProperty("effort").GetString());
+    }
+
+    [Fact]
     public async Task VisualReview_FallsBackToHighWhenModelDoesNotSupportOriginalDetail()
     {
         var fixture = ScientificReviewTestFixture.Create();
@@ -435,6 +463,32 @@ public sealed class OpenAiScientificReviewContractTests
         public Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
         {
             throw new InvalidOperationException("Checkpoint resume must not read provider secrets.");
+        }
+    }
+
+    private sealed class CapturingCheckpointStore : IOpenAiScientificReviewCheckpointStore
+    {
+        public OpenAiScientificReviewCheckpointIdentity? LoadIdentity { get; private set; }
+
+        public OpenAiScientificReviewCheckpointIdentity? SaveIdentity { get; private set; }
+
+        public Task<ScientificProviderReviewResult?> TryLoadAsync(
+            OpenAiScientificReviewCheckpointIdentity identity,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            LoadIdentity = identity;
+            return Task.FromResult<ScientificProviderReviewResult?>(null);
+        }
+
+        public Task SaveAsync(
+            OpenAiScientificReviewCheckpointIdentity identity,
+            ScientificProviderReviewResult result,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            SaveIdentity = identity;
+            return Task.CompletedTask;
         }
     }
 }

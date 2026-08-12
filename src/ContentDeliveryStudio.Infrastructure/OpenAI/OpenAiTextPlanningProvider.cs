@@ -35,7 +35,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         Capabilities = new ProviderCapabilities(
             "openai-text",
             "OpenAI Text Planning Provider",
-            [_options.TextPlanningModel],
+            OpenAiTaskModelRouter.ModelsForCapabilities(_options, _options.TextPlanningModel),
             SupportsTextPlanning: true,
             SupportsImageGeneration: false,
             SupportsVisionReview: false,
@@ -62,14 +62,15 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        httpRequest.Content = JsonContent.Create(CreatePayload(request), options: JsonOptions);
+        var route = OpenAiTaskModelRouter.ForPlanning(_options, request);
+        httpRequest.Content = JsonContent.Create(CreatePayload(request, route), options: JsonOptions);
 
         var stopwatch = Stopwatch.StartNew();
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         stopwatch.Stop();
         if (!response.IsSuccessStatusCode)
         {
-            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
                 $"OpenAI text planning request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
         }
@@ -80,7 +81,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             cancellationToken,
             "OpenAI text planning response contained invalid JSON.");
         var providerTraceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
-        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
+        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed, route);
         return OpenAiTextPlanningResponseMapper.ParseSeriesPlan(document.RootElement);
     }
 
@@ -115,15 +116,15 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         CancellationToken cancellationToken)
         => CreateDocumentIllustrationPlanInternalAsync(request, cancellationToken);
 
-    private Dictionary<string, object?> CreatePayload(PlanningRequest request)
+    private Dictionary<string, object?> CreatePayload(PlanningRequest request, OpenAiTaskModelRoute route)
     {
         return new Dictionary<string, object?>
         {
-            ["model"] = _options.TextPlanningModel,
+            ["model"] = route.Model,
             ["instructions"] = "You plan coherent image series. Return only valid JSON that matches the requested schema.",
             ["input"] = BuildInput(request),
             ["store"] = Routing.Store,
-            ["reasoning"] = OpenAiReasoningPayload.Create(_options.ReasoningEffort),
+            ["reasoning"] = OpenAiReasoningPayload.Create(route.ReasoningEffort),
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = new Dictionary<string, object?>
@@ -152,8 +153,9 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        var route = OpenAiTaskModelRouter.ForDocumentPlanning(_options, request);
         httpRequest.Content = JsonContent.Create(
-            OpenAiTextPlanningRequestMapper.CreateDocumentIllustrationResponsesPayload(_options, request),
+            OpenAiTextPlanningRequestMapper.CreateDocumentIllustrationResponsesPayload(_options, request, route),
             options: JsonOptions);
 
         var stopwatch = Stopwatch.StartNew();
@@ -161,7 +163,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         stopwatch.Stop();
         if (!response.IsSuccessStatusCode)
         {
-            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
                 $"OpenAI text planning request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
         }
@@ -172,7 +174,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             cancellationToken,
             "OpenAI document illustration planning response contained invalid JSON.");
         var providerTraceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
-        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
+        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed, route);
         return OpenAiTextPlanningResponseMapper.ParseDocumentIllustrationPlan(document.RootElement);
     }
 
@@ -240,12 +242,13 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         HttpResponseMessage response,
         JsonElement? body,
         string? providerTraceId,
-        TimeSpan latency)
+        TimeSpan latency,
+        OpenAiTaskModelRoute? route = null)
     {
         _telemetrySink.Record(OpenAiProviderTelemetry.Create(
             Capabilities.ProviderId,
             "text-planning",
-            _options.TextPlanningModel,
+            route?.Model ?? _options.TextPlanningModel,
             endpoint,
             response,
             body,

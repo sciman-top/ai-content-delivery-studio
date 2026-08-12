@@ -104,6 +104,39 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task TextPlanningProvider_AutoRouteKeepsPayloadAndTelemetryModelAligned()
+    {
+        var telemetrySink = new RecordingTelemetrySink();
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_auto_plan",
+              "output_text": "{\"summary\":\"Auto plan\",\"items\":[{\"title\":\"Opening\",\"brief\":\"A brief\",\"promptDraft\":\"A prompt\"}]}",
+              "usage": {"input_tokens": 10, "output_tokens": 10, "total_tokens": 20}
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiTextPlanningProvider(
+            httpClient,
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                TextRoutingMode = OpenAiTextRoutingMode.Auto,
+            },
+            new StaticSecretStore("test-openai-key"),
+            telemetrySink);
+
+        await provider.CreatePlanAsync(
+            new PlanningRequest("routine topic", "teachers", 2),
+            CancellationToken.None);
+
+        using var payload = JsonDocument.Parse(handler.LastRequestBody!);
+        Assert.Equal("gpt-5.6-terra", payload.RootElement.GetProperty("model").GetString());
+        Assert.Equal("high", payload.RootElement.GetProperty("reasoning").GetProperty("effort").GetString());
+        Assert.Equal("gpt-5.6-terra", Assert.Single(telemetrySink.Events).Model);
+    }
+
+    [Fact]
     public async Task TextPlanningProvider_ParsesMessageContentFallback()
     {
         using var handler = new CaptureHandler(_ => JsonResponse(
@@ -363,6 +396,38 @@ public sealed class OpenAiProviderContractTests
         Assert.Equal("gpt-5.6-sol", client.LastOptions!.Model);
         Assert.False(client.LastOptions.StoredOutputEnabled);
         Assert.NotNull(client.LastOptions.TextOptions);
+    }
+
+    [Fact]
+    public async Task SdkTextPlanningProvider_AutoRouteSetsModelReasoningAndTelemetryTogether()
+    {
+        var telemetrySink = new RecordingTelemetrySink();
+        var client = new FakeResponsesClient(SdkJsonResponse(
+            """
+            {
+              "id": "resp_sdk_auto_plan",
+              "output_text": "{\"summary\":\"Auto plan\",\"items\":[{\"title\":\"Opening\",\"brief\":\"A brief\",\"promptDraft\":\"A prompt\"}]}",
+              "usage": {"input_tokens": 10, "output_tokens": 10, "total_tokens": 20}
+            }
+            """));
+        var provider = new OpenAiSdkTextPlanningProvider(
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                TextRoutingMode = OpenAiTextRoutingMode.Auto,
+            },
+            client,
+            new StaticSecretStore("test-openai-key"),
+            telemetrySink);
+
+        await provider.CreatePlanAsync(
+            new PlanningRequest("routine topic", "teachers", 2),
+            CancellationToken.None);
+
+        Assert.Equal("gpt-5.6-terra", client.LastOptions!.Model);
+        Assert.NotNull(client.LastOptions.ReasoningOptions);
+        Assert.Equal("high", client.LastOptions.ReasoningOptions.ReasoningEffortLevel.ToString());
+        Assert.Equal("gpt-5.6-terra", Assert.Single(telemetrySink.Events).Model);
     }
 
     [Fact]

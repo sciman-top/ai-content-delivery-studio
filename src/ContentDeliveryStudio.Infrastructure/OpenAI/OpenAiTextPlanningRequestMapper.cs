@@ -24,14 +24,20 @@ public static class OpenAiTextPlanningRequestMapper
     public static Dictionary<string, object?> CreateResponsesPayload(
         OpenAiProviderOptions options,
         PlanningRequest request)
+        => CreateResponsesPayload(options, request, OpenAiTaskModelRouter.ForPlanning(options, request));
+
+    internal static Dictionary<string, object?> CreateResponsesPayload(
+        OpenAiProviderOptions options,
+        PlanningRequest request,
+        OpenAiTaskModelRoute route)
     {
         return new Dictionary<string, object?>
         {
-            ["model"] = options.TextPlanningModel,
+            ["model"] = route.Model,
             ["instructions"] = Instructions,
             ["input"] = BuildInput(request),
             ["store"] = OpenAiRoutingDefaults.StoreRemoteStateByDefault,
-            ["reasoning"] = OpenAiReasoningPayload.Create(options.ReasoningEffort),
+            ["reasoning"] = OpenAiReasoningPayload.Create(route.ReasoningEffort),
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = CreateTextFormatPayload(),
@@ -59,14 +65,23 @@ public static class OpenAiTextPlanningRequestMapper
     public static Dictionary<string, object?> CreateDocumentIllustrationResponsesPayload(
         OpenAiProviderOptions options,
         DocumentIllustrationPlanningRequest request)
+        => CreateDocumentIllustrationResponsesPayload(
+            options,
+            request,
+            OpenAiTaskModelRouter.ForDocumentPlanning(options, request));
+
+    internal static Dictionary<string, object?> CreateDocumentIllustrationResponsesPayload(
+        OpenAiProviderOptions options,
+        DocumentIllustrationPlanningRequest request,
+        OpenAiTaskModelRoute route)
     {
         return new Dictionary<string, object?>
         {
-            ["model"] = options.TextPlanningModel,
+            ["model"] = route.Model,
             ["instructions"] = "You plan document-grounded illustration targets. Return only valid JSON that matches the requested schema. Do not fabricate evidence, experimental results, or unsupported factual claims.",
             ["input"] = BuildDocumentIllustrationInput(request),
             ["store"] = OpenAiRoutingDefaults.StoreRemoteStateByDefault,
-            ["reasoning"] = OpenAiReasoningPayload.Create(options.ReasoningEffort),
+            ["reasoning"] = OpenAiReasoningPayload.Create(route.ReasoningEffort),
             ["text"] = new Dictionary<string, object?>
             {
                 ["format"] = new Dictionary<string, object?>

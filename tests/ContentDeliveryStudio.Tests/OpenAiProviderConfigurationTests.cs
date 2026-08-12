@@ -86,6 +86,118 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Equal("IMAGE_PROVIDER_APP_SECRET", configuration.Image.AppSecretSecretName);
     }
 
+    [Theory]
+    [InlineData(TextProviderModelPresets.SolXHigh, "gpt-5.6-sol", "xhigh")]
+    [InlineData(TextProviderModelPresets.SolMedium, "gpt-5.6-sol", "medium")]
+    [InlineData(TextProviderModelPresets.TerraXHigh, "gpt-5.6-terra", "xhigh")]
+    [InlineData(TextProviderModelPresets.TerraHigh, "gpt-5.6-terra", "high")]
+    public void ProviderEnvironmentConfiguration_ResolvesSupportedTextProviderPreset(
+        string preset,
+        string expectedModel,
+        string expectedReasoningEffort)
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_PRESET"] = preset,
+                ["TEXT_PROVIDER_MODEL"] = "legacy-model",
+                ["TEXT_PROVIDER_REASONING_EFFORT"] = "low",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Empty(configuration.Validate());
+        Assert.Equal(preset, configuration.Text.ModelPreset);
+        Assert.Equal(expectedModel, configuration.Text.Model);
+        Assert.Equal(expectedReasoningEffort, configuration.Text.ReasoningEffort);
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_RejectsUnknownTextProviderPreset()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_PRESET"] = "unknown-tier",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.6-sol",
+                ["TEXT_PROVIDER_REASONING_EFFORT"] = "xhigh",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Contains(
+            configuration.Validate(),
+            error => error.Contains("unknown-tier", StringComparison.Ordinal)
+                && error.Contains(TextProviderModelPresets.TerraHigh, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_LoadsAutoRoutingAndProjectsItToRuntimeOptions()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_ROUTING_MODE"] = TextProviderRoutingModes.Auto,
+                ["TEXT_PROVIDER_PRESET"] = TextProviderModelPresets.SolXHigh,
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        var options = OpenAiProviderOptions.FromTextProviderEnvironment(configuration);
+
+        Assert.Empty(configuration.Validate());
+        Assert.Equal(TextProviderRoutingModes.Auto, configuration.Text.RoutingMode);
+        Assert.Equal(OpenAiTextRoutingMode.Auto, options.TextRoutingMode);
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_RejectsUnknownTextRoutingMode()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.6-sol",
+                ["TEXT_PROVIDER_ROUTING_MODE"] = "adaptive-magic",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Contains(
+            configuration.Validate(),
+            error => error.Contains("adaptive-magic", StringComparison.Ordinal)
+                && error.Contains(TextProviderRoutingModes.Fixed, StringComparison.Ordinal));
+        Assert.Throws<InvalidOperationException>(() =>
+            OpenAiProviderOptions.FromTextProviderEnvironment(configuration));
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_DefaultsPrimaryAndFallbackRoutingToFixed()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://primary.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-primary",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.6-sol",
+                ["TEXT_PROVIDER_FALLBACK_1_BASE_URL"] = "https://backup.example/v1",
+                ["TEXT_PROVIDER_FALLBACK_1_API_KEY"] = "sk-backup",
+                ["TEXT_PROVIDER_FALLBACK_1_MODEL"] = "gpt-5.6-sol",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://primary.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Equal(TextProviderRoutingModes.Fixed, configuration.Text.RoutingMode);
+        Assert.Equal(TextProviderRoutingModes.Fixed, Assert.Single(configuration.TextFallbacks).RoutingMode);
+    }
+
     [Fact]
     public void ProviderEnvironmentConfiguration_FallsBackToTextApiKeyWhenImageKeyIsMissing()
     {

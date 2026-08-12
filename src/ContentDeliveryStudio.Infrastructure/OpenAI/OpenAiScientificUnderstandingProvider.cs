@@ -49,6 +49,7 @@ public sealed class OpenAiScientificUnderstandingProvider : IScientificUnderstan
         ScientificUnderstandingChunkRequest request,
         CancellationToken cancellationToken)
     {
+        var route = OpenAiTaskModelRouter.ForScientificUnderstanding(_options, request);
         var sdkOptions = OpenAiSdkResponseOptionsFactory.CreateScientificUnderstandingOptions(
             _options,
             request);
@@ -68,13 +69,13 @@ public sealed class OpenAiScientificUnderstandingProvider : IScientificUnderstan
                 ?? throw new InvalidOperationException(
                     "OpenAI scientific understanding response did not include a JSON body.");
             var result = OpenAiScientificUnderstandingMapper.Parse(body, request);
-            RecordTelemetry(endpoint, response, result.ProviderTraceId, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, response, result.ProviderTraceId, stopwatch.Elapsed, route);
             return result;
         }
         catch (OpenAiResponsesClientException exception)
         {
             stopwatch.Stop();
-            RecordTelemetry(endpoint, exception.Result, null, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, exception.Result, null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
                 $"OpenAI scientific understanding request failed with status {exception.Result.StatusCode} {exception.Result.ReasonPhrase}.",
                 exception);
@@ -97,12 +98,13 @@ public sealed class OpenAiScientificUnderstandingProvider : IScientificUnderstan
         Uri endpoint,
         OpenAiResponsesClientResult response,
         string? providerTraceId,
-        TimeSpan latency)
+        TimeSpan latency,
+        OpenAiTaskModelRoute route)
     {
         _telemetrySink.Record(OpenAiProviderTelemetry.Create(
             "openai-scientific-understanding",
             "scientific-understanding",
-            _options.TextPlanningModel,
+            route.Model,
             endpoint,
             response.StatusCode,
             response.IsSuccessStatusCode,

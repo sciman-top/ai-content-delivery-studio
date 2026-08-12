@@ -1,6 +1,6 @@
+using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.Documents;
 using ContentDeliveryStudio.Core.Providers;
-using ContentDeliveryStudio.Application.ScientificFigures;
 using OpenAI.Responses;
 
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
@@ -12,12 +12,14 @@ public static class OpenAiSdkResponseOptionsFactory
         OpenAiProviderOptions options,
         PlanningRequest request)
     {
+        var route = OpenAiTaskModelRouter.ForPlanning(options, request);
         return new CreateResponseOptions(
-            options.TextPlanningModel,
+            route.Model,
             [ResponseItem.CreateUserMessageItem(OpenAiTextPlanningRequestMapper.BuildInput(request))])
         {
             Instructions = OpenAiTextPlanningRequestMapper.Instructions,
             StoredOutputEnabled = OpenAiRoutingDefaults.StoreRemoteStateByDefault,
+            ReasoningOptions = OpenAiReasoningOptionsFactory.Create(route.ReasoningEffort),
             TextOptions = new ResponseTextOptions
             {
                 TextFormat = ResponseTextFormat.CreateJsonSchemaFormat(
@@ -32,12 +34,14 @@ public static class OpenAiSdkResponseOptionsFactory
         OpenAiProviderOptions options,
         DocumentIllustrationPlanningRequest request)
     {
+        var route = OpenAiTaskModelRouter.ForDocumentPlanning(options, request);
         return new CreateResponseOptions(
-            options.TextPlanningModel,
+            route.Model,
             [ResponseItem.CreateUserMessageItem(OpenAiTextPlanningRequestMapper.BuildDocumentIllustrationInput(request))])
         {
             Instructions = "You plan document-grounded illustration targets. Return only valid JSON that matches the requested schema. Do not fabricate evidence, experimental results, or unsupported factual claims.",
             StoredOutputEnabled = OpenAiRoutingDefaults.StoreRemoteStateByDefault,
+            ReasoningOptions = OpenAiReasoningOptionsFactory.Create(route.ReasoningEffort),
             TextOptions = new ResponseTextOptions
             {
                 TextFormat = ResponseTextFormat.CreateJsonSchemaFormat(
@@ -52,12 +56,14 @@ public static class OpenAiSdkResponseOptionsFactory
         OpenAiProviderOptions options,
         ScientificUnderstandingChunkRequest request)
     {
+        var route = OpenAiTaskModelRouter.ForScientificUnderstanding(options, request);
         return new CreateResponseOptions(
-            options.TextPlanningModel,
+            route.Model,
             [ResponseItem.CreateUserMessageItem(OpenAiScientificUnderstandingMapper.BuildInput(request))])
         {
             Instructions = OpenAiScientificUnderstandingMapper.Instructions,
             StoredOutputEnabled = false,
+            ReasoningOptions = OpenAiReasoningOptionsFactory.Create(route.ReasoningEffort),
             MaxOutputTokenCount = OpenAiScientificUnderstandingMapper.MaxOutputTokens,
             TextOptions = new ResponseTextOptions
             {
@@ -68,5 +74,13 @@ public static class OpenAiSdkResponseOptionsFactory
             },
         };
     }
+}
+
+internal static class OpenAiReasoningOptionsFactory
+{
+    public static ResponseReasoningOptions Create(string effort) => new()
+    {
+        ReasoningEffortLevel = new ResponseReasoningEffortLevel(effort),
+    };
 }
 #pragma warning restore OPENAI001

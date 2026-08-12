@@ -12,6 +12,12 @@ public enum OpenAiProviderOperation
     All = TextPlanning | ImageGeneration | VisionReview,
 }
 
+public enum OpenAiTextRoutingMode
+{
+    Fixed = 0,
+    Auto = 1,
+}
+
 public sealed record OpenAiProviderOptions
 {
     public Uri BaseUri { get; init; } = new("https://api.openai.com/v1/");
@@ -29,6 +35,8 @@ public sealed record OpenAiProviderOptions
     public string TextPlanningModel { get; init; } = "gpt-5.6-sol";
 
     public string ReasoningEffort { get; init; } = "medium";
+
+    public OpenAiTextRoutingMode TextRoutingMode { get; init; } = OpenAiTextRoutingMode.Fixed;
 
     public string ImageGenerationModel { get; init; } = "gpt-image-2";
 
@@ -78,6 +86,7 @@ public sealed record OpenAiProviderOptions
             UsesSharedTextApiKeyFallback = false,
             TextPlanningModel = RequireModel(endpoint, "Text provider"),
             ReasoningEffort = endpoint.ReasoningEffort,
+            TextRoutingMode = ParseTextRoutingMode(endpoint.RoutingMode),
             ImageGenerationModel = string.Empty,
             VisionReviewModel = RequireModel(endpoint, "Text provider"),
             AllowedOperations = OpenAiProviderOperation.TextPlanning | OpenAiProviderOperation.VisionReview,
@@ -176,6 +185,11 @@ public sealed record OpenAiProviderOptions
             errors.Add("OpenAI reasoning effort is invalid.");
         }
 
+        if (!Enum.IsDefined(TextRoutingMode))
+        {
+            errors.Add("OpenAI text routing mode is invalid.");
+        }
+
         if (VisionReviewBatchItemLimit <= 0)
         {
             errors.Add("Vision review batch item limit must be greater than zero.");
@@ -223,6 +237,17 @@ public sealed record OpenAiProviderOptions
         return string.IsNullOrWhiteSpace(endpoint.Model)
             ? throw new InvalidOperationException($"{displayName} model is required.")
             : endpoint.Model;
+    }
+
+    private static OpenAiTextRoutingMode ParseTextRoutingMode(string value)
+    {
+        return value switch
+        {
+            TextProviderRoutingModes.Fixed => OpenAiTextRoutingMode.Fixed,
+            TextProviderRoutingModes.Auto => OpenAiTextRoutingMode.Auto,
+            _ => throw new InvalidOperationException(
+                $"Text provider routing mode '{value}' is invalid. Validate provider configuration before creating runtime options."),
+        };
     }
 
     private static Uri EnsureTrailingSlash(Uri uri)

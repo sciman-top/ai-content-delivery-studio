@@ -38,14 +38,16 @@ public sealed class OpenAiScientificReviewProvider
         var allowedIds = request.Specification.Elements.Select(item => item.ElementId)
             .Concat(request.Specification.Relations.Select(item => item.RelationId))
             .ToHashSet(StringComparer.Ordinal);
+        var route = OpenAiTaskModelRouter.ForScientificSemanticReview(_options, request);
         return ReviewAsync(
             "scientific-semantic-review",
             OpenAiScientificReviewMapper.CreateSemanticPayload(
                 request,
-                _options.VisionReviewModel,
-                _options.ReasoningEffort),
+                route.Model,
+                route.ReasoningEffort),
             allowedIds,
             ScientificReviewLayer.Semantic.ToString(),
+            route,
             cancellationToken);
     }
 
@@ -55,14 +57,16 @@ public sealed class OpenAiScientificReviewProvider
     {
         var allowedIds = request.RegionCrops.Select(item => item.ResponsibleItemId)
             .ToHashSet(StringComparer.Ordinal);
+        var route = OpenAiTaskModelRouter.ForScientificVisualReview(_options, request);
         return ReviewAsync(
             "scientific-visual-review",
             OpenAiScientificReviewMapper.CreateVisualPayload(
                 request,
-                _options.VisionReviewModel,
-                _options.ReasoningEffort),
+                route.Model,
+                route.ReasoningEffort),
             allowedIds,
             ScientificReviewLayer.Visual.ToString(),
+            route,
             cancellationToken);
     }
 
@@ -71,6 +75,7 @@ public sealed class OpenAiScientificReviewProvider
         Dictionary<string, object?> payload,
         IReadOnlySet<string> allowedIds,
         string layerResponsibleItemId,
+        OpenAiTaskModelRoute route,
         CancellationToken cancellationToken)
     {
         if (!_options.RealApiEnabled)
@@ -83,8 +88,8 @@ public sealed class OpenAiScientificReviewProvider
         var checkpointIdentity = OpenAiScientificReviewCheckpointIdentity.Create(
             operation,
             endpoint,
-            _options.VisionReviewModel,
-            _options.ReasoningEffort,
+            route.Model,
+            route.ReasoningEffort,
             payloadBytes);
         var resumed = await _checkpointStore.TryLoadAsync(checkpointIdentity, cancellationToken);
         if (resumed is not null)
@@ -125,7 +130,7 @@ public sealed class OpenAiScientificReviewProvider
                 stopwatch.Stop();
                 if (!response.IsSuccessStatusCode)
                 {
-                    RecordTelemetry(operation, endpoint, response, null, null, stopwatch.Elapsed);
+                    RecordTelemetry(operation, endpoint, response, null, null, stopwatch.Elapsed, route);
                     if (IsTransient(response.StatusCode) && attempt < MaximumTransientAttempts)
                     {
                         await DelayForRetryAsync(attempt, cancellationToken);
@@ -139,7 +144,7 @@ public sealed class OpenAiScientificReviewProvider
                 await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
                 using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
                 var traceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
-                RecordTelemetry(operation, endpoint, response, document.RootElement, traceId, stopwatch.Elapsed);
+                RecordTelemetry(operation, endpoint, response, document.RootElement, traceId, stopwatch.Elapsed, route);
                 var result = OpenAiScientificReviewMapper.Parse(
                     document.RootElement,
                     allowedIds,
@@ -178,12 +183,13 @@ public sealed class OpenAiScientificReviewProvider
         HttpResponseMessage response,
         JsonElement? body,
         string? traceId,
-        TimeSpan latency)
+        TimeSpan latency,
+        OpenAiTaskModelRoute route)
     {
         _telemetrySink.Record(OpenAiProviderTelemetry.Create(
             "openai-scientific-review",
             operation,
-            _options.VisionReviewModel,
+            route.Model,
             endpoint,
             response,
             body,

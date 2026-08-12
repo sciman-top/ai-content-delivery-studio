@@ -6,6 +6,52 @@ public enum ProviderImageGenerationSurface
     Responses = 1,
 }
 
+public static class TextProviderRoutingModes
+{
+    public const string Fixed = "fixed";
+    public const string Auto = "auto";
+
+    public static IReadOnlyList<string> Names { get; } = [Fixed, Auto];
+}
+
+public static class TextProviderModelPresets
+{
+    public const string SolXHigh = "sol-xhigh";
+    public const string SolMedium = "sol-medium";
+    public const string TerraXHigh = "terra-xhigh";
+    public const string TerraHigh = "terra-high";
+
+    public static IReadOnlyList<string> Names { get; } =
+        [SolXHigh, SolMedium, TerraXHigh, TerraHigh];
+
+    public static bool TryResolve(string? name, out string model, out string reasoningEffort)
+    {
+        switch (name?.Trim().ToLowerInvariant())
+        {
+            case SolXHigh:
+                model = "gpt-5.6-sol";
+                reasoningEffort = "xhigh";
+                return true;
+            case SolMedium:
+                model = "gpt-5.6-sol";
+                reasoningEffort = "medium";
+                return true;
+            case TerraXHigh:
+                model = "gpt-5.6-terra";
+                reasoningEffort = "xhigh";
+                return true;
+            case TerraHigh:
+                model = "gpt-5.6-terra";
+                reasoningEffort = "high";
+                return true;
+            default:
+                model = string.Empty;
+                reasoningEffort = string.Empty;
+                return false;
+        }
+    }
+}
+
 public sealed record ProviderEnvironmentConfiguration(
     ProviderEndpointEnvironmentConfiguration Text,
     ProviderEndpointEnvironmentConfiguration Image,
@@ -107,7 +153,9 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
     int ConcurrencyPerKey,
     int TotalConcurrency,
     ProviderImageGenerationSurface ImageGenerationSurface,
-    string ReasoningEffort = "medium")
+    string ReasoningEffort = "medium",
+    string? ModelPreset = null,
+    string RoutingMode = TextProviderRoutingModes.Fixed)
 {
     public static ProviderEndpointEnvironmentConfiguration CreateText(IReadOnlyDictionary<string, string?> values)
         => CreateText(values, "TEXT_PROVIDER");
@@ -125,11 +173,19 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
         string prefix)
     {
         var keyNames = GetPresentSecretNames(values, $"{prefix}_API_KEY");
+        var modelPreset = GetPresentValue(values, $"{prefix}_PRESET");
+        var routingMode = GetValue(values, $"{prefix}_ROUTING_MODE", TextProviderRoutingModes.Fixed)
+            .Trim()
+            .ToLowerInvariant();
+        var hasResolvedPreset = TextProviderModelPresets.TryResolve(
+            modelPreset,
+            out var presetModel,
+            out var presetReasoningEffort);
         return new ProviderEndpointEnvironmentConfiguration(
             prefix,
             GetValue(values, $"{prefix}_KIND", "openai_compatible"),
             GetUri(values, $"{prefix}_BASE_URL"),
-            GetValue(values, $"{prefix}_MODEL", string.Empty),
+            hasResolvedPreset ? presetModel : GetValue(values, $"{prefix}_MODEL", string.Empty),
             ResponsesModel: null,
             keyNames.FirstOrDefault(),
             keyNames,
@@ -139,7 +195,11 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             GetPositiveInt(values, $"{prefix}_CONCURRENCY_PER_KEY", 1),
             GetPositiveInt(values, $"{prefix}_TOTAL_CONCURRENCY", Math.Max(1, keyNames.Count)),
             ProviderImageGenerationSurface.Images,
-            GetValue(values, $"{prefix}_REASONING_EFFORT", "medium"));
+            hasResolvedPreset
+                ? presetReasoningEffort
+                : GetValue(values, $"{prefix}_REASONING_EFFORT", "medium"),
+            modelPreset,
+            routingMode);
     }
 
     public static ProviderEndpointEnvironmentConfiguration CreateImage(IReadOnlyDictionary<string, string?> values)
@@ -244,6 +304,21 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
         if (ReasoningEffort is not ("none" or "low" or "medium" or "high" or "xhigh" or "max"))
         {
             errors.Add($"{displayName} reasoning effort is invalid.");
+        }
+
+        if (Prefix.StartsWith("TEXT_PROVIDER", StringComparison.Ordinal)
+            && ModelPreset is not null
+            && !TextProviderModelPresets.TryResolve(ModelPreset, out _, out _))
+        {
+            errors.Add(
+                $"{displayName} preset '{ModelPreset}' is invalid. Allowed presets: {string.Join(", ", TextProviderModelPresets.Names)}.");
+        }
+
+        if (Prefix.StartsWith("TEXT_PROVIDER", StringComparison.Ordinal)
+            && !TextProviderRoutingModes.Names.Contains(RoutingMode, StringComparer.Ordinal))
+        {
+            errors.Add(
+                $"{displayName} routing mode '{RoutingMode}' is invalid. Allowed modes: {string.Join(", ", TextProviderRoutingModes.Names)}.");
         }
 
         return errors;

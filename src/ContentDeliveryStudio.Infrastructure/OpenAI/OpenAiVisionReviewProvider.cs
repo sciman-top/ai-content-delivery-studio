@@ -36,7 +36,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         Capabilities = new ProviderCapabilities(
             "openai-vision",
             "OpenAI Vision Review Provider",
-            [_options.VisionReviewModel],
+            OpenAiTaskModelRouter.ModelsForCapabilities(_options, _options.VisionReviewModel),
             SupportsTextPlanning: false,
             SupportsImageGeneration: false,
             SupportsVisionReview: true,
@@ -61,18 +61,19 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
             ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
         var imageDataUrl = await CreateCompactImageDataUrlAsync(request.AssetPath, cancellationToken);
         var routing = BaseRouting with { Store = _options.VisionReviewUsesStoredResponses };
+        var route = OpenAiTaskModelRouter.ForVisionReview(_options, request);
 
         var endpoint = new Uri(_options.BaseUri, routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        httpRequest.Content = JsonContent.Create(CreatePayload(request, imageDataUrl, routing), options: JsonOptions);
+        httpRequest.Content = JsonContent.Create(CreatePayload(request, imageDataUrl, routing, route), options: JsonOptions);
 
         var stopwatch = Stopwatch.StartNew();
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         stopwatch.Stop();
         if (!response.IsSuccessStatusCode)
         {
-            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed);
+            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
                 $"OpenAI vision review request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
         }
@@ -80,7 +81,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
         var providerTraceId = ExtractTraceId(document.RootElement);
-        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed);
+        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed, route);
         var outputText = ExtractOutputText(document.RootElement);
         var review = JsonSerializer.Deserialize<OpenAiVisionReviewResponse>(outputText, JsonOptions)
             ?? throw new InvalidOperationException("OpenAI vision review response was empty.");
@@ -107,12 +108,13 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
     private Dictionary<string, object?> CreatePayload(
         VisionReviewRequest request,
         string imageDataUrl,
-        OpenAiRoutingDecision routing)
+        OpenAiRoutingDecision routing,
+        OpenAiTaskModelRoute route)
     {
         var payload = new Dictionary<string, object?>
         {
-            ["model"] = _options.VisionReviewModel,
-            ["reasoning"] = OpenAiReasoningPayload.Create(_options.ReasoningEffort),
+            ["model"] = route.Model,
+            ["reasoning"] = OpenAiReasoningPayload.Create(route.ReasoningEffort),
             ["instructions"] = "Review the generated image against the prompt and rubric. Return only valid JSON with the final decision and a short comment.",
             ["input"] = new object[]
             {
@@ -334,12 +336,13 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         HttpResponseMessage response,
         JsonElement? body,
         string? providerTraceId,
-        TimeSpan latency)
+        TimeSpan latency,
+        OpenAiTaskModelRoute route)
     {
         _telemetrySink.Record(OpenAiProviderTelemetry.Create(
             Capabilities.ProviderId,
             "vision-review",
-            _options.VisionReviewModel,
+            route.Model,
             endpoint,
             response,
             body,
