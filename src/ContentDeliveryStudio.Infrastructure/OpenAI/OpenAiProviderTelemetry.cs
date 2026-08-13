@@ -96,7 +96,10 @@ public sealed class DiagnosticProviderCallTelemetrySink : IProviderCallTelemetry
                 telemetry.Latency.TotalMilliseconds,
                 telemetry.Usage?.TotalTokens,
                 telemetry.EstimatedCostUsd,
-                activity?.TraceId.ToString() ?? Activity.Current?.TraceId.ToString()));
+                activity?.TraceId.ToString() ?? Activity.Current?.TraceId.ToString(),
+                telemetry.ModelPreset,
+                telemetry.ReasoningEffort,
+                telemetry.RouteReason));
         }
         catch (Exception exception) when (exception is not StackOverflowException)
         {
@@ -114,6 +117,9 @@ public sealed class DiagnosticProviderCallTelemetrySink : IProviderCallTelemetry
         activity.SetTag("provider.latency_ms", telemetry.Latency.TotalMilliseconds);
         activity.SetTag("provider.rate_card", telemetry.RateCardName);
         activity.SetTag("provider.estimated_cost_usd", (double)telemetry.EstimatedCostUsd);
+        activity.SetTag("provider.model_preset", telemetry.ModelPreset);
+        activity.SetTag("provider.reasoning_effort", telemetry.ReasoningEffort);
+        activity.SetTag("provider.route_reason", telemetry.RouteReason);
         activity.SetTag("otel.status_code", telemetry.Succeeded ? "OK" : "ERROR");
 
         if (Uri.TryCreate(telemetry.Endpoint, UriKind.Absolute, out var endpoint))
@@ -152,6 +158,9 @@ public sealed class DiagnosticProviderCallTelemetrySink : IProviderCallTelemetry
             { "http.response.status_code", telemetry.HttpStatusCode },
             { "provider.succeeded", telemetry.Succeeded },
             { "provider.rate_card", telemetry.RateCardName },
+            { "provider.model_preset", telemetry.ModelPreset },
+            { "provider.reasoning_effort", telemetry.ReasoningEffort },
+            { "provider.route_reason", telemetry.RouteReason },
         };
 
         if (Uri.TryCreate(telemetry.Endpoint, UriKind.Absolute, out var endpoint))
@@ -177,7 +186,10 @@ public sealed record ProviderCallTelemetry(
     TimeSpan Latency,
     decimal EstimatedCostUsd,
     string RateCardName,
-    DateTimeOffset RecordedAt);
+    DateTimeOffset RecordedAt,
+    string? ModelPreset = null,
+    string? ReasoningEffort = null,
+    string? RouteReason = null);
 
 public sealed record ProviderTokenUsage(
     int? InputTokens,
@@ -205,7 +217,8 @@ internal static class OpenAiProviderTelemetry
         string? providerTraceId,
         TimeSpan latency,
         decimal estimatedCostUsd,
-        string rateCardName)
+        string rateCardName,
+        OpenAiTaskModelRoute? route = null)
     {
         ArgumentNullException.ThrowIfNull(response);
 
@@ -221,7 +234,8 @@ internal static class OpenAiProviderTelemetry
             providerTraceId,
             latency,
             estimatedCostUsd,
-            rateCardName);
+            rateCardName,
+            route);
     }
 
     public static ProviderCallTelemetry Create(
@@ -236,7 +250,8 @@ internal static class OpenAiProviderTelemetry
         string? providerTraceId,
         TimeSpan latency,
         decimal estimatedCostUsd,
-        string rateCardName)
+        string rateCardName,
+        OpenAiTaskModelRoute? route = null)
     {
         return new ProviderCallTelemetry(
             providerId,
@@ -251,7 +266,10 @@ internal static class OpenAiProviderTelemetry
             latency,
             succeeded ? estimatedCostUsd : 0m,
             rateCardName,
-            DateTimeOffset.UtcNow);
+            DateTimeOffset.UtcNow,
+            route?.Preset,
+            route?.ReasoningEffort,
+            route?.Reason);
     }
 
     public static ProviderTokenUsage? ExtractUsage(JsonElement root)

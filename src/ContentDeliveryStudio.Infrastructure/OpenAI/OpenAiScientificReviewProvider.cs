@@ -196,6 +196,7 @@ public sealed class OpenAiScientificReviewProvider
             traceId,
             latency,
             estimatedCostUsd: 0m,
-            rateCardName: "unpriced"));
+            rateCardName: "unpriced",
+            route));
     }
 }

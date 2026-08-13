@@ -255,7 +255,8 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             providerTraceId,
             latency,
             _rateCard.TextPlanningRequestUsd,
-            _rateCard.Name));
+            _rateCard.Name,
+            route));
     }
 
     private static async Task<JsonDocument> ParseJsonOrThrowAsync(

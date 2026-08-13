@@ -44,6 +44,9 @@ public sealed class JsonlDiagnosticsEventJournal : IDiagnosticsEventJournal
         "latencyMilliseconds",
         "totalTokens",
         "estimatedCostUsd",
+        "modelPreset",
+        "reasoningEffort",
+        "routeReason",
     ];
     private static readonly HashSet<string> QueueEventNames =
     [
@@ -166,7 +169,10 @@ public sealed class JsonlDiagnosticsEventJournal : IDiagnosticsEventJournal
                 Succeeded: value.Succeeded,
                 LatencyMilliseconds: value.LatencyMilliseconds,
                 TotalTokens: value.TotalTokens,
-                EstimatedCostUsd: value.EstimatedCostUsd));
+                EstimatedCostUsd: value.EstimatedCostUsd,
+                ModelPreset: SanitizeString(value.ModelPreset),
+                ReasoningEffort: SanitizeString(value.ReasoningEffort),
+                RouteReason: SanitizeString(value.RouteReason)));
 
         TryAppend(entry);
     }
@@ -368,7 +374,10 @@ public sealed class JsonlDiagnosticsEventJournal : IDiagnosticsEventJournal
             && properties.Succeeded is null
             && properties.LatencyMilliseconds is null
             && properties.TotalTokens is null
-            && properties.EstimatedCostUsd is null;
+            && properties.EstimatedCostUsd is null
+            && properties.ModelPreset is null
+            && properties.ReasoningEffort is null
+            && properties.RouteReason is null;
     }
 
     private static bool ValidateProviderEntry(DiagnosticsLogEntry entry)
@@ -383,6 +392,9 @@ public sealed class JsonlDiagnosticsEventJournal : IDiagnosticsEventJournal
             && properties.LatencyMilliseconds is >= 0 and <= 86_400_000
             && properties.TotalTokens is null or >= 0
             && properties.EstimatedCostUsd is >= 0 and <= 1_000_000
+            && IsSafeOptionalString(properties.ModelPreset)
+            && IsSafeOptionalString(properties.ReasoningEffort)
+            && IsSafeOptionalString(properties.RouteReason)
             && properties.ProjectId is null
             && properties.TaskId is null
             && properties.Status is null

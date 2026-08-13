@@ -66,7 +66,10 @@ public sealed record ProviderCallDiagnosticsEvent(
     double LatencyMilliseconds,
     int? TotalTokens,
     decimal EstimatedCostUsd,
-    string? CorrelationId = null);
+    string? CorrelationId = null,
+    string? ModelPreset = null,
+    string? ReasoningEffort = null,
+    string? RouteReason = null);
 
 public sealed record DiagnosticsLogReadResult(
     IReadOnlyList<DiagnosticsLogEntry> Entries,
@@ -97,4 +100,7 @@ public sealed record DiagnosticsLogProperties(
     bool? Succeeded = null,
     double? LatencyMilliseconds = null,
     int? TotalTokens = null,
-    decimal? EstimatedCostUsd = null);
+    decimal? EstimatedCostUsd = null,
+    string? ModelPreset = null,
+    string? ReasoningEffort = null,
+    string? RouteReason = null);

@@ -53,3 +53,37 @@ Add deterministic `auto|fixed` text routing across exactly four registered model
 - Unknown routing modes and presets are validation errors; live registration remains fail-closed.
 - `.env` stays Git-ignored; API key values are neither logged nor committed.
 - Rollback: set `TEXT_PROVIDER_ROUTING_MODE=fixed`; the retained `TEXT_PROVIDER_PRESET=sol-xhigh` becomes authoritative without changing image routing. Revert this evidence, provider routing, tests, and documentation slice only if code rollback is required.
+
+## 2026-08-13 Route Observability Follow-Through
+
+```reference-decision
+{
+  "schemaVersion": 1,
+  "area": "host-and-observability",
+  "trigger": "telemetry-registration",
+  "consultedSources": [
+    {
+      "path": "D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/opentelemetry-dotnet",
+      "revision": "2eeede10c1bb7b87f3f6f70264a804d8ee9de948"
+    },
+    {
+      "path": "docs/superpowers/specs/2026-07-29-structured-diagnostics-log-ingestion-design.md",
+      "revision": "repository-baseline-2026-08-13"
+    }
+  ],
+  "observedBehavior": "The existing provider telemetry seam emits bounded Activity and Meter tags and mirrors a typed subset into a fail-closed local JSONL journal. The journal rejects unknown fields, unsafe strings, and fields assigned to the wrong event category.",
+  "decision": "adapt",
+  "affectedContract": "Add only the selected model preset, reasoning effort, and bounded route reason to the existing provider-call telemetry and diagnostics records. Preserve the existing sanitizer, exact property allowlist, queue/provider category separation, local retention limits, and best-effort non-interference with provider behavior.",
+  "focusedVerification": [
+    "dotnet test tests/ContentDeliveryStudio.Tests/ContentDeliveryStudio.Tests.csproj --filter FullyQualifiedName~OpenAiProviderContractTests|FullyQualifiedName~JsonlDiagnosticsEventJournalTests --no-restore",
+    "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1"
+  ]
+}
+```
+
+- Scope: preserve all existing thresholds and provider outputs while projecting the already-selected preset, reasoning effort, and bounded route reason into provider telemetry, OpenTelemetry tags, and the redacted local JSONL diagnostics journal.
+- Privacy boundary: prompts, source text, credentials, endpoints, and response bodies are not added to diagnostics. New values pass through the existing string sanitizer and exact property allowlist.
+- Focused verification: `dotnet test tests/ContentDeliveryStudio.Tests/ContentDeliveryStudio.Tests.csproj --filter "FullyQualifiedName~OpenAiTaskModelRouterTests|FullyQualifiedName~OpenAiProviderContractTests|FullyQualifiedName~OpenAiScientificReviewContractTests|FullyQualifiedName~JsonlDiagnosticsEventJournalTests" --no-restore` exited `0`; `64 / 64` passed after synchronizing the fail-closed journal allowlist and category invariant.
+- Full closeout: `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1` exited `0`; build completed with `0` warnings and `0` errors, tests passed `812 / 812`, both enforced reference areas passed, the product-focus contract passed, and `dotnet format --verify-no-changes` passed.
+- Correctness boundary: this proves deterministic routing observability and persistence, not that the current thresholds are statistically optimal. Live paired model evaluation remains outside this provider-free slice.
+- Rollback: revert only the additive telemetry/diagnostics fields, their tests, and this follow-through section; routing behavior and provider request payloads remain unchanged.

@@ -187,7 +187,8 @@ public sealed class OpenAiSdkTextPlanningProvider : ITextPlanningProvider
             providerTraceId,
             latency,
             _rateCard.TextPlanningRequestUsd,
-            _rateCard.Name));
+            _rateCard.Name,
+            route));
     }
 
     private async Task<DocumentIllustrationPlanningResult> CreateDocumentIllustrationPlanInternalAsync(

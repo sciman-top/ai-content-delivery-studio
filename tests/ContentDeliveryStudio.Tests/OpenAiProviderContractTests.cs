@@ -133,7 +133,11 @@ public sealed class OpenAiProviderContractTests
         using var payload = JsonDocument.Parse(handler.LastRequestBody!);
         Assert.Equal("gpt-5.6-terra", payload.RootElement.GetProperty("model").GetString());
         Assert.Equal("high", payload.RootElement.GetProperty("reasoning").GetProperty("effort").GetString());
-        Assert.Equal("gpt-5.6-terra", Assert.Single(telemetrySink.Events).Model);
+        var telemetry = Assert.Single(telemetrySink.Events);
+        Assert.Equal("gpt-5.6-terra", telemetry.Model);
+        Assert.Equal(TextProviderModelPresets.TerraHigh, telemetry.ModelPreset);
+        Assert.Equal("high", telemetry.ReasoningEffort);
+        Assert.Equal("routine-series-plan", telemetry.RouteReason);
     }
 
     [Fact]

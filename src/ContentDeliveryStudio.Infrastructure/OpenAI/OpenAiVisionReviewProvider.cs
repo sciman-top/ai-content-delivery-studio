@@ -349,7 +349,8 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
             providerTraceId,
             latency,
             _rateCard.VisionReviewRequestUsd,
-            _rateCard.Name));
+            _rateCard.Name,
+            route));
     }
 
     private sealed record OpenAiVisionReviewResponse(

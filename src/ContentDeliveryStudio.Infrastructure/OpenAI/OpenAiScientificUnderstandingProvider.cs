@@ -113,6 +113,7 @@ public sealed class OpenAiScientificUnderstandingProvider : IScientificUnderstan
             providerTraceId,
             latency,
             estimatedCostUsd: 0m,
-            rateCardName: "unpriced"));
+            rateCardName: "unpriced",
+            route));
     }
 }

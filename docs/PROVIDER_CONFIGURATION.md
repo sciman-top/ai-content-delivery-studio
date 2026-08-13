@@ -55,7 +55,7 @@ In `auto` mode, the runtime chooses only among those four registered pairs from 
 | Full-resolution scientific visual review | `sol-xhigh` |
 | General vision review | `terra-high`; 5 signals uses `terra-xhigh`; 8 signals uses `sol-medium` |
 
-The selected model and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. `TEXT_PROVIDER_PRESET=sol-xhigh` remains the operator rollback/default tier when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
+The selected model and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. Provider-call telemetry and the local redacted diagnostics journal also record the bounded `modelPreset`, `reasoningEffort`, and `routeReason` fields so route quality can be evaluated without retaining prompts or secrets. `TEXT_PROVIDER_PRESET=sol-xhigh` remains the operator rollback/default tier when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
 
 The preset pairs follow [OpenAI's GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model) and the [GPT-5.6 Terra model contract](https://developers.openai.com/api/docs/models/gpt-5.6-terra). Gateway-specific availability must still be confirmed through that gateway's model catalog.
 

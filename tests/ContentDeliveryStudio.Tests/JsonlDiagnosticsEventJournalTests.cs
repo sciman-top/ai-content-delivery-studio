@@ -32,7 +32,10 @@ public sealed class JsonlDiagnosticsEventJournalTests
             LatencyMilliseconds: 125.5,
             TotalTokens: 20,
             EstimatedCostUsd: 0.03m,
-            CorrelationId: "trace123"));
+            CorrelationId: "trace123",
+            ModelPreset: "terra-high",
+            ReasoningEffort: "high",
+            RouteReason: "routine-series-plan"));
 
         var result = await journal.ReadRecentAsync(500, CancellationToken.None);
 
@@ -42,6 +45,9 @@ public sealed class JsonlDiagnosticsEventJournalTests
         Assert.Equal(taskId.ToString("N"), result.Entries[0].Properties.TaskId);
         Assert.Equal("completed", result.Entries[1].EventName);
         Assert.Equal("[redacted]", result.Entries[1].Properties.Model);
+        Assert.Equal("terra-high", result.Entries[1].Properties.ModelPreset);
+        Assert.Equal("high", result.Entries[1].Properties.ReasoningEffort);
+        Assert.Equal("routine-series-plan", result.Entries[1].Properties.RouteReason);
         Assert.Equal(0, result.DroppedCount);
         Assert.Equal(0, result.InvalidCount);
         Assert.DoesNotContain("sk-not-a-safe-model", await File.ReadAllTextAsync(journal.ActiveFilePath));
