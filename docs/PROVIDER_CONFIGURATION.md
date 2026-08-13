@@ -46,16 +46,18 @@ In `auto` mode, the runtime chooses only among those four registered pairs from 
 | Workload | Selected preset |
 | --- | --- |
 | Routine series or document plan | `terra-high` |
-| Series with at least 6 items or 2,400 estimated input characters | `terra-xhigh` |
-| Series with at least 12 items or 3,600 estimated input characters | `sol-medium` |
-| Complex educational document with at least 4,500 input weight or 8 evidence rows | `terra-xhigh` |
-| Scholarly draft planning | `sol-medium` |
-| Scientific understanding chunk | `terra-xhigh` |
-| Scientific semantic review | `sol-medium`; high risk uses `sol-xhigh` |
+| Series with at least 6 items or 2,400 estimated input characters | `sol-medium` |
+| Series with at least 12 items or 3,600 estimated input characters | `sol-xhigh` |
+| Complex educational document with at least 4,500 input weight or 8 evidence rows | `sol-xhigh` |
+| Scholarly draft planning | `sol-xhigh` |
+| Scientific understanding chunk | `sol-xhigh` |
+| Scientific semantic review | `sol-xhigh` |
 | Full-resolution scientific visual review | `sol-xhigh` |
-| General vision review | `terra-high`; 5 signals uses `terra-xhigh`; 8 signals uses `sol-medium` |
+| General vision review | `terra-high`; 5 signals uses `terra-xhigh`; 8 signals uses `sol-xhigh` |
 
 The selected model and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. Provider-call telemetry and the local redacted diagnostics journal also record the bounded `modelPreset`, `reasoningEffort`, and `routeReason` fields so route quality can be evaluated without retaining prompts or secrets. `TEXT_PROVIDER_PRESET=sol-xhigh` remains the operator rollback/default tier when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
+
+Quality-first invariant: every workload explicitly classified as complex, scholarly, scientific understanding/review, high risk, or full-resolution scientific visual review routes to `gpt-5.6-sol` with `xhigh` reasoning. `terra-high` and `terra-xhigh` remain limited to routine and moderate-complexity work; input size alone enters `sol-medium` before the complex threshold. This invariant prioritizes correctness probability over latency and cost, but does not replace schema validation, deterministic checks, or final approval.
 
 The preset pairs follow [OpenAI's GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model) and the [GPT-5.6 Terra model contract](https://developers.openai.com/api/docs/models/gpt-5.6-terra). Gateway-specific availability must still be confirmed through that gateway's model catalog.
 

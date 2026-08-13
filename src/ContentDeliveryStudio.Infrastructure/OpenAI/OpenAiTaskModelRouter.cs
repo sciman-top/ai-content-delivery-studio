@@ -47,13 +47,13 @@ internal static class OpenAiTaskModelRouter
         if (request.ItemCount >= ComplexSeriesItemCount
             || inputCharacters >= ComplexSeriesInputCharacters)
         {
-            return Preset(TextProviderModelPresets.SolMedium, "complex-series-plan");
+            return Preset(TextProviderModelPresets.SolXHigh, "complex-series-plan");
         }
 
         if (request.ItemCount >= LargeSeriesItemCount
             || inputCharacters >= LargeSeriesInputCharacters)
         {
-            return Preset(TextProviderModelPresets.TerraXHigh, "large-series-plan");
+            return Preset(TextProviderModelPresets.SolMedium, "large-series-plan");
         }
 
         return Preset(TextProviderModelPresets.TerraHigh, "routine-series-plan");
@@ -73,7 +73,7 @@ internal static class OpenAiTaskModelRouter
         if (request.DocumentFamily is DocumentFamily.ScholarlyDraft
             || request.StrictnessLevel is IllustrationStrictnessLevel.ScholarlyDraft)
         {
-            return Preset(TextProviderModelPresets.SolMedium, "scholarly-document-plan");
+            return Preset(TextProviderModelPresets.SolXHigh, "scholarly-document-plan");
         }
 
         var evidenceRows = request.Sections.Count
@@ -83,7 +83,7 @@ internal static class OpenAiTaskModelRouter
             && (DocumentIllustrationExecutionPolicy.EstimateInputWeight(request) >= ComplexDocumentInputWeight
                 || evidenceRows >= ComplexDocumentEvidenceRows))
         {
-            return Preset(TextProviderModelPresets.TerraXHigh, "complex-educational-document-plan");
+            return Preset(TextProviderModelPresets.SolXHigh, "complex-educational-document-plan");
         }
 
         return Preset(TextProviderModelPresets.TerraHigh, "routine-document-plan");
@@ -97,7 +97,7 @@ internal static class OpenAiTaskModelRouter
         ArgumentNullException.ThrowIfNull(request);
         return options.TextRoutingMode is OpenAiTextRoutingMode.Fixed
             ? Fixed(options.TextPlanningModel, options.ReasoningEffort)
-            : Preset(TextProviderModelPresets.TerraXHigh, "scientific-understanding-chunk");
+            : Preset(TextProviderModelPresets.SolXHigh, "scientific-understanding-chunk");
     }
 
     public static OpenAiTaskModelRoute ForScientificSemanticReview(
@@ -113,7 +113,7 @@ internal static class OpenAiTaskModelRouter
 
         return request.Specification.RiskLevel is ScientificFigureRiskLevel.High
             ? Preset(TextProviderModelPresets.SolXHigh, "high-risk-scientific-semantic-review")
-            : Preset(TextProviderModelPresets.SolMedium, "scientific-semantic-review");
+            : Preset(TextProviderModelPresets.SolXHigh, "scientific-semantic-review");
     }
 
     public static OpenAiTaskModelRoute ForScientificVisualReview(
@@ -142,7 +142,7 @@ internal static class OpenAiTaskModelRouter
             + (request.ReviewPrep?.EvidenceSelections.Count ?? 0);
         if (signals >= ComplexVisionSignals)
         {
-            return Preset(TextProviderModelPresets.SolMedium, "complex-vision-review");
+            return Preset(TextProviderModelPresets.SolXHigh, "complex-vision-review");
         }
 
         if (signals >= ModerateVisionSignals)

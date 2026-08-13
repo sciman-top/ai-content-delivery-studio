@@ -87,3 +87,37 @@ Add deterministic `auto|fixed` text routing across exactly four registered model
 - Full closeout: `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1` exited `0`; build completed with `0` warnings and `0` errors, tests passed `812 / 812`, both enforced reference areas passed, the product-focus contract passed, and `dotnet format --verify-no-changes` passed.
 - Correctness boundary: this proves deterministic routing observability and persistence, not that the current thresholds are statistically optimal. Live paired model evaluation remains outside this provider-free slice.
 - Rollback: revert only the additive telemetry/diagnostics fields, their tests, and this follow-through section; routing behavior and provider request payloads remain unchanged.
+
+## 2026-08-13 Quality-First Complex Routing
+
+```reference-decision
+{
+  "schemaVersion": 1,
+  "area": "openai-provider",
+  "trigger": "real-provider-enablement",
+  "consultedSources": [
+    {
+      "path": "https://developers.openai.com/api/docs/guides/model-guidance?model=gpt-5.6-sol",
+      "revision": "fetched-2026-08-13"
+    },
+    {
+      "path": "docs/PROVIDER_CONFIGURATION.md",
+      "revision": "quality-first-policy-2026-08-13"
+    }
+  ],
+  "observedBehavior": "Official GPT-5.6 guidance identifies gpt-5.6-sol as the flagship capability model and high or xhigh reasoning as appropriate only when demanding workloads benefit. The product owner explicitly prioritizes correctness over latency and cost for high-difficulty and complex stages.",
+  "decision": "adapt",
+  "affectedContract": "In automatic routing, every workload explicitly classified as complex, scholarly, scientific understanding/review, high risk, or full-resolution scientific visual review must select sol-xhigh. Routine work remains terra-high, moderate vision review remains terra-xhigh, and large-but-not-complex series planning remains sol-medium.",
+  "focusedVerification": [
+    "dotnet test tests/ContentDeliveryStudio.Tests/ContentDeliveryStudio.Tests.csproj --filter FullyQualifiedName~OpenAiTaskModelRouterTests --no-restore",
+    "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1"
+  ]
+}
+```
+
+- Scope: change only deterministic automatic route selection, its contract tests, operator documentation, and this evidence. Fixed mode, failover, image generation, prompts, schemas, and provider request shapes remain unchanged.
+- Focused verification: the routing and provider-contract test selection exited `0`; `61 / 61` passed, including a direct invariant that every complex/scientific route resolves to preset `sol-xhigh`, model `gpt-5.6-sol`, and reasoning effort `xhigh`.
+- Full closeout: `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1` exited `0`; build completed with `0` warnings and `0` errors, tests passed `813 / 813`, reference evidence and product-focus contracts passed, and `dotnet format --verify-no-changes` passed.
+- Correctness boundary: using `gpt-5.6-sol/xhigh` increases the quality-first allocation for difficult work but cannot guarantee correctness; structured output validation, deterministic invariants, review checkpoints, and final approval remain mandatory.
+- Paid/live provider: not invoked in this repository verification slice.
+- Rollback: revert this section and the matching route/test/documentation changes; operators can also immediately set `TEXT_PROVIDER_ROUTING_MODE=fixed` with `TEXT_PROVIDER_PRESET=sol-xhigh`.
