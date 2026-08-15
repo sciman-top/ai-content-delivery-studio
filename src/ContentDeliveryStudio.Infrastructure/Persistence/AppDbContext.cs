@@ -1,4 +1,3 @@
-using ContentDeliveryStudio.Core.Artifacts;
 using ContentDeliveryStudio.Core.Documents;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Sources;
@@ -42,10 +41,6 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<SourceAsset> SourceAssets => Set<SourceAsset>();
 
-    public DbSet<OutputArtifact> OutputArtifacts => Set<OutputArtifact>();
-
-    public DbSet<ArtifactPackage> ArtifactPackages => Set<ArtifactPackage>();
-
     public DbSet<RoutedRepairPatch> RoutedRepairPatches => Set<RoutedRepairPatch>();
 
     internal DbSet<ScientificFigureWorkflowPersistenceRecord> ScientificFigureWorkflows =>
@@ -53,8 +48,6 @@ public sealed class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Ignore<ArtifactManifest>();
-        modelBuilder.Ignore<ArtifactManifestItem>();
         modelBuilder.Ignore<ExtractedContent>();
         modelBuilder.Ignore<EvidenceAnchor>();
         modelBuilder.Ignore<IllustrationTarget>();
@@ -84,10 +77,6 @@ public sealed class AppDbContext : DbContext
         modelBuilder.ApplyConfiguration(new ReviewResultConfiguration());
 
         modelBuilder.ApplyConfiguration(new SourceAssetConfiguration());
-
-        modelBuilder.ApplyConfiguration(new OutputArtifactConfiguration());
-
-        modelBuilder.ApplyConfiguration(new ArtifactPackageConfiguration());
 
         modelBuilder.ApplyConfiguration(new RoutedRepairPatchConfiguration());
 

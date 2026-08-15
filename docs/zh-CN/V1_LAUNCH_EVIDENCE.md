@@ -40,17 +40,17 @@
 | 发布指标 | 当前状态 | 当前证据 | 剩余缺口 |
 | --- | --- | --- | --- |
 | 主路径在不使用付费 API、且不手工改数据库的前提下，连续三次完成 fake-first 端到端运行。 | 已由 automated repo evidence 验证 | `PrimaryLaunchRouteVerificationTests.PrimaryLaunchRoute_CompletesThreeConsecutiveFakeFirstRunsWithoutManualDatabaseEdits` 证明了三次连续的短需求 -> brief -> blueprint -> series -> review -> delivery 运行，并使用 fake provider 与持久化本地状态检查。支撑切片覆盖仍在 `FakeWorkflowTests`、`ProjectApplicationServiceTests` 和 `BriefWorkflowApplicationServiceTests` 中。 | 未来仍可补一条面向用户的脚本来镜像这组测试，但发布指标已经有自动化证明。 |
-| 一组 `2-item` 样本序列能通过 opt-in OpenAI 路径完成，并验证 request provenance、review evidence 和 secret redaction。 | 已由 live provider evidence 验证 | `artifacts/live-openai-v1-sample/20260611-132947/live-v1-sample-summary.json` 记录了当前可用的最新 opt-in OpenAI 运行。该样本通过了 launch preflight，完成了真实 text planning、真实 image generation、真实 image review、final approval、delivery export 和 diagnostics export。`outputs/delivery/manifest.json` 显示两个 item 都在首次批准尝试中完成，并保留了 prompt snapshot 与 metadata；`diagnostics/diagnostics.json` 与 `openai-launch-preflight.json` 保持了 secret 值脱敏。该样本还验证了当前紧凑 visual-review 路径，以及官方 SDK Images 路径上受控的瞬时 `502 upstream_error` 重试。自动化护栏仍在 `OpenAiProviderContractTests`、`OpenAiProviderConfigurationTests`、`OpenAiProviderSmokeTests`、`OpenAiLaunchPreflightTests`、`OpenAiLaunchPreflightReportWriterTests`、`OpenAiLaunchPreflightToolAdapterTests`、`ToolAdapterServiceCollectionExtensionsTests`、`DiagnosticsPackageTests`、`OpenAiOfficialSdkImageGenerationProviderTests` 与 `OpenAiLiveV1SampleRouteTests` 中。 | 只有当 provider 行为发生实质变化，或需要更新的 live snapshot 时，才需要刷新这组证据。 |
+| 一组 `2-item` 样本序列能通过 opt-in OpenAI 路径完成，并验证 request provenance、review evidence 和 secret redaction。 | 已由 live provider evidence 验证 | `artifacts/live-openai-v1-sample/20260611-132947/live-v1-sample-summary.json` 记录了当前可用的 opt-in OpenAI 运行。当前自动化护栏保留在 provider contract、configuration、preflight、diagnostics、official-SDK 与 live-sample route 测试中。 | 只有当 provider 行为发生实质变化，或需要更新的 live snapshot 时，才需要刷新这组证据。 |
 | 文章或纯文本规划在默认情况下不依赖真实 provider，也能生成并提升已批准的插图目标。 | 已由 automated repo evidence 验证 | `SupportingValidationRouteVerificationTests.SupportingValidationRoute_CompletesFakeFirstDocumentPlanningThroughDelivery` 证明了文章/纯文本规划、已批准目标提升、fake-first 生成、review、approval 和 delivery export 的整条路径。`DocumentIllustrationWorkflowTests` 继续覆盖更窄的规划与 oversize-guard 边界。 | 以后仍值得补一条面向用户的脚本，但该指标已经具备自动化证明。 |
-| 教学海报证明路径能够导出确定性文本合成 provenance 和人工 approval evidence。 | 已由 automated repo evidence 验证 | `EducationalPosterLaunchProofTests.EducationalPosterProofPath_ExportsCompositionProvenanceAndApprovalEvidence` 证明了确定性合成、composition-report provenance 复制和 final approval evidence 在一次 delivery export 中全部成立。支撑组件覆盖仍在 `SkiaDeterministicTextComposerTests`、`DeterministicTextCompositionToolAdapterTests` 和 `DeliveryPackageTests` 中。 | 未来真实样本导出仍然有价值，但该指标已经具备自动化证明。 |
-| 第一条真实低风险 operator 动作能端到端跑通，并写出审计输出与 rollback 或 cleanup 说明。 | 已由 automated repo evidence 验证 | `ArtifactValidationToolAdapterTests.LowRiskAutoRepairService_RunsArtifactValidationAdapterAndWritesDiagnosticsReport` 证明了本地验证输出能写入 diagnostics 目录，并带有 cleanup guidance。`LowRiskAutoRepairServiceTests` 证明了“仅低风险”执行边界。 | 未来可以补一个用户可见的 launch bundle，但该指标已经具备自动化证明。 |
+| 教学海报证明路径能够导出确定性文本合成 provenance 和人工 approval evidence。 | 已由 automated repo evidence 验证 | `EducationalPosterLaunchProofTests.EducationalPosterProofPath_ExportsCompositionProvenanceAndApprovalEvidence` 证明了确定性合成、composition-report provenance 复制和 final approval evidence；组件覆盖保留在 `SkiaDeterministicTextComposerTests` 与 `DeliveryPackageTests`。 | 未来真实样本导出仍然有价值，但该指标已经具备自动化证明。 |
+| 第一条真实低风险 operator 动作能端到端跑通，并写出审计输出与 rollback 或 cleanup 说明。 | 历史快照证据 | 快照当时由后来已退休的 ToolAdapter/Operator 测试面证明；该指标只描述锁定快照，不代表当前仍存在通用 operator runtime。 | 新 operator 能力必须有真实产品消费者和 fresh acceptance，不能为维持历史指标恢复已退休平台。 |
 
 ## 当前结论
 
 - 对于 `2026-06-23` 快照，`5 / 5` 个发布指标都具备已记录的自动化仓库证据或真实 provider 证据，并继续保持已验证状态。
 - 对于 `2026-06-23` 这次快照，live OpenAI 发布缺口仍然处于关闭状态。
 - 本快照记录的自动化门禁通过规范仓库验证路径，并保持 `433 / 433` 测试通过。
-- 更新的 repo-only 基线已按 [Phase 7 产品硬化收口证据](../change-evidence/20260730-phase7-product-hardening-closeout.md) 通过 `734 / 734` 测试；这个更新的自动化结果不会刷新 live OpenAI 样本，也不会静默创建新的 V1 发布快照。
+- 后续仓库门禁不会刷新 live OpenAI 样本，也不会静默创建新的 V1 发布快照。
 - 本快照中的最新真实 OpenAI 证据仍来自 `artifacts/live-openai-v1-sample/20260611-132947`；这次读数刷新不需要新增付费 provider 重跑。
 - 仓库现在同时具备只读 preflight 路径，以及一组与同一发布声明对应的已记录真实 provider 证据。
 
@@ -89,16 +89,11 @@
 - `tests/ContentDeliveryStudio.Tests/OpenAiProviderSmokeTests.cs`
 - `tests/ContentDeliveryStudio.Tests/OpenAiLaunchPreflightTests.cs`
 - `tests/ContentDeliveryStudio.Tests/OpenAiLaunchPreflightReportWriterTests.cs`
-- `tests/ContentDeliveryStudio.Tests/OpenAiLaunchPreflightToolAdapterTests.cs`
-- `tests/ContentDeliveryStudio.Tests/ToolAdapterServiceCollectionExtensionsTests.cs`
 - `tests/ContentDeliveryStudio.Tests/DiagnosticsPackageTests.cs`
 - `tests/ContentDeliveryStudio.Tests/SkiaDeterministicTextComposerTests.cs`
-- `tests/ContentDeliveryStudio.Tests/DeterministicTextCompositionToolAdapterTests.cs`
 - `tests/ContentDeliveryStudio.Tests/EducationalPosterLaunchProofTests.cs`
 - `tests/ContentDeliveryStudio.Tests/DeliveryPackageTests.cs`
 - `tests/ContentDeliveryStudio.Tests/ProjectApplicationServiceTests.cs`
-- `tests/ContentDeliveryStudio.Tests/ArtifactValidationToolAdapterTests.cs`
-- `tests/ContentDeliveryStudio.Tests/LowRiskAutoRepairServiceTests.cs`
 - `scripts/verify-repo.ps1`
 - `scripts/sync-reference-governance.ps1`
 - `scripts/verify-reference-evidence.ps1`

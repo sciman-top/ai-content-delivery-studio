@@ -140,8 +140,7 @@ public sealed class SupportingValidationRouteVerificationTests
                         decision.HumanApproved,
                         decision.Reviewer,
                         decision.Notes,
-                        decision.DecidedAt,
-                        ArtifactRole: "supporting-validation-final-image"));
+                        decision.DecidedAt));
             }
 
             var delivery = await service.ExportDeliveryPackageAsync(

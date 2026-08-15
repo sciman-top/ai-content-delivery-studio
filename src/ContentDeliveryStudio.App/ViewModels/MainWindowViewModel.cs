@@ -25,13 +25,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly GenerationWorkflowCoordinator _generationWorkflowCoordinator;
     private readonly ReviewWorkflowCoordinator _reviewWorkflowCoordinator;
     private readonly DeliveryWorkflowCoordinator _deliveryWorkflowCoordinator;
-    private readonly PlanEditorWorkflowCoordinator _planEditorWorkflowCoordinator;
     private readonly WorkflowGraphCoordinator _workflowGraphCoordinator;
     private readonly ProjectWorkbenchProjectionCoordinator _projectWorkbenchProjectionCoordinator;
     private readonly ProjectWorkbenchStateCoordinator _projectWorkbenchStateCoordinator;
-    private readonly WorkbenchInspectorCoordinator _workbenchInspectorCoordinator;
     private readonly MainWindowLocalizationCoordinator _mainWindowLocalizationCoordinator;
-    private readonly MainWindowSelectionSummaryCoordinator _mainWindowSelectionSummaryCoordinator;
     private readonly GalleryThumbnailWarmupService _galleryThumbnailWarmupService;
     private readonly IDocumentSourceFilePickerService? _documentSourceFilePickerService;
     private readonly MainWindowOperationGate _operationGate;
@@ -107,34 +104,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _generationWorkflowCoordinator = new GenerationWorkflowCoordinator(projectService);
         _reviewWorkflowCoordinator = new ReviewWorkflowCoordinator(projectService, localizationService);
         _deliveryWorkflowCoordinator = new DeliveryWorkflowCoordinator(projectService);
-        _planEditorWorkflowCoordinator = new PlanEditorWorkflowCoordinator(projectService);
         _workflowGraphCoordinator = new WorkflowGraphCoordinator(localizationService);
         _projectWorkbenchProjectionCoordinator = new ProjectWorkbenchProjectionCoordinator(localizationService, projectService);
         _projectWorkbenchStateCoordinator = new ProjectWorkbenchStateCoordinator(
             localizationService,
             projectService,
             _projectWorkbenchProjectionCoordinator);
-        _workbenchInspectorCoordinator = new WorkbenchInspectorCoordinator(
-            _projectWorkspaceCoordinator,
-            _planningWorkflowCoordinator,
-            _generationWorkflowCoordinator);
         _mainWindowLocalizationCoordinator = new MainWindowLocalizationCoordinator(
             localizationService,
             scientificDeliveryPackageSaveService is null
                 ? null
                 : bytes => scientificDeliveryPackageSaveService.SavePackage(bytes));
-        _mainWindowSelectionSummaryCoordinator = new MainWindowSelectionSummaryCoordinator();
         var generationSettingsWorkspace = new ImageSeriesGenerationSettingsWorkspaceViewModel(
-            _mainWindowSelectionSummaryCoordinator.BuildStyleRecipeSummary);
+            BuildStyleRecipeSummary);
         var planningWorkspace = new ImageSeriesPlanningWorkspaceViewModel(
             RunImageSeriesCreateSeriesAsync,
             RunImageSeriesAddItemAsync,
             RunImageSeriesCreatePromptVersionAsync,
             CanRunMutation,
             () => SelectedProject is not null,
-            item => _mainWindowSelectionSummaryCoordinator.BuildSelectedSeriesItemTitle(
-                item,
-                Text(LocalizationKey.NoItemSelectedForPrompt)),
+            item => item?.Title ?? Text(LocalizationKey.NoItemSelectedForPrompt),
             OnImageSeriesSelectedSeriesChanged,
             OnImageSeriesSelectedItemChanged,
             OnImageSeriesPromptProjectionChanged);
@@ -155,9 +144,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
             () => SelectedProject is not null,
             QueueGalleryWarmup,
             ApplyImageSeriesGalleryEditResult,
-            row => _mainWindowSelectionSummaryCoordinator.BuildSelectedCandidateSummary(
-                row,
-                Text(LocalizationKey.NoCandidateSelectedForEdit)),
+            row => row is null
+                ? Text(LocalizationKey.NoCandidateSelectedForEdit)
+                : $"{row.ItemTitle} ({row.CandidateImageId:N})",
             OnImageSeriesGalleryProjectionChanged);
         galleryWorkspace.ApplyProviderCapability(imageEditProvider?.Capabilities);
         var reviewWorkspace = new ImageSeriesReviewWorkspaceViewModel(
@@ -321,9 +310,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
-            CurrentProjectSummary = _mainWindowSelectionSummaryCoordinator.BuildCurrentProjectSummary(
-                value,
-                Text(LocalizationKey.NoProjectLoaded));
+            CurrentProjectSummary = BuildCurrentProjectSummary(value);
             if (value is not null && string.IsNullOrWhiteSpace(NewPlanningGoal))
             {
                 NewPlanningGoal = value.Name;
@@ -895,9 +882,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             restoredSelections.SelectedStyleGuideOption,
             restoredSelections.GenerationRecipeOptions,
             restoredSelections.SelectedGenerationRecipeOption);
-        CurrentProjectSummary = _mainWindowSelectionSummaryCoordinator.BuildCurrentProjectSummary(
-            SelectedProject,
-            Text(LocalizationKey.NoProjectLoaded));
+        CurrentProjectSummary = BuildCurrentProjectSummary(SelectedProject);
         if (string.IsNullOrWhiteSpace(NewPlanningAudience))
         {
             NewPlanningAudience = Text(LocalizationKey.DefaultPlanningAudience);
@@ -1027,6 +1012,21 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private static string FormatList(IReadOnlyList<string>? values)
     {
         return values is null || values.Count == 0 ? string.Empty : string.Join("; ", values);
+    }
+
+    private string BuildCurrentProjectSummary(ProjectSummaryViewModel? project)
+    {
+        return project is null
+            ? Text(LocalizationKey.NoProjectLoaded)
+            : $"{project.Name} ({project.UpdatedAt.LocalDateTime:g})";
+    }
+
+    private static string BuildStyleRecipeSummary(
+        ImageTypePresetOptionViewModel? preset,
+        StyleGuideOptionViewModel? guide,
+        GenerationRecipeOptionViewModel? recipe)
+    {
+        return $"{preset?.DisplayName ?? "-"} / {guide?.Name ?? "-"} / {recipe?.DisplayName ?? "-"}";
     }
 
     private static string SanitizeFileName(string value)

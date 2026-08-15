@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 namespace ContentDeliveryStudio.Tests;
 
+[Trait("Category", "ReleaseOnly")]
 public sealed class VerifyRepoScriptTests
 {
     [Fact]
@@ -107,10 +108,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
                 result.StandardOutput.IndexOf("==> Reference evidence and governance", StringComparison.Ordinal));
             Assert.True(
                 result.StandardOutput.IndexOf("==> Reference evidence and governance", StringComparison.Ordinal) <
-                result.StandardOutput.IndexOf("==> dotnet format --verify-no-changes", StringComparison.Ordinal));
+                result.StandardOutput.IndexOf("==> git diff --check", StringComparison.Ordinal));
 
             var buildInvocations = await File.ReadAllLinesAsync(logPath);
             Assert.Equal(2, buildInvocations.Count(line => line.StartsWith("build", StringComparison.OrdinalIgnoreCase)));
+            var testInvocation = Assert.Single(
+                buildInvocations,
+                line => line.StartsWith("test", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains("--filter Category!=ReleaseOnly", testInvocation);
+            Assert.DoesNotContain(buildInvocations, line => line.StartsWith("format", StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
@@ -376,6 +382,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
                 logPath,
                 statePath,
                 Path.Combine(repositoryRoot, "scripts", "preflight-release.ps1"),
+                "-SkipReferenceEvidence",
                 "-SkipPublishWhatIf",
                 "-NoRestore",
                 "-ForcePowerShellTextScan");
@@ -390,7 +397,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
 
             var invocations = await File.ReadAllLinesAsync(logPath);
             Assert.Single(invocations, line => line.StartsWith("build", StringComparison.OrdinalIgnoreCase));
-            Assert.Single(invocations, line => line.StartsWith("test", StringComparison.OrdinalIgnoreCase));
+            var testInvocations = invocations
+                .Where(line => line.StartsWith("test", StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+            Assert.Equal(2, testInvocations.Length);
+            Assert.Contains(testInvocations, line => line.Contains("--filter Category!=ReleaseOnly", StringComparison.Ordinal));
+            Assert.Contains(testInvocations, line => line.Contains("--filter Category=ReleaseOnly", StringComparison.Ordinal));
             Assert.Single(invocations, line => line.StartsWith("format", StringComparison.OrdinalIgnoreCase));
         }
         finally
@@ -403,7 +415,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
     }
 
     [Fact]
-    public async Task ReferenceEvidenceScript_RejectsNarrativeOnlyEvidence()
+    public async Task ReferenceEvidenceScript_AdvisesOnMappedAreaWithoutForcingEvidenceReceipt()
     {
         var repositoryRoot = FindRepositoryRoot();
         var tempRoot = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
@@ -419,12 +431,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
                 Path.Combine(tempRoot, "unused-state.txt"),
                 Path.Combine(repositoryRoot, "scripts", "verify-reference-evidence.ps1"),
                 "-Paths",
-                "src/ContentDeliveryStudio.App/ViewModels/MainWindowViewModel.cs,docs/ARCHITECTURE.md");
+                "src/ContentDeliveryStudio.Infrastructure/Persistence/AppDbContext.cs");
 
-            Assert.Equal(1, result.ExitCode);
+            Assert.Equal(0, result.ExitCode);
             Assert.Contains(
-                "required structured reference decision is incomplete",
+                "no structured reference decision was requested",
                 result.StandardOutput + result.StandardError);
+            Assert.DoesNotContain(
+                "Cannot bind argument to parameter 'EvidencePaths'",
+                result.StandardOutput + result.StandardError,
+                StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -436,7 +452,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
     }
 
     [Fact]
-    public async Task ReferenceEvidenceScript_AcceptsMatchingStructuredDecision()
+    public async Task ReferenceEvidenceScript_RequiresDecisionOnlyWhenExplicitlyRequested()
     {
         var repositoryRoot = FindRepositoryRoot();
         var tempRoot = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
@@ -452,12 +468,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
                 Path.Combine(tempRoot, "unused-state.txt"),
                 Path.Combine(repositoryRoot, "scripts", "verify-reference-evidence.ps1"),
                 "-Paths",
-                "src/ContentDeliveryStudio.App/ViewModels/MainWindowViewModel.cs,docs/change-evidence/20260802-lean-verification-lanes.md");
+                "src/ContentDeliveryStudio.Infrastructure/Persistence/AppDbContext.cs",
+                "-RequireDecision");
 
-            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(1, result.ExitCode);
             Assert.Contains(
-                "workflow-and-ux-architecture: structured reference decision verified",
-                result.StandardOutput);
+                "required structured reference decision is incomplete",
+                result.StandardOutput + result.StandardError);
         }
         finally
         {

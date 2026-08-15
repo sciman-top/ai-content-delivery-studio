@@ -4,7 +4,6 @@ using ContentDeliveryStudio.Application.Composition;
 using ContentDeliveryStudio.Application.Delivery;
 using System.Windows;
 using ContentDeliveryStudio.Application.Projects;
-using ContentDeliveryStudio.Application.ToolAdapters;
 using ContentDeliveryStudio.App.Services;
 using ContentDeliveryStudio.App.ViewModels;
 using ContentDeliveryStudio.App.Telemetry;
@@ -21,7 +20,6 @@ using ContentDeliveryStudio.Infrastructure.OpenAI;
 using ContentDeliveryStudio.Infrastructure.Persistence;
 using ContentDeliveryStudio.Infrastructure.Sources;
 using ContentDeliveryStudio.Infrastructure.ScientificFigures;
-using ContentDeliveryStudio.Infrastructure.ToolAdapters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -76,9 +74,6 @@ public partial class App : System.Windows.Application
         builder.Services.AddTransient<SourceIngestionApplicationService>();
         // V1 keeps exact label and formula rendering on the local deterministic path instead of asking image generation to render trusted text.
         builder.Services.AddSingleton<IDeterministicTextComposer, SkiaDeterministicTextComposer>();
-        // Keep the currently executable local operator adapters wired into the desktop host, including the
-        // read-only OpenAI launch preflight that only inspects readiness and writes local diagnostics.
-        builder.Services.AddBuiltInLocalToolAdapters();
         builder.Services.AddSingleton<IDeliveryPackageWriter, DeliveryPackageWriter>();
         builder.Services.AddSingleton<IDiagnosticsPackageWriter, DiagnosticsPackageWriter>();
         builder.Services.AddTransient<DiagnosticsPackageApplicationService>();

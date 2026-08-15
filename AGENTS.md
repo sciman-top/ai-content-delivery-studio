@@ -6,14 +6,14 @@
 ## 1. 当前落点与目标归宿
 - 当前落点：`D:\CODE\ai-content-delivery-studio` 是 AI Content Delivery Studio 的实现仓，图像系列与科学图解是当前生产路径。
 - 目标归宿：交付 Windows-first 桌面应用，覆盖素材理解、系列规划、生成、审查、修复、自动化和交付打包。
-- 下一最小里程碑：按 `docs/TASKS.md` 与仓内 spec/plan 完成一个有 fresh gate evidence 的有界切片。
+- 下一最小里程碑：直接修复当前代码中的有证据问题；`docs/TASKS.md` 只记录不能由仓库自主完成的四个外部阻断。
 - `D:\CODE\physicist_chinese_poster_batch_tool` 仅是生产案例，不是实现根；仓库重命名以 `docs/adr/0008-product-identity-and-repository-rename.md` 的 gate 为准。
-- 当前任务、provider/live 状态和交付批次从 `docs/TASKS.md`、对应 spec/plan 与 `docs/change-evidence/` fresh read；根规则不保存完成数或验收快照。
+- 当前外部阻断从 `docs/TASKS.md` fresh read；provider/live 状态和交付批次仅从对应历史验收记录读取，不把旧快照当作当前门禁。
 
 ## A. 仓库事实与模块边界
 - `ContentDeliveryStudio.sln` 是解决方案入口；`src/` 承载 WPF、应用服务、领域、provider、持久化、诊断与工具适配。
 - `tests/` 承载单元/集成、fake-first 启动、provider preflight 与 operator/tool-adapter 回归。
-- `docs/adr/` 是持久决策，`docs/research/` 是参考证据，`docs/superpowers/specs/` 与 `docs/superpowers/plans/` 承载非平凡切片设计与计划。
+- `docs/adr/` 只承载持久架构决策，`docs/research/` 只承载仍有消费者的参考证据；普通切片不新建 spec、plan、evidence receipt 或 machine queue。
 - `workspace/` 与 `outputs/` 是本地运行/生成数据并由 Git 忽略；不得把它们当作源码真源。
 - 代码、reference policy、reference basis、测试与 CI 事实冲突时先收口，不把过期规划叙述当成已实现能力。
 - 真实主链是“素材输入 -> 系列规划 -> fake-first 生成 -> vision/文本审查 -> 人工批准 -> 交付打包”；先证明最薄可观察闭环，再扩 provider、自动修复或批处理枝节。
@@ -36,23 +36,23 @@
 - build：`dotnet build ContentDeliveryStudio.sln`
 - test：`dotnet test ContentDeliveryStudio.sln --no-build`
 - focused closeout：未触及 provider、observability、persistence/schema、document/image rendering、publish/package/release 的规则、文档、测试、verifier、script/config，运行 `git diff --check` 与受影响 verifier/test；需要 solution feedback 时才运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore`，不机械叠加。
-- contract/invariant：`pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1` 校验结构化 reference decision 与 parity，并运行 product-focus verifier 和 format。
-- hotspot：publish/package/release 切片在 Full 之后运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`，追加 placeholder/conflict、实际 publish/package 与 diff hygiene。
-- full closeout：触及上述运行/交付风险，或 focused 发现跨面风险时运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1`；它按 build、完整 test、reference/product contract、format 各执行一次。
+- contract/invariant：只有当前切片确需外部源码裁决时运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1 -RequireDecision`；Full 默认只做 parity 与映射提示，不强迫 evidence receipt。
+- hotspot：publish/package/release 切片运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`；它只调用一次 Full，再追加 release-only tests、changed-C# format、scan 与 publish/package。
+- full closeout：触及运行/交付风险，或 focused 发现跨面风险时运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Full`；它只执行一次 build、非 ReleaseOnly tests、reference contract 与 diff hygiene。
 - 触及 provider、observability、persistence/schema 或 operator/tooling 边界时，reference evidence 失败即阻断。
-- 证据放入 `docs/change-evidence/`；最低记录风险、命令、exit code、关键输出、兼容判断、N/A 与回滚。
+- `docs/change-evidence/` 只用于无法由代码和 Git 历史重建的 live、人审、硬件、迁移、waiver 或 release acceptance；普通修复不写证据文件。
 - 回滚只撤销本任务源码/规则/证据切片；生成输出和 workspace 需要时在 Git 外备份，不能用 Git 回滚伪装恢复。
 
 ## D. Global Rule -> Repo Action
 - Git profile: baseline=`main`; upstream=`origin/main`; closeout=`proportional_focused_or_full`。
 - `R1`：先声明 `src/`、provider adapter、workflow 或 docs 落点及验收命令。
 - `R2`：每步跑受影响验证，closeout 只走 focused 或 full 中最低充分路径。
-- `R3`：临时 provider/交付兼容必须在 `docs/change-evidence/` 写回收条件。
+- `R3`：临时 provider/交付兼容在相邻代码、现有 ADR 或当前任务中写回收条件，不新建治理面。
 - `R4`：fake-first；live provider、凭据与外部发布须显式授权并可回滚。
 - `R5`：无两个真实消费者或失败证据，不新增 provider/workflow 抽象。
 - `R6`：C 章按风险匹配 focused/full；进入 full 时固定顺序不可绕过。
 - `R7`：保持 provider、schema、reference basis 与交付行为兼容；变化必须有迁移说明。
-- `R8`：`docs/change-evidence/` 记录依据、命令、证据与回滚。
+- `R8`：用任务记录、Git diff/commit 与最低充分验证回执追踪依据、命令和回滚；仅外部验收进入 evidence 文件。
 - `S1`：先跑通输入到可验收交付物的最薄真实链。
 - `S2`：阶段、provider/live 状态只进 spec、plan 或 evidence，根规则不存快照。
 - `S3`：外部研究按 B 章形成可逆决定即停止。

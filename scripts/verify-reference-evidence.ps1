@@ -2,6 +2,7 @@ param(
     [string[]]$Paths,
     [string]$BaseRef,
     [string]$HeadRef,
+    [switch]$RequireDecision,
     [switch]$RequireReferenceBasisFile,
     [switch]$ParityOnly
 )
@@ -132,7 +133,7 @@ function Test-NonEmptyText {
 function Get-StructuredReferenceDecisions {
     param(
         [Parameter(Mandatory = $true)][string]$RepoRoot,
-        [Parameter(Mandatory = $true)][string[]]$EvidencePaths
+        [AllowEmptyCollection()][string[]]$EvidencePaths = @()
     )
 
     $decisions = @()
@@ -376,7 +377,7 @@ foreach ($area in $touchedAreas) {
         if ($RequireReferenceBasisFile) {
             Write-Host "  - docs/REFERENCE_BASIS.md or scripts/reference-basis.json updated"
         }
-    } else {
+    } elseif ($invalidDecisionMessages.Count -gt 0 -or $RequireDecision -or $RequireReferenceBasisFile) {
         $failedAreas += $area
         Write-Host "[FAIL] $($area.Name): required structured reference decision is incomplete." -ForegroundColor Red
         Write-Host "  Triggering paths:"
@@ -407,6 +408,9 @@ foreach ($area in $touchedAreas) {
         foreach ($reference in $area.RecommendedReferences) {
             Write-Host "  - $reference"
         }
+    } else {
+        Write-Host "[INFO] $($area.Name): mapped area touched; no structured reference decision was requested." -ForegroundColor Yellow
+        Write-Host "  Use -RequireDecision only when the current change actually needs external-source adjudication."
     }
 
     Write-Host ""
@@ -416,4 +420,4 @@ if ($failedAreas.Count -gt 0) {
     throw "Reference evidence gate failed for $($failedAreas.Count) area(s). Add a valid structured reference decision before closing the change."
 }
 
-Write-Host "[OK] Reference evidence gate passed for all touched enforced areas." -ForegroundColor Green
+Write-Host "[OK] Reference governance passed for all touched mapped areas." -ForegroundColor Green

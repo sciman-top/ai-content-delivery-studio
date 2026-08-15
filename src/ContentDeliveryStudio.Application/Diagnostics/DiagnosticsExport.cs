@@ -1,5 +1,4 @@
 using ContentDeliveryStudio.Core.Projects;
-using ContentDeliveryStudio.Core.Operators;
 
 namespace ContentDeliveryStudio.Application.Diagnostics;
 
@@ -16,7 +15,6 @@ public sealed record DiagnosticsExportRequest(
     IReadOnlyList<DiagnosticsProviderSnapshot> Providers,
     IReadOnlyList<DiagnosticsSecretSnapshot> Secrets,
     IReadOnlyList<RepairPatchDiagnosticsSnapshot>? RepairPatches = null,
-    IReadOnlyList<OperatorAuditSnapshot>? OperatorRuns = null,
     OpenAiLaunchPreflightDiagnosticsSnapshot? OpenAiLaunchPreflight = null,
     IReadOnlyList<DiagnosticsLogEntry>? Logs = null,
     int DroppedLogCount = 0,
@@ -124,50 +122,6 @@ public sealed record RepairPatchItemDiagnosticsSnapshot(
             item.Evidence,
             item.ProposedChanges,
             item.RequiresHumanApproval);
-    }
-}
-
-public sealed record OperatorAuditSnapshot(
-    Guid OperatorActionId,
-    Guid OperatorRunId,
-    string ToolAdapterId,
-    string RiskLevel,
-    string ActionStatus,
-    string RunStatus,
-    bool DryRun,
-    DateTimeOffset StartedAt,
-    DateTimeOffset? CompletedAt,
-    string? OutputSummary,
-    string? ErrorMessage,
-    string? ApprovedBy,
-    DateTimeOffset? ApprovedAt)
-{
-    public static OperatorAuditSnapshot FromRun(
-        OperatorAction action,
-        OperatorRun run)
-    {
-        ArgumentNullException.ThrowIfNull(action);
-        ArgumentNullException.ThrowIfNull(run);
-
-        if (action.Id != run.OperatorActionId)
-        {
-            throw new ArgumentException("Operator run does not belong to the supplied operator action.", nameof(run));
-        }
-
-        return new OperatorAuditSnapshot(
-            action.Id,
-            run.Id,
-            run.ToolAdapterId,
-            action.RiskLevel.ToString(),
-            action.Status.ToString(),
-            run.Status.ToString(),
-            run.DryRun,
-            run.StartedAt,
-            run.CompletedAt,
-            run.OutputSummary,
-            run.ErrorMessage,
-            action.ApprovedBy,
-            action.ApprovedAt);
     }
 }
 

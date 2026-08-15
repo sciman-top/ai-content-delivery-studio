@@ -227,6 +227,16 @@ function Set-ManagedBlock {
         1
     )
 
+    # The manifest is the single reference-area truth. Retire the old hand-maintained
+    # area catalog and shelf backlog instead of keeping a second drifting copy.
+    $updated = [System.Text.RegularExpressions.Regex]::Replace(
+        $updated,
+        "(?s)\n## Reference Areas.*$",
+        "",
+        1
+    )
+    $updated = $updated.TrimEnd("`r", "`n") + "`n"
+
     if ($Check) {
         $normalizedUpdated = Normalize-Text -Text $updated
         $normalizedContent = Normalize-Text -Text $Content

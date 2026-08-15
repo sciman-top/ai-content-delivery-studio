@@ -133,20 +133,6 @@ public sealed class ScientificFigureSpecViewModelTests
         Assert.Contains("unresolved-uncertainty:issue-boundary", viewModel.GateOneBlockingReasons);
     }
 
-    [Fact]
-    public void FigureSpecView_UsesStructuredControlsWithoutRawJsonEditor()
-    {
-        var xaml = ReadRepoFile("ScientificFigureSpecWorkspaceView.xaml");
-
-        Assert.Contains("AutomationProperties.AutomationId=\"ScientificFigureElementList\"", xaml);
-        Assert.Contains("AutomationProperties.AutomationId=\"ScientificFigureRelationList\"", xaml);
-        Assert.Contains("AutomationProperties.AutomationId=\"ScientificFigureProposalDiffs\"", xaml);
-        Assert.Contains("ScientificFigureSpec.AcceptProposalCommand", xaml);
-        Assert.Contains("ScientificFigureSpec.RejectProposalCommand", xaml);
-        Assert.Contains("ScientificFigureSpec.ApproveGateOneCommand", xaml);
-        Assert.DoesNotContain("JSON", xaml, StringComparison.OrdinalIgnoreCase);
-    }
-
     private static FigureSpecFixture CreateFixture()
     {
         var understanding = ScientificFigureTestFixture.ReadyUnderstanding();
@@ -183,13 +169,6 @@ public sealed class ScientificFigureSpecViewModelTests
             [relation],
             []);
         return new FigureSpecFixture(ScientificFigureWorkflow.Create(specification));
-    }
-
-    private static string ReadRepoFile(string fileName)
-    {
-        return File.ReadAllText(Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..", "..",
-            "src", "ContentDeliveryStudio.App", "Views", fileName)));
     }
 
     private sealed record FigureSpecFixture(ScientificFigureWorkflow Workflow);

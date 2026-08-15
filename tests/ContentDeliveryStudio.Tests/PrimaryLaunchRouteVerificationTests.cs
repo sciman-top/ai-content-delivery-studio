@@ -164,7 +164,6 @@ public sealed class PrimaryLaunchRouteVerificationTests
                             decision.Reviewer,
                             decision.Notes,
                             decision.DecidedAt,
-                            ArtifactRole: "launch-route-final-image",
                             Blueprint: new DeliveryBlueprintMetadata(
                                 promotedBlueprint.Id,
                                 promotedBlueprint.Key,

@@ -1,10 +1,9 @@
 using System.Text.Json;
+using ContentDeliveryStudio.Application.Composition;
 using ContentDeliveryStudio.Application.Delivery;
-using ContentDeliveryStudio.Application.ToolAdapters;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Infrastructure.Composition;
 using ContentDeliveryStudio.Infrastructure.Delivery;
-using ContentDeliveryStudio.Infrastructure.ToolAdapters;
 using SkiaSharp;
 
 namespace ContentDeliveryStudio.Tests;
@@ -22,7 +21,6 @@ public sealed class EducationalPosterLaunchProofTests
         try
         {
             var backgroundPath = Path.Combine(sourceDirectory, "background.png");
-            var labelSpecPath = Path.Combine(sourceDirectory, "labels.json");
             var composedImagePath = Path.Combine(sourceDirectory, "poster-final.png");
             var layoutReportPath = Path.Combine(sourceDirectory, "poster-layout-report.json");
             var metadataPath = Path.Combine(sourceDirectory, "poster-final.json");
@@ -36,45 +34,16 @@ public sealed class EducationalPosterLaunchProofTests
                 await File.WriteAllBytesAsync(backgroundPath, encodedBackground.ToArray(), CancellationToken.None);
             }
 
-            await File.WriteAllTextAsync(
-                labelSpecPath,
-                JsonSerializer.Serialize(new
-                {
+            var composer = new SkiaDeterministicTextComposer();
+            var compositionResult = await composer.ComposeAsync(
+                new DeterministicTextCompositionRequest(
+                    backgroundPath,
                     composedImagePath,
                     layoutReportPath,
-                    overlays = new[]
-                    {
-                        new
-                        {
-                            text = "Archimedes Principle",
-                            x = 24,
-                            y = 28,
-                            fontSize = 28,
-                            hexColor = "#224466",
-                        },
-                        new
-                        {
-                            text = "Buoyant force equals displaced fluid weight.",
-                            x = 24,
-                            y = 84,
-                            fontSize = 18,
-                            hexColor = "#335577",
-                        },
-                    },
-                }),
-                CancellationToken.None);
-
-            var compositionAdapter = new DeterministicTextCompositionToolAdapter(new SkiaDeterministicTextComposer());
-            var compositionResult = await compositionAdapter.RunAsync(
-                ToolAdapterRunRequest.Create(
-                    compositionAdapter.Descriptor,
-                    dryRun: false,
-                    inputs: new Dictionary<string, string>
-                    {
-                        ["backgroundPath"] = backgroundPath,
-                        ["labelSpecPath"] = labelSpecPath,
-                    },
-                    DateTimeOffset.Parse("2026-06-09T10:00:00Z")),
+                    [
+                        new DeterministicTextOverlay("Archimedes Principle", 24, 28, 28, "#224466"),
+                        new DeterministicTextOverlay("Buoyant force equals displaced fluid weight.", 24, 84, 18, "#335577"),
+                    ]),
                 CancellationToken.None);
 
             await File.WriteAllTextAsync(
@@ -101,7 +70,7 @@ public sealed class EducationalPosterLaunchProofTests
                         new DeliveryExportItem(
                             "poster-proof",
                             "Archimedes poster",
-                            compositionResult.Outputs["composedImagePath"],
+                            compositionResult.ComposedImagePath,
                             metadataPath,
                             "Create a classroom-safe background with deterministic labels reserved for the final educational poster.",
                             ReviewDecision.Pass,
@@ -109,8 +78,7 @@ public sealed class EducationalPosterLaunchProofTests
                             FinalReviewer: "Teacher",
                             FinalApprovalNotes: "Ready for classroom delivery.",
                             FinalApprovalDecidedAt: DateTimeOffset.Parse("2026-06-09T10:05:00Z"),
-                            ArtifactRole: "educational-poster",
-                            DeterministicCompositionReportPath: compositionResult.Outputs["layoutReportPath"]),
+                            DeterministicCompositionReportPath: compositionResult.LayoutReportPath),
                     ]),
                 CancellationToken.None);
 

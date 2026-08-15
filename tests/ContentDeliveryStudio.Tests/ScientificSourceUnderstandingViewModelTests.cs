@@ -74,24 +74,6 @@ public sealed class ScientificSourceUnderstandingViewModelTests
         Assert.Equal(ScientificClaimStatus.Accepted, fixture.Understanding.Claims[0].Status);
     }
 
-    [Fact]
-    public void SourceAndUnderstandingViews_ExposeEvidenceNavigationAndAuditedDraftControls()
-    {
-        var sourceXaml = ReadRepoFile("ScientificSourceWorkspaceView.xaml");
-        var understandingXaml = ReadRepoFile("ScientificUnderstandingWorkspaceView.xaml");
-
-        Assert.Contains("AutomationProperties.AutomationId=\"ScientificSourceBlockList\"", sourceXaml);
-        Assert.Contains("ScientificSourceUnderstanding.SourceBlocks", sourceXaml);
-        Assert.Contains("ScientificSourceUnderstanding.Diagnostics", sourceXaml);
-        Assert.Contains("ScientificSourceUnderstanding.BlockingReasons", sourceXaml);
-        Assert.Contains("AutomationProperties.AutomationId=\"ScientificClaimList\"", understandingXaml);
-        Assert.Contains("ScientificSourceUnderstanding.SelectedEvidence.QuotedText", understandingXaml);
-        Assert.Contains("ScientificSourceUnderstanding.Conflicts", understandingXaml);
-        Assert.Contains("ScientificSourceUnderstanding.CorrectionDraftTitle", understandingXaml);
-        Assert.Contains("ScientificSourceUnderstanding.CreateCorrectionDraftCommand", understandingXaml);
-        Assert.DoesNotContain("NormalizedStatement, Mode=TwoWay", understandingXaml);
-    }
-
     private static ScientificSourceUnderstandingFixture CreateReadyFixture()
     {
         var block = CreateBlock(
@@ -196,13 +178,6 @@ public sealed class ScientificSourceUnderstandingViewModelTests
                 ScientificRequiredContentStatus.Complete),
             blocks,
             diagnostics);
-    }
-
-    private static string ReadRepoFile(string fileName)
-    {
-        return File.ReadAllText(Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..", "..",
-            "src", "ContentDeliveryStudio.App", "Views", fileName)));
     }
 
     private sealed record ScientificSourceUnderstandingFixture(

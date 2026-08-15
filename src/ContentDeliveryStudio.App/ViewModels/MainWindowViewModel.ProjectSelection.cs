@@ -8,7 +8,7 @@ public sealed partial class MainWindowViewModel
     private async Task CreateProjectAsync()
     {
         var result = await _operationGate.RunExclusiveAsync(
-            cancellationToken => _workbenchInspectorCoordinator.CreateProjectAsync(
+            cancellationToken => _projectWorkspaceCoordinator.CreateProjectAsync(
                 NewProjectName,
                 cancellationToken));
 
@@ -30,9 +30,7 @@ public sealed partial class MainWindowViewModel
     {
         return _operationGate.RunLatestWinsAsync(
             MainWindowOperationLane.ProviderCenterRefresh,
-            cancellationToken => _workbenchInspectorCoordinator.RefreshProviderCenterAsync(
-                ProviderCenter,
-                cancellationToken));
+            cancellationToken => ProviderCenter.RefreshAsync(cancellationToken));
     }
 
     [RelayCommand]
@@ -40,8 +38,6 @@ public sealed partial class MainWindowViewModel
     {
         return _operationGate.RunLatestWinsAsync(
             MainWindowOperationLane.ProviderHealthCheck,
-            cancellationToken => _workbenchInspectorCoordinator.CheckProviderHealthAsync(
-                ProviderCenter,
-                cancellationToken));
+            cancellationToken => ProviderCenter.CheckHealthAsync(cancellationToken));
     }
 }

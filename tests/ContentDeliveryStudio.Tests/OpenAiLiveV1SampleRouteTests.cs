@@ -295,8 +295,7 @@ public sealed class OpenAiLiveV1SampleRouteTests
                             FinalReviewer: approval.Reviewer,
                             FinalApprovalNotes: approval.Notes,
                             FinalApprovalDecidedAt: approval.DecidedAt,
-                            GenerationTaskId: generationTask.Id,
-                            ArtifactRole: "live-openai-v1-sample"));
+                            GenerationTaskId: generationTask.Id));
                     break;
                 }
 

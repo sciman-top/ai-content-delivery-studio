@@ -15,19 +15,21 @@ Use this document together with:
 - [DOCUMENTATION_GOVERNANCE.md](./DOCUMENTATION_GOVERNANCE.md)
 - `D:\CODE\external\ai-content-delivery-studio-references\README.md`
 
-## Hard Rule
+## Proportional Rule
 
-When a change touches a high-drift engineering area or a task listed here as `required`, the engineer must:
+When external source can materially change a decision in a mapped area, the engineer must:
 
 1. consult the mapped local reference shelf first
 2. prefer official documentation or official source repositories before community examples
-3. leave an in-repo evidence trail in the same change set
+3. run the explicit decision check and update an existing durable evidence surface when the decision must persist
 
 The local enforcement entrypoint is:
 
 ```powershell
-.\scripts\verify-reference-evidence.ps1
+.\scripts\verify-reference-evidence.ps1 -RequireDecision
 ```
+
+Ordinary changes in a mapped directory use the default parity/advisory check and do not require an evidence receipt.
 
 The machine-sync entrypoint is:
 
@@ -52,427 +54,47 @@ That script owns the generated summary block in this document and the repo-side 
 This section is generated from `scripts/reference-basis.json` by `scripts/sync-reference-governance.ps1`.
 Do not edit this block by hand. Update the JSON manifest and rerun the sync script instead.
 
-- Manifest version: `1`
-- Manifest updatedAt: `2026-08-03T18:05:00+08:00`
+- Manifest version: `2`
+- Manifest updatedAt: `2026-08-15T00:00:00+08:00`
 
 ### `openai-provider`
 
 - `required`: `true`
 - Source rules: `src/ContentDeliveryStudio.Infrastructure/OpenAI/`, `src/ContentDeliveryStudio.Core/Providers/`
-- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/PROVIDER_CONFIGURATION.md`, `docs/PROVIDER_ROUTING_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
-- Required triggers: `request-response-shape`, `images-vs-responses-routing`, `store-or-previous-response-id`, `structured-output`, `vision-review`, `real-provider-enablement`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/PROVIDER_CONFIGURATION.md`, `docs/PROVIDER_ROUTING_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`
+- Required triggers: `request-response-shape`, `images-vs-responses-routing`, `structured-output`, `vision-review`, `real-provider-enablement`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/01-openai/openai-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/01-openai/openai-cookbook-selected` (kind: `official-examples`; reuse: `adapt-with-review`)
-  - `D:/CODE/ai-content-delivery-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
-
-### `host-and-observability`
-
-- `required`: `true`
-- Source rules: `src/ContentDeliveryStudio.App/App.xaml.cs`, `src/ContentDeliveryStudio.App/Telemetry/`, `src/ContentDeliveryStudio.App/Services/ProviderCenterServices.cs`, `src/ContentDeliveryStudio.App/Properties/launchSettings.json`, `src/ContentDeliveryStudio.Infrastructure/Diagnostics/`
-- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
-- Required triggers: `host-startup`, `dependency-injection`, `telemetry-registration`, `otlp-export`, `aspire-dashboard`, `http-resilience`, `health-diagnostics`
-- Local references:
-  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/docs-desktop` (kind: `official-doc-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/WPF-Samples` (kind: `official-samples`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet` (kind: `official-toolkit-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/dotnet-extensions` (kind: `official-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/opentelemetry-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/opentelemetry-dotnet-contrib` (kind: `official-contrib-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/08-platform-and-observability/aspire` (kind: `official-source`; reuse: `direct-pattern`)
 
 ### `persistence-and-schema`
 
 - `required`: `true`
-- Source rules: `src/ContentDeliveryStudio.Infrastructure/Persistence/`, `src/ContentDeliveryStudio.Core/Projects/`, `src/ContentDeliveryStudio.Core/Artifacts/`, `src/ContentDeliveryStudio.Core/Sources/`, `src/ContentDeliveryStudio.Core/Documents/`, `src/ContentDeliveryStudio.Core/Packs/`
-- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
-- Required triggers: `entity-configuration`, `aggregate-shape`, `migration-behavior`, `sqlite-limitation`, `project-load-save-contract`
+- Source rules: `src/ContentDeliveryStudio.Infrastructure/Persistence/`
+- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`
+- Required triggers: `entity-configuration`, `migration-behavior`, `sqlite-limitation`, `project-load-save-contract`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/03-data-persistence/EntityFramework.Docs` (kind: `official-doc-source`; reuse: `direct-pattern`)
-  - `D:/CODE/ai-content-delivery-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
 
-### `tooling-and-operator`
-
-- `required`: `true`
-- Source rules: `src/ContentDeliveryStudio.Application/ToolAdapters/`, `src/ContentDeliveryStudio.Infrastructure/ToolAdapters/`, `src/ContentDeliveryStudio.Core/Operators/`, `src/ContentDeliveryStudio.Infrastructure/Composition/`, `src/ContentDeliveryStudio.Infrastructure/Delivery/`, `src/ContentDeliveryStudio.Infrastructure/Import/`, `src/ContentDeliveryStudio.Infrastructure/Sources/`
-- Evidence rules: `docs/research/REFERENCE_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/OPERATOR_RISK_POLICY.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
-- Required triggers: `deterministic-composition`, `document-conversion`, `artifact-validation`, `delivery-packaging`, `diagnostics-export`, `browser-automation`, `desktop-automation`
-- Local references:
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown` (kind: `official-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling` (kind: `community-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig` (kind: `community-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/Open-XML-SDK` (kind: `official-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/QuestPDF` (kind: `community-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/SkiaSharp` (kind: `official-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/06-automation-testing/playwright-dotnet` (kind: `official-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/06-automation-testing/FlaUI` (kind: `community-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/ComfyUI` (kind: `community-source`; reuse: `inspiration-only`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/InvokeAI` (kind: `community-source`; reuse: `inspiration-only`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/diffusers` (kind: `community-source`; reuse: `inspiration-only`)
-
-### `workflow-and-ux-architecture`
+### `delivery-package`
 
 - `required`: `true`
-- Source rules: `src/ContentDeliveryStudio.App/MainWindow.xaml`, `src/ContentDeliveryStudio.App/MainWindow.xaml.cs`, `src/ContentDeliveryStudio.App/ViewModels/MainWindowViewModel.cs`, `src/ContentDeliveryStudio.App/ViewModels/MainWindowOperationGate.cs`, `src/ContentDeliveryStudio.Application/Modules/`, `src/ContentDeliveryStudio.Application/Workflows/`
-- Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
-- Required triggers: `large-viewmodel-split`, `large-view-split`, `shell-view-structure`, `source-structure-test-reduction`, `workflow-graph`, `queue-gallery-stage-composition`, `module-boundary-change`
+- Source rules: `src/ContentDeliveryStudio.Application/Delivery/`, `src/ContentDeliveryStudio.Infrastructure/Delivery/`
+- Evidence rules: `docs/ARCHITECTURE.md`, `docs/V1_LAUNCH_EVIDENCE.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`
+- Required triggers: `delivery-manifest-contract`, `package-hash-contract`, `package-path-containment`, `document-rendering`
 - Local references:
-  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/docs-desktop` (kind: `official-doc-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet` (kind: `official-toolkit-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/WPF-Samples` (kind: `official-samples`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/ComfyUI` (kind: `community-source`; reuse: `inspiration-only`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/07-image-workflow-references/InvokeAI` (kind: `community-source`; reuse: `inspiration-only`)
-
-### `pack-and-policy-modeling`
-
-- `required`: `true`
-- Source rules: `src/ContentDeliveryStudio.Core/Packs/`, `src/ContentDeliveryStudio.Application/Packs/`, `src/ContentDeliveryStudio.Core/Projects/ReviewRubricTemplates.cs`, `src/ContentDeliveryStudio.Application/Artifacts/`, `src/ContentDeliveryStudio.Application/Workflows/`
-- Evidence rules: `docs/ARCHITECTURE.md`, `docs/TARGET_ENGINEERING_STATE.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/REFERENCE_BASIS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
-- Required triggers: `pack-schema-contract`, `workflow-pack-boundary`, `industry-policy-shape`, `renderer-policy-shape`, `review-rubric-policy-shape`, `scenario-selection-contract`
-- Local references:
-  - `D:/CODE/external/ai-content-delivery-studio-references/02-dotnet-wpf/CommunityToolkit-dotnet` (kind: `official-toolkit-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/SkiaSharp` (kind: `official-source`; reuse: `direct-pattern`)
-  - `D:/CODE/ai-content-delivery-studio/docs/research/REFERENCE_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
-
-### `document-extraction-and-ocr`
-
-- `required`: `true`
-- Source rules: `src/ContentDeliveryStudio.Core/Documents/`, `src/ContentDeliveryStudio.Infrastructure/Sources/`, `src/ContentDeliveryStudio.Infrastructure/Import/`, `src/ContentDeliveryStudio.Application/Artifacts/`, `src/ContentDeliveryStudio.Application/ToolAdapters/`
-- Evidence rules: `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/ROADMAP.md`, `docs/TASKS.md`, `docs/change-evidence/`, `docs/superpowers/specs/`, `docs/superpowers/plans/`
-- Required triggers: `pdf-structure-extraction`, `docx-structure-extraction`, `ocr-introduction`, `citation-span-evidence`, `scholarly-figure-source-extraction`
-- Local references:
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/markitdown` (kind: `official-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling` (kind: `community-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig` (kind: `community-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/Open-XML-SDK` (kind: `official-source`; reuse: `direct-pattern`)
+  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/QuestPDF` (kind: `community-source`; reuse: `adapt-with-review`)
 
 ### `scientific-figure-workflow`
 
 - `required`: `true`
-- Source rules: `src/ContentDeliveryStudio.Core/ScientificFigures/`, `src/ContentDeliveryStudio.Application/ScientificFigures/`, `src/ContentDeliveryStudio.Infrastructure/ScientificFigures/`, `src/ContentDeliveryStudio.App/Views/ScientificFigures/`, `src/ContentDeliveryStudio.App/ViewModels/ScientificFigures/`
-- Evidence rules: `docs/research/SCIENTIFIC_FIGURE_WORKFLOW_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/change-evidence/`, `docs/superpowers/specs/2026-07-25-scientific-figure-trustworthy-workflow-design.md`, `docs/superpowers/plans/2026-07-25-scientific-figure-trustworthy-workflow.md`
-- Required triggers: `scholarly-source-extraction`, `claim-evidence-authority`, `formula-to-svg`, `deterministic-svg-generation`, `svg-to-png-pdf-export`, `scientific-contract-review`, `scientific-workflow-ui`
+- Source rules: `src/ContentDeliveryStudio.Core/ScientificFigures/`, `src/ContentDeliveryStudio.Application/ScientificFigures/`, `src/ContentDeliveryStudio.Infrastructure/ScientificFigures/`
+- Evidence rules: `docs/research/SCIENTIFIC_FIGURE_WORKFLOW_RESEARCH.md`, `docs/ARCHITECTURE.md`, `docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md`, `docs/REFERENCE_BASIS.md`, `docs/REFERENCE_EVIDENCE_POLICY.md`, `docs/change-evidence/`
+- Required triggers: `scholarly-source-extraction`, `claim-evidence-authority`, `formula-to-svg`, `deterministic-svg-generation`, `svg-to-png-pdf-export`, `scientific-contract-review`
 - Local references:
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/GROBID` (kind: `community-source`; reuse: `adapt-with-review`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/docling` (kind: `community-source`; reuse: `adapt-with-review`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/PdfPig` (kind: `community-source`; reuse: `direct-pattern`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/MathJax` (kind: `official-source`; reuse: `adapt-with-review`)
   - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/Svg.Skia` (kind: `community-source`; reuse: `direct-pattern`)
-  - `D:/CODE/external/ai-content-delivery-studio-references/05-document-rendering/SkiaSharp` (kind: `official-source`; reuse: `direct-pattern`)
-  - `D:/CODE/ai-content-delivery-studio/docs/research/SCIENTIFIC_FIGURE_WORKFLOW_RESEARCH.md` (kind: `repo-evidence`; reuse: `direct-pattern`)
 
 <!-- END GENERATED REFERENCE BASIS SUMMARY -->
-
-## Reference Areas
-
-### `openai-provider`
-
-Source paths:
-
-- `src/ContentDeliveryStudio.Infrastructure/OpenAI/`
-- `src/ContentDeliveryStudio.Core/Providers/`
-
-Required local references:
-
-- `D:\CODE\external\ai-content-delivery-studio-references\01-openai\openai-dotnet`
-- `D:\CODE\external\ai-content-delivery-studio-references\01-openai\openai-cookbook-selected`
-- `docs/research/REFERENCE_RESEARCH.md`
-
-Preferred official docs:
-
-- OpenAI image generation guide
-- OpenAI images and vision guide
-- OpenAI tools guide
-- OpenAI Responses API reference
-
-Reuse guidance:
-
-- `openai-dotnet`: `direct-pattern`
-- `openai-cookbook-selected`: `adapt-with-review`
-
-Must check references when:
-
-- adding or changing request or response payload shapes
-- changing Images API versus Responses API routing
-- changing `store`, `previous_response_id`, structured output, image edit, or vision-review behavior
-- changing provider error handling, retries, cost semantics, or request provenance capture
-- enabling previously fake-only real-provider routes
-
-### `host-and-observability`
-
-Source paths:
-
-- `src/ContentDeliveryStudio.App/App.xaml.cs`
-- `src/ContentDeliveryStudio.App/Telemetry/`
-- `src/ContentDeliveryStudio.App/Services/ProviderCenterServices.cs`
-- `src/ContentDeliveryStudio.App/Properties/launchSettings.json`
-- `src/ContentDeliveryStudio.Infrastructure/Diagnostics/`
-
-Required local references:
-
-- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\docs-desktop`
-- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\WPF-Samples`
-- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\CommunityToolkit-dotnet`
-- `D:\CODE\external\ai-content-delivery-studio-references\08-platform-and-observability\dotnet-extensions`
-- `D:\CODE\external\ai-content-delivery-studio-references\08-platform-and-observability\opentelemetry-dotnet`
-- `D:\CODE\external\ai-content-delivery-studio-references\08-platform-and-observability\opentelemetry-dotnet-contrib`
-- `D:\CODE\external\ai-content-delivery-studio-references\08-platform-and-observability\aspire`
-- `docs/research/REFERENCE_RESEARCH.md`
-
-Preferred official docs:
-
-- WPF Generic Host guidance
-- WPF documentation
-- .NET resilience guidance
-- .NET observability with OpenTelemetry
-- .NET networking telemetry guidance
-
-Reuse guidance:
-
-- `docs-desktop`, `WPF-Samples`, `CommunityToolkit-dotnet`: `direct-pattern`
-- `dotnet-extensions`, `opentelemetry-dotnet`, `opentelemetry-dotnet-contrib`, `aspire`: `direct-pattern`
-- `Prism`: `adapt-with-review`
-
-Must check references when:
-
-- changing `App.xaml.cs` host startup, dependency injection registration, or application lifetime wiring
-- changing telemetry registration, OTLP export, Aspire dashboard support, logging, or metrics/tracing sources
-- changing `HttpClient` resilience handler behavior or named-client conventions
-- changing provider-center health or diagnostics plumbing
-
-### `persistence-and-schema`
-
-Source paths:
-
-- `src/ContentDeliveryStudio.Infrastructure/Persistence/`
-- `src/ContentDeliveryStudio.Core/Projects/`
-- `src/ContentDeliveryStudio.Core/Artifacts/`
-- `src/ContentDeliveryStudio.Core/Sources/`
-- `src/ContentDeliveryStudio.Core/Documents/`
-- `src/ContentDeliveryStudio.Core/Packs/`
-
-Required local references:
-
-- `D:\CODE\external\ai-content-delivery-studio-references\03-data-persistence\EntityFramework.Docs`
-- `docs/research/REFERENCE_RESEARCH.md`
-
-Preferred official docs:
-
-- EF Core SQLite provider docs
-- EF Core migration and testing strategy docs
-
-Reuse guidance:
-
-- `EntityFramework.Docs`: `direct-pattern`
-
-Must check references when:
-
-- adding or changing EF entity configuration
-- changing aggregate structure, durable record shape, or migration behavior
-- changing SQLite assumptions, locking, rebuild-sensitive schema operations, or persistence tests
-- changing delivery manifest, artifact provenance, or project load/save contracts
-
-### `tooling-and-operator`
-
-Source paths:
-
-- `src/ContentDeliveryStudio.Application/ToolAdapters/`
-- `src/ContentDeliveryStudio.Infrastructure/ToolAdapters/`
-- `src/ContentDeliveryStudio.Core/Operators/`
-- `src/ContentDeliveryStudio.Infrastructure/Composition/`
-- `src/ContentDeliveryStudio.Infrastructure/Delivery/`
-- `src/ContentDeliveryStudio.Infrastructure/Import/`
-- `src/ContentDeliveryStudio.Infrastructure/Sources/`
-
-Required local references:
-
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\markitdown`
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\docling`
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\PdfPig`
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\Open-XML-SDK`
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\QuestPDF`
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\SkiaSharp`
-- `D:\CODE\external\ai-content-delivery-studio-references\06-automation-testing\playwright-dotnet`
-- `D:\CODE\external\ai-content-delivery-studio-references\06-automation-testing\FlaUI`
-- `D:\CODE\external\ai-content-delivery-studio-references\07-image-workflow-references\ComfyUI`
-- `D:\CODE\external\ai-content-delivery-studio-references\07-image-workflow-references\InvokeAI`
-- `D:\CODE\external\ai-content-delivery-studio-references\07-image-workflow-references\diffusers`
-- `docs/research/REFERENCE_RESEARCH.md`
-
-Reuse guidance:
-
-- `markitdown`, `docling`, `PdfPig`, `Open-XML-SDK`, `QuestPDF`, `SkiaSharp`, `playwright-dotnet`, `FlaUI`: `direct-pattern`
-- `ComfyUI`, `InvokeAI`, `diffusers`: `inspiration-only`
-
-Must check references when:
-
-- adding or changing deterministic composition or document conversion behavior
-- changing artifact-validation, delivery packaging, diagnostics export, or import logic
-- changing DOCX/PPTX package assembly, editable Office output flows, or import/export adapters that inspect Open XML package structure
-- changing browser or desktop automation adapter boundaries
-- changing queue, graph, workflow, canvas, gallery, or operator execution concepts by borrowing from local-image projects
-
-### `workflow-and-ux-architecture`
-
-Source paths:
-
-- `src/ContentDeliveryStudio.App/MainWindow.xaml`
-- `src/ContentDeliveryStudio.App/MainWindow.xaml.cs`
-- `src/ContentDeliveryStudio.App/ViewModels/`
-- `src/ContentDeliveryStudio.App/Views/`
-- `src/ContentDeliveryStudio.Application/Modules/`
-- `src/ContentDeliveryStudio.Application/Workflows/`
-
-Required local references:
-
-- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\docs-desktop`
-- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\CommunityToolkit-dotnet`
-- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\WPF-Samples`
-- `D:\CODE\external\ai-content-delivery-studio-references\07-image-workflow-references\ComfyUI`
-- `D:\CODE\external\ai-content-delivery-studio-references\07-image-workflow-references\InvokeAI`
-- `docs/ARCHITECTURE.md`
-- `docs/TARGET_ENGINEERING_STATE.md`
-
-Preferred official docs:
-
-- CommunityToolkit.Mvvm docs
-- WPF data binding and commanding docs
-- WPF user-control and shell composition docs
-
-Reuse guidance:
-
-- `docs-desktop`, `CommunityToolkit-dotnet`, `WPF-Samples`: `direct-pattern`
-- `ComfyUI`, `InvokeAI`: `inspiration-only`
-
-Must check references when:
-
-- splitting large view models, shell views, or feature-owned WPF views
-- extracting deterministic projection, localization payload, or selection-summary display builders out of `MainWindowViewModel`
-- changing workflow graph, queue, gallery, stage composition, or module boundaries
-- changing `MainWindow.xaml` or `MainWindow.xaml.cs` shell data-context or navigation composition
-- promoting image-workflow UX ideas into reusable product architecture
-
-### `pack-and-policy-modeling`
-
-Source paths:
-
-- `src/ContentDeliveryStudio.Core/Packs/`
-- `src/ContentDeliveryStudio.Application/Packs/`
-- `src/ContentDeliveryStudio.Core/Projects/ReviewRubricTemplates.cs`
-- `src/ContentDeliveryStudio.Application/Artifacts/`
-- `src/ContentDeliveryStudio.Application/Workflows/`
-
-Required local references:
-
-- `D:\CODE\external\ai-content-delivery-studio-references\02-dotnet-wpf\CommunityToolkit-dotnet`
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\SkiaSharp`
-- `docs/research/REFERENCE_RESEARCH.md`
-
-Preferred official docs:
-
-- CommunityToolkit.Mvvm docs
-- WPF and .NET host documentation already used by this repository
-- OpenAI images and vision guide when pack policy affects review or deterministic-output expectations
-
-Reuse guidance:
-
-- `CommunityToolkit-dotnet`, `SkiaSharp`: `direct-pattern`
-- repository research and architecture docs: `direct-pattern`
-
-Must check references when:
-
-- changing pack schema contracts
-- changing workflow-pack or industry-pack metadata shape
-- introducing renderer-policy or review-rubric policy records
-- introducing scenario-selection or high-requirement policy propagation behavior
-
-### `document-extraction-and-ocr`
-
-Source paths:
-
-- `src/ContentDeliveryStudio.Core/Documents/`
-- `src/ContentDeliveryStudio.Infrastructure/Sources/`
-- `src/ContentDeliveryStudio.Infrastructure/Import/`
-- `src/ContentDeliveryStudio.Application/Artifacts/`
-- `src/ContentDeliveryStudio.Application/ToolAdapters/`
-
-Required local references:
-
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\markitdown`
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\docling`
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\PdfPig`
-- `D:\CODE\external\ai-content-delivery-studio-references\05-document-rendering\Open-XML-SDK`
-- `docs/research/REFERENCE_RESEARCH.md`
-
-Preferred official docs:
-
-- source and artifact support matrix
-- Open XML SDK for Office docs
-- PDF/document extraction references already tracked by the repository
-
-Reuse guidance:
-
-- `markitdown`, `docling`, `PdfPig`, `Open-XML-SDK`: `direct-pattern`
-
-Must check references when:
-
-- introducing PDF or DOCX structure extraction
-- introducing OCR into the main product path
-- introducing citation-span or paper-figure source extraction
-- changing support-matrix promises for binary document inputs
-
-## Current Code Review Findings That Should Drive Reference Use
-
-These repository areas especially benefit from stronger reference discipline:
-
-- `src/ContentDeliveryStudio.App/ViewModels/MainWindowViewModel.cs`
-  - large orchestration surface; prefer WPF/MVVM and modular-composition references before further expansion, and extract pure projection or display-summary builders before moving command ownership
-- `src/ContentDeliveryStudio.App/MainWindow.xaml`
-  - large shell view; prefer WPF sample and modular-view references before adding more UI surface
-- `src/ContentDeliveryStudio.Infrastructure/OpenAI/`
-  - high semantic drift; prefer official OpenAI docs and SDK source first
-- `src/ContentDeliveryStudio.Infrastructure/Persistence/` plus core aggregate records
-  - schema and SQLite behavior should stay anchored to official EF docs
-- `src/ContentDeliveryStudio.Infrastructure/Sources/LocalBinaryDocumentExtractionProvider.cs`
-  - current DOCX extraction reads `word/document.xml` directly; prefer `Open-XML-SDK` plus existing PDF/document references before broadening extraction fidelity or Office-package support claims
-
-## Current Reference Shelf Gap Review
-
-### Keep
-
-Keep the current reference groups. They align well with the real codebase and roadmap.
-
-### Add
-
-Add or keep freshly added:
-
-- `08-platform-and-observability/aspire`
-  - because the repository already ships an `AspireDashboard` OTLP profile and local telemetry guidance
-- `08-platform-and-observability/opentelemetry-dotnet-contrib`
-  - because host and diagnostics hardening already depend on real instrumentation and exporter extension patterns beyond the core SDK surface
-- `05-document-rendering/Open-XML-SDK`
-  - because the current codebase already extracts DOCX content locally and the built-in packs already expose `docx` and `pptx` delivery formats
-- `05-document-rendering/GROBID`
-  - because scholarly PDF extraction and paper-figure evidence extraction are now active in the trustworthy-scientific-figure slice; evaluate it only through an isolated service boundary
-- `05-document-rendering/MathJax`
-  - because the active slice requires formula-to-SVG output with pinned offline assets and explicit Windows adapter evidence
-- `05-document-rendering/Svg.Skia`
-  - because the active slice requires PNG and PDF exports to derive from one approved SVG authority
-
-### Add Later When Activated
-
-- OCR references such as `Tesseract` or `OCRmyPDF`
-  - only when scanned-document hardening becomes an active near-term slice
-- `WindowsAppSDK-Samples`
-  - only when package identity, lifecycle, or WinUI migration becomes active
-
-### Reduce Or Keep Optional
-
-Keep as optional inspiration, not required implementation sources:
-
-- `04-ai-orchestration/semantic-kernel`
-- `07-image-workflow-references/ComfyUI`
-- `07-image-workflow-references/InvokeAI`
-- `07-image-workflow-references/diffusers`
-
-Do not let these optional references silently redefine the default V1 architecture.

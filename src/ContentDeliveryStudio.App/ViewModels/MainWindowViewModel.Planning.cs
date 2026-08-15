@@ -61,13 +61,16 @@ public sealed partial class MainWindowViewModel
         var result = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
-                var planningResult = await _workbenchInspectorCoordinator.RunFakeDocumentPlanningAsync(
-                    currentProject,
+                var planningResult = await _planningWorkflowCoordinator.RunFakeDocumentPlanningAsync(
+                    currentProject.Id,
+                    currentProject.Name,
                     NewDocumentSourceText,
                     NewDocumentAudience,
                     SelectedDocumentStrictnessOption?.Value ?? IllustrationStrictnessLevel.Educational,
                     _defaultDocumentAudience,
-                    ActivityItems,
+                    cancellationToken);
+                var workspace = await _projectWorkspaceCoordinator.RefreshProjectsAsync(
+                    currentProject.Id,
                     cancellationToken);
                 var snapshot = await CaptureProjectReloadSnapshotAsync(
                     currentProject.Id,
@@ -76,9 +79,9 @@ public sealed partial class MainWindowViewModel
                     cancellationToken);
 
                 return new DocumentPlanningReloadResult(
-                    planningResult.Workspace,
+                    workspace,
                     planningResult.ResultSummary,
-                    planningResult.ActivityItems,
+                    ActivityItems.Concat([planningResult.ResultSummary]).ToArray(),
                     snapshot);
             });
 

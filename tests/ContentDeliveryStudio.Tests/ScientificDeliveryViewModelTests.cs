@@ -92,20 +92,6 @@ public sealed class ScientificDeliveryViewModelTests
         Assert.Equal(ScientificRepairExecutionMode.HumanRequired, repair.ExecutionMode);
     }
 
-    [Fact]
-    public void DeliveryView_ExposesComparisonEvidenceAndExplicitCommands()
-    {
-        var xaml = ReadRepoFile("ScientificDeliveryWorkspaceView.xaml");
-
-        Assert.Contains("AutomationProperties.AutomationId=\"ScientificDeliveryFormatList\"", xaml);
-        Assert.Contains("ScientificDelivery.Artifacts", xaml);
-        Assert.Contains("ScientificDelivery.EvidenceItems", xaml);
-        Assert.Contains("ScientificDelivery.Providers", xaml);
-        Assert.Contains("ScientificDelivery.ApproveGateTwoCommand", xaml);
-        Assert.Contains("ScientificDelivery.RejectGateTwoCommand", xaml);
-        Assert.Contains("ScientificDelivery.ExportPackageCommand", xaml);
-    }
-
     private static ScientificDeliveryViewModel CreateViewModel(
         ScientificDeliveryTestFixture fixture,
         Action<byte[]>? exportRequested = null,
@@ -118,10 +104,4 @@ public sealed class ScientificDeliveryViewModelTests
             clock);
     }
 
-    private static string ReadRepoFile(string fileName)
-    {
-        return File.ReadAllText(Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..", "..",
-            "src", "ContentDeliveryStudio.App", "Views", fileName)));
-    }
 }

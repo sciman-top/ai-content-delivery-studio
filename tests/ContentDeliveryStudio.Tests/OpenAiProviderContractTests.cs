@@ -7,6 +7,7 @@ using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Core.Styles;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
 using OpenAI.Responses;
+using SkiaSharp;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -543,7 +544,7 @@ public sealed class OpenAiProviderContractTests
     public async Task ImageGenerationProvider_PostsImageRequestAndWritesAssetAndMetadata()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
-        var imageBytes = new byte[] { 137, 80, 78, 71 };
+        var imageBytes = TestImageFactory.CreatePngBytes(1024, 1024);
         using var handler = new CaptureHandler(_ => JsonResponse(
             $$"""
             {
@@ -595,6 +596,10 @@ public sealed class OpenAiProviderContractTests
             Assert.Equal("img_resp_123", metadata.RootElement.GetProperty("providerTraceId").GetString());
             Assert.Equal("images", metadata.RootElement.GetProperty("endpointFamily").GetString());
             Assert.False(metadata.RootElement.GetProperty("store").GetBoolean());
+            Assert.Equal("1024x1024", metadata.RootElement.GetProperty("requestedSize").GetString());
+            Assert.Equal("1024x1024", metadata.RootElement.GetProperty("originalSize").GetString());
+            Assert.Equal("1024x1024", metadata.RootElement.GetProperty("deliveredSize").GetString());
+            Assert.Equal("png", metadata.RootElement.GetProperty("deliveredFormat").GetString());
         }
         finally
         {
@@ -609,7 +614,7 @@ public sealed class OpenAiProviderContractTests
     public async Task ImageGenerationProvider_RecordsTelemetryAndWritesSafeMetadataSummary()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
-        var imageBytes = new byte[] { 137, 80, 78, 71 };
+        var imageBytes = TestImageFactory.CreatePngBytes(1024, 1024);
         var telemetrySink = new RecordingTelemetrySink();
         using var handler = new CaptureHandler(_ => JsonResponse(
             $$"""
@@ -667,6 +672,66 @@ public sealed class OpenAiProviderContractTests
                 Directory.Delete(rootDirectory, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public async Task ImageGenerationProvider_RejectsUndecodableImageBytesWithoutWritingAsset()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            $$"""
+            {
+              "id": "img_invalid",
+              "data": [{ "b64_json": "{{Convert.ToBase64String([1, 2, 3, 4])}}" }]
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateImageProvider(httpClient);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GenerateImageAsync(
+                new ImageGenerationRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "prompt",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    rootDirectory,
+                    "invalid.png"),
+                CancellationToken.None));
+
+        Assert.Contains("decoded", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(Directory.Exists(rootDirectory));
+    }
+
+    [Fact]
+    public async Task ImageGenerationProvider_RejectsUnexpectedImageDimensionsWithoutWritingAsset()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var imageBytes = TestImageFactory.CreatePngBytes(512, 512);
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            $$"""
+            {
+              "id": "img_wrong_size",
+              "data": [{ "b64_json": "{{Convert.ToBase64String(imageBytes)}}" }]
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = CreateImageProvider(httpClient);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GenerateImageAsync(
+                new ImageGenerationRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "prompt",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    rootDirectory,
+                    "wrong-size.png"),
+                CancellationToken.None));
+
+        Assert.Contains("512x512", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("1024x1024", exception.Message, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(rootDirectory));
     }
 
     [Fact]
@@ -924,14 +989,15 @@ public sealed class OpenAiProviderContractTests
     [Fact]
     public async Task ImageGenerationProvider_AddsAppModeHeadersWhenConfigured()
     {
+        var imageBytes = TestImageFactory.CreatePngBytes(1024, 1024);
         using var handler = new CaptureHandler(_ => JsonResponse(
-            """
+            $$"""
             {
               "id": "img_resp_app_mode",
               "created": 1790000000,
               "data": [
                 {
-                  "b64_json": "iVBORw=="
+                  "b64_json": "{{Convert.ToBase64String(imageBytes)}}"
                 }
               ]
             }
@@ -972,8 +1038,9 @@ public sealed class OpenAiProviderContractTests
     public async Task ImageGenerationProvider_UsesResponsesStatefulPathWhenExplicitlyEnabled()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var imageBytes = TestImageFactory.CreatePngBytes(1024, 1024);
         using var handler = new CaptureHandler(_ => JsonResponse(
-            """
+            $$"""
             {
               "id": "resp_image_stateful_123",
               "output": [
@@ -981,7 +1048,7 @@ public sealed class OpenAiProviderContractTests
                   "id": "ig_call_123",
                   "type": "image_generation_call",
                   "revised_prompt": "A cleaner revised prompt for the final render.",
-                  "result": "iVBORw=="
+                  "result": "{{Convert.ToBase64String(imageBytes)}}"
                 }
               ],
               "usage": {
@@ -1055,8 +1122,9 @@ public sealed class OpenAiProviderContractTests
     public async Task ImageGenerationProvider_UsesResponsesPathByDefaultWhenProviderIsConfiguredForResponses()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var imageBytes = TestImageFactory.CreatePngBytes(1024, 1024);
         using var handler = new CaptureHandler(_ => JsonResponse(
-            """
+            $$"""
             {
               "id": "resp_image_default_123",
               "output": [
@@ -1064,7 +1132,7 @@ public sealed class OpenAiProviderContractTests
                   "id": "ig_call_default_123",
                   "type": "image_generation_call",
                   "revised_prompt": "A revised default response prompt.",
-                  "result": "iVBORw=="
+                  "result": "{{Convert.ToBase64String(imageBytes)}}"
                 }
               ]
             }

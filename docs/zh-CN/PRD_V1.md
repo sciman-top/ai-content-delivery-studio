@@ -199,6 +199,8 @@ V1 只纳入一条真实的低风险 operator 执行切片。
 
 细化执行规则见 [../OPERATOR_RISK_POLICY.md](../OPERATOR_RISK_POLICY.md)。
 
+这条切片仍是锁定 V1 快照的一部分；通用 Operator/ToolAdapter 平台后来因没有当前产品消费者而退休，安全规则改由具体 provider、delivery 与外部动作边界承担。
+
 ## V1 的源与产物边界
 
 受支持的输入与输出边界被有意收窄。发布支持聚焦于需求文本、粘贴/纯文本文章输入，以及图像序列交付产物。
@@ -209,7 +211,7 @@ V1 只纳入一条真实的低风险 operator 执行切片。
 
 两份策略文档定义了 V1 与长期工程方向的关系：
 
-- [../TARGET_ENGINEERING_STATE.md](../TARGET_ENGINEERING_STATE.md)
+- [../ARCHITECTURE.md](../ARCHITECTURE.md)
 - [../EXTERNAL_REFERENCE_STRATEGY.md](../EXTERNAL_REFERENCE_STRATEGY.md)
 
 ## 发布指标

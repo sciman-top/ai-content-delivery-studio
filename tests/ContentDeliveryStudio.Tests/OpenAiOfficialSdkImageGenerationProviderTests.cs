@@ -4,6 +4,7 @@ using System.Text.Json;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
+using SkiaSharp;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -15,7 +16,7 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
         var transport = new FakeOpenAiSdkImageTransport(
             new OpenAiSdkImageTransportResult(
-                [137, 80, 78, 71],
+                TestImageFactory.CreatePngBytes(1024, 1024),
                 "img_sdk_provider_123",
                 200,
                 "req_sdk_provider_123",
@@ -63,6 +64,10 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
             Assert.Equal("openai-image-sdk", metadata.RootElement.GetProperty("providerId").GetString());
             Assert.Equal("images", metadata.RootElement.GetProperty("endpointFamily").GetString());
             Assert.False(metadata.RootElement.GetProperty("store").GetBoolean());
+            Assert.Equal("1024x1024", metadata.RootElement.GetProperty("requestedSize").GetString());
+            Assert.Equal("1024x1024", metadata.RootElement.GetProperty("originalSize").GetString());
+            Assert.Equal("1024x1024", metadata.RootElement.GetProperty("deliveredSize").GetString());
+            Assert.Equal("png", metadata.RootElement.GetProperty("deliveredFormat").GetString());
         }
         finally
         {
@@ -71,6 +76,47 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
                 Directory.Delete(rootDirectory, recursive: true);
             }
         }
+    }
+
+    [Fact]
+    public async Task GenerateImageAsync_RejectsUndecodableImageBytesWithoutWritingAsset()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var provider = CreateProvider([1, 2, 3, 4]);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GenerateImageAsync(CreateRequest(rootDirectory), CancellationToken.None));
+
+        Assert.Contains("decoded", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.False(Directory.Exists(rootDirectory));
+    }
+
+    [Fact]
+    public async Task GenerateImageAsync_RejectsUnexpectedImageDimensionsWithoutWritingAsset()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var provider = CreateProvider(TestImageFactory.CreatePngBytes(512, 512));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GenerateImageAsync(CreateRequest(rootDirectory), CancellationToken.None));
+
+        Assert.Contains("512x512", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("1024x1024", exception.Message, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(rootDirectory));
+    }
+
+    [Fact]
+    public async Task GenerateImageAsync_RejectsUnexpectedImageFormatWithoutWritingAsset()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var provider = CreateProvider(TestImageFactory.CreateJpegBytes(1024, 1024));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GenerateImageAsync(CreateRequest(rootDirectory), CancellationToken.None));
+
+        Assert.Contains("jpeg", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("png", exception.Message, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(rootDirectory));
     }
 
     [Fact]
@@ -140,7 +186,7 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
                 new FakePipelineResponse(502),
                 innerException: null),
             new OpenAiSdkImageTransportResult(
-                [137, 80, 78, 71],
+                TestImageFactory.CreatePngBytes(1024, 1024),
                 "img_sdk_provider_retry",
                 200,
                 "req_sdk_provider_retry",
@@ -215,6 +261,31 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
             CallCount++;
             return Task.FromResult(_result);
         }
+    }
+
+    private static OpenAiOfficialSdkImageGenerationProvider CreateProvider(byte[] imageBytes)
+    {
+        return new OpenAiOfficialSdkImageGenerationProvider(
+            new OpenAiProviderOptions { RealApiEnabled = true },
+            new StaticSecretStore("test-openai-key"),
+            new FakeOpenAiSdkImageTransport(
+                new OpenAiSdkImageTransportResult(
+                    imageBytes,
+                    "img_sdk_test",
+                    200,
+                    "req_sdk_test",
+                    BinaryData.FromString("{\"id\":\"img_sdk_test\",\"data\":[]}"))));
+    }
+
+    private static ImageGenerationRequest CreateRequest(string outputDirectory)
+    {
+        return new ImageGenerationRequest(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "prompt",
+            new GenerationSettings(1024, 1024, "standard", "png"),
+            outputDirectory,
+            "generated.png");
     }
 
     private sealed class ThrowingOpenAiSdkImageTransport(int statusCode) : IOpenAiSdkImageTransport
@@ -339,5 +410,26 @@ public sealed class OpenAiOfficialSdkImageGenerationProviderTests
         {
             return Enumerable.Empty<KeyValuePair<string, string>>().GetEnumerator();
         }
+    }
+}
+
+internal static class TestImageFactory
+{
+    public static byte[] CreatePngBytes(int width, int height)
+    {
+        using var bitmap = new SKBitmap(width, height);
+        bitmap.Erase(SKColors.White);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Png, quality: 100);
+        return data.ToArray();
+    }
+
+    public static byte[] CreateJpegBytes(int width, int height)
+    {
+        using var bitmap = new SKBitmap(width, height);
+        bitmap.Erase(SKColors.White);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Jpeg, quality: 90);
+        return data.ToArray();
     }
 }

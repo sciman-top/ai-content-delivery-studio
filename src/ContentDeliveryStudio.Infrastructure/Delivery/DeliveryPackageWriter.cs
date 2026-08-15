@@ -127,12 +127,9 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 item.ExperimentSlug,
                 item.ExperimentParameters ?? new Dictionary<string, string>(),
                 item.GenerationTaskId,
-                item.OutputArtifactId,
                 item.SourceAssetIds ?? [],
                 item.EvidenceAnchorIds ?? [],
-                item.ArtifactRole,
                 item.Blueprint,
-                item.OperatorRunIds ?? [],
                 item.EditProvenance));
         }
 
@@ -185,12 +182,9 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                         item.ExperimentSlug,
                         item.ExperimentParameters,
                         item.GenerationTaskId,
-                        item.OutputArtifactId,
                         item.SourceAssetIds,
                         item.EvidenceAnchorIds,
-                        item.ArtifactRole,
                         item.Blueprint,
-                        item.OperatorRunIds,
                         item.DeterministicCompositionReportPath,
                         item.EditProvenance))
                     .ToArray()),
@@ -310,7 +304,7 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
     private static string WriteManifestCsv(IReadOnlyList<DeliveryManifestItem> items)
     {
         var builder = new StringBuilder();
-        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,finalReviewer,finalApprovalNotes,finalApprovalDecidedAt,deterministicCompositionReportPath,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,outputArtifactId,sourceAssetIds,evidenceAnchorIds,operatorRunIds,artifactRole,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary,editSourceCandidateId,editProviderId,editEndpointClass,editModelId,editApprovalReceiptId,editApprovalRequestSetHash");
+        builder.AppendLine("itemKey,title,imagePath,promptPath,metadataPath,reviewDecision,humanApproved,finalReviewer,finalApprovalNotes,finalApprovalDecidedAt,deterministicCompositionReportPath,styleGuideId,styleGuideVersion,recipeId,referenceImageSetIds,experimentSlug,experimentParameters,generationTaskId,sourceAssetIds,evidenceAnchorIds,blueprintId,blueprintKey,blueprintDisplayName,blueprintCategory,blueprintSequenceMode,blueprintConsistencySummary,blueprintVariationSummary,editSourceCandidateId,editProviderId,editEndpointClass,editModelId,editApprovalReceiptId,editApprovalRequestSetHash");
 
         foreach (var item in items)
         {
@@ -334,11 +328,8 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
                 EscapeCsv(item.ExperimentSlug ?? string.Empty),
                 EscapeCsv(FormatExperimentParameters(item.ExperimentParameters)),
                 EscapeCsv(item.GenerationTaskId?.ToString() ?? string.Empty),
-                EscapeCsv(item.OutputArtifactId?.ToString() ?? string.Empty),
                 EscapeCsv(string.Join(';', item.SourceAssetIds)),
                 EscapeCsv(string.Join(';', item.EvidenceAnchorIds)),
-                EscapeCsv(string.Join(';', item.OperatorRunIds)),
-                EscapeCsv(item.ArtifactRole ?? string.Empty),
                 EscapeCsv(item.Blueprint?.Id.ToString() ?? string.Empty),
                 EscapeCsv(item.Blueprint?.Key ?? string.Empty),
                 EscapeCsv(item.Blueprint?.DisplayName ?? string.Empty),
@@ -440,12 +431,9 @@ public sealed record DeliveryPackageItem(
     string? ExperimentSlug = null,
     IReadOnlyDictionary<string, string>? ExperimentParameters = null,
     Guid? GenerationTaskId = null,
-    Guid? OutputArtifactId = null,
     IReadOnlyList<Guid>? SourceAssetIds = null,
     IReadOnlyList<Guid>? EvidenceAnchorIds = null,
-    string? ArtifactRole = null,
     DeliveryBlueprintMetadata? Blueprint = null,
-    IReadOnlyList<Guid>? OperatorRunIds = null,
     string? DeterministicCompositionReportPath = null,
     CandidateImageEditProvenance? EditProvenance = null);
 
@@ -480,12 +468,9 @@ internal sealed record DeliveryManifestItem(
     string? ExperimentSlug,
     IReadOnlyDictionary<string, string> ExperimentParameters,
     Guid? GenerationTaskId,
-    Guid? OutputArtifactId,
     IReadOnlyList<Guid> SourceAssetIds,
     IReadOnlyList<Guid> EvidenceAnchorIds,
-    string? ArtifactRole,
     DeliveryBlueprintMetadata? Blueprint,
-    IReadOnlyList<Guid> OperatorRunIds,
     CandidateImageEditProvenance? EditProvenance);
 
 internal sealed record StagedDeliveryPackage(

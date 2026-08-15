@@ -33,10 +33,8 @@ public sealed class DeliveryPackageTests
             var referenceSetId = Guid.NewGuid();
             var generationTaskId = Guid.NewGuid();
             var blueprintId = Guid.NewGuid();
-            var outputArtifactId = Guid.NewGuid();
             var sourceAssetId = Guid.NewGuid();
             var evidenceAnchorId = Guid.NewGuid();
-            var operatorRunId = Guid.NewGuid();
             var editSourceCandidateId = Guid.NewGuid();
             var editApprovalReceiptId = Guid.NewGuid();
             var editProvenance = new CandidateImageEditProvenance(
@@ -75,10 +73,8 @@ public sealed class DeliveryPackageTests
                             ExperimentSlug: "001-lighting-soft",
                             ExperimentParameters: new Dictionary<string, string> { ["lighting"] = "soft" },
                             GenerationTaskId: generationTaskId,
-                            OutputArtifactId: outputArtifactId,
                             SourceAssetIds: [sourceAssetId],
                             EvidenceAnchorIds: [evidenceAnchorId],
-                            ArtifactRole: "final-image",
                             Blueprint: new DeliveryBlueprintMetadata(
                                 blueprintId,
                                 "panel-narrative-sequence",
@@ -87,7 +83,6 @@ public sealed class DeliveryPackageTests
                                 "panel_sequence",
                                 "same main character; consistent scene grammar",
                                 "alternate camera distance"),
-                            OperatorRunIds: [operatorRunId],
                             EditProvenance: editProvenance),
                         new DeliveryPackageItem(
                             "alt",
@@ -128,11 +123,8 @@ public sealed class DeliveryPackageTests
             Assert.Equal("001-lighting-soft", items[0].GetProperty("experimentSlug").GetString());
             Assert.Equal("soft", items[0].GetProperty("experimentParameters").GetProperty("lighting").GetString());
             Assert.Equal(generationTaskId, items[0].GetProperty("generationTaskId").GetGuid());
-            Assert.Equal(outputArtifactId, items[0].GetProperty("outputArtifactId").GetGuid());
             Assert.Equal(sourceAssetId, items[0].GetProperty("sourceAssetIds")[0].GetGuid());
             Assert.Equal(evidenceAnchorId, items[0].GetProperty("evidenceAnchorIds")[0].GetGuid());
-            Assert.Equal(operatorRunId, items[0].GetProperty("operatorRunIds")[0].GetGuid());
-            Assert.Equal("final-image", items[0].GetProperty("artifactRole").GetString());
             var blueprint = items[0].GetProperty("blueprint");
             Assert.Equal(blueprintId, blueprint.GetProperty("id").GetGuid());
             Assert.Equal("panel-narrative-sequence", blueprint.GetProperty("key").GetString());
@@ -148,7 +140,6 @@ public sealed class DeliveryPackageTests
             Assert.Equal(editApprovalReceiptId, manifestEdit.GetProperty("approvalReceiptId").GetGuid());
 
             var manifestCsv = await File.ReadAllTextAsync(result.ManifestCsvPath, CancellationToken.None);
-            Assert.Contains("outputArtifactId", manifestCsv);
             Assert.Contains("editApprovalRequestSetHash", manifestCsv);
             Assert.Contains("openai-image-edit", manifestCsv);
             var manifestJson = await File.ReadAllTextAsync(result.ManifestJsonPath, CancellationToken.None);
@@ -156,11 +147,8 @@ public sealed class DeliveryPackageTests
             Assert.DoesNotContain(Path.GetFullPath(sourceDirectory), manifestJson, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("sourceAssetIds", manifestCsv);
             Assert.Contains("evidenceAnchorIds", manifestCsv);
-            Assert.Contains(outputArtifactId.ToString(), manifestCsv);
             Assert.Contains(sourceAssetId.ToString(), manifestCsv);
             Assert.Contains(evidenceAnchorId.ToString(), manifestCsv);
-            Assert.Contains("operatorRunIds", manifestCsv);
-            Assert.Contains(operatorRunId.ToString(), manifestCsv);
             Assert.Contains("finalReviewer", manifestCsv);
             Assert.Contains("Ready for classroom delivery.", manifestCsv);
             Assert.Contains("blueprintConsistencySummary", manifestCsv);

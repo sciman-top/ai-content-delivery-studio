@@ -25,7 +25,7 @@
 | 目前到底验证到了什么程度？ | [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) 然后对照 [../V1_LAUNCH_EVIDENCE.md](../V1_LAUNCH_EVIDENCE.md) |
 | 作为用户或操作者，应当如何走当前最强路径？ | [USER_GUIDE.md](./USER_GUIDE.md) |
 | 如何进行可信科研绘图的本地 fake-first 人工试运行？ | [SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md](./SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md) |
-| 产品工作流、对象模型和 V1 设计边界是什么？ | [PRODUCT_DESIGN.md](./PRODUCT_DESIGN.md) |
+| 产品工作流、对象模型和 V1 设计边界是什么？ | [PRD_V1.md](./PRD_V1.md) 与 [../ARCHITECTURE.md](../ARCHITECTURE.md) |
 | 还要做什么、下一步车道如何划分？ | 先读英文 [../ROADMAP.md](../ROADMAP.md) 和 [../TASKS.md](../TASKS.md) |
 | 非 trivial 工程切片应当如何执行？ | 先读英文 [../AI_CODING_WORKFLOW.md](../AI_CODING_WORKFLOW.md) 和 [../../AGENTS.md](../../AGENTS.md) |
 | provider、operator、reference evidence 的强治理边界是什么？ | 先读英文 [../PROVIDER_ROUTING_POLICY.md](../PROVIDER_ROUTING_POLICY.md)、[../OPERATOR_RISK_POLICY.md](../OPERATOR_RISK_POLICY.md)、[../REFERENCE_EVIDENCE_POLICY.md](../REFERENCE_EVIDENCE_POLICY.md)、[../REFERENCE_BASIS.md](../REFERENCE_BASIS.md) |
@@ -36,7 +36,7 @@
 - [PRD_V1.md](./PRD_V1.md): V1 发布承诺、边界、指标和 blocker。
 - [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md): 当前 V1 指标验证状态与证据快照。
 - [USER_GUIDE.md](./USER_GUIDE.md): 当前最强支持路径的用户使用说明。
-- [PRODUCT_DESIGN.md](./PRODUCT_DESIGN.md): 产品定位、工作流、对象模型与 MVP 范围。
+- [PRD_V1.md](./PRD_V1.md): 产品承诺、工作流与 MVP 边界。
 - [SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md](./SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md): 从任意目录启动、五工作区人工检查和 accepted/rejected finalization。
 
 ## 当前仍以英文版为准的工程文档

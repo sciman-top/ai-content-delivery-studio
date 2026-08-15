@@ -1,13 +1,10 @@
-using ContentDeliveryStudio.Core.Experiments;
-
 namespace ContentDeliveryStudio.Core.Projects;
 
 public sealed record CandidateComparisonInput(
     Guid CandidateImageId,
     string Title,
     string AssetPath,
-    StructuredReviewOutput Review,
-    ParameterGridVariant? ExperimentVariant = null);
+    StructuredReviewOutput Review);
 
 public sealed record CandidateComparison(
     IReadOnlyList<CandidateComparisonRow> Rows)
@@ -25,11 +22,7 @@ public sealed record CandidateComparison(
                     candidate.Review.Decision,
                     CalculateWeightedScore(candidate.Review),
                     candidate.Review.HardFailures.Count,
-                    candidate.Review.NeedsRepair,
-                    candidate.ExperimentVariant?.Slug,
-                    candidate.ExperimentVariant?.ParameterValues ?? new Dictionary<string, string>(),
-                    candidate.ExperimentVariant?.GenerationTaskId,
-                    candidate.ExperimentVariant?.Recipe?.Id))
+                    candidate.Review.NeedsRepair))
                 .OrderBy(row => row.NeedsRepair)
                 .ThenByDescending(row => row.Decision is ReviewDecision.Pass)
                 .ThenBy(row => row.HardFailureCount)
@@ -57,8 +50,4 @@ public sealed record CandidateComparisonRow(
     ReviewDecision Decision,
     double WeightedScore,
     int HardFailureCount,
-    bool NeedsRepair,
-    string? ExperimentSlug,
-    IReadOnlyDictionary<string, string> ExperimentParameters,
-    Guid? GenerationTaskId,
-    Guid? RecipeId);
+    bool NeedsRepair);

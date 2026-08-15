@@ -1,17 +1,14 @@
 # Post-V1 Product Focus PRD
 
-**Status:** Approved planning authority for repository-owned follow-through
+**Status:** Durable product direction; the repository execution queue is retired
 **Date:** 2026-08-02
 **Supersedes:** No historical release document. [PRD_V1.md](./PRD_V1.md) remains the locked V1 promise.
-**Execution queue:** [product-focus-execution.json](./product-focus-execution.json)
-**Design authority:** [2026-08-02-product-focus-and-simplification-design.md](./superpowers/specs/2026-08-02-product-focus-and-simplification-design.md)
-**Implementation authority:** [2026-08-02-product-focus-and-simplification.md](./superpowers/plans/2026-08-02-product-focus-and-simplification.md)
 
 ## 1. Document Role
 
 This PRD narrows the post-V1 product to the capabilities that create direct user value. It exists because the repository has accumulated mature planning, governance, pack, module, operator, and remote-workflow contracts while several ordinary image-production capabilities remain fake-first or contract-only.
 
-This PRD defines what should be productized next, what should be frozen, what may be removed after compatibility review, and how completion must be reported. It does not relabel the historical V1 live snapshot, reopen accepted scientific-figure evidence, authorize paid-provider calls, or claim that every long-term roadmap phase is production-ready.
+This PRD records the durable two-lane product boundary and the criteria for excluding platform work. It is not a task queue or completion ledger. Current external blockers live in [TASKS.md](./TASKS.md). It does not relabel the historical V1 live snapshot, reopen accepted scientific-figure evidence, authorize paid-provider calls, or claim that every long-term roadmap phase is production-ready.
 
 ## 2. Product Thesis
 
@@ -210,14 +207,13 @@ Frozen means: preserve persisted compatibility when it exists, do not expand, an
 
 An AI selecting work must:
 
-1. Read `product-focus-execution.json` and choose the lowest-order `ready` task whose dependencies are complete.
-2. Respect `authority`; repo-only work cannot consume paid or manual authority.
-3. Stay inside the declared `writeSet` unless a discovered dependency is recorded before editing.
-4. Run the declared focused verification before the repository gate.
-5. Update the canonical queue state and one bounded evidence record only after acceptance criteria are met.
-6. Preserve user-owned dirty files and never treat a passing repository gate as live, manual, or hardware acceptance.
-7. Avoid expanding a frozen capability unless a new approved PRD or ADR explicitly reopens it.
+1. Inspect the affected code, tests, and current external blockers before editing.
+2. Respect authority; repo work cannot consume paid, human, or hardware authority.
+3. Freeze the smallest causal write set and expand it only for an observed current failure.
+4. Run one focused affected check and one proportional closeout lane.
+5. Preserve user-owned dirty files and never treat a passing repository gate as live, manual, or hardware acceptance.
+6. Avoid reviving a retired platform or frozen capability without a new approved PRD or ADR and two real consumers.
 
 ## 14. Rollback
 
-Product-focus planning changes may be reverted without changing the locked V1 snapshot or accepted scientific evidence. Implementation tasks must define slice-local source and migration rollback. Git rollback never substitutes for restoring local SQLite, workspace, delivery, or provider state.
+Implementation changes must keep slice-local source and migration rollback clear. Git rollback never substitutes for restoring local SQLite, workspace, delivery, or provider state.

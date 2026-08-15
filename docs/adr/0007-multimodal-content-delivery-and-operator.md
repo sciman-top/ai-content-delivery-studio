@@ -1,8 +1,10 @@
 # ADR 0007: Multimodal Content Delivery And AI Operator Boundary
 
-Status: accepted
+Status: partially superseded
 
 Date: 2026-06-03
+
+Supersession note: source/evidence, deterministic tooling, review, repair, and provider-neutral delivery remain accepted. The generic Pack, OutputArtifact/ArtifactPackage, ToolAdapter/Operator, and module-platform surfaces were retired after the desktop and persistence consumer audit found no current product consumers. See [ARCHITECTURE.md](../ARCHITECTURE.md) for current structure.
 
 ## Context
 

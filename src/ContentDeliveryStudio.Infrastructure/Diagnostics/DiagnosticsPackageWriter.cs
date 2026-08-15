@@ -37,7 +37,6 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
             request.Providers,
             request.Secrets,
             request.RepairPatches ?? [],
-            request.OperatorRuns ?? [],
             request.OpenAiLaunchPreflight,
             request.Logs ?? [],
             request.DroppedLogCount,
@@ -138,15 +137,6 @@ public sealed class DiagnosticsPackageWriter : IDiagnosticsPackageWriter
         }
 
         builder.AppendLine();
-        builder.AppendLine("## Operator Runs");
-
-        foreach (var run in package.OperatorRuns)
-        {
-            builder.AppendLine(
-                $"- {run.ToolAdapterId}: actionStatus={run.ActionStatus}, runStatus={run.RunStatus}, dryRun={run.DryRun}, summary={run.OutputSummary ?? string.Empty}");
-        }
-
-        builder.AppendLine();
         builder.AppendLine("## Structured Logs");
         builder.AppendLine("- scope=local-only, redacted=true, arbitraryMessages=false");
         builder.AppendLine($"- retained={package.Logs.Count}, dropped={package.DroppedLogCount}, invalid={package.InvalidLogCount}");
@@ -194,7 +184,6 @@ internal sealed record DiagnosticsPackage(
     IReadOnlyList<DiagnosticsProviderSnapshot> Providers,
     IReadOnlyList<DiagnosticsSecretSnapshot> Secrets,
     IReadOnlyList<RepairPatchDiagnosticsSnapshot> RepairPatches,
-    IReadOnlyList<OperatorAuditSnapshot> OperatorRuns,
     OpenAiLaunchPreflightDiagnosticsSnapshot? OpenAiLaunchPreflight,
     IReadOnlyList<DiagnosticsLogEntry> Logs,
     int DroppedLogCount,

@@ -1,5 +1,4 @@
 using ContentDeliveryStudio.Application.Projects;
-using ContentDeliveryStudio.Core.Artifacts;
 using ContentDeliveryStudio.Core.Documents;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Sources;
@@ -23,8 +22,6 @@ public sealed class EfProjectRepository : IProjectRepository
         typeof(IllustrationPlan),
         typeof(ProviderProfile),
         typeof(SourceAsset),
-        typeof(OutputArtifact),
-        typeof(ArtifactPackage),
         typeof(RoutedRepairPatch),
     ];
 
@@ -67,8 +64,6 @@ public sealed class EfProjectRepository : IProjectRepository
         return _dbContext.Projects
             .Include(project => project.ProviderProfiles)
             .Include(project => project.SourceAssets)
-            .Include(project => project.OutputArtifacts)
-            .Include(project => project.ArtifactPackages)
             .Include(project => project.DocumentBriefs)
             .Include(project => project.IllustrationPlans)
             .Include(project => project.RoutedRepairPatches)
@@ -104,8 +99,6 @@ public sealed class EfProjectRepository : IProjectRepository
         Add([project]);
         Add(project.ProviderProfiles);
         Add(project.SourceAssets);
-        Add(project.OutputArtifacts);
-        Add(project.ArtifactPackages);
         Add(project.DocumentBriefs);
         Add(project.IllustrationPlans);
         Add(project.RoutedRepairPatches);
@@ -145,8 +138,6 @@ public sealed class EfProjectRepository : IProjectRepository
         await LoadExistingIdsAsync(snapshot, existingIds, typeof(IllustrationPlan), ids => _dbContext.IllustrationPlans.Where(plan => ids.Contains(plan.Id)).Select(plan => plan.Id), cancellationToken);
         await LoadExistingIdsAsync(snapshot, existingIds, typeof(ProviderProfile), ids => _dbContext.ProviderProfiles.Where(profile => ids.Contains(profile.Id)).Select(profile => profile.Id), cancellationToken);
         await LoadExistingIdsAsync(snapshot, existingIds, typeof(SourceAsset), ids => _dbContext.SourceAssets.Where(asset => ids.Contains(asset.Id)).Select(asset => asset.Id), cancellationToken);
-        await LoadExistingIdsAsync(snapshot, existingIds, typeof(OutputArtifact), ids => _dbContext.OutputArtifacts.Where(artifact => ids.Contains(artifact.Id)).Select(artifact => artifact.Id), cancellationToken);
-        await LoadExistingIdsAsync(snapshot, existingIds, typeof(ArtifactPackage), ids => _dbContext.ArtifactPackages.Where(package => ids.Contains(package.Id)).Select(package => package.Id), cancellationToken);
         await LoadExistingIdsAsync(snapshot, existingIds, typeof(RoutedRepairPatch), ids => _dbContext.RoutedRepairPatches.Where(patch => ids.Contains(patch.Id)).Select(patch => patch.Id), cancellationToken);
 
         return existingIds;

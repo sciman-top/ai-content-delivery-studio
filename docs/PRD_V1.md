@@ -197,6 +197,8 @@ Recommended first slice:
 
 Detailed execution rules live in [OPERATOR_RISK_POLICY.md](./OPERATOR_RISK_POLICY.md).
 
+This slice remains part of the locked V1 snapshot. The generic Operator/ToolAdapter platform was later retired after it had no current product consumer; the safety rules now apply at concrete provider, delivery, and external-action boundaries.
+
 ## Source And Artifact Boundary For V1
 
 The release boundary for supported inputs and outputs is intentionally narrow. Launch support focuses on requirement text, pasted or plain-text article input, and image-series delivery artifacts.
@@ -207,7 +209,7 @@ Detailed support status lives in [SOURCE_ARTIFACT_SUPPORT_MATRIX.md](./SOURCE_AR
 
 Two strategy documents now define how V1 relates to longer-term engineering direction:
 
-- [TARGET_ENGINEERING_STATE.md](./TARGET_ENGINEERING_STATE.md)
+- [ARCHITECTURE.md](./ARCHITECTURE.md)
 - [EXTERNAL_REFERENCE_STRATEGY.md](./EXTERNAL_REFERENCE_STRATEGY.md)
 
 ## Launch Metrics

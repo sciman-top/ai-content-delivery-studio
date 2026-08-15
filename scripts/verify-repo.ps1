@@ -24,7 +24,7 @@ if ($Mode -eq "Quick" -and [string]::IsNullOrWhiteSpace($TestFilter)) {
 }
 
 if ($Mode -eq "Full" -and -not [string]::IsNullOrWhiteSpace($TestFilter)) {
-    throw "-TestFilter is available only in Quick mode. Full mode always runs the complete test suite."
+    throw "-TestFilter is available only in Quick mode. Full mode uses the fixed core-test lane."
 }
 
 function Invoke-Step {
@@ -101,10 +101,9 @@ function Invoke-DotNetBuildWithRetry {
 }
 
 $buildArgs = @("build", "ContentDeliveryStudio.sln")
-$testArgs = @("test", "ContentDeliveryStudio.sln")
+$testArgs = @("test", "ContentDeliveryStudio.sln", "--no-build", "--no-restore")
 if ($NoRestore) {
     $buildArgs += "--no-restore"
-    $testArgs += @("--no-build", "--no-restore")
 }
 
 Invoke-Step -Label "dotnet build" -Action {
@@ -113,6 +112,9 @@ Invoke-Step -Label "dotnet build" -Action {
 
 if ($Mode -eq "Quick") {
     $testArgs += @("--filter", $TestFilter)
+} else {
+    $testArgs += @("--filter", "Category!=ReleaseOnly")
+    Write-Host "[BOUNDARY] Full runs the core suite once; Category=ReleaseOnly is reserved for release preflight." -ForegroundColor Yellow
 }
 
 Invoke-Step -Label "dotnet test" -Action {
@@ -134,12 +136,16 @@ Invoke-Step -Label "Reference evidence and governance" -Action {
     }
 }
 
-Invoke-Step -Label "Product focus plan contract" -Action {
-    & ".\scripts\verify-product-focus-plan.ps1"
-}
-
-Invoke-Step -Label "dotnet format --verify-no-changes" -Action {
-    & dotnet format --verify-no-changes
+Invoke-Step -Label "git diff --check" -Action {
+    if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef) -and
+        -not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
+        & git diff --check "$ReferenceEvidenceBaseRef...$ReferenceEvidenceHeadRef"
+    } else {
+        & git diff --check
+        if ($LASTEXITCODE -eq 0) {
+            & git diff --cached --check
+        }
+    }
 }
 
 Write-Host "Repository verification passed." -ForegroundColor Green

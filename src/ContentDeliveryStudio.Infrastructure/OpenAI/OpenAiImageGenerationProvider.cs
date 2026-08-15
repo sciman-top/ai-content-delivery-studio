@@ -225,6 +225,7 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         var imageBytes = Convert.FromBase64String(imageBase64);
         var generatedAt = DateTimeOffset.UtcNow;
         var outputFormat = NormalizeOutputFormat(request.Settings.OutputFormat);
+        var inspectedAsset = GeneratedImageAssetInspector.Inspect(imageBytes, request.Settings, outputFormat);
         var providerTraceId = ExtractTraceId(root);
         var revisedPrompt = ExtractRevisedPrompt(root);
         var toolCallId = ExtractToolCallId(root);
@@ -254,6 +255,10 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
                     seriesItemId = request.SeriesItemId,
                     promptVersionId = request.PromptVersionId,
                     promptText = request.PromptText,
+                    requestedSize = BuildSize(request),
+                    originalSize = inspectedAsset.Size,
+                    deliveredSize = inspectedAsset.Size,
+                    deliveredFormat = inspectedAsset.Format,
                     settings = new
                     {
                         size = BuildSize(request),

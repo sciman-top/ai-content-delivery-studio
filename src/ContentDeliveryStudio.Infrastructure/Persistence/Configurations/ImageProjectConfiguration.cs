@@ -22,14 +22,6 @@ internal sealed class ImageProjectConfiguration : IEntityTypeConfiguration<Image
             .WithOne()
             .HasForeignKey(asset => asset.ProjectId)
             .OnDelete(DeleteBehavior.Cascade);
-        entity.HasMany(project => project.OutputArtifacts)
-            .WithOne()
-            .HasForeignKey(artifact => artifact.ProjectId)
-            .OnDelete(DeleteBehavior.Cascade);
-        entity.HasMany(project => project.ArtifactPackages)
-            .WithOne()
-            .HasForeignKey(package => package.ProjectId)
-            .OnDelete(DeleteBehavior.Cascade);
         entity.HasMany(project => project.DocumentBriefs)
             .WithOne()
             .HasForeignKey(brief => brief.ProjectId)
@@ -46,10 +38,6 @@ internal sealed class ImageProjectConfiguration : IEntityTypeConfiguration<Image
         entity.Navigation(project => project.ProviderProfiles).UsePropertyAccessMode(PropertyAccessMode.Field);
         entity.Navigation(project => project.SourceAssets).UsePropertyAccessMode(PropertyAccessMode.Field);
         entity.Navigation(project => project.SourceAssets).AutoInclude();
-        entity.Navigation(project => project.OutputArtifacts).UsePropertyAccessMode(PropertyAccessMode.Field);
-        entity.Navigation(project => project.OutputArtifacts).AutoInclude();
-        entity.Navigation(project => project.ArtifactPackages).UsePropertyAccessMode(PropertyAccessMode.Field);
-        entity.Navigation(project => project.ArtifactPackages).AutoInclude();
         entity.Navigation(project => project.DocumentBriefs).UsePropertyAccessMode(PropertyAccessMode.Field);
         entity.Navigation(project => project.DocumentBriefs).AutoInclude();
         entity.Navigation(project => project.IllustrationPlans).UsePropertyAccessMode(PropertyAccessMode.Field);

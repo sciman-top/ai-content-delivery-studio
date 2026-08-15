@@ -1,186 +1,89 @@
 # AI Content Delivery Studio
 
-Windows-first AI content delivery workbench with image-series production as the current core launch path.
+Windows-first desktop workbench for controlled image-series production and evidence-grounded scientific figures.
 
-This repository is the active implementation home for the product. It is intentionally separate from `D:\CODE\physicist_chinese_poster_batch_tool`, which remains a production case study and migration sample rather than the implementation root. The product-facing name and the active repository, solution, and namespaces now use `AI Content Delivery Studio` / `ai-content-delivery-studio` / `ContentDeliveryStudio`, with legacy `ImageSeriesStudio` references kept only for historical evidence and bounded compatibility notes.
+The repository's real product path is:
 
-Chinese entrypoints:
-
-- [README.zh-CN.md](./README.zh-CN.md)
-- [docs/zh-CN/README.md](./docs/zh-CN/README.md)
-
-## Current Readout
-
-- Active implementation root: `D:\CODE\ai-content-delivery-studio`
-- Current root after the completed root rename: `D:\CODE\ai-content-delivery-studio`
-- Latest local repository verification: `2026-06-23` via `.\scripts\verify-repo.ps1 -NoRestore`; reference governance parity, reference evidence, build, `433 / 433` tests, and format verification passed
-- Latest stronger closeout gate: `2026-06-23` via `.\scripts\preflight-release.ps1 -NoRestore`
-- Latest recorded V1 release-verification snapshot: `2026-06-23`
-- Latest recorded live OpenAI sample remains: `artifacts/live-openai-v1-sample/20260611-132947`
-- Current launch-verification readout: the `2026-06-23` snapshot in [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md) keeps all `5 / 5` V1 launch metrics verified, with the latest live-provider evidence still anchored to the recorded `2026-06-11` sample
-- Current repo-side execution queue: closed for the recorded V1 and implementation-plan surface; remaining work is intentionally limited to deferred or future trigger lanes rather than an active open backlog
-- Current strongest user-visible routes:
-  - short requirement -> brief -> blueprint -> series -> review -> delivery
-  - plain-text or article -> evidence anchors -> illustration targets -> promoted downstream workflow
-  - text-heavy educational poster -> deterministic text composition -> approval evidence export
-- Current bounded built-in local tool adapters in the desktop host:
-  - `artifact-validation`
-  - `deterministic-text-composition`
-  - read-only `openai-launch-preflight`
-
-Important truth boundary:
-
-- `README.md` is an overview and local-start entrypoint.
-- Current V1 release-claim truth lives only in [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md).
-- Product promise lives in [docs/PRD_V1.md](docs/PRD_V1.md).
-
-## Product Goal
-
-Help a user turn a requirement, source file, or draft into a reviewed delivery package. The current launch spine remains image-series-first:
-
-1. Capture goal, audience, constraints, references, and quality standards.
-2. Produce a reusable brief, blueprint candidates, and a promoted route.
-3. Generate candidate visuals in controlled batches.
-4. Review candidates against structured rubric criteria with human final approval.
-5. Repair the correct layer: brief, blueprint, prompt, settings, deterministic composition, or source evidence.
-6. Export a delivery package with images, prompt snapshots, provenance, review evidence, and manifests.
-
-## Quick Start
-
-### Verify The Repository
-
-Use the canonical local full gate:
-
-```powershell
-.\scripts\verify-repo.ps1
+```text
+source or requirement -> plan -> fake-first generation -> structured review -> human approval -> delivery package
 ```
 
-That gate now checks reference-governance parity first through `.\scripts\sync-reference-governance.ps1 -Check`, then runs reference evidence, build, test, and format verification.
+`D:\CODE\physicist_chinese_poster_batch_tool` is a production case study, not this application's implementation root.
 
-This runs the repository-local reference-evidence gate first, then `dotnet build`, `dotnet test`, and `dotnet format --verify-no-changes`.
+Chinese entrypoints: [README.zh-CN.md](./README.zh-CN.md) and [docs/zh-CN/README.md](./docs/zh-CN/README.md).
 
-### Run The Stronger Release-Style Preflight
+## Product Boundary
+
+- Controlled image series: brief and blueprint comparison, editable plans, durable generation queue, candidate review, explicit human approval, and path-safe delivery.
+- Scientific figures: source evidence, approved figure specification, deterministic SVG authority, independent review, bounded repair, two human gates, and evidence-backed packaging.
+- Document illustration is an input route into those two production lanes, not a third platform.
+- Scenario names such as article, poster, courseware, or report are profiles and delivery categories, not separate workflow engines.
+- Fake providers are the default. Real or paid providers require explicit opt-in configuration and current authorization.
+- `workspace/`, `outputs/`, local SQLite files, provider secrets, and generated assets stay outside Git.
+
+Historical launch and live-provider claims remain bounded by [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md). Repository verification never implies a fresh paid-provider, human, hardware, or field acceptance.
+
+## Verify
+
+Focused feedback:
+
+```powershell
+.\scripts\verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore
+```
+
+Repository closeout:
+
+```powershell
+.\scripts\verify-repo.ps1 -Mode Full
+```
+
+Release closeout:
 
 ```powershell
 .\scripts\preflight-release.ps1
 ```
 
-The release-style preflight also checks reference-governance parity before placeholder, merge-conflict, publish dry-run, and diff-hygiene checks.
+Quick runs one build and the selected tests. Full runs the non-release suite, reference contract, and diff hygiene once. Release invokes Full once, then adds release-only tests, changed-C# formatting, scans, and publish/package checks.
 
-This adds placeholder and merge-conflict scans, reuses the reference-evidence gate, runs the canonical repository verification path, performs a publish dry run, and finishes with diff-hygiene checks.
-
-### Publish A Local Windows Build
+Publish a local Windows build:
 
 ```powershell
 .\scripts\publish-app.ps1 -Configuration Release -Runtime win-x64
 ```
 
-Preview only:
-
-```powershell
-.\scripts\publish-app.ps1 -WhatIfOnly
-```
-
-### Docs-Only Hygiene Check
-
-```powershell
-rg -n "(TB[D]|TO[D]O|PLACE''HOLDER)" .
-git status --short
-```
+Preview publishing with `-WhatIfOnly`.
 
 ## Repository Shape
 
-### Source Projects
-
-- `src/ContentDeliveryStudio.App`: WPF shell, localization, workbench UI, diagnostics, and operator-facing flows.
-- `src/ContentDeliveryStudio.Application`: application services, workflow coordinators, repair routing, and delivery orchestration.
-- `src/ContentDeliveryStudio.Core`: domain model, provider contracts, workflow records, review and delivery invariants.
-- `src/ContentDeliveryStudio.Infrastructure`: EF Core persistence, provider adapters, local tool adapters, diagnostics, and composition services.
-
-### Supporting Areas
-
-- `tests/ContentDeliveryStudio.Tests`: unit, SQLite reload, workflow, provider, launch-route, and delivery verification coverage.
-- `docs/`: product, architecture, roadmap, tasks, launch evidence, provider policy, operator policy, ADRs, and reference governance.
-- `scripts/`: repository verification, release preflight, publish, reference-evidence, and related local automation.
-- `artifacts/`: checked-in evidence bundles such as live OpenAI sample outputs and diagnostics reruns.
-- `workspace/`: local project state and runtime data, ignored by git.
-- `outputs/`: generated delivery outputs, ignored by git.
-
-## Current Launch Boundary
-
-V1 is intentionally narrower than the long-term multimodal vision.
-
-- Primary launch route: short requirement -> `CreativeBrief` -> `DesignBlueprint` -> image-series workflow -> review -> approved `DeliveryPackage`
-- Supporting validation route: article or plain text -> evidence anchors -> illustration targets -> promoted downstream workflow
-- Proof path: generated background plate -> deterministic text, formula, and label composition -> approval evidence export
-
-The authoritative V1 launch frame lives in:
-
-- [docs/PRD_V1.md](docs/PRD_V1.md)
-- [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md)
-- [docs/ROADMAP.md](docs/ROADMAP.md)
-- [docs/TASKS.md](docs/TASKS.md)
+- `src/ContentDeliveryStudio.App`: WPF shell and user-facing workspaces.
+- `src/ContentDeliveryStudio.Application`: product use cases and workflow services.
+- `src/ContentDeliveryStudio.Core`: domain models, provider contracts, review, approval, and delivery invariants.
+- `src/ContentDeliveryStudio.Infrastructure`: persistence, provider implementations, extraction, rendering, diagnostics, and packaging.
+- `tests/ContentDeliveryStudio.Tests`: behavior, persistence, provider-contract, packaging, and release-only coverage.
+- `scripts/`: proportional repository verification, publishing, and reference checks.
+- `docs/`: durable product, architecture, operator, provider, evidence, research, and ADR material.
 
 ## Engineering Posture
 
-- Fake-first and local-first remain the default development and regression posture.
-- Real OpenAI behavior is opt-in and must stay behind explicit provider configuration, preflight, and evidence review.
-- Deterministic text composition is part of the proven V1 path for text-heavy educational or poster-style outputs.
-- Operator automation stays bounded: low-risk local validation and preparation paths first, broader side-effectful automation later.
-- The current transport split is deliberate: stable single-shot image generation uses the official OpenAI .NET SDK Images path, while some Responses-backed planning and review flows still keep raw `HttpClient` where the SDK surface remains incomplete for the current contract needs.
-- Non-trivial engineering changes should use the repo-owned workflow in [docs/AI_CODING_WORKFLOW.md](docs/AI_CODING_WORKFLOW.md): repo-owned spec/plan/evidence, contract-first public seams, conditional subagent/worktree use, and layered auto-execution.
+- Prefer one concrete product path over extension platforms without consumers.
+- Add an abstraction only for two real consumers or one unavoidable external boundary.
+- Test observable behavior and contracts; avoid private source-shape and exact-token assertions.
+- Use the lowest sufficient verification lane once after inputs are frozen.
+- Do not create per-change specs, plans, evidence receipts, queue entries, or governance checks by default.
+- Keep text planning, image generation, image editing, and vision review as separate provider contracts.
+- Deterministic post-render text composition remains the authority for text-dense output.
 
-## Documentation Map
+The lightweight implementation loop is in [docs/AI_CODING_WORKFLOW.md](docs/AI_CODING_WORKFLOW.md).
 
-### Start Here
+## Documentation
 
-- [docs/zh-CN/README.md](docs/zh-CN/README.md)
-- [docs/DOCUMENTATION_GOVERNANCE.md](docs/DOCUMENTATION_GOVERNANCE.md)
-- [docs/AI_CODING_WORKFLOW.md](docs/AI_CODING_WORKFLOW.md)
-- [docs/PRD_V1.md](docs/PRD_V1.md)
-- [docs/V1_LAUNCH_EVIDENCE.md](docs/V1_LAUNCH_EVIDENCE.md)
-- [docs/ROADMAP.md](docs/ROADMAP.md)
-- [docs/TASKS.md](docs/TASKS.md)
+- Product: [docs/PRD_V1.md](docs/PRD_V1.md), [docs/PRD_POST_V1_PRODUCT_FOCUS.md](docs/PRD_POST_V1_PRODUCT_FOCUS.md)
+- Current external blockers: [docs/TASKS.md](docs/TASKS.md)
+- Direction: [docs/ROADMAP.md](docs/ROADMAP.md)
+- Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- User and operator guidance: [docs/USER_GUIDE.md](docs/USER_GUIDE.md), [docs/OPERATOR_RISK_POLICY.md](docs/OPERATOR_RISK_POLICY.md)
+- Provider boundaries: [docs/PROVIDER_CONFIGURATION.md](docs/PROVIDER_CONFIGURATION.md), [docs/PROVIDER_ROUTING_POLICY.md](docs/PROVIDER_ROUTING_POLICY.md)
+- Reference routing: [docs/REFERENCE_BASIS.md](docs/REFERENCE_BASIS.md), [docs/REFERENCE_EVIDENCE_POLICY.md](docs/REFERENCE_EVIDENCE_POLICY.md)
+- Durable decisions: [docs/adr](docs/adr)
 
-### Product And Architecture
-
-- [docs/PRODUCT_DESIGN.md](docs/PRODUCT_DESIGN.md)
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- [docs/TARGET_ENGINEERING_STATE.md](docs/TARGET_ENGINEERING_STATE.md)
-- [docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md](docs/SOURCE_ARTIFACT_SUPPORT_MATRIX.md)
-- [docs/USER_GUIDE.md](docs/USER_GUIDE.md)
-
-### Provider, Operator, And Evidence Governance
-
-- [docs/PROVIDER_CONFIGURATION.md](docs/PROVIDER_CONFIGURATION.md)
-- [docs/PROVIDER_ROUTING_POLICY.md](docs/PROVIDER_ROUTING_POLICY.md)
-- [docs/OPERATOR_RISK_POLICY.md](docs/OPERATOR_RISK_POLICY.md)
-- [docs/REFERENCE_EVIDENCE_POLICY.md](docs/REFERENCE_EVIDENCE_POLICY.md)
-- [docs/REFERENCE_BASIS.md](docs/REFERENCE_BASIS.md)
-- [docs/research/REFERENCE_RESEARCH.md](docs/research/REFERENCE_RESEARCH.md)
-
-### ADRs And Plans
-
-- [docs/superpowers/specs/2026-06-15-ai-coding-workflow-v1-design.md](docs/superpowers/specs/2026-06-15-ai-coding-workflow-v1-design.md)
-- [docs/superpowers/plans/2026-06-15-ai-coding-workflow-v1.md](docs/superpowers/plans/2026-06-15-ai-coding-workflow-v1.md)
-- [docs/adr/0001-independent-repo-and-stack.md](docs/adr/0001-independent-repo-and-stack.md)
-- [docs/adr/0002-api-boundaries-and-review-loop.md](docs/adr/0002-api-boundaries-and-review-loop.md)
-- [docs/adr/0008-product-identity-and-repository-rename.md](docs/adr/0008-product-identity-and-repository-rename.md)
-- [docs/adr/0009-openai-dotnet-sdk-adoption.md](docs/adr/0009-openai-dotnet-sdk-adoption.md)
-- [docs/superpowers/specs/2026-05-31-ai-image-series-studio-design.md](docs/superpowers/specs/2026-05-31-ai-image-series-studio-design.md)
-- [docs/superpowers/plans/2026-05-31-ai-image-series-studio-implementation.md](docs/superpowers/plans/2026-05-31-ai-image-series-studio-implementation.md)
-- [docs/superpowers/plans/2026-06-07-v1-launch-hardening.md](docs/superpowers/plans/2026-06-07-v1-launch-hardening.md)
-
-## Local Reference Shelf
-
-A local external reference shelf is available at:
-
-`D:\CODE\external\ai-content-delivery-studio-references`
-
-The repository keeps a repo-side snapshot of that shelf manifest at `scripts/external-reference-shelf.snapshot.json`. Refresh it together with `docs/REFERENCE_BASIS.md` by running:
-
-```powershell
-.\scripts\sync-reference-governance.ps1
-```
-
-Use it for quick local lookup of official SDKs, WPF and host patterns, EF Core and SQLite references, resilience and observability internals, deterministic document tooling, and image workflow architecture references. These materials inform engineering decisions, but they do not override this repository's source, tests, ADRs, or project rules.
+The external reference shelf is read-only input. `scripts/reference-basis.json` is the routing source used to generate the managed section of `docs/REFERENCE_BASIS.md`; neither source overrides repository code, tests, or ADRs.

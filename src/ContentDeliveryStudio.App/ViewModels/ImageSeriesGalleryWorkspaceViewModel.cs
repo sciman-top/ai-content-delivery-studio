@@ -5,7 +5,7 @@ using ContentDeliveryStudio.Core.References;
 
 namespace ContentDeliveryStudio.App.ViewModels;
 
-internal delegate Task<WorkbenchInspectorImageEditResult?> ImageSeriesGalleryEditRunner(
+internal delegate Task<ImageSeriesGalleryEditResult?> ImageSeriesGalleryEditRunner(
     GalleryRowViewModel selectedRow,
     string editPrompt,
     string? maskPath,
@@ -17,7 +17,7 @@ public sealed partial class ImageSeriesGalleryWorkspaceViewModel : ObservableObj
     private readonly Func<bool> _canMutate;
     private readonly Func<bool> _hasSelectedProject;
     private readonly Action<IReadOnlyList<string>> _queueThumbnailWarmup;
-    private readonly Action<WorkbenchInspectorImageEditResult> _editApplied;
+    private readonly Action<ImageSeriesGalleryEditResult> _editApplied;
     private readonly Func<GalleryRowViewModel?, string> _buildSelectedCandidateSummary;
     private readonly Action _projectionChanged;
     private bool _supportsApprovedImageEdit;
@@ -72,7 +72,7 @@ public sealed partial class ImageSeriesGalleryWorkspaceViewModel : ObservableObj
         Func<bool> canMutate,
         Func<bool> hasSelectedProject,
         Action<IReadOnlyList<string>> queueThumbnailWarmup,
-        Action<WorkbenchInspectorImageEditResult> editApplied,
+        Action<ImageSeriesGalleryEditResult> editApplied,
         Func<GalleryRowViewModel?, string> buildSelectedCandidateSummary,
         Action projectionChanged)
     {
@@ -204,3 +204,8 @@ public sealed partial class ImageSeriesGalleryWorkspaceViewModel : ObservableObj
         return IsApprovedImageEditAvailable;
     }
 }
+
+internal sealed record ImageSeriesGalleryEditResult(
+    IReadOnlyList<GalleryRowViewModel> GalleryRows,
+    GalleryRowViewModel SelectedGalleryRow,
+    IReadOnlyList<string> ActivityItems);

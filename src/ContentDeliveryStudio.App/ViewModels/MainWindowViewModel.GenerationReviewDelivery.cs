@@ -49,7 +49,7 @@ public sealed partial class MainWindowViewModel
         return true;
     }
 
-    private async Task<WorkbenchInspectorImageEditResult?> RunImageSeriesGalleryEditAsync(
+    private async Task<ImageSeriesGalleryEditResult?> RunImageSeriesGalleryEditAsync(
         GalleryRowViewModel selectedRow,
         string editPrompt,
         string? maskPath,
@@ -61,16 +61,19 @@ public sealed partial class MainWindowViewModel
         }
 
         var projectId = SelectedProject.Id;
-        var result = await _operationGate.RunExclusiveAsync(
-            cancellationToken => _workbenchInspectorCoordinator.RunFakeImageEditAsync(
+        var result = await _operationGate.RunExclusiveAsync(async cancellationToken =>
+        {
+            var editedRow = await _generationWorkflowCoordinator.RunFakeImageEditAsync(
                 projectId,
                 selectedRow,
                 editPrompt,
                 maskPath,
-                ImageEditResultText,
-                currentRows,
-                ActivityItems,
-                cancellationToken));
+                cancellationToken);
+            return new ImageSeriesGalleryEditResult(
+                [.. currentRows, editedRow],
+                editedRow,
+                [ImageEditResultText, .. ActivityItems]);
+        });
 
         if (!result.Executed || result.Value is null)
         {
@@ -85,7 +88,7 @@ public sealed partial class MainWindowViewModel
         return result.Value;
     }
 
-    private void ApplyImageSeriesGalleryEditResult(WorkbenchInspectorImageEditResult result)
+    private void ApplyImageSeriesGalleryEditResult(ImageSeriesGalleryEditResult result)
     {
         ImageSeriesReviewWorkspace.ApplyProjection([]);
         ImageSeriesDeliveryWorkspace.ApplyProjection([]);
@@ -235,7 +238,7 @@ public sealed partial class MainWindowViewModel
         var result = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
-                var seriesId = await _planEditorWorkflowCoordinator.CreateSeriesAsync(
+                var seriesId = await _projectWorkspaceCoordinator.CreateSeriesAsync(
                     projectId,
                     title,
                     description,
@@ -272,7 +275,7 @@ public sealed partial class MainWindowViewModel
         var result = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
-                var itemId = await _planEditorWorkflowCoordinator.AddItemAsync(
+                var itemId = await _projectWorkspaceCoordinator.AddItemAsync(
                     projectId,
                     selectedSeriesId,
                     title,
@@ -311,7 +314,7 @@ public sealed partial class MainWindowViewModel
         var operation = await _operationGate.RunExclusiveAsync(
             async cancellationToken =>
             {
-                var promptVersionId = await _planEditorWorkflowCoordinator.CreatePromptVersionAsync(
+                var promptVersionId = await _projectWorkspaceCoordinator.CreatePromptVersionAsync(
                     projectId,
                     selectedItemId,
                     promptText,

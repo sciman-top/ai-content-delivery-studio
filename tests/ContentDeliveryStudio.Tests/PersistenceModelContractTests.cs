@@ -1,5 +1,4 @@
 using System.Collections;
-using ContentDeliveryStudio.Core.Artifacts;
 using ContentDeliveryStudio.Core.Sources;
 using ContentDeliveryStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -71,55 +70,5 @@ public sealed class PersistenceModelContractTests
         db.ChangeTracker.DetectChanges();
 
         Assert.True(entry.Property(nameof(SourceAsset.ExtractedContents)).IsModified);
-    }
-
-    [Fact]
-    public void JsonValueComparer_UsesConsistentEqualityHashAndDeepSnapshot()
-    {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-        using var db = new AppDbContext(options);
-        var property = db.GetService<IDesignTimeModel>().Model
-            .FindEntityType(typeof(OutputArtifact))!
-            .FindProperty(nameof(OutputArtifact.SourceAssetIds))!;
-        var comparer = property.GetValueComparer()!;
-        var original = new List<Guid> { Guid.NewGuid() };
-
-        var snapshot = Assert.IsAssignableFrom<IReadOnlyList<Guid>>(comparer.Snapshot(original));
-
-        Assert.NotSame(original, snapshot);
-        Assert.True(comparer.Equals(original, snapshot));
-        Assert.Equal(comparer.GetHashCode(original), comparer.GetHashCode(snapshot));
-
-        original.Add(Guid.NewGuid());
-
-        Assert.False(comparer.Equals(original, snapshot));
-    }
-
-    [Fact]
-    public void JsonValueComparer_TreatsDictionaryInsertionOrderAsStructurallyEquivalent()
-    {
-        var options = new DbContextOptionsBuilder<AppDbContext>()
-            .UseSqlite("Data Source=:memory:")
-            .Options;
-        using var db = new AppDbContext(options);
-        var property = db.GetService<IDesignTimeModel>().Model
-            .FindEntityType(typeof(OutputArtifact))!
-            .FindProperty(nameof(OutputArtifact.Metadata))!;
-        var comparer = property.GetValueComparer()!;
-        IReadOnlyDictionary<string, string> first = new Dictionary<string, string>
-        {
-            ["alpha"] = "1",
-            ["beta"] = "2",
-        };
-        IReadOnlyDictionary<string, string> second = new Dictionary<string, string>
-        {
-            ["beta"] = "2",
-            ["alpha"] = "1",
-        };
-
-        Assert.True(comparer.Equals(first, second));
-        Assert.Equal(comparer.GetHashCode(first), comparer.GetHashCode(second));
     }
 }

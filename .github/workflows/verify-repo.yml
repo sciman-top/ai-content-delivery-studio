@@ -48,7 +48,7 @@ jobs:
         if: github.event_name == 'pull_request'
         shell: pwsh
         run: |
-          .\scripts\verify-repo.ps1 -ReferenceEvidenceBaseRef $env:REFERENCE_BASE_REF -ReferenceEvidenceHeadRef $env:REFERENCE_HEAD_REF
+          .\scripts\verify-repo.ps1 -Mode Full -ReferenceEvidenceBaseRef $env:REFERENCE_BASE_REF -ReferenceEvidenceHeadRef $env:REFERENCE_HEAD_REF
 
       - name: Run mainline release preflight
         if: github.event_name == 'push'

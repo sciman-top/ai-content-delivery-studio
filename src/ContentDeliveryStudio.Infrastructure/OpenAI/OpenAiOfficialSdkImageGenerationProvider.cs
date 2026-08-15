@@ -117,6 +117,10 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
             "OpenAI official SDK image generation response contained invalid JSON.");
         var generatedAt = DateTimeOffset.UtcNow;
         var outputFormat = NormalizeOutputFormat(request.Settings.OutputFormat);
+        var inspectedAsset = GeneratedImageAssetInspector.Inspect(
+            transportResult.ImageBytes,
+            request.Settings,
+            outputFormat);
         var telemetry = OpenAiProviderTelemetry.Create(
             Capabilities.ProviderId,
             "image-generation",
@@ -153,6 +157,10 @@ public sealed class OpenAiOfficialSdkImageGenerationProvider : IImageGenerationP
                     seriesItemId = request.SeriesItemId,
                     promptVersionId = request.PromptVersionId,
                     promptText = request.PromptText,
+                    requestedSize = BuildSize(request),
+                    originalSize = inspectedAsset.Size,
+                    deliveredSize = inspectedAsset.Size,
+                    deliveredFormat = inspectedAsset.Format,
                     settings = new
                     {
                         size = BuildSize(request),

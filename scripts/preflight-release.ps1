@@ -107,8 +107,46 @@ function Invoke-RgFilteredCheck {
     return $lines
 }
 
+function Get-ChangedPaths {
+    $paths = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+    $gitQueries = @(
+        @("diff", "--name-only", "--diff-filter=ACMR"),
+        @("diff", "--cached", "--name-only", "--diff-filter=ACMR"),
+        @("ls-files", "--others", "--exclude-standard")
+    )
+
+    if (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef) -and
+        -not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
+        $gitQueries += ,@(
+            "diff",
+            "--name-only",
+            "--diff-filter=ACMR",
+            "$ReferenceEvidenceBaseRef...$ReferenceEvidenceHeadRef")
+    }
+
+    foreach ($query in $gitQueries) {
+        $output = @(& git @query)
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to discover changed paths with: git $($query -join ' ')"
+        }
+
+        foreach ($path in $output) {
+            $relativePath = $path.ToString().Trim()
+            if (-not [string]::IsNullOrWhiteSpace($relativePath) -and
+                (Test-Path -LiteralPath $relativePath -PathType Leaf)) {
+                $null = $paths.Add($relativePath)
+            }
+        }
+    }
+
+    return @($paths | Sort-Object)
+}
+
 Invoke-Step -Label "Repository verification" -Action {
-    $verifyParams = @{}
+    $verifyParams = @{
+        Mode = "Full"
+    }
     if ($NoRestore) {
         $verifyParams.NoRestore = $true
     }
@@ -123,6 +161,36 @@ Invoke-Step -Label "Repository verification" -Action {
     }
 
     & ".\scripts\verify-repo.ps1" @verifyParams
+}
+
+Invoke-Step -Label "Release-only tests" -Action {
+    & dotnet test ContentDeliveryStudio.sln --no-build --no-restore --filter "Category=ReleaseOnly"
+}
+
+Invoke-Step -Label "dotnet format --verify-no-changes" -Action {
+    $changedPaths = @(Get-ChangedPaths)
+    $changedCSharpPaths = @($changedPaths | Where-Object {
+        [System.IO.Path]::GetExtension($_) -ieq ".cs"
+    })
+    $formatConfigurationChanged = @($changedPaths | Where-Object {
+        $name = [System.IO.Path]::GetFileName($_)
+        $name -in @(".editorconfig", "global.json") -or
+        $name -like "*.csproj" -or
+        $name -like "Directory.Build.*"
+    }).Count -gt 0
+
+    if ($changedPaths.Count -eq 0 -or $formatConfigurationChanged) {
+        & dotnet format ContentDeliveryStudio.sln --verify-no-changes --no-restore
+        return
+    }
+
+    if ($changedCSharpPaths.Count -eq 0) {
+        Write-Host "No changed C# files detected; formatting verification is not required."
+        $global:LASTEXITCODE = 0
+        return
+    }
+
+    & dotnet format ContentDeliveryStudio.sln --verify-no-changes --no-restore --include @changedCSharpPaths
 }
 
 Invoke-Step -Label "Placeholder scan" -Action {
@@ -172,14 +240,6 @@ if (-not $SkipPublishWhatIf) {
             }
         }
     }
-}
-
-Invoke-Step -Label "git diff --check" -Action {
-    & git diff --check
-}
-
-Invoke-Step -Label "git diff --cached --check" -Action {
-    & git diff --cached --check
 }
 
 Write-Host "Release preflight passed." -ForegroundColor Green

@@ -2,277 +2,106 @@
 
 ## Purpose
 
-This document defines the default AI-assisted engineering workflow for this repository.
+This is the repository's lightweight default for AI-assisted implementation. It keeps the product's real safety boundaries while avoiding duplicate plans, status ledgers, evidence receipts, and repeated verification.
 
-The goal is to keep implementation work:
+## Truth And Scope
 
-- repo-owned rather than tool-owned
-- spec-first rather than prompt-first
-- evidence-backed rather than assumption-backed
-- small-slice and verifiable rather than broad and implicit
+Read only the surfaces needed for the current change:
 
-This workflow is for repository implementation discipline. It is not a product-scope document and it is not a release-readiness ledger.
+1. the affected code and tests
+2. [TASKS.md](./TASKS.md) for remaining work
+3. the relevant product or architecture document when a contract is unclear
+4. [REFERENCE_BASIS.md](./REFERENCE_BASIS.md) only for a mapped high-risk seam
 
-## Core Decision
+Before editing, state the goal, non-goals, write set, cheapest sufficient verification, and stop condition in the task conversation. A separate repository spec or plan is not required for ordinary implementation.
 
-AI 推荐: use `repo-owned spec/plan/evidence + Superpowers as the main workflow skeleton + contract-first coding style + conditional subagent/worktree usage + layered auto-execution`.
+## Default Loop
 
-Do not use an external spec system such as `speckit` as a second long-lived source of truth for this repository.
+1. Reproduce or inspect the current behavior.
+2. Change the smallest causal seam.
+3. Add or update behavior coverage only when it protects a real failure mode or contract.
+4. Run the focused affected check once.
+5. Run one proportional closeout lane after the inputs are frozen.
+6. Update an existing durable document only when its contract or current state changed.
 
-External workflow tools may still influence writing style, acceptance discipline, or local ergonomics. They must not replace the repository's own documents.
+Do not create a new abstraction, compatibility layer, evidence file, spec, plan, queue entry, or governance check merely to document the work being done.
 
-## Truth Sources
+## Verification Lanes
 
-Before non-trivial work starts, read the repository truth surfaces in this order:
+Use the lowest lane that proves the claim.
 
-1. [README.md](../README.md)
-2. [PRD_V1.md](./PRD_V1.md)
-3. [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md)
-4. [ROADMAP.md](./ROADMAP.md)
-5. [TASKS.md](./TASKS.md)
-6. [REFERENCE_BASIS.md](./REFERENCE_BASIS.md)
-
-If the slice touches provider, host, persistence, tooling, or operator boundaries, consult the mapped local reference shelf first.
-
-## Default Workflow
-
-### Phase 0: Read The Current Truth
-
-- Read the core repository truth surfaces listed above.
-- Resolve whether the work is:
-  - `XS-S`: one or two files, low-risk, no new long-lived contract
-  - `M`: one vertical slice, usually three to five files
-  - `L+`: more than one subsystem or more than five files
-
-### Phase 1: Define The Landing Point
-
-For non-trivial changes, create or update a repo-owned spec under `docs/superpowers/specs/`.
-
-The spec must answer:
-
-- goal
-- boundary
-- inputs and outputs
-- failure modes
-- acceptance criteria
-- explicit non-goals
-
-`speckit`-style hygiene is welcome:
-
-- short spec
-- strong acceptance criteria
-- low ambiguity
-
-Do not introduce a parallel external spec system as a second truth surface.
-
-### Phase 2: Write The Implementation Plan
-
-Write or update a repo-owned plan under `docs/superpowers/plans/`.
-
-One plan should cover one vertical slice and normally contain `3-5` tasks.
-
-Each task should state:
-
-- `Why now`
-- `Inputs`
-- `Outputs`
-- `Acceptance`
-- `Verification`
-- `Evidence`
-- `Not in scope`
-
-### Phase 3: Execute
-
-Default execution mode is one agent completing one bounded slice end-to-end.
-
-Use `Matt Pocock`-style contract-first thinking where it helps:
-
-- define or clarify public types first
-- prefer additive changes
-- avoid leaking implementation details
-- keep tests centered on contracts and behavior
-
-### Phase 4: Verify
-
-Use the smallest lane that proves the current claim.
-
-Quick inner-loop feedback requires an explicit focused test filter:
+### Focused / Quick
 
 ```powershell
 .\scripts\verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore
 ```
 
-Quick builds the solution and runs only the selected tests. It does not run reference evidence, product-plan contracts, formatting, release scans, or packaging, so it cannot be cited as repository closeout.
+Quick performs one solution build and one explicitly filtered test run. It skips reference governance, release-only tests, formatting, scans, and packaging. For a smaller inner loop, invoking the affected test project or verifier directly is preferred when a solution build adds no useful signal.
 
-Canonical Full verification:
+### Full
 
 ```powershell
-.\scripts\verify-repo.ps1
+.\scripts\verify-repo.ps1 -Mode Full
 ```
 
-Full runs exactly one `build -> complete test -> reference/product contracts -> format` sequence.
+Full performs exactly:
 
-Release closeout:
+```text
+build -> tests where Category!=ReleaseOnly -> reference contract -> diff hygiene
+```
+
+It does not run release-only tests, a whole-solution formatter, packaging, the retired product-focus queue, or a second copy of any prior step.
+
+### Release
 
 ```powershell
 .\scripts\preflight-release.ps1
 ```
 
-Release runs Full once, then adds placeholder/conflict scans, actual publish/package verification, and staged/unstaged diff hygiene. It must not repeat Full or reference-governance work.
+Release invokes Full once, then adds exactly one `Category=ReleaseOnly` test pass, changed-C# formatting (or full formatting only when formatter configuration changed), placeholder/conflict scans, publish/package verification, and the diff result already established by Full. Core and release-only tests are disjoint; reference governance is not repeated.
 
-Tests should observe domain behavior, persisted state, provider requests, packages, public ViewModel behavior, parsed semantic structure, or native UI Automation. Exact source-token and file-placement assertions are retained only when the source declaration itself is the externally meaningful contract and no stronger probe exists.
+Pull requests use Full. Pushes to `main` use Release.
 
-High-requirement slices must also synchronize:
+## Tests
 
-- docs
-- tasks
-- evidence
-- reference governance
+Prefer tests that observe domain behavior, persisted state, provider requests, package contents, public ViewModel behavior, parsed semantic structure, or native UI Automation.
 
-### Phase 5: Close Out
+Delete or avoid tests that merely assert:
 
-When a slice is complete, synchronize:
+- exact source-token counts
+- file placement with no external contract
+- private call ordering already covered by outcomes
+- duplicate wrapper behavior
+- historical implementation shape
 
-- [ROADMAP.md](./ROADMAP.md)
-- [TASKS.md](./TASKS.md)
-- the spec/plan pair
-- any needed evidence or ADR surface
+Do not broaden from a focused test to Full or Release unless the change crosses a shared/high-risk seam or the repository closeout contract requires it.
 
-Final reporting should distinguish:
+## Durable Documents
 
-- repository-side completion
-- current slice completion
-- remaining longer-term work
+Create or update a durable record only for one of these cases:
 
-## Execution Rules
+- an ADR for an irreversible or long-lived architectural decision
+- migration and rollback instructions for persistence/schema changes
+- structured reference evidence for a mapped seam only when external source actually adjudicates the decision and `-RequireDecision` is selected
+- security, paid/live-provider, manual/hardware, or release acceptance that cannot be inferred from tests
+- a product contract or operator instruction that users need after the change
 
-### Superpowers
+Routine refactors, bug fixes, test updates, and documentation corrections do not require a spec-plan-evidence trio. Completed work belongs in Git history; [TASKS.md](./TASKS.md) should contain only work that remains or an external acceptance blocker.
 
-Superpowers remains the main workflow skeleton for this repository.
+## Parallel Work
 
-Non-trivial changes should leave:
+Default to one executor. Use a subagent or worktree only when there are at least two independently verifiable slices with non-overlapping write sets and the isolation has clear net value. Parallelism does not add extra plans, evidence, or repeated gates.
 
-- a repo-owned spec
-- a repo-owned plan
-- fresh verification evidence
+## Safety Boundaries
 
-### speckit
+Keep these strict even when the workflow is lean:
 
-Do not use `speckit` as a repository system of record.
+- fake providers before live providers
+- explicit authorization for paid calls and external publication
+- secret isolation
+- persistence migration and rollback compatibility
+- human approval before final delivery
+- delivery manifest, hash, and path containment
+- scientific claim/evidence and deterministic render contracts
 
-You may borrow its writing discipline:
-
-- concise specification
-- explicit acceptance criteria
-- lower ambiguity
-
-### Matt Pocock
-
-Use this style mainly for public contracts in:
-
-- `src/ContentDeliveryStudio.Core`
-- `src/ContentDeliveryStudio.Application`
-- pack metadata
-- planning, review, and repair contracts
-
-It is a design style, not the repository's primary workflow system.
-
-### Subagents
-
-Default: do not use subagents.
-
-Use `1-2` subagents only when the work can be cleanly split into independent branches such as:
-
-- document synchronization
-- focused test augmentation
-- an isolated module seam
-
-Do not split one strongly coupled domain or schema or UI slice across many subagents.
-
-### Worktrees
-
-Default: do not create a worktree for ordinary multi-file work.
-
-Use a worktree when isolation meaningfully lowers risk, especially for:
-
-- large rename slices
-- high-risk refactors
-- long-running experiments
-- clearly independent parallel branches
-
-Do not use worktrees for routine documentation tweaks or one bounded vertical slice.
-
-### Auto-Execution
-
-Use layered automation instead of one global "full auto" mode:
-
-- `L1 automatic`
-  - documentation sync
-  - conservative local edits
-  - test and evidence refresh
-- `L2 conditional automatic`
-  - pack schema changes
-  - review and routing behavior changes
-  - provider contract updates
-  - only after spec and plan exist
-- `L3 not automatic by default`
-  - wide rename programs
-  - broad schema migrations
-  - multi-worktree integration closeout
-  - external side effects
-
-## Task Sizing
-
-### `XS-S`
-
-- one or two files
-- low-risk
-- usually no new spec file required
-- update existing plan or task surface when needed
-
-### `M`
-
-- one complete vertical slice
-- commonly three to five touched files
-- requires a repo-owned plan
-
-### `L+`
-
-- more than five files
-- or touches more than one subsystem
-- must be split before implementation
-
-Do not treat `schema + planner + review + UI + docs + evidence` as one execution task.
-
-## Acceptance Criteria For A Slice
-
-Every slice must satisfy:
-
-- no competing truth source is introduced
-- code, tests, docs, and tasks stay synchronized
-- fresh repository verification passes
-- reusable evidence remains in-repo
-
-High-requirement slices must also satisfy:
-
-- source and evidence are not replaced by prompt-only behavior
-- review and repair routing is explicit
-- deterministic-output requirements are visible
-- human approval boundaries are preserved
-
-## Non-Goals
-
-This workflow does not:
-
-- replace product documents such as `PRD_V1.md`
-- replace release truth in `V1_LAUNCH_EVIDENCE.md`
-- require subagents for ordinary slices
-- require worktrees for ordinary slices
-- require external spec tooling
-
-## Relationship To Other Documents
-
-- [DOCUMENTATION_GOVERNANCE.md](./DOCUMENTATION_GOVERNANCE.md) explains which document answers which question.
-- [TASKS.md](./TASKS.md) tracks what still needs to happen.
-- [ROADMAP.md](./ROADMAP.md) keeps sequencing and boundary posture visible.
-- `docs/superpowers/specs/` and `docs/superpowers/plans/` are the long-lived engineering spec and plan surfaces for this repository.
+Repository verification proves repository behavior only. It does not prove host loading, paid/live-provider behavior, manual accessibility, hardware behavior, publication, or external acceptance.

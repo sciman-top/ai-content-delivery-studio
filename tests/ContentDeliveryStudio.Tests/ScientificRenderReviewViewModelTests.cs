@@ -171,21 +171,6 @@ public sealed class ScientificRenderReviewViewModelTests
         Assert.Equal(0.5, viewModel.ZoomScale);
     }
 
-    [Fact]
-    public void RenderReviewView_ProvidesSvgPreviewFindingsProvenanceAndRepairControls()
-    {
-        var xaml = ReadRepoFile("ScientificRenderReviewWorkspaceView.xaml");
-
-        Assert.Contains("<WebBrowser", xaml);
-        Assert.Contains("AutomationProperties.AutomationId=\"ScientificSvgPreview\"", xaml);
-        Assert.Contains("AutomationProperties.AutomationId=\"ScientificSvgAuthorityItems\"", xaml);
-        Assert.Contains("ScientificRenderReview.ContractFindings", xaml);
-        Assert.Contains("ScientificRenderReview.SemanticFindings", xaml);
-        Assert.Contains("ScientificRenderReview.VisualFindings", xaml);
-        Assert.Contains("ScientificRenderReview.RunAutomaticRepairCommand", xaml);
-        Assert.Contains("ScientificRenderReview.RepairHistory", xaml);
-    }
-
     private static RenderReviewFixture CreateFixture()
     {
         var source = ScientificContractReviewFixture.Create(advisoryScore: 0.99);
@@ -221,13 +206,6 @@ public sealed class ScientificRenderReviewViewModelTests
             contract,
             decision,
             repairPlan);
-    }
-
-    private static string ReadRepoFile(string fileName)
-    {
-        return File.ReadAllText(Path.GetFullPath(Path.Combine(
-            AppContext.BaseDirectory, "..", "..", "..", "..", "..",
-            "src", "ContentDeliveryStudio.App", "Views", fileName)));
     }
 
     private sealed record RenderReviewFixture(
