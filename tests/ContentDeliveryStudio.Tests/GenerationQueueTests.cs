@@ -39,6 +39,27 @@ public sealed class GenerationQueueTests
     }
 
     [Fact]
+    public async Task GenerationQueue_RetriesAttemptTimeoutAndReportsTerminalFailure()
+    {
+        var provider = new DelayingImageGenerationProvider(TimeSpan.FromSeconds(10));
+        var queue = new GenerationQueue(
+            provider,
+            new GenerationQueueOptions(
+                MaxConcurrency: 1,
+                MaxRetries: 1,
+                Timeout: TimeSpan.FromMilliseconds(25)));
+
+        var run = await queue.RunAsync([CreateRequest()], CancellationToken.None);
+
+        var task = Assert.Single(run.Tasks);
+        Assert.Equal(GenerationTaskStatus.Failed, task.Status);
+        Assert.Equal(2, task.AttemptCount);
+        Assert.Contains("timed out", task.ErrorMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(run.Images);
+        Assert.Equal(2, provider.CallCount);
+    }
+
+    [Fact]
     public async Task GenerationQueue_FailsBeforeProviderCallWhenRecipeUnsupportedByCapabilities()
     {
         var provider = new CapabilityBoundImageGenerationProvider();
@@ -142,10 +163,13 @@ public sealed class GenerationQueueTests
             SupportsImageEditing: false,
             SupportsStreaming: false);
 
+        public int CallCount { get; private set; }
+
         public async Task<ImageGenerationResult> GenerateImageAsync(
             ImageGenerationRequest request,
             CancellationToken cancellationToken)
         {
+            CallCount++;
             await Task.Delay(_delay, cancellationToken);
 
             return new ImageGenerationResult(

@@ -71,6 +71,10 @@ public sealed class OpenAiImageEditProviderTests
             Assert.Equal(
                 OpenAiImageEditProvider.ComputeSha256ForText("Preserve the subject and change the lighting."),
                 metadata.RootElement.GetProperty("instructionSha256").GetString());
+            Assert.Equal("1024x1024", metadata.RootElement.GetProperty("requestedSize").GetString());
+            Assert.Equal("1024x1024", metadata.RootElement.GetProperty("originalSize").GetString());
+            Assert.Equal("1024x1024", metadata.RootElement.GetProperty("deliveredSize").GetString());
+            Assert.Equal("png", metadata.RootElement.GetProperty("deliveredFormat").GetString());
         }
         finally
         {
@@ -161,6 +165,45 @@ public sealed class OpenAiImageEditProviderTests
         }
     }
 
+    [Theory]
+    [InlineData("undecodable")]
+    [InlineData("wrong-size")]
+    public async Task EditImageAsync_RejectsInvalidProviderImageBeforeWritingOutput(string scenario)
+    {
+        var root = CreateRoot();
+        var sourcePath = WritePng(root, "source.png", 2, 2);
+        var outputDirectory = Path.Combine(root, "outputs");
+        var providerImage = scenario == "wrong-size"
+            ? CreatePngBytes(2, 2)
+            : new byte[] { 1, 2, 3, 4 };
+        var handler = new CapturingHandler(providerImage);
+        var provider = CreateProvider(handler);
+        var sourceId = Guid.NewGuid();
+
+        try
+        {
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => provider.EditImageAsync(
+                CreateRequest(
+                    sourceId,
+                    sourcePath,
+                    maskPath: null,
+                    OpenAiImageEditProvider.ComputeSha256(sourcePath),
+                    outputDirectory),
+                CancellationToken.None));
+
+            Assert.Contains(
+                scenario == "wrong-size" ? "size" : "decode",
+                exception.Message,
+                StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(1, handler.CallCount);
+            Assert.False(Directory.Exists(outputDirectory));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static OpenAiImageEditProvider CreateProvider(CapturingHandler handler, bool realApiEnabled = true)
     {
         return new OpenAiImageEditProvider(
@@ -203,13 +246,17 @@ public sealed class OpenAiImageEditProviderTests
     private static string WritePng(string root, string fileName, int width, int height)
     {
         var path = Path.Combine(root, fileName);
+        File.WriteAllBytes(path, CreatePngBytes(width, height));
+        return path;
+    }
+
+    private static byte[] CreatePngBytes(int width, int height)
+    {
         using var bitmap = new SKBitmap(width, height);
         bitmap.Erase(SKColors.White);
         using var image = SKImage.FromBitmap(bitmap);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
-        using var stream = File.Create(path);
-        data.SaveTo(stream);
-        return path;
+        return data.ToArray();
     }
 
     private sealed class StaticSecretStore(string? value) : IOpenAiSecretStore
@@ -223,6 +270,13 @@ public sealed class OpenAiImageEditProviderTests
 
     private sealed class CapturingHandler : HttpMessageHandler
     {
+        private readonly byte[] _providerImage;
+
+        public CapturingHandler(byte[]? providerImage = null)
+        {
+            _providerImage = providerImage ?? CreatePngBytes(1024, 1024);
+        }
+
         public int CallCount { get; private set; }
 
         public HttpMethod? Method { get; private set; }
@@ -254,7 +308,9 @@ public sealed class OpenAiImageEditProviderTests
             return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(
-                    "{\"id\":\"edit-captured-123\",\"data\":[{\"b64_json\":\"iVBORw==\"}]}",
+                    $$"""
+                    {"id":"edit-captured-123","data":[{"b64_json":"{{Convert.ToBase64String(_providerImage)}}"}]}
+                    """,
                     Encoding.UTF8,
                     "application/json"),
             };

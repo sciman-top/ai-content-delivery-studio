@@ -5,11 +5,43 @@ namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
 internal static class GeneratedImageAssetInspector
 {
+    private const int MaximumGeneratedImageBytes = 50 * 1024 * 1024;
+    private const int MaximumBase64Characters = ((MaximumGeneratedImageBytes + 2) / 3) * 4;
+
+    public static byte[] DecodeBase64(string imageBase64)
+    {
+        if (string.IsNullOrWhiteSpace(imageBase64))
+        {
+            throw new InvalidOperationException("Generated image response did not contain base64 image data.");
+        }
+
+        if (imageBase64.Length > MaximumBase64Characters)
+        {
+            throw new InvalidOperationException("Generated image exceeded the bounded 50 MB output limit.");
+        }
+
+        byte[] imageBytes;
+        try
+        {
+            imageBytes = Convert.FromBase64String(imageBase64);
+        }
+        catch (FormatException exception)
+        {
+            throw new InvalidOperationException("Generated image response contained invalid base64 image data.", exception);
+        }
+
+        EnsureBoundedSize(imageBytes);
+        return imageBytes;
+    }
+
     public static GeneratedImageAssetInfo Inspect(
         byte[] imageBytes,
         GenerationSettings requestedSettings,
         string requestedFormat)
     {
+        ArgumentNullException.ThrowIfNull(imageBytes);
+        EnsureBoundedSize(imageBytes);
+
         using var stream = new MemoryStream(imageBytes, writable: false);
         using var codec = SKCodec.Create(stream)
             ?? throw new InvalidOperationException("Generated image bytes could not be decoded.");
@@ -41,6 +73,14 @@ internal static class GeneratedImageAssetInspector
         }
 
         return new GeneratedImageAssetInfo(deliveredFormat, width, height);
+    }
+
+    private static void EnsureBoundedSize(byte[] imageBytes)
+    {
+        if (imageBytes.Length == 0 || imageBytes.Length > MaximumGeneratedImageBytes)
+        {
+            throw new InvalidOperationException("Generated image must be non-empty and no larger than 50 MB.");
+        }
     }
 }
 

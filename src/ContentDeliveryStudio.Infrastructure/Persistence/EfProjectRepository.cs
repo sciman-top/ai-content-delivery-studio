@@ -34,6 +34,8 @@ public sealed class EfProjectRepository : IProjectRepository
 
     public async Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(project);
+
         var snapshot = BuildAggregateIdentitySnapshot(project);
         var existingIds = await LoadExistingIdsAsync(snapshot, cancellationToken);
 
@@ -62,6 +64,7 @@ public sealed class EfProjectRepository : IProjectRepository
     public Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken)
     {
         return _dbContext.Projects
+            .AsSplitQuery()
             .Include(project => project.ProviderProfiles)
             .Include(project => project.SourceAssets)
             .Include(project => project.DocumentBriefs)

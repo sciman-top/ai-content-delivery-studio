@@ -11,6 +11,8 @@ public sealed class GenerationQueue
 
     public GenerationQueue(IImageGenerationProvider provider, GenerationQueueOptions? options = null)
     {
+        ArgumentNullException.ThrowIfNull(provider);
+
         _provider = provider;
         _options = options ?? new GenerationQueueOptions();
 
@@ -23,12 +25,19 @@ public sealed class GenerationQueue
         {
             throw new ArgumentOutOfRangeException(nameof(options), "MaxRetries cannot be negative.");
         }
+
+        if (_options.Timeout is { } timeout && timeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(options), "Timeout must be positive when configured.");
+        }
     }
 
     public async Task<GenerationQueueRun> RunAsync(
         IReadOnlyList<ImageGenerationRequest> requests,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(requests);
+
         using var concurrency = new SemaphoreSlim(_options.MaxConcurrency);
 
         var executions = requests
@@ -87,16 +96,27 @@ public sealed class GenerationQueue
         while (attemptCount <= _options.MaxRetries)
         {
             attemptCount++;
+            using var attemptCancellation = CreateAttemptCancellation(cancellationToken);
 
             try
             {
-                using var attemptCancellation = CreateAttemptCancellation(cancellationToken);
                 var image = await _provider.GenerateImageAsync(request, attemptCancellation.Token);
                 return GenerationQueueExecution.Succeeded(request, attemptCount, image);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 return GenerationQueueExecution.Cancelled(request, attemptCount);
+            }
+            catch (OperationCanceledException exception) when (attemptCancellation.IsCancellationRequested)
+            {
+                lastError = new TimeoutException(
+                    $"Generation attempt timed out after {_options.Timeout}.",
+                    exception);
+
+                if (attemptCount > _options.MaxRetries)
+                {
+                    break;
+                }
             }
             catch (Exception exception) when (attemptCount <= _options.MaxRetries)
             {

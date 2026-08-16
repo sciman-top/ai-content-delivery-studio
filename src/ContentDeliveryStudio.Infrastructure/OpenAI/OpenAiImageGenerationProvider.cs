@@ -222,7 +222,7 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         CancellationToken cancellationToken)
     {
         var imageBase64 = ExtractImageBase64(root);
-        var imageBytes = Convert.FromBase64String(imageBase64);
+        var imageBytes = GeneratedImageAssetInspector.DecodeBase64(imageBase64);
         var generatedAt = DateTimeOffset.UtcNow;
         var outputFormat = NormalizeOutputFormat(request.Settings.OutputFormat);
         var inspectedAsset = GeneratedImageAssetInspector.Inspect(imageBytes, request.Settings, outputFormat);

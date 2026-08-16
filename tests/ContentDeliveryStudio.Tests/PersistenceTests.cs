@@ -7,6 +7,7 @@ using ContentDeliveryStudio.Core.Styles;
 using ContentDeliveryStudio.Infrastructure.Fakes;
 using ContentDeliveryStudio.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -23,6 +24,7 @@ public sealed class PersistenceTests
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
                 .UseSqlite($"Data Source={databasePath};Pooling=False")
+                .ConfigureWarnings(warnings => warnings.Throw(RelationalEventId.MultipleCollectionIncludeWarning))
                 .Options;
 
             var timestamp = new DateTimeOffset(2026, 6, 24, 10, 0, 0, TimeSpan.Zero);

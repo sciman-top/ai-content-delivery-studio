@@ -69,7 +69,7 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
         ImageEditRequest request,
         CancellationToken cancellationToken)
     {
-        ValidateRequest(request);
+        var validatedInputs = await ValidateRequestAsync(request, cancellationToken);
         await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
             _options,
             _secretStore,
@@ -84,7 +84,7 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
         AddOptionalAppHeaders(httpRequest, appId, appSecret);
-        using var content = await CreateMultipartContentAsync(request, _options.ImageGenerationModel, cancellationToken);
+        using var content = CreateMultipartContent(request, _options.ImageGenerationModel);
         httpRequest.Content = content;
 
         var stopwatch = Stopwatch.StartNew();
@@ -111,19 +111,16 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
                 $"OpenAI image edit request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
         }
 
-        var imageBytes = Convert.FromBase64String(ExtractImageBase64(document.RootElement));
+        var imageBytes = GeneratedImageAssetInspector.DecodeBase64(ExtractImageBase64(document.RootElement));
         var generatedAt = DateTimeOffset.UtcNow;
         var outputFormat = NormalizeOutputFormat(request.Settings.OutputFormat);
+        var inspectedAsset = GeneratedImageAssetInspector.Inspect(imageBytes, request.Settings, outputFormat);
         Directory.CreateDirectory(request.OutputDirectory);
         var assetPath = Path.GetFullPath(Path.Combine(
             request.OutputDirectory,
             EnsureOutputFileName(request.OutputFileName, outputFormat, request.SourceCandidateImageId)));
         EnsureNonDestructiveOutput(assetPath, request);
         var metadataPath = Path.ChangeExtension(assetPath, ".json");
-        var sourceSha256 = await ComputeSha256Async(request.SourceImagePath, cancellationToken);
-        var maskSha256 = string.IsNullOrWhiteSpace(request.MaskImagePath)
-            ? null
-            : await ComputeSha256Async(request.MaskImagePath, cancellationToken);
 
         await AtomicFileWriter.WriteAllBytesAsync(assetPath, imageBytes, cancellationToken);
         await AtomicFileWriter.WriteAllTextAsync(
@@ -136,10 +133,14 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
                 model = _options.ImageGenerationModel,
                 providerTraceId,
                 request.SourceCandidateImageId,
-                sourceSha256,
-                maskSha256,
+                sourceSha256 = validatedInputs.SourceSha256,
+                maskSha256 = validatedInputs.MaskSha256,
                 referenceRoles = request.References.Select(reference => reference.Role.ToString()).ToArray(),
                 instructionSha256 = ComputeSha256ForText(request.PromptText),
+                requestedSize = BuildSize(request.Settings),
+                originalSize = inspectedAsset.Size,
+                deliveredSize = inspectedAsset.Size,
+                deliveredFormat = inspectedAsset.Format,
                 settings = new
                 {
                     size = BuildSize(request.Settings),
@@ -158,7 +159,9 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
             generatedAt);
     }
 
-    private void ValidateRequest(ImageEditRequest request)
+    private async Task<ValidatedImageEditInputs> ValidateRequestAsync(
+        ImageEditRequest request,
+        CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (string.IsNullOrWhiteSpace(request.PromptText))
@@ -195,7 +198,7 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
             throw new InvalidOperationException("This provider slice supports exactly one Subject source-candidate reference.");
         }
 
-        var actualSourceHash = ComputeSha256(request.SourceImagePath);
+        var actualSourceHash = await ComputeSha256Async(request.SourceImagePath, cancellationToken);
         if (!actualSourceHash.Equals(request.References[0].Sha256, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("Source candidate hash does not match the edit reference record.");
@@ -209,7 +212,7 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
 
         if (string.IsNullOrWhiteSpace(request.MaskImagePath))
         {
-            return;
+            return new ValidatedImageEditInputs(actualSourceHash, MaskSha256: null);
         }
 
         if (!File.Exists(request.MaskImagePath))
@@ -229,34 +232,51 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
         {
             throw new InvalidOperationException("Mask edits require source and mask images with identical dimensions.");
         }
+
+        var maskSha256 = await ComputeSha256Async(request.MaskImagePath, cancellationToken);
+        return new ValidatedImageEditInputs(actualSourceHash, maskSha256);
     }
 
-    private static async Task<MultipartFormDataContent> CreateMultipartContentAsync(
+    private static MultipartFormDataContent CreateMultipartContent(
         ImageEditRequest request,
-        string model,
-        CancellationToken cancellationToken)
+        string model)
     {
         var content = new MultipartFormDataContent();
-        content.Add(new StringContent(model), "model");
-        content.Add(new StringContent(request.PromptText), "prompt");
-        content.Add(new StringContent("1"), "n");
-        content.Add(new StringContent(BuildSize(request.Settings)), "size");
-        content.Add(new StringContent(NormalizeQuality(request.Settings.Quality)), "quality");
-        content.Add(new StringContent(NormalizeOutputFormat(request.Settings.OutputFormat)), "output_format");
-
-        var sourceBytes = await File.ReadAllBytesAsync(request.SourceImagePath, cancellationToken);
-        var sourceContent = new ByteArrayContent(sourceBytes);
-        sourceContent.Headers.ContentType = new MediaTypeHeaderValue(GetMediaType(request.SourceImagePath));
-        content.Add(sourceContent, "image[]", Path.GetFileName(request.SourceImagePath));
-
-        if (!string.IsNullOrWhiteSpace(request.MaskImagePath))
+        try
         {
-            var maskBytes = await File.ReadAllBytesAsync(request.MaskImagePath, cancellationToken);
-            var maskContent = new ByteArrayContent(maskBytes);
-            maskContent.Headers.ContentType = new MediaTypeHeaderValue(GetMediaType(request.MaskImagePath));
-            content.Add(maskContent, "mask", Path.GetFileName(request.MaskImagePath));
-        }
+            content.Add(new StringContent(model), "model");
+            content.Add(new StringContent(request.PromptText), "prompt");
+            content.Add(new StringContent("1"), "n");
+            content.Add(new StringContent(BuildSize(request.Settings)), "size");
+            content.Add(new StringContent(NormalizeQuality(request.Settings.Quality)), "quality");
+            content.Add(new StringContent(NormalizeOutputFormat(request.Settings.OutputFormat)), "output_format");
+            content.Add(CreateFileContent(request.SourceImagePath), "image[]", Path.GetFileName(request.SourceImagePath));
 
+            if (!string.IsNullOrWhiteSpace(request.MaskImagePath))
+            {
+                content.Add(CreateFileContent(request.MaskImagePath), "mask", Path.GetFileName(request.MaskImagePath));
+            }
+
+            return content;
+        }
+        catch
+        {
+            content.Dispose();
+            throw;
+        }
+    }
+
+    private static StreamContent CreateFileContent(string path)
+    {
+        var stream = new FileStream(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 81920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        var content = new StreamContent(stream);
+        content.Headers.ContentType = new MediaTypeHeaderValue(GetMediaType(path));
         return content;
     }
 
@@ -369,15 +389,26 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
         return (codec.Info.Width, codec.Info.Height);
     }
 
-    internal static string ComputeSha256(string value) =>
-        Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(value)));
+    internal static string ComputeSha256(string value)
+    {
+        using var stream = File.OpenRead(value);
+        return Convert.ToHexStringLower(SHA256.HashData(stream));
+    }
 
     internal static string ComputeSha256ForText(string value) =>
         Convert.ToHexStringLower(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value)));
 
-    private static Task<string> ComputeSha256Async(string value, CancellationToken cancellationToken)
+    private static async Task<string> ComputeSha256Async(string value, CancellationToken cancellationToken)
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        return Task.FromResult(ComputeSha256(value));
+        await using var stream = new FileStream(
+            value,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            bufferSize: 81920,
+            FileOptions.Asynchronous | FileOptions.SequentialScan);
+        return Convert.ToHexStringLower(await SHA256.HashDataAsync(stream, cancellationToken));
     }
+
+    private sealed record ValidatedImageEditInputs(string SourceSha256, string? MaskSha256);
 }

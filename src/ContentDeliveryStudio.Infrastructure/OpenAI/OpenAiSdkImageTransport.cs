@@ -110,7 +110,7 @@ public sealed class OpenAiSdkImageTransport : IOpenAiSdkImageTransport
             "OpenAI SDK image transport response contained invalid JSON.");
         var imageBase64 = ExtractImageBase64(document.RootElement);
         return new OpenAiSdkImageTransportResult(
-            Convert.FromBase64String(imageBase64),
+            GeneratedImageAssetInspector.DecodeBase64(imageBase64),
             ExtractTraceId(document.RootElement),
             response.StatusCode,
             response.RequestId,
