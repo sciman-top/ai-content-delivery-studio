@@ -11,7 +11,9 @@ public sealed class ProviderCenterPresentationCoordinator
         return
         [
             ProviderEndpointRowViewModel.FromSnapshot(snapshot.Text),
+            .. snapshot.TextFallbacks.Select(ProviderEndpointRowViewModel.FromSnapshot),
             ProviderEndpointRowViewModel.FromSnapshot(snapshot.Image),
+            .. snapshot.ImageFallbacks.Select(ProviderEndpointRowViewModel.FromSnapshot),
         ];
     }
 
@@ -36,8 +38,11 @@ public sealed class ProviderCenterPresentationCoordinator
             return $"Provider configuration needs attention: {snapshot.ValidationMessages.Count} issue(s).";
         }
 
-        var textSecret = snapshot.Text.ApiKeyCount == 1 ? "text key configured" : $"text keys {snapshot.Text.ApiKeyCount}";
-        return $"Providers ready: {textSecret}; image keys {snapshot.Image.ApiKeyCount}; total image concurrency {snapshot.Image.TotalConcurrency}.";
+        var textKeyCount = snapshot.Text.ApiKeyCount + snapshot.TextFallbacks.Sum(item => item.ApiKeyCount);
+        var imageKeyCount = snapshot.Image.ApiKeyCount + snapshot.ImageFallbacks.Sum(item => item.ApiKeyCount);
+        var imageConcurrency = snapshot.Image.TotalConcurrency + snapshot.ImageFallbacks.Sum(item => item.TotalConcurrency);
+        var textSecret = textKeyCount == 1 ? "text key configured" : $"text keys {textKeyCount}";
+        return $"Providers ready: {textSecret}; image keys {imageKeyCount}; total image concurrency {imageConcurrency}.";
     }
 
     public string BuildHealthSummary(ProviderCenterHealthSnapshot snapshot)

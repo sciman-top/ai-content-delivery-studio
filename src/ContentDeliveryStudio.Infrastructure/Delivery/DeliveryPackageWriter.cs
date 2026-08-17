@@ -399,12 +399,34 @@ public sealed class DeliveryPackageWriter : IDeliveryPackageWriter
 
     private static string EscapeCsv(string value)
     {
-        if (!value.Contains(',') && !value.Contains('"') && !value.Contains('\n'))
+        var safeValue = NeutralizeSpreadsheetFormula(value);
+        if (!safeValue.Contains(',')
+            && !safeValue.Contains('"')
+            && !safeValue.Contains('\n')
+            && !safeValue.Contains('\r'))
         {
-            return value;
+            return safeValue;
         }
 
-        return $"\"{value.Replace("\"", "\"\"")}\"";
+        return $"\"{safeValue.Replace("\"", "\"\"")}\"";
+    }
+
+    private static string NeutralizeSpreadsheetFormula(string value)
+    {
+        var firstNonWhitespaceIndex = 0;
+        while (firstNonWhitespaceIndex < value.Length
+               && char.IsWhiteSpace(value[firstNonWhitespaceIndex]))
+        {
+            firstNonWhitespaceIndex++;
+        }
+
+        if (firstNonWhitespaceIndex < value.Length
+            && value[firstNonWhitespaceIndex] is '=' or '+' or '-' or '@')
+        {
+            return $"'{value}";
+        }
+
+        return value;
     }
 }
 

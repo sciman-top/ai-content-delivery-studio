@@ -57,6 +57,41 @@ public sealed class OpenAiProviderContractTests
     }
 
     [Fact]
+    public async Task TextPlanningProvider_AppliesConfiguredAppCredentials()
+    {
+        using var handler = new CaptureHandler(_ => JsonResponse(
+            """
+            {
+              "id": "resp_plan_app_headers",
+              "output_text": "{\"summary\":\"Plan\",\"items\":[{\"title\":\"Opening\",\"brief\":\"A brief\",\"promptDraft\":\"A prompt\"}]}"
+            }
+            """));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiTextPlanningProvider(
+            httpClient,
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                AppIdSecretName = "TEXT_PROVIDER_APP_ID",
+                AppSecretSecretName = "TEXT_PROVIDER_APP_SECRET",
+            },
+            new StaticSecretMapStore(
+                new Dictionary<string, string?>
+                {
+                    ["OPENAI_API_KEY"] = "test-openai-key",
+                    ["TEXT_PROVIDER_APP_ID"] = "app-id",
+                    ["TEXT_PROVIDER_APP_SECRET"] = "app-secret",
+                }));
+
+        await provider.CreatePlanAsync(
+            new PlanningRequest("topic", "audience", 1),
+            CancellationToken.None);
+
+        Assert.Equal("app-id", handler.LastRequest!.Headers.GetValues("X-App-ID").Single());
+        Assert.Equal("app-secret", handler.LastRequest.Headers.GetValues("X-App-Secret").Single());
+    }
+
+    [Fact]
     public async Task TextPlanningProvider_RecordsRequestUsageLatencyAndCostTelemetry()
     {
         var telemetrySink = new RecordingTelemetrySink();
@@ -1032,6 +1067,40 @@ public sealed class OpenAiProviderContractTests
         Assert.Equal("app-id", Assert.Single(appIdValues));
         Assert.True(handler.LastRequest.Headers.TryGetValues("X-App-Secret", out var appSecretValues));
         Assert.Equal("app-secret", Assert.Single(appSecretValues));
+    }
+
+    [Fact]
+    public async Task ImageGenerationProvider_RejectsMissingConfiguredAppCredentialBeforeHttpCall()
+    {
+        using var handler = new CaptureHandler(_ => throw new InvalidOperationException("HTTP must not be called."));
+        using var httpClient = new HttpClient(handler);
+        var provider = new OpenAiImageGenerationProvider(
+            httpClient,
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                AppIdSecretName = "IMAGE_PROVIDER_APP_ID",
+                AppSecretSecretName = "IMAGE_PROVIDER_APP_SECRET",
+            },
+            new StaticSecretMapStore(
+                new Dictionary<string, string?>
+                {
+                    ["OPENAI_API_KEY"] = "test-openai-key",
+                    ["IMAGE_PROVIDER_APP_ID"] = "app-id",
+                }));
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            provider.GenerateImageAsync(
+                new ImageGenerationRequest(
+                    Guid.NewGuid(),
+                    Guid.NewGuid(),
+                    "Create a clean science poster.",
+                    new GenerationSettings(1024, 1024, "standard", "png"),
+                    Path.GetTempPath()),
+                CancellationToken.None));
+
+        Assert.Contains("app secret was not found", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, handler.CallCount);
     }
 
     [Fact]

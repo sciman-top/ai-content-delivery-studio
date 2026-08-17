@@ -766,7 +766,7 @@ public sealed class GenerationWorkflowApplicationService
             throw new InvalidOperationException("Live generation requires a non-fake image provider.");
         }
 
-        if (_imageGenerationProvider.Capabilities.ProviderId.StartsWith("failover:", StringComparison.OrdinalIgnoreCase))
+        if (!_imageGenerationProvider.Capabilities.IsDirectProviderIdentity)
         {
             throw new InvalidOperationException(
                 "Live approval requires a direct provider identity; failover destinations need separate receipt coverage.");

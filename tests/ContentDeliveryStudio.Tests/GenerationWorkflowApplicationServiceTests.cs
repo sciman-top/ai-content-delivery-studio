@@ -4,6 +4,7 @@ using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Core.References;
 using ContentDeliveryStudio.Infrastructure.Fakes;
+using ContentDeliveryStudio.Infrastructure.OpenAI;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -149,6 +150,27 @@ public sealed class GenerationWorkflowApplicationServiceTests
                 CancellationToken.None));
 
         Assert.Equal(0, provider.CallCount);
+        var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+        Assert.Null(loaded!.Series.Single().Items.Single().GenerationTasks.Single().ApprovalReceipt);
+    }
+
+    [Fact]
+    public async Task LiveApproval_RejectsFailoverImageProviderBeforeIssuingReceipt()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new FailoverImageGenerationProvider(
+            [new CapturedPaidImageGenerationProvider(), new CapturedPaidImageGenerationProvider()]);
+        var service = new GenerationWorkflowApplicationService(repository, provider, imageEditProvider: null);
+        var project = await SeedGenerationProjectAsync(repository, itemCount: 1);
+        await service.PrepareGenerationQueueAsync(project.Id, CancellationToken.None);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ApprovePreparedLiveGenerationQueueAsync(
+                project.Id,
+                CreateLiveApprovalRequest(explicitAuthority: true),
+                CancellationToken.None));
+
+        Assert.Contains("direct provider identity", exception.Message, StringComparison.OrdinalIgnoreCase);
         var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
         Assert.Null(loaded!.Series.Single().Items.Single().GenerationTasks.Single().ApprovalReceipt);
     }

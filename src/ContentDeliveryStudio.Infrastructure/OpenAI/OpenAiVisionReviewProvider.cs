@@ -57,15 +57,19 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
             _secretStore,
             OpenAiProviderOperation.VisionReview,
             cancellationToken);
-        var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
-            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
+        var credentials = await ProviderRequestAuthentication.ResolveAsync(
+            _secretStore,
+            _options.ApiKeySecretName,
+            _options.AppIdSecretName,
+            _options.AppSecretSecretName,
+            cancellationToken);
         var imageDataUrl = await CreateCompactImageDataUrlAsync(request.AssetPath, cancellationToken);
         var routing = BaseRouting with { Store = _options.VisionReviewUsesStoredResponses };
         var route = OpenAiTaskModelRouter.ForVisionReview(_options, request);
 
         var endpoint = new Uri(_options.BaseUri, routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        ProviderRequestAuthentication.Apply(httpRequest, credentials);
         httpRequest.Content = JsonContent.Create(CreatePayload(request, imageDataUrl, routing, route), options: JsonOptions);
 
         var stopwatch = Stopwatch.StartNew();

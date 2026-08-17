@@ -103,12 +103,16 @@ public sealed class OpenAiScientificReviewProvider
             _secretStore,
             OpenAiProviderOperation.VisionReview,
             cancellationToken);
-        var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
-            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
+        var credentials = await ProviderRequestAuthentication.ResolveAsync(
+            _secretStore,
+            _options.ApiKeySecretName,
+            _options.AppIdSecretName,
+            _options.AppSecretSecretName,
+            cancellationToken);
         for (var attempt = 1; attempt <= MaximumTransientAttempts; attempt++)
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
-            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+            ProviderRequestAuthentication.Apply(request, credentials);
             request.Content = new ByteArrayContent(payloadBytes);
             request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
 

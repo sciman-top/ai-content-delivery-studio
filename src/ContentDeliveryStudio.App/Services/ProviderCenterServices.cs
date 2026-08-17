@@ -63,26 +63,50 @@ public sealed class DotEnvProviderCenterHealthCheckService : IProviderCenterHeal
         }
 
         var configuration = await ProviderEnvironmentConfiguration.FromDotEnvFileAsync(_envPath, cancellationToken);
-        var textResults = configuration.Text.ApiKeySecretName is null
-            ? []
-            : new[]
-            {
-                ProviderKeyHealthSnapshot.FromResult(
-                    await _healthCheckService.CheckModelsEndpointAsync(configuration.Text, cancellationToken)),
-            };
-        var imageResults = await _healthCheckService.CheckKeyPoolModelsEndpointAsync(configuration.Image, cancellationToken);
+        var textResults = await CheckEndpointsAsync(
+            [configuration.Text, .. configuration.TextFallbacks],
+            cancellationToken);
+        var imageResults = await CheckEndpointsAsync(
+            [configuration.Image, .. configuration.ImageFallbacks],
+            cancellationToken);
 
         return new ProviderCenterHealthSnapshot(
             textResults,
-            imageResults.Select(ProviderKeyHealthSnapshot.FromResult).ToArray());
+            imageResults);
+    }
+
+    private async Task<IReadOnlyList<ProviderKeyHealthSnapshot>> CheckEndpointsAsync(
+        IReadOnlyList<ProviderEndpointEnvironmentConfiguration> endpoints,
+        CancellationToken cancellationToken)
+    {
+        var results = new List<ProviderKeyHealthSnapshot>();
+        foreach (var endpoint in endpoints)
+        {
+            var endpointResults = await _healthCheckService.CheckKeyPoolModelsEndpointAsync(
+                endpoint,
+                cancellationToken);
+            results.AddRange(endpointResults.Select(ProviderKeyHealthSnapshot.FromResult));
+        }
+
+        return results;
     }
 }
 
 public sealed record ProviderCenterSnapshot(
     ProviderEndpointConfigurationSnapshot Text,
     ProviderEndpointConfigurationSnapshot Image,
+    IReadOnlyList<ProviderEndpointConfigurationSnapshot> TextFallbacks,
+    IReadOnlyList<ProviderEndpointConfigurationSnapshot> ImageFallbacks,
     IReadOnlyList<string> ValidationMessages)
 {
+    public ProviderCenterSnapshot(
+        ProviderEndpointConfigurationSnapshot text,
+        ProviderEndpointConfigurationSnapshot image,
+        IReadOnlyList<string> validationMessages)
+        : this(text, image, [], [], validationMessages)
+    {
+    }
+
     public static ProviderCenterSnapshot FromConfiguration(ProviderEnvironmentConfiguration configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -90,6 +114,16 @@ public sealed record ProviderCenterSnapshot(
         return new ProviderCenterSnapshot(
             ProviderEndpointConfigurationSnapshot.FromConfiguration("Text provider", configuration.Text),
             ProviderEndpointConfigurationSnapshot.FromConfiguration("Image provider", configuration.Image),
+            configuration.TextFallbacks
+                .Select((item, index) => ProviderEndpointConfigurationSnapshot.FromConfiguration(
+                    $"Text provider fallback {index + 1}",
+                    item))
+                .ToArray(),
+            configuration.ImageFallbacks
+                .Select((item, index) => ProviderEndpointConfigurationSnapshot.FromConfiguration(
+                    $"Image provider fallback {index + 1}",
+                    item))
+                .ToArray(),
             configuration.Validate());
     }
 
@@ -98,6 +132,8 @@ public sealed record ProviderCenterSnapshot(
         return new ProviderCenterSnapshot(
             ProviderEndpointConfigurationSnapshot.Empty("Text provider", "TEXT_PROVIDER"),
             ProviderEndpointConfigurationSnapshot.Empty("Image provider", "IMAGE_PROVIDER"),
+            [],
+            [],
             [$"Provider environment file was not found: {envPath}"]);
     }
 }
@@ -152,12 +188,10 @@ public sealed record ProviderCenterHealthSnapshot(
 {
     public IReadOnlyList<ProviderKeyHealthSnapshot> ForPrefix(string prefix)
     {
-        return prefix switch
-        {
-            "TEXT_PROVIDER" => Text,
-            "IMAGE_PROVIDER" => Image,
-            _ => [],
-        };
+        return Text
+            .Concat(Image)
+            .Where(item => string.Equals(item.ProviderPrefix, prefix, StringComparison.Ordinal))
+            .ToArray();
     }
 }
 

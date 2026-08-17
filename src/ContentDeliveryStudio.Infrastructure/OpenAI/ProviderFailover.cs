@@ -266,6 +266,7 @@ public static class ProviderFailoverPolicy
             supportedOutputFormats,
             supportedBackgroundModes,
             supportsReferenceImages: capabilityList.Any(capability => capability.SupportsReferenceImages),
-            costHints);
+            costHints,
+            isDirectProviderIdentity: false);
     }
 }

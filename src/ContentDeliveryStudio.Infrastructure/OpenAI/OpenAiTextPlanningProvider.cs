@@ -56,12 +56,16 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             _secretStore,
             OpenAiProviderOperation.TextPlanning,
             cancellationToken);
-        var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
-            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
+        var credentials = await ProviderRequestAuthentication.ResolveAsync(
+            _secretStore,
+            _options.ApiKeySecretName,
+            _options.AppIdSecretName,
+            _options.AppSecretSecretName,
+            cancellationToken);
 
         var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        ProviderRequestAuthentication.Apply(httpRequest, credentials);
         var route = OpenAiTaskModelRouter.ForPlanning(_options, request);
         httpRequest.Content = JsonContent.Create(CreatePayload(request, route), options: JsonOptions);
 
@@ -147,12 +151,16 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             _secretStore,
             OpenAiProviderOperation.TextPlanning,
             cancellationToken);
-        var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
-            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
+        var credentials = await ProviderRequestAuthentication.ResolveAsync(
+            _secretStore,
+            _options.ApiKeySecretName,
+            _options.AppIdSecretName,
+            _options.AppSecretSecretName,
+            cancellationToken);
 
         var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        ProviderRequestAuthentication.Apply(httpRequest, credentials);
         var route = OpenAiTaskModelRouter.ForDocumentPlanning(_options, request);
         httpRequest.Content = JsonContent.Create(
             OpenAiTextPlanningRequestMapper.CreateDocumentIllustrationResponsesPayload(_options, request, route),

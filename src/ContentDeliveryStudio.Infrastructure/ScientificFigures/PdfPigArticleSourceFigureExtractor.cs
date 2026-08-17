@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using ContentDeliveryStudio.Application.ScientificFigures;
+using ContentDeliveryStudio.Infrastructure.Sources;
 using SkiaSharp;
 using UglyToad.PdfPig;
 
@@ -7,6 +8,18 @@ namespace ContentDeliveryStudio.Infrastructure.ScientificFigures;
 
 public sealed class PdfPigArticleSourceFigureExtractor : IArticleSourceFigureExtractor
 {
+    private readonly SourceIngestionBudget _budget;
+
+    public PdfPigArticleSourceFigureExtractor()
+        : this(SourceIngestionBudget.Default)
+    {
+    }
+
+    internal PdfPigArticleSourceFigureExtractor(SourceIngestionBudget budget)
+    {
+        _budget = budget ?? throw new ArgumentNullException(nameof(budget));
+    }
+
     public ArticleSourceFigureAudit Extract(string sourcePdfPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePdfPath);
@@ -15,8 +28,13 @@ public sealed class PdfPigArticleSourceFigureExtractor : IArticleSourceFigureExt
             throw new FileNotFoundException("Article PDF was not found.", sourcePdfPath);
         }
 
+        _budget.ValidateSourceFile(sourcePdfPath);
+
         var assets = new List<ArticleSourceFigureAsset>();
+        var extractedFigureCount = 0;
+        long extractedFigureBytes = 0;
         using var document = PdfDocument.Open(sourcePdfPath);
+        _budget.ValidatePdfPageCount(document.NumberOfPages);
         foreach (var page in document.GetPages())
         {
             var imageIndex = 0;
@@ -24,12 +42,24 @@ public sealed class PdfPigArticleSourceFigureExtractor : IArticleSourceFigureExt
             {
                 imageIndex++;
                 if (image.WidthInSamples < 200
-                    || image.HeightInSamples < 150
-                    || !TryGetSourcePng(image, out var pngBytes)
-                    || pngBytes.Length == 0)
+                    || image.HeightInSamples < 150)
                 {
                     continue;
                 }
+
+                _budget.ValidateFigureCandidate(
+                    image.WidthInSamples,
+                    image.HeightInSamples,
+                    image.RawMemory.Length);
+                if (!TryGetSourcePng(image, out var pngBytes) || pngBytes.Length == 0)
+                {
+                    continue;
+                }
+
+                (extractedFigureCount, extractedFigureBytes) = _budget.AddExtractedFigure(
+                    extractedFigureCount,
+                    extractedFigureBytes,
+                    pngBytes.Length);
 
                 var bounds = image.BoundingBox;
                 assets.Add(new ArticleSourceFigureAsset(
@@ -53,13 +83,19 @@ public sealed class PdfPigArticleSourceFigureExtractor : IArticleSourceFigureExt
         }
 
         return new ArticleSourceFigureAudit(
-            Hash(File.ReadAllBytes(sourcePdfPath)),
+            HashFile(sourcePdfPath),
             document.NumberOfPages,
             Array.AsReadOnly(assets.ToArray()));
     }
 
     private static string Hash(byte[] bytes) =>
         $"sha256:{Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()}";
+
+    private static string HashFile(string path)
+    {
+        using var stream = File.OpenRead(path);
+        return $"sha256:{Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant()}";
+    }
 
     private static bool TryGetSourcePng(
         UglyToad.PdfPig.Content.IPdfImage source,

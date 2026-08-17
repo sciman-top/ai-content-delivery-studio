@@ -1,5 +1,4 @@
 using System.Net;
-using System.Net.Http.Headers;
 
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
@@ -53,14 +52,26 @@ public sealed class ProviderHealthCheckService
             return ProviderHealthCheckResult.MissingConfiguration(endpoint.Prefix, apiKeySecretName, "Base URL is missing.");
         }
 
-        var apiKey = await _secretStore.GetSecretAsync(apiKeySecretName, cancellationToken);
-        if (string.IsNullOrWhiteSpace(apiKey))
+        ProviderRequestCredentials credentials;
+        try
         {
-            return ProviderHealthCheckResult.MissingSecret(endpoint.Prefix, apiKeySecretName);
+            credentials = await ProviderRequestAuthentication.ResolveAsync(
+                _secretStore,
+                apiKeySecretName,
+                endpoint.AppIdSecretName,
+                endpoint.AppSecretSecretName,
+                cancellationToken);
+        }
+        catch (ProviderCredentialNotFoundException exception)
+        {
+            return ProviderHealthCheckResult.MissingSecret(
+                endpoint.Prefix,
+                apiKeySecretName,
+                $"Required secret was not found: {exception.SecretName}");
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Get, BuildModelsUri(endpoint.BaseUri));
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+        ProviderRequestAuthentication.Apply(request, credentials);
 
         try
         {
@@ -111,7 +122,10 @@ public sealed record ProviderHealthCheckResult(
             detail);
     }
 
-    public static ProviderHealthCheckResult MissingSecret(string providerPrefix, string apiKeySecretName)
+    public static ProviderHealthCheckResult MissingSecret(
+        string providerPrefix,
+        string apiKeySecretName,
+        string detail = "Secret was not found.")
     {
         return new ProviderHealthCheckResult(
             providerPrefix,
@@ -119,7 +133,7 @@ public sealed record ProviderHealthCheckResult(
             ProviderHealthStatus.MissingSecret,
             null,
             "/v1/models",
-            "Secret was not found.");
+            detail);
     }
 
     public static ProviderHealthCheckResult FromHttpStatus(

@@ -69,15 +69,27 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             _secretStore,
             OpenAiProviderOperation.ImageGeneration,
             cancellationToken);
-        var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
-            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
-        var appId = await GetOptionalSecretAsync(_options.AppIdSecretName, cancellationToken);
-        var appSecret = await GetOptionalSecretAsync(_options.AppSecretSecretName, cancellationToken);
+        var credentials = await ProviderRequestAuthentication.ResolveAsync(
+            _secretStore,
+            _options.ApiKeySecretName,
+            _options.AppIdSecretName,
+            _options.AppSecretSecretName,
+            cancellationToken);
 
         var useResponsesApi = request.UseResponsesApi || _options.ImageGenerationUsesResponsesByDefault;
         return useResponsesApi
-            ? await GenerateStatefulImageAsync(request, apiKey, appId, appSecret, cancellationToken)
-            : await GenerateSingleShotImageAsync(request, apiKey, appId, appSecret, cancellationToken);
+            ? await GenerateStatefulImageAsync(
+                request,
+                credentials.ApiKey,
+                credentials.AppId,
+                credentials.AppSecret,
+                cancellationToken)
+            : await GenerateSingleShotImageAsync(
+                request,
+                credentials.ApiKey,
+                credentials.AppId,
+                credentials.AppSecret,
+                cancellationToken);
     }
 
     private async Task<ImageGenerationResult> GenerateSingleShotImageAsync(
@@ -89,8 +101,9 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
     {
         var endpoint = new Uri(_options.BaseUri, SingleShotRouting.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        AddOptionalAppHeaders(httpRequest, appId, appSecret);
+        ProviderRequestAuthentication.Apply(
+            httpRequest,
+            new ProviderRequestCredentials(apiKey, appId, appSecret));
         httpRequest.Content = JsonContent.Create(CreateSingleShotPayload(request), options: JsonOptions);
 
         var stopwatch = Stopwatch.StartNew();
@@ -138,8 +151,9 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
             ?? throw new InvalidOperationException("Responses image generation model is required for stateful image generation.");
         var endpoint = new Uri(_options.BaseUri, StatefulRouting.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        AddOptionalAppHeaders(httpRequest, appId, appSecret);
+        ProviderRequestAuthentication.Apply(
+            httpRequest,
+            new ProviderRequestCredentials(apiKey, appId, appSecret));
         httpRequest.Content = JsonContent.Create(CreateStatefulPayload(request, responsesModel), options: JsonOptions);
 
         var stopwatch = Stopwatch.StartNew();
@@ -421,29 +435,6 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         return root.TryGetProperty("created", out var createdElement)
             ? $"openai-image-{createdElement}"
             : "openai-image-generate";
-    }
-
-    private async Task<string?> GetOptionalSecretAsync(string? secretName, CancellationToken cancellationToken)
-    {
-        return string.IsNullOrWhiteSpace(secretName)
-            ? null
-            : await _secretStore.GetSecretAsync(secretName, cancellationToken);
-    }
-
-    private static void AddOptionalAppHeaders(
-        HttpRequestMessage request,
-        string? appId,
-        string? appSecret)
-    {
-        if (!string.IsNullOrWhiteSpace(appId))
-        {
-            request.Headers.TryAddWithoutValidation("X-App-ID", appId);
-        }
-
-        if (!string.IsNullOrWhiteSpace(appSecret))
-        {
-            request.Headers.TryAddWithoutValidation("X-App-Secret", appSecret);
-        }
     }
 
     private void RecordTelemetry(

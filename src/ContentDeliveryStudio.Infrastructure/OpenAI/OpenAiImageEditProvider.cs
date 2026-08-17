@@ -75,15 +75,16 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
             _secretStore,
             OpenAiProviderOperation.ImageGeneration,
             cancellationToken);
-        var apiKey = await _secretStore.GetSecretAsync(_options.ApiKeySecretName, cancellationToken)
-            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
-        var appId = await GetOptionalSecretAsync(_options.AppIdSecretName, cancellationToken);
-        var appSecret = await GetOptionalSecretAsync(_options.AppSecretSecretName, cancellationToken);
+        var credentials = await ProviderRequestAuthentication.ResolveAsync(
+            _secretStore,
+            _options.ApiKeySecretName,
+            _options.AppIdSecretName,
+            _options.AppSecretSecretName,
+            cancellationToken);
         var endpoint = new Uri(_options.BaseUri, "images/edits");
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        httpRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
-        AddOptionalAppHeaders(httpRequest, appId, appSecret);
+        ProviderRequestAuthentication.Apply(httpRequest, credentials);
         using var content = CreateMultipartContent(request, _options.ImageGenerationModel);
         httpRequest.Content = content;
 
@@ -278,26 +279,6 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
         var content = new StreamContent(stream);
         content.Headers.ContentType = new MediaTypeHeaderValue(GetMediaType(path));
         return content;
-    }
-
-    private async Task<string?> GetOptionalSecretAsync(string? secretName, CancellationToken cancellationToken)
-    {
-        return string.IsNullOrWhiteSpace(secretName)
-            ? null
-            : await _secretStore.GetSecretAsync(secretName, cancellationToken);
-    }
-
-    private static void AddOptionalAppHeaders(HttpRequestMessage request, string? appId, string? appSecret)
-    {
-        if (!string.IsNullOrWhiteSpace(appId))
-        {
-            request.Headers.TryAddWithoutValidation("X-App-ID", appId);
-        }
-
-        if (!string.IsNullOrWhiteSpace(appSecret))
-        {
-            request.Headers.TryAddWithoutValidation("X-App-Secret", appSecret);
-        }
     }
 
     private static void EnsureNonDestructiveOutput(string assetPath, ImageEditRequest request)

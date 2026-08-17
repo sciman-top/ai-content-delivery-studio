@@ -6,6 +6,7 @@ obj/
 TestResults/
 /artifacts/
 /eval/scientific-figures/.cache/
+/tmp/
 dist/
 publish/
 .worktrees/

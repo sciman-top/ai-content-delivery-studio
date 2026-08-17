@@ -224,6 +224,90 @@ public sealed class LocalBackupRestoreServiceTests
         }
     }
 
+    [Fact]
+    public async Task CreateBackupAsync_StopsBeforeWritingFileThatExceedsRemainingTotalBudget()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"content-delivery-backup-budget-{Guid.NewGuid():N}");
+        var source = Path.Combine(tempRoot, "source");
+        var backupPath = Path.Combine(tempRoot, "backup.zip");
+
+        try
+        {
+            Directory.CreateDirectory(source);
+            await File.WriteAllTextAsync(Path.Combine(source, "first.txt"), "123");
+            await File.WriteAllTextAsync(Path.Combine(source, "second.txt"), "456");
+            var service = new LocalBackupRestoreService(
+                new LocalBackupRestoreLimits(
+                    MaximumEntryCount: 10,
+                    MaximumEntrySizeBytes: 10,
+                    MaximumTotalSizeBytes: 5,
+                    MaximumManifestSizeBytes: 1024));
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                service.CreateBackupAsync(new(source, backupPath), CancellationToken.None));
+
+            Assert.Contains("total size limit", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.False(File.Exists(backupPath));
+            Assert.DoesNotContain(
+                Directory.EnumerateFiles(tempRoot),
+                path => Path.GetFileName(path).EndsWith(".tmp", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task RestoreBackupAsync_RollsBackEarlierOverwriteWhenLaterCommitFails()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"content-delivery-backup-rollback-{Guid.NewGuid():N}");
+        var source = Path.Combine(tempRoot, "source");
+        var restored = Path.Combine(tempRoot, "restored");
+        var backupPath = Path.Combine(tempRoot, "backup.zip");
+
+        try
+        {
+            Directory.CreateDirectory(source);
+            Directory.CreateDirectory(restored);
+            await File.WriteAllTextAsync(Path.Combine(source, "first.txt"), "new-first");
+            await File.WriteAllTextAsync(Path.Combine(source, "second.txt"), "new-second");
+            await File.WriteAllTextAsync(Path.Combine(restored, "first.txt"), "old-first");
+            await File.WriteAllTextAsync(Path.Combine(restored, "second.txt"), "old-second");
+
+            var service = new LocalBackupRestoreService();
+            await service.CreateBackupAsync(new(source, backupPath), CancellationToken.None);
+
+            await using (var locked = new FileStream(
+                             Path.Combine(restored, "second.txt"),
+                             FileMode.Open,
+                             FileAccess.ReadWrite,
+                             FileShare.None))
+            {
+                await Assert.ThrowsAnyAsync<IOException>(() =>
+                    service.RestoreBackupAsync(
+                        new(backupPath, restored, Overwrite: true),
+                        CancellationToken.None));
+            }
+
+            Assert.Equal("old-first", await File.ReadAllTextAsync(Path.Combine(restored, "first.txt")));
+            Assert.Equal("old-second", await File.ReadAllTextAsync(Path.Combine(restored, "second.txt")));
+            Assert.DoesNotContain(
+                Directory.EnumerateDirectories(tempRoot),
+                path => Path.GetFileName(path).StartsWith(".restored.restore-", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
     private static async Task WriteEntryAsync(ZipArchive archive, string path, string content)
     {
         var entry = archive.CreateEntry(path);

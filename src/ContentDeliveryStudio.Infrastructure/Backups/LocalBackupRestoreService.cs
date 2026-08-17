@@ -9,15 +9,24 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
 {
     private const int ManifestSchemaVersion = 1;
     private const string ManifestEntryName = "backup-manifest.json";
-    private const int MaximumEntryCount = 10_000;
-    private const long MaximumEntrySizeBytes = 512L * 1024 * 1024;
-    private const long MaximumTotalSizeBytes = 4L * 1024 * 1024 * 1024;
-    private const long MaximumManifestSizeBytes = 4L * 1024 * 1024;
 
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
         WriteIndented = true,
     };
+
+    private readonly LocalBackupRestoreLimits _limits;
+
+    public LocalBackupRestoreService()
+        : this(new LocalBackupRestoreLimits())
+    {
+    }
+
+    internal LocalBackupRestoreService(LocalBackupRestoreLimits limits)
+    {
+        _limits = limits ?? throw new ArgumentNullException(nameof(limits));
+        _limits.Validate();
+    }
 
     public async Task<BackupResult> CreateBackupAsync(
         BackupRequest request,
@@ -42,6 +51,7 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
         var options = request.Options ?? BackupOptions.SafeDefaults;
         var includedFiles = new List<BackupManifestFile>();
         var skippedFileCount = 0;
+        long includedSizeBytes = 0;
         var tempBackupPath = Path.Combine(
             backupDirectory,
             $".{Path.GetFileName(backupFilePath)}.{Guid.NewGuid():N}.tmp");
@@ -69,30 +79,36 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
                         continue;
                     }
 
-                    if (includedFiles.Count >= MaximumEntryCount)
+                    if (includedFiles.Count >= _limits.MaximumEntryCount)
                     {
                         throw new InvalidOperationException(
-                            $"Backup exceeds the supported file limit of {MaximumEntryCount}.");
+                            $"Backup exceeds the supported file limit of {_limits.MaximumEntryCount}.");
                     }
 
                     var relativePath = NormalizeArchivePath(Path.GetRelativePath(sourceRoot, filePath));
-                    var entry = archive.CreateEntry(relativePath, CompressionLevel.Optimal);
                     await using var source = File.OpenRead(filePath);
-                    if (source.Length > MaximumEntrySizeBytes)
+                    if (source.Length > _limits.MaximumEntrySizeBytes)
                     {
                         throw new InvalidOperationException(
                             $"Backup file exceeds the supported size limit: {relativePath}");
                     }
 
-                    await using var destination = entry.Open();
-                    var (sizeBytes, sha256) = await CopyAndHashAsync(source, destination, cancellationToken);
-                    includedFiles.Add(new BackupManifestFile(relativePath, sizeBytes, sha256));
-                }
+                    var remainingTotalBytes = checked(_limits.MaximumTotalSizeBytes - includedSizeBytes);
+                    if (source.Length > remainingTotalBytes)
+                    {
+                        throw new InvalidOperationException(
+                            $"Backup exceeds the supported total size limit of {_limits.MaximumTotalSizeBytes} bytes.");
+                    }
 
-                if (includedFiles.Sum(file => file.SizeBytes) > MaximumTotalSizeBytes)
-                {
-                    throw new InvalidOperationException(
-                        $"Backup exceeds the supported total size limit of {MaximumTotalSizeBytes} bytes.");
+                    var entry = archive.CreateEntry(relativePath, CompressionLevel.Optimal);
+                    await using var destination = entry.Open();
+                    var (sizeBytes, sha256) = await CopyAndHashAsync(
+                        source,
+                        destination,
+                        remainingTotalBytes,
+                        cancellationToken);
+                    includedSizeBytes = checked(includedSizeBytes + sizeBytes);
+                    includedFiles.Add(new BackupManifestFile(relativePath, sizeBytes, sha256));
                 }
 
                 var manifest = new BackupManifest(
@@ -134,6 +150,11 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
         }
 
         var targetRoot = Path.GetFullPath(request.TargetDirectory);
+        if (File.Exists(targetRoot))
+        {
+            throw new IOException($"Restore target directory is occupied by a file: {targetRoot}");
+        }
+
         using var archive = ZipFile.OpenRead(backupFilePath);
         var validatedFiles = await ValidateArchiveAsync(
             archive,
@@ -141,33 +162,212 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
             request.Overwrite,
             cancellationToken);
 
-        Directory.CreateDirectory(targetRoot);
-        foreach (var validatedFile in validatedFiles)
+        var trimmedTargetRoot = targetRoot.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var targetParent = Path.GetDirectoryName(trimmedTargetRoot)
+            ?? throw new InvalidOperationException("Restore target cannot be a volume root.");
+        var targetName = Path.GetFileName(trimmedTargetRoot);
+        Directory.CreateDirectory(targetParent);
+        var transactionRoot = Path.Combine(targetParent, $".{targetName}.restore-{Guid.NewGuid():N}");
+        var stagingRoot = Path.Combine(transactionRoot, "payload");
+        var rollbackRoot = Path.Combine(transactionRoot, "rollback");
+        var cleanupTransaction = true;
+
+        try
         {
+            Directory.CreateDirectory(stagingRoot);
+            foreach (var validatedFile in validatedFiles)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var stagingPath = ResolveInsideRoot(stagingRoot, validatedFile.RelativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(stagingPath)!);
+
+                await using var source = validatedFile.Entry.Open();
+                await using var destination = new FileStream(
+                    stagingPath,
+                    FileMode.CreateNew,
+                    FileAccess.Write,
+                    FileShare.None);
+                await source.CopyToAsync(destination, cancellationToken);
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
-            Directory.CreateDirectory(Path.GetDirectoryName(validatedFile.DestinationPath)!);
+            if (!Directory.Exists(targetRoot))
+            {
+                Directory.Move(stagingRoot, targetRoot);
+            }
+            else
+            {
+                CommitStagedFiles(
+                    stagingRoot,
+                    rollbackRoot,
+                    targetRoot,
+                    validatedFiles,
+                    request.Overwrite);
+            }
 
-            await using var source = validatedFile.Entry.Open();
-            await using var destination = new FileStream(
-                validatedFile.DestinationPath,
-                request.Overwrite ? FileMode.Create : FileMode.CreateNew,
-                FileAccess.Write,
-                FileShare.None);
-            await source.CopyToAsync(destination, cancellationToken);
+            return new RestoreResult(targetRoot, validatedFiles.Count);
         }
-
-        return new RestoreResult(targetRoot, validatedFiles.Count);
+        catch (RestoreRollbackException exception)
+        {
+            cleanupTransaction = false;
+            throw new IOException(
+                $"Restore failed and rollback was incomplete. Recovery data was preserved at: {transactionRoot}",
+                exception);
+        }
+        finally
+        {
+            if (cleanupTransaction)
+            {
+                TryDeleteDirectory(transactionRoot);
+            }
+        }
     }
 
-    private static async Task<IReadOnlyList<ValidatedBackupFile>> ValidateArchiveAsync(
+    private static void CommitStagedFiles(
+        string stagingRoot,
+        string rollbackRoot,
+        string targetRoot,
+        IReadOnlyList<ValidatedBackupFile> files,
+        bool overwrite)
+    {
+        var committed = new List<CommittedRestoreFile>(files.Count);
+        var createdDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        try
+        {
+            foreach (var file in files)
+            {
+                var stagingPath = ResolveInsideRoot(stagingRoot, file.RelativePath);
+                var destinationPath = file.DestinationPath;
+                CreateMissingTargetDirectories(
+                    Path.GetDirectoryName(destinationPath)!,
+                    targetRoot,
+                    createdDirectories);
+
+                string? rollbackPath = null;
+                try
+                {
+                    if (File.Exists(destinationPath))
+                    {
+                        if (!overwrite)
+                        {
+                            throw new IOException($"Restore target already exists: {destinationPath}");
+                        }
+
+                        rollbackPath = ResolveInsideRoot(rollbackRoot, file.RelativePath);
+                        Directory.CreateDirectory(Path.GetDirectoryName(rollbackPath)!);
+                        File.Move(destinationPath, rollbackPath);
+                    }
+
+                    File.Move(stagingPath, destinationPath);
+                    committed.Add(new CommittedRestoreFile(destinationPath, rollbackPath));
+                }
+                catch (Exception commitException)
+                {
+                    if (rollbackPath is not null
+                        && File.Exists(rollbackPath)
+                        && !File.Exists(destinationPath))
+                    {
+                        try
+                        {
+                            File.Move(rollbackPath, destinationPath);
+                        }
+                        catch (Exception rollbackException)
+                        {
+                            throw new RestoreRollbackException(commitException, rollbackException);
+                        }
+                    }
+
+                    throw;
+                }
+            }
+        }
+        catch (Exception commitException)
+        {
+            try
+            {
+                RollBackCommittedFiles(committed, createdDirectories);
+            }
+            catch (Exception rollbackException)
+            {
+                throw new RestoreRollbackException(commitException, rollbackException);
+            }
+
+            throw;
+        }
+    }
+
+    private static void CreateMissingTargetDirectories(
+        string directory,
+        string targetRoot,
+        ISet<string> createdDirectories)
+    {
+        var missing = new Stack<string>();
+        for (var current = directory;
+             !string.Equals(current, targetRoot, StringComparison.OrdinalIgnoreCase) && !Directory.Exists(current);
+             current = Path.GetDirectoryName(current)!)
+        {
+            missing.Push(current);
+        }
+
+        while (missing.Count > 0)
+        {
+            var current = missing.Pop();
+            Directory.CreateDirectory(current);
+            createdDirectories.Add(current);
+        }
+    }
+
+    private static void RollBackCommittedFiles(
+        IReadOnlyList<CommittedRestoreFile> committed,
+        IEnumerable<string> createdDirectories)
+    {
+        foreach (var file in committed.Reverse())
+        {
+            if (File.Exists(file.DestinationPath))
+            {
+                File.Delete(file.DestinationPath);
+            }
+
+            if (file.RollbackPath is not null && File.Exists(file.RollbackPath))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(file.DestinationPath)!);
+                File.Move(file.RollbackPath, file.DestinationPath);
+            }
+        }
+
+        foreach (var directory in createdDirectories.OrderByDescending(path => path.Length))
+        {
+            if (Directory.Exists(directory) && !Directory.EnumerateFileSystemEntries(directory).Any())
+            {
+                Directory.Delete(directory);
+            }
+        }
+    }
+
+    private static void TryDeleteDirectory(string path)
+    {
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                Directory.Delete(path, recursive: true);
+            }
+        }
+        catch
+        {
+            // Cleanup is best-effort; preserve the original restore result or failure.
+        }
+    }
+
+    private async Task<IReadOnlyList<ValidatedBackupFile>> ValidateArchiveAsync(
         ZipArchive archive,
         string targetRoot,
         bool overwrite,
         CancellationToken cancellationToken)
     {
-        if (archive.Entries.Count > MaximumEntryCount + 1)
+        if (archive.Entries.Count > _limits.MaximumEntryCount + 1)
         {
-            throw new InvalidDataException($"Backup exceeds the supported entry limit of {MaximumEntryCount}.");
+            throw new InvalidDataException($"Backup exceeds the supported entry limit of {_limits.MaximumEntryCount}.");
         }
 
         var normalizedEntries = new Dictionary<string, ZipArchiveEntry>(StringComparer.OrdinalIgnoreCase);
@@ -192,7 +392,7 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
         }
 
         var manifestEntry = manifestEntries[0];
-        if (manifestEntry.Length > MaximumManifestSizeBytes)
+        if (manifestEntry.Length > _limits.MaximumManifestSizeBytes)
         {
             throw new InvalidDataException("Backup manifest exceeds the supported size limit.");
         }
@@ -218,7 +418,7 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
                 $"Backup manifest schema {manifest.SchemaVersion} is not supported.");
         }
 
-        if (manifest.Files is null || manifest.Files.Count > MaximumEntryCount)
+        if (manifest.Files is null || manifest.Files.Count > _limits.MaximumEntryCount)
         {
             throw new InvalidDataException("Backup manifest has an invalid file count.");
         }
@@ -234,13 +434,13 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
                 throw new InvalidDataException($"Backup manifest contains a duplicate entry path: {normalizedPath}");
             }
 
-            if (file.SizeBytes < 0 || file.SizeBytes > MaximumEntrySizeBytes)
+            if (file.SizeBytes < 0 || file.SizeBytes > _limits.MaximumEntrySizeBytes)
             {
                 throw new InvalidDataException($"Backup entry has an unsupported size: {normalizedPath}");
             }
 
             totalSizeBytes = checked(totalSizeBytes + file.SizeBytes);
-            if (totalSizeBytes > MaximumTotalSizeBytes)
+            if (totalSizeBytes > _limits.MaximumTotalSizeBytes)
             {
                 throw new InvalidDataException("Backup exceeds the supported total size limit.");
             }
@@ -284,15 +484,16 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
                 throw new IOException($"Restore target already exists: {destinationPath}");
             }
 
-            validatedFiles.Add(new ValidatedBackupFile(entry, destinationPath));
+            validatedFiles.Add(new ValidatedBackupFile(entry, normalizedPath, destinationPath));
         }
 
         return validatedFiles;
     }
 
-    private static async Task<(long SizeBytes, string Sha256)> CopyAndHashAsync(
+    private async Task<(long SizeBytes, string Sha256)> CopyAndHashAsync(
         Stream source,
         Stream destination,
+        long maximumRemainingTotalBytes,
         CancellationToken cancellationToken)
     {
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
@@ -302,9 +503,15 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
         while ((read = await source.ReadAsync(buffer, cancellationToken)) > 0)
         {
             total = checked(total + read);
-            if (total > MaximumEntrySizeBytes)
+            if (total > _limits.MaximumEntrySizeBytes)
             {
                 throw new InvalidOperationException("Backup file exceeds the supported size limit.");
+            }
+
+            if (total > maximumRemainingTotalBytes)
+            {
+                throw new InvalidOperationException(
+                    $"Backup exceeds the supported total size limit of {_limits.MaximumTotalSizeBytes} bytes.");
             }
 
             hash.AppendData(buffer, 0, read);
@@ -464,7 +671,17 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
 
     private sealed record ValidatedBackupFile(
         ZipArchiveEntry Entry,
+        string RelativePath,
         string DestinationPath);
+
+    private sealed record CommittedRestoreFile(
+        string DestinationPath,
+        string? RollbackPath);
+
+    private sealed class RestoreRollbackException(Exception commitException, Exception rollbackException)
+        : IOException(
+            "Restore commit failed and the attempted rollback was incomplete.",
+            new AggregateException(commitException, rollbackException));
 }
 
 internal sealed record BackupManifest(
@@ -477,3 +694,21 @@ internal sealed record BackupManifestFile(
     string Path,
     long SizeBytes,
     string Sha256);
+
+internal sealed record LocalBackupRestoreLimits(
+    int MaximumEntryCount = 10_000,
+    long MaximumEntrySizeBytes = 512L * 1024 * 1024,
+    long MaximumTotalSizeBytes = 4L * 1024 * 1024 * 1024,
+    long MaximumManifestSizeBytes = 4L * 1024 * 1024)
+{
+    public void Validate()
+    {
+        if (MaximumEntryCount <= 0
+            || MaximumEntrySizeBytes <= 0
+            || MaximumTotalSizeBytes <= 0
+            || MaximumManifestSizeBytes <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(LocalBackupRestoreLimits), "Backup limits must be positive.");
+        }
+    }
+}

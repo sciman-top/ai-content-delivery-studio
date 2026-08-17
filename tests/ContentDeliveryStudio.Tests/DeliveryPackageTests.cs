@@ -170,6 +170,66 @@ public sealed class DeliveryPackageTests
     }
 
     [Fact]
+    public async Task DeliveryPackageWriter_NeutralizesSpreadsheetFormulasOnlyInCsv()
+    {
+        var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var sourceDirectory = Path.Combine(rootDirectory, "source");
+        var packageDirectory = Path.Combine(rootDirectory, "delivery");
+        Directory.CreateDirectory(sourceDirectory);
+
+        const string dangerousTitle = "=HYPERLINK(\"https://example.invalid\")";
+        const string dangerousReviewer = " \t@SUM(1,2)";
+        const string dangerousNotes = "\r\n+cmd|' /C calc'!A0";
+        const string dangerousExperimentSlug = "-2+3";
+
+        try
+        {
+            var imagePath = Path.Combine(sourceDirectory, "approved.png");
+            await File.WriteAllBytesAsync(imagePath, [1, 2, 3], CancellationToken.None);
+
+            var result = await new DeliveryPackageWriter().WriteAsync(
+                new DeliveryPackageRequest(
+                    "Formula safety",
+                    packageDirectory,
+                    [
+                        new DeliveryPackageItem(
+                            "cover",
+                            dangerousTitle,
+                            imagePath,
+                            Path.Combine(sourceDirectory, "missing-metadata.json"),
+                            "Prompt",
+                            ReviewDecision.Pass,
+                            HumanApproved: true,
+                            FinalReviewer: dangerousReviewer,
+                            FinalApprovalNotes: dangerousNotes,
+                            ExperimentSlug: dangerousExperimentSlug),
+                    ]),
+                CancellationToken.None);
+
+            var manifestCsv = await File.ReadAllTextAsync(result.ManifestCsvPath, CancellationToken.None);
+            Assert.Contains("\"'=HYPERLINK(\"\"https://example.invalid\"\")\"", manifestCsv);
+            Assert.Contains("\"' \t@SUM(1,2)\"", manifestCsv);
+            Assert.Contains("\"'\r\n+cmd|' /C calc'!A0\"", manifestCsv);
+            Assert.Contains("'-2+3", manifestCsv);
+
+            using var manifestStream = File.OpenRead(result.ManifestJsonPath);
+            using var manifest = await JsonDocument.ParseAsync(manifestStream, cancellationToken: CancellationToken.None);
+            var item = manifest.RootElement.GetProperty("items")[0];
+            Assert.Equal(dangerousTitle, item.GetProperty("title").GetString());
+            Assert.Equal(dangerousReviewer, item.GetProperty("finalReviewer").GetString());
+            Assert.Equal(dangerousNotes, item.GetProperty("finalApprovalNotes").GetString());
+            Assert.Equal(dangerousExperimentSlug, item.GetProperty("experimentSlug").GetString());
+        }
+        finally
+        {
+            if (Directory.Exists(rootDirectory))
+            {
+                Directory.Delete(rootDirectory, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task DeliveryPackageWriter_RejectsDuplicateNormalizedKeys()
     {
         var rootDirectory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));

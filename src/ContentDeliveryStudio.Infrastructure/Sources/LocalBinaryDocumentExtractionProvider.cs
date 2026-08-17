@@ -15,6 +15,18 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
         SourceAssetKind.Docx,
     ];
 
+    private readonly SourceIngestionBudget _budget;
+
+    public LocalBinaryDocumentExtractionProvider()
+        : this(SourceIngestionBudget.Default)
+    {
+    }
+
+    internal LocalBinaryDocumentExtractionProvider(SourceIngestionBudget budget)
+    {
+        _budget = budget ?? throw new ArgumentNullException(nameof(budget));
+    }
+
     public DocumentExtractionProviderCapabilities Capabilities { get; } = new(
         "local-binary-document-extraction",
         "Local Binary Document Extraction Provider",
@@ -42,6 +54,8 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
             throw new FileNotFoundException("Binary document extraction requires an existing local file path.", request.OriginalPath);
         }
 
+        _budget.ValidateSourceFile(request.OriginalPath);
+
         return request.SourceKind switch
         {
             SourceAssetKind.Pdf => await ExtractPdfAsync(request, cancellationToken),
@@ -50,7 +64,7 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
         };
     }
 
-    private static Task<DocumentExtractionResult> ExtractPdfAsync(
+    private Task<DocumentExtractionResult> ExtractPdfAsync(
         DocumentExtractionRequest request,
         CancellationToken cancellationToken)
     {
@@ -62,6 +76,7 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
         var offset = 0;
 
         using var document = PdfDocument.Open(request.OriginalPath!);
+        _budget.ValidatePdfPageCount(document.NumberOfPages);
         foreach (var page in document.GetPages())
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -72,6 +87,7 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
                 continue;
             }
 
+            var nextOffset = _budget.AddExtractedText(offset, text.Length);
             var locationHint = $"{fileName}: page {page.Number}";
             extractedContents.Add(new ExtractedContentDraft(
                 ExtractedContentKind.PlainText,
@@ -79,13 +95,13 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
                 locationHint,
                 page.Number,
                 offset,
-                offset + text.Length));
+                nextOffset));
             anchors.Add(new EvidenceAnchorDraft(
                 extractedContents.Count - 1,
                 $"pdf-page-{page.Number}",
                 SelectAnchorQuote(text),
                 locationHint));
-            offset += text.Length;
+            offset = nextOffset;
         }
 
         EnsureHasExtractedContent(extractedContents, fileName, "PDF");
@@ -95,7 +111,7 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
             "local-binary-pdf-extraction"));
     }
 
-    private static async Task<DocumentExtractionResult> ExtractDocxAsync(
+    private async Task<DocumentExtractionResult> ExtractDocxAsync(
         DocumentExtractionRequest request,
         CancellationToken cancellationToken)
     {
@@ -109,8 +125,7 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
         using var archive = ZipFile.OpenRead(request.OriginalPath!);
         var entry = archive.GetEntry("word/document.xml")
             ?? throw new InvalidOperationException("DOCX body XML was not found. High-fidelity or unsupported DOCX extraction is outside the current supported boundary.");
-        await using var stream = entry.Open();
-        var document = await XDocument.LoadAsync(stream, LoadOptions.None, cancellationToken);
+        var document = await _budget.LoadDocxBodyAsync(entry, cancellationToken);
         XNamespace wordNamespace = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 
         var paragraphIndex = 0;
@@ -128,6 +143,7 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
             }
 
             paragraphIndex++;
+            var nextOffset = _budget.AddExtractedText(offset, text.Length);
             var locationHint = $"{fileName}: paragraph {paragraphIndex}";
             extractedContents.Add(new ExtractedContentDraft(
                 ExtractedContentKind.PlainText,
@@ -135,13 +151,13 @@ public sealed class LocalBinaryDocumentExtractionProvider : IDocumentExtractionP
                 locationHint,
                 null,
                 offset,
-                offset + text.Length));
+                nextOffset));
             anchors.Add(new EvidenceAnchorDraft(
                 extractedContents.Count - 1,
                 $"docx-paragraph-{paragraphIndex}",
                 SelectAnchorQuote(text),
                 locationHint));
-            offset += text.Length;
+            offset = nextOffset;
         }
 
         EnsureHasExtractedContent(extractedContents, fileName, "DOCX");

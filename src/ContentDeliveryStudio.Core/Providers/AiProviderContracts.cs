@@ -82,6 +82,8 @@ public interface IProviderCapabilities
     int MaxReferenceImageCount { get; }
 
     long MaxReferenceImageBytes { get; }
+
+    bool IsDirectProviderIdentity { get; }
 }
 
 public sealed class ProviderCapabilities : IProviderCapabilities
@@ -104,7 +106,8 @@ public sealed class ProviderCapabilities : IProviderCapabilities
         IReadOnlyList<ReferenceImageRole>? supportedReferenceImageRoles = null,
         bool supportsMaskEditing = false,
         int maxReferenceImageCount = 0,
-        long maxReferenceImageBytes = 0)
+        long maxReferenceImageBytes = 0,
+        bool isDirectProviderIdentity = true)
     {
         ProviderId = providerId;
         DisplayName = displayName;
@@ -124,6 +127,7 @@ public sealed class ProviderCapabilities : IProviderCapabilities
         SupportsMaskEditing = supportsMaskEditing;
         MaxReferenceImageCount = maxReferenceImageCount;
         MaxReferenceImageBytes = maxReferenceImageBytes;
+        IsDirectProviderIdentity = isDirectProviderIdentity;
     }
 
     public string ProviderId { get; }
@@ -161,6 +165,8 @@ public sealed class ProviderCapabilities : IProviderCapabilities
     public int MaxReferenceImageCount { get; }
 
     public long MaxReferenceImageBytes { get; }
+
+    public bool IsDirectProviderIdentity { get; }
 }
 
 public sealed record ImageOutputSize(int Width, int Height);

@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.ScientificFigures;
 using ContentDeliveryStudio.Core.Sources;
+using ContentDeliveryStudio.Infrastructure.Sources;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 
@@ -18,6 +19,18 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
         SourceAssetKind.Paste,
     ];
 
+    private readonly SourceIngestionBudget _budget;
+
+    public PdfPigScientificDocumentExtractor()
+        : this(SourceIngestionBudget.Default)
+    {
+    }
+
+    internal PdfPigScientificDocumentExtractor(SourceIngestionBudget budget)
+    {
+        _budget = budget ?? throw new ArgumentNullException(nameof(budget));
+    }
+
     public Task<ScientificDocumentExtraction> ExtractAsync(
         ScientificDocumentExtractionRequest request,
         CancellationToken cancellationToken)
@@ -25,6 +38,15 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
         ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
         ValidateRequest(request);
+
+        if (request.SourceKind == SourceAssetKind.Pdf)
+        {
+            _budget.ValidateSourceFile(request.OriginalPath!);
+        }
+        else
+        {
+            _budget.AddExtractedText(0, request.SourceText.Length);
+        }
 
         var blocks = request.SourceKind == SourceAssetKind.Pdf
             ? ExtractPdfBlocks(request, cancellationToken)
@@ -113,13 +135,15 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
         }
     }
 
-    private static List<ScientificSourceBlock> ExtractPdfBlocks(
+    private List<ScientificSourceBlock> ExtractPdfBlocks(
         ScientificDocumentExtractionRequest request,
         CancellationToken cancellationToken)
     {
         var blocks = new List<ScientificSourceBlock>();
         var offset = 0;
+        var extractedCharacterCount = 0;
         using var document = PdfDocument.Open(request.OriginalPath!);
+        _budget.ValidatePdfPageCount(document.NumberOfPages);
         foreach (var page in document.GetPages())
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -140,6 +164,7 @@ public sealed partial class PdfPigScientificDocumentExtractor : IScientificDocum
             for (var index = 0; index < pageBlocks.Length; index++)
             {
                 var text = pageBlocks[index];
+                extractedCharacterCount = _budget.AddExtractedText(extractedCharacterCount, text.Length);
                 var kind = ClassifyScholarlyBlock(SourceAssetKind.Pdf, text);
                 if (kind == ScientificSourceBlockKind.Heading)
                 {

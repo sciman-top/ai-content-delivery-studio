@@ -30,6 +30,30 @@ public sealed class ProviderCenterPresentationCoordinatorTests
                 UsesAppCredentials: true,
                 ConcurrencyPerKey: 10,
                 TotalConcurrency: 40),
+            [
+                new ProviderEndpointConfigurationSnapshot(
+                    "Text provider fallback 1",
+                    "TEXT_PROVIDER_FALLBACK_1",
+                    "openai_compatible",
+                    "https://text-backup.example/v1",
+                    "gpt-5.5",
+                    1,
+                    UsesAppCredentials: false,
+                    ConcurrencyPerKey: 1,
+                    TotalConcurrency: 1),
+            ],
+            [
+                new ProviderEndpointConfigurationSnapshot(
+                    "Image provider fallback 1",
+                    "IMAGE_PROVIDER_FALLBACK_1",
+                    "openai_compatible_image_only",
+                    "https://image-backup.example/v1",
+                    "image-model",
+                    2,
+                    UsesAppCredentials: false,
+                    ConcurrencyPerKey: 2,
+                    TotalConcurrency: 4),
+            ],
             []);
 
         var rows = coordinator.BuildProviderRows(snapshot);
@@ -42,12 +66,14 @@ public sealed class ProviderCenterPresentationCoordinatorTests
                 Assert.Equal("1 key", row.SecretSummary);
                 Assert.Equal("Not checked", row.HealthSummary);
             },
+            row => Assert.Equal("TEXT_PROVIDER_FALLBACK_1", row.Prefix),
             row =>
             {
                 Assert.Equal("Image provider", row.Title);
                 Assert.Equal("4 keys + app credentials", row.SecretSummary);
                 Assert.Equal("10 per key / 40 total", row.ConcurrencySummary);
-            });
+            },
+            row => Assert.Equal("IMAGE_PROVIDER_FALLBACK_1", row.Prefix));
     }
 
     [Fact]

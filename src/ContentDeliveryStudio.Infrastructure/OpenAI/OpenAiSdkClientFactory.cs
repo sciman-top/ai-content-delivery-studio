@@ -1,4 +1,5 @@
 using System.ClientModel;
+using System.ClientModel.Primitives;
 using OpenAI;
 using OpenAI.Images;
 using OpenAI.Responses;
@@ -28,35 +29,39 @@ public sealed class OpenAiSdkClientFactory
                 nameof(requiredOperation));
         }
 
-        var credential = await CreateCredentialAsync(options, requiredOperation, cancellationToken);
+        var credentials = await ResolveCredentialsAsync(options, requiredOperation, cancellationToken);
+        var clientOptions = new ResponsesClientOptions
+        {
+            Endpoint = options.BaseUri,
+        };
+        AddAppCredentialPolicies(clientOptions, credentials);
 
         return new ResponsesClient(
-            credential,
-            new ResponsesClientOptions
-            {
-                Endpoint = options.BaseUri,
-            });
+            new ApiKeyCredential(credentials.ApiKey),
+            clientOptions);
     }
 
     public async Task<ImageClient> CreateImageClientAsync(
         OpenAiProviderOptions options,
         CancellationToken cancellationToken)
     {
-        var credential = await CreateCredentialAsync(
+        var credentials = await ResolveCredentialsAsync(
             options,
             OpenAiProviderOperation.ImageGeneration,
             cancellationToken);
+        var clientOptions = new OpenAIClientOptions
+        {
+            Endpoint = options.BaseUri,
+        };
+        AddAppCredentialPolicies(clientOptions, credentials);
 
         return new ImageClient(
             options.ImageGenerationModel,
-            credential,
-            new OpenAIClientOptions
-            {
-                Endpoint = options.BaseUri,
-            });
+            new ApiKeyCredential(credentials.ApiKey),
+            clientOptions);
     }
 
-    private async Task<ApiKeyCredential> CreateCredentialAsync(
+    private async Task<ProviderRequestCredentials> ResolveCredentialsAsync(
         OpenAiProviderOptions options,
         OpenAiProviderOperation requiredOperation,
         CancellationToken cancellationToken)
@@ -67,10 +72,37 @@ public sealed class OpenAiSdkClientFactory
             requiredOperation,
             cancellationToken);
 
-        var apiKey = await _secretStore.GetSecretAsync(options.ApiKeySecretName, cancellationToken)
-            ?? throw new InvalidOperationException("OpenAI API key was not found in the configured secret store.");
+        return await ProviderRequestAuthentication.ResolveAsync(
+            _secretStore,
+            options.ApiKeySecretName,
+            options.AppIdSecretName,
+            options.AppSecretSecretName,
+            cancellationToken);
+    }
 
-        return new ApiKeyCredential(apiKey);
+    private static void AddAppCredentialPolicies(
+        ClientPipelineOptions options,
+        ProviderRequestCredentials credentials)
+    {
+        if (!string.IsNullOrWhiteSpace(credentials.AppId))
+        {
+            options.AddPolicy(
+                ApiKeyAuthenticationPolicy.CreateHeaderApiKeyPolicy(
+                    new ApiKeyCredential(credentials.AppId),
+                    "X-App-ID",
+                    keyPrefix: null!),
+                PipelinePosition.PerCall);
+        }
+
+        if (!string.IsNullOrWhiteSpace(credentials.AppSecret))
+        {
+            options.AddPolicy(
+                ApiKeyAuthenticationPolicy.CreateHeaderApiKeyPolicy(
+                    new ApiKeyCredential(credentials.AppSecret),
+                    "X-App-Secret",
+                    keyPrefix: null!),
+                PipelinePosition.PerCall);
+        }
     }
 }
 #pragma warning restore OPENAI001
