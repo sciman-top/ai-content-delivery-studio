@@ -196,6 +196,41 @@ public sealed class ArticleScientificFigureSetTests
     }
 
     [Fact]
+    public void EvidenceBoardRenderer_UsesContentHeightForSixPhotographs()
+    {
+        var assets = Enumerable.Range(1, 6).Select(index =>
+        {
+            var png = CreatePhotographicPng(index);
+            return new ArticleSourceFigureAsset(
+                $"source-photo-{index}",
+                PageNumber: index,
+                PageImageIndex: 1,
+                PixelWidth: 800,
+                PixelHeight: 600,
+                PageLeft: 10,
+                PageBottom: 10,
+                PageWidth: 400,
+                PageHeight: 300,
+                Hash(png),
+                png);
+        }).ToArray();
+        var audit = new ArticleSourceFigureAudit(
+            $"sha256:{new string('a', 64)}",
+            PageCount: 6,
+            assets);
+
+        var board = new SkiaArticleSourceEvidenceBoardRenderer().Render(audit);
+
+        Assert.Equal(1600, board.PixelWidth);
+        Assert.Equal(852, board.PixelHeight);
+        Assert.Equal(assets.Select(asset => asset.AssetId), board.SourceAssetIds);
+        using var bitmap = SKBitmap.Decode(board.PngBytes);
+        Assert.NotNull(bitmap);
+        Assert.Equal(board.PixelWidth, bitmap.Width);
+        Assert.Equal(board.PixelHeight, bitmap.Height);
+    }
+
+    [Fact]
     public void Exporter_RendersEndAnchoredCandidateWatermarkInsideTheCanvas()
     {
         var candidate = CreateCandidates().Single(item =>
@@ -491,6 +526,18 @@ public sealed class ArticleScientificFigureSetTests
 
     private static string Hash(byte[] bytes) =>
         $"sha256:{Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()}";
+
+    private static byte[] CreatePhotographicPng(int index)
+    {
+        using var bitmap = new SKBitmap(800, 600);
+        bitmap.Erase(new SKColor(
+            (byte)(40 + (index * 20)),
+            (byte)(20 + (index * 10)),
+            (byte)(180 - (index * 10))));
+        using var image = SKImage.FromBitmap(bitmap);
+        using var encoded = image.Encode(SKEncodedImageFormat.Png, quality: 100);
+        return encoded.ToArray();
+    }
 
     private static string Mutate(string svg, string mutation)
     {

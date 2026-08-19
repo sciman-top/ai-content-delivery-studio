@@ -130,7 +130,11 @@ public sealed class PdfPigArticleSourceFigureExtractor : IArticleSourceFigureExt
 public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvidenceBoardRenderer
 {
     private const int Width = 1600;
-    private const int Height = 1200;
+    private const int Columns = 3;
+    private const int CardHeight = 320;
+    private const int Gap = 28;
+    private const int StartY = 142;
+    private const int BottomPadding = 42;
 
     public ArticleSourceEvidenceBoard Render(ArticleSourceFigureAudit audit)
     {
@@ -151,9 +155,15 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
                 $"Source PDF contains no photographic evidence assets. Evaluated: {diagnostics}");
         }
 
+        var rows = (selected.Length + Columns - 1) / Columns;
+        var height = StartY
+            + (rows * CardHeight)
+            + (Math.Max(0, rows - 1) * Gap)
+            + BottomPadding;
+
         using var surface = SKSurface.Create(new SKImageInfo(
             Width,
-            Height,
+            height,
             SKColorType.Rgba8888,
             SKAlphaType.Premul))
             ?? throw new InvalidOperationException("Could not create evidence-board surface.");
@@ -169,19 +179,15 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
             SKTextAlign.Left,
             new SKColor(71, 85, 105));
 
-        const int columns = 3;
         const int cardWidth = 480;
-        const int cardHeight = 320;
-        const int gap = 28;
         const int startX = 52;
-        const int startY = 142;
         for (var index = 0; index < selected.Length; index++)
         {
-            var row = index / columns;
-            var column = index % columns;
-            var left = startX + (column * (cardWidth + gap));
-            var top = startY + (row * (cardHeight + gap));
-            DrawCard(canvas, selected[index], index + 1, left, top, cardWidth, cardHeight);
+            var row = index / Columns;
+            var column = index % Columns;
+            var left = startX + (column * (cardWidth + Gap));
+            var top = StartY + (row * (CardHeight + Gap));
+            DrawCard(canvas, selected[index], index + 1, left, top, cardWidth, CardHeight);
         }
 
         canvas.Flush();
@@ -193,7 +199,7 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
             bytes,
             ArticleScientificFigureSetService.Hash(bytes),
             Width,
-            Height,
+            height,
             selected.Select(item => item.AssetId).ToArray());
     }
 
