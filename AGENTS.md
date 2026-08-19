@@ -1,7 +1,7 @@
 # AGENTS.md - ai-content-delivery-studio
 **项目契约**: 2.0
-**全局规则复核**: 9.76
-**最后更新**: 2026-08-14
+**全局规则复核**: 9.77
+**最后更新**: 2026-08-19
 
 ## 1. 当前落点与目标归宿
 - 当前落点：`D:\CODE\ai-content-delivery-studio` 是 AI Content Delivery Studio 的实现仓，图像系列与科学图解是当前生产路径。
@@ -43,21 +43,6 @@
 - `docs/change-evidence/` 只用于无法由代码和 Git 历史重建的 live、人审、硬件、迁移、waiver 或 release acceptance；普通修复不写证据文件。
 - 回滚只撤销本任务源码/规则/证据切片；生成输出和 workspace 需要时在 Git 外备份，不能用 Git 回滚伪装恢复。
 
-## D. Global Rule -> Repo Action
-- Git profile: baseline=`main`; upstream=`origin/main`; closeout=`proportional_focused_or_full`。
-- `R1`：先声明 `src/`、provider adapter、workflow 或 docs 落点及验收命令。
-- `R2`：每步跑受影响验证，closeout 只走 focused 或 full 中最低充分路径。
-- `R3`：临时 provider/交付兼容在相邻代码、现有 ADR 或当前任务中写回收条件，不新建治理面。
-- `R4`：fake-first；live provider、凭据与外部发布须显式授权并可回滚。
-- `R5`：无两个真实消费者或失败证据，不新增 provider/workflow 抽象。
-- `R6`：C 章按风险匹配 focused/full；进入 full 时固定顺序不可绕过。
-- `R7`：保持 provider、schema、reference basis 与交付行为兼容；变化必须有迁移说明。
-- `R8`：用任务记录、Git diff/commit 与最低充分验证回执追踪依据、命令和回滚；仅外部验收进入 evidence 文件。
-- `S1`：先跑通输入到可验收交付物的最薄真实链。
-- `S2`：阶段、provider/live 状态只进 spec、plan 或 evidence，根规则不存快照。
-- `S3`：外部研究按 B 章形成可逆决定即停止。
-- `S4`：reference basis 按消费者与许可晋降、替换或退役。
-- `S5`：`scripts/verify-repo.ps1` 承接可重复强制，规则只保留入口与阻断语义。
-- `E4`：preflight、CI 与 reference gate 承接健康信号。
-- `E5`：依赖、provider 或工具来源变化必须复核供应链。
-- `E6`：持久化/schema 变化必须有迁移、兼容和回滚。
+## D. Git 与回滚
+- Git baseline=`main`; upstream=`origin/main`; closeout=`proportional_focused_or_full`。
+- 回滚只撤销本任务源码、规则或证据切片；生成输出与 workspace 需要时在 Git 外备份。
