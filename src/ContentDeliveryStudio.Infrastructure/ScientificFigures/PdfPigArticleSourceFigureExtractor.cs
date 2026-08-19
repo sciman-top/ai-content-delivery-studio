@@ -131,10 +131,10 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
 {
     private const int Width = 1600;
     private const int Columns = 3;
-    private const int CardHeight = 320;
+    private const int CardHeight = 280;
     private const int Gap = 28;
-    private const int StartY = 142;
-    private const int BottomPadding = 42;
+    private const int StartY = 24;
+    private const int BottomPadding = 24;
 
     public ArticleSourceEvidenceBoard Render(ArticleSourceFigureAudit audit)
     {
@@ -169,15 +169,6 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
             ?? throw new InvalidOperationException("Could not create evidence-board surface.");
         var canvas = surface.Canvas;
         canvas.Clear(SKColors.White);
-        DrawText(canvas, "原文实验照片证据板", 64, 62, 32, SKTextAlign.Left, SKColors.Black);
-        DrawText(
-            canvas,
-            "原始图片逐张保留；证据板仅等比缩放、排版与编号；照片不是因果证明；Gate 1 待核验",
-            64,
-            102,
-            19,
-            SKTextAlign.Left,
-            new SKColor(71, 85, 105));
 
         const int cardWidth = 480;
         const int startX = 52;
@@ -187,7 +178,7 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
             var column = index % Columns;
             var left = startX + (column * (cardWidth + Gap));
             var top = StartY + (row * (CardHeight + Gap));
-            DrawCard(canvas, selected[index], index + 1, left, top, cardWidth, CardHeight);
+            DrawCard(canvas, selected[index], left, top, cardWidth, CardHeight);
         }
 
         canvas.Flush();
@@ -260,7 +251,6 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
     private static void DrawCard(
         SKCanvas canvas,
         ArticleSourceFigureAsset asset,
-        int displayIndex,
         int left,
         int top,
         int width,
@@ -285,7 +275,7 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
 
         using var bitmap = SKBitmap.Decode(asset.PngBytes)
             ?? throw new InvalidOperationException($"Could not decode source asset {asset.AssetId}.");
-        var imageArea = new SKRect(left + 12, top + 12, left + width - 12, top + height - 52);
+        var imageArea = new SKRect(left + 12, top + 12, left + width - 12, top + height - 12);
         var scale = Math.Min(imageArea.Width / bitmap.Width, imageArea.Height / bitmap.Height);
         var targetWidth = bitmap.Width * scale;
         var targetHeight = bitmap.Height * scale;
@@ -296,48 +286,5 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
             imageArea.MidY + (targetHeight / 2));
         using var imagePaint = new SKPaint { IsAntialias = true };
         canvas.DrawBitmap(bitmap, target, imagePaint);
-        DrawText(
-            canvas,
-            $"来源照片 {displayIndex} | PDF 第 {asset.PageNumber} 页",
-            left + 18,
-            top + height - 20,
-            17,
-            SKTextAlign.Left,
-            new SKColor(30, 41, 59));
-    }
-
-    private static void DrawText(
-        SKCanvas canvas,
-        string text,
-        float x,
-        float y,
-        float size,
-        SKTextAlign align,
-        SKColor color)
-    {
-        using var typeface = ResolveTypeface(text);
-        using var font = new SKFont(typeface, size);
-        using var paint = new SKPaint
-        {
-            Color = color,
-            IsAntialias = true,
-        };
-        canvas.DrawText(text, x, y, align, font, paint);
-    }
-
-    private static SKTypeface ResolveTypeface(string text)
-    {
-        foreach (var family in new[] { "Microsoft YaHei", "Noto Sans CJK SC", "Segoe UI" })
-        {
-            var typeface = SKTypeface.FromFamilyName(family);
-            if (typeface.ContainsGlyphs(text))
-            {
-                return typeface;
-            }
-
-            typeface.Dispose();
-        }
-
-        throw new InvalidOperationException("No installed typeface covers the evidence-board labels.");
     }
 }

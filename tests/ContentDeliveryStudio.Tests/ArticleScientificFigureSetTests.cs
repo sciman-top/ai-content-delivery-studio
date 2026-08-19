@@ -222,7 +222,7 @@ public sealed class ArticleScientificFigureSetTests
         var board = new SkiaArticleSourceEvidenceBoardRenderer().Render(audit);
 
         Assert.Equal(1600, board.PixelWidth);
-        Assert.Equal(852, board.PixelHeight);
+        Assert.Equal(636, board.PixelHeight);
         Assert.Equal(assets.Select(asset => asset.AssetId), board.SourceAssetIds);
         using var bitmap = SKBitmap.Decode(board.PngBytes);
         Assert.NotNull(bitmap);
@@ -231,32 +231,22 @@ public sealed class ArticleScientificFigureSetTests
     }
 
     [Fact]
-    public void Exporter_RendersEndAnchoredCandidateWatermarkInsideTheCanvas()
+    public void CandidateRenderer_OmitsWorkflowAnnotationsFromVisibleSvg()
     {
-        var candidate = CreateCandidates().Single(item =>
-            item.Kind == ArticleScientificFigureCandidateKind.Mechanism);
-        var svg = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
-        var exports = new ScientificFigureExporter().Export(
-            new ScientificFigureExportRequest(svg, svg.Sha256, 1200, 800));
-        var png = exports.Artifacts.Single(item => item.Format == "png");
-        using var bitmap = SKBitmap.Decode(png.Bytes);
-        Assert.NotNull(bitmap);
-        var amberPixels = new List<int>();
-        for (var y = 730; y < 770; y++)
+        foreach (var candidate in CreateCandidates().Where(item =>
+                     item.Kind != ArticleScientificFigureCandidateKind.SourceEvidenceBoard))
         {
-            for (var x = 0; x < bitmap.Width; x++)
-            {
-                var color = bitmap.GetPixel(x, y);
-                if (color.Red > 120 && color.Green is > 45 and < 130 && color.Blue < 70)
-                {
-                    amberPixels.Add(x);
-                }
-            }
-        }
+            var svg = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1).Svg;
 
-        Assert.NotEmpty(amberPixels);
-        Assert.True(amberPixels.Min() < 1000);
-        Assert.True(amberPixels.Max() <= 1140);
+            Assert.Contains("gate1=pending", svg, StringComparison.Ordinal);
+            Assert.DoesNotContain(candidate.ReplacementRationale, svg, StringComparison.Ordinal);
+            Assert.DoesNotContain("替代/解释来源", svg, StringComparison.Ordinal);
+            Assert.DoesNotContain("候选图 | 非按比例", svg, StringComparison.Ordinal);
+            Assert.DoesNotContain("不声明清晰度、正倒或生理结论", svg, StringComparison.Ordinal);
+            Assert.DoesNotContain("两种装置不是同一个观察条件", svg, StringComparison.Ordinal);
+            Assert.DoesNotContain("文章中的 f≈2 cm 示例不自动作为人眼常数", svg, StringComparison.Ordinal);
+            Assert.DoesNotContain("能否看见、清晰度与视觉正倒属于待核验主张", svg, StringComparison.Ordinal);
+        }
     }
 
     [Fact]

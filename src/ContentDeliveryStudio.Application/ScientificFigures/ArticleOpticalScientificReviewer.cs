@@ -241,9 +241,10 @@ public sealed class ArticleOpticalScientificReviewer
                 Forbid("x / (x - 1)", "optics-wrong-formula-branch", "lens-formula-branches");
                 break;
             case ArticleScientificFigureCandidateKind.ExperimentalComparison:
+                Require("A. 光屏接收中间实像", "optics-screen-panel-missing", "screen-receiver-conditions");
+                Require("B. 眼睛/相机模型继续接收光束", "optics-fixed-receiver-panel-missing", "screen-receiver-conditions");
                 Require("光屏位于像面", "optics-screen-condition-missing", "screen-receiver-conditions");
                 Require("固定接收面", "optics-fixed-receiver-condition-missing", "screen-receiver-conditions");
-                Require("两种装置不是同一个观察条件", "optics-receiver-equivalence-invalid", "screen-receiver-conditions");
                 break;
             case ArticleScientificFigureCandidateKind.Comparison:
                 Require("L2 位于 S 右侧", "optics-plane-order-right-invalid", "plane-order-comparison");

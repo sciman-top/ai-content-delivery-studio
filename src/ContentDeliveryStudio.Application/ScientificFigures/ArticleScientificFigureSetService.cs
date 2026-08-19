@@ -113,11 +113,13 @@ public sealed class ArticleCandidateVisualContractReviewer
                 "Candidate SVG requires both title and description."));
         }
 
-        if (!visibleText.Any(text => text.Contains("Gate 1", StringComparison.Ordinal)))
+        var metadata = root.Element(Svg + "metadata")?.Value;
+        if (metadata is null
+            || !metadata.Contains("gate1=pending", StringComparison.OrdinalIgnoreCase))
         {
             findings.Add(new ArticleCandidateVisualContractFinding(
-                "candidate-authority-watermark-missing",
-                "Pending scientific candidates must display the Gate 1 boundary."));
+                "candidate-authority-metadata-missing",
+                "Pending scientific candidates must preserve the Gate 1 boundary in SVG metadata."));
         }
 
         if (candidate.SourceFigureReferences.Count == 0)

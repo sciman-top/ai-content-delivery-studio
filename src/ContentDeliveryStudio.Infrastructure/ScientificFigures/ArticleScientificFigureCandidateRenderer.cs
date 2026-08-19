@@ -54,7 +54,6 @@ public sealed class ArticleScientificFigureCandidateRenderer
             new XAttribute("data-provenance-kind", ScientificProvenanceKind.ClaimEvidence));
         group.Add(Rect(24, 24, 1152, 752, "#FFFFFF", "#CBD5E1", 2));
         group.Add(Text(candidate.Title, 64, 74, 30, Ink));
-        group.Add(Text(candidate.ReplacementRationale, 64, 108, 16, Muted));
 
         switch (candidate.Kind)
         {
@@ -80,19 +79,6 @@ public sealed class ArticleScientificFigureCandidateRenderer
                     "Unsupported article candidate kind.");
         }
 
-        group.Add(Text(
-            $"替代/解释来源：{string.Join("、", candidate.SourceFigureReferences)}",
-            64,
-            726,
-            16,
-            Muted));
-        group.Add(Text(
-            "候选图 | 非按比例 | 科学主张与参数须逐图 Gate 1 核验",
-            1136,
-            754,
-            16,
-            Amber,
-            anchor: "end"));
         layer.Add(group);
         root.Add(layer);
         var document = new XDocument(new XDeclaration("1.0", "utf-8", null), root);
@@ -158,7 +144,6 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Line(850, 410, 1100, 390, Magenta, 3, arrow: true));
         group.Add(Rect(506, 570, 238, 70, "#EFF6FF", "#93C5FD", 1));
         group.Add(Text("S 是 L2 的物体", 625, 604, 18, Blue, "middle"));
-        group.Add(Text("不声明清晰度、正倒或生理结论", 625, 630, 14, Muted, "middle"));
     }
 
     private static void RenderLensEquationGraph(XElement group)
@@ -193,7 +178,6 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Text("1/u - 1/v = 1/f", 628, 442, 18, Ink));
         group.Add(Text("y = x / (1 - x)，0 < x < 1", 628, 474, 19, Magenta));
         group.Add(Text("两支互为反函数，关于 y = x 对称", 628, 520, 17, Amber));
-        group.Add(Text("文章中的 f≈2 cm 示例不自动作为人眼常数", 600, 642, 16, Amber, "middle"));
     }
 
     private static void RenderScreenRetinaComparison(XElement group)
@@ -222,7 +206,6 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Line(860, 410, 1065, 398, Magenta, 3, arrow: true));
         group.Add(Line(1065, 275, 1065, 525, Green, 5));
         group.Add(Text("固定接收面", 1065, 558, 17, Green, "middle"));
-        group.Add(Text("两种装置不是同一个观察条件", 600, 632, 17, Amber, "middle"));
     }
 
     private static void RenderObservationPositionComparison(XElement group)
@@ -262,13 +245,6 @@ public sealed class ArticleScientificFigureCandidateRenderer
             group.Add(Text(card.State, card.Left + 163, 598, 14, Muted, "middle"));
         }
 
-        group.Add(Text(
-            "能否看见、清晰度与视觉正倒属于待核验主张，不能由位置示意图自动推出",
-            600,
-            670,
-            18,
-            Amber,
-            "middle"));
     }
 
     private static void RenderCorrectiveLensControl(XElement group)
