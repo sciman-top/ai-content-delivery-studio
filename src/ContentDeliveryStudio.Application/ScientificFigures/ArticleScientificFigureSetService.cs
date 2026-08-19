@@ -59,6 +59,12 @@ public sealed record ArticleCandidateVisualContractReport(
 public sealed class ArticleCandidateVisualContractReviewer
 {
     private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
+    private static readonly string[] WorkflowAnnotationMarkers =
+    [
+        "Gate 1",
+        "替代/解释来源",
+        "候选图 | 非按比例",
+    ];
 
     public ArticleCandidateVisualContractReport Review(
         ArticleScientificFigureCandidate candidate,
@@ -120,6 +126,17 @@ public sealed class ArticleCandidateVisualContractReviewer
             findings.Add(new ArticleCandidateVisualContractFinding(
                 "candidate-authority-metadata-missing",
                 "Pending scientific candidates must preserve the Gate 1 boundary in SVG metadata."));
+        }
+
+        var visibleWorkflowAnnotation = visibleText.FirstOrDefault(text =>
+            string.Equals(text.Trim(), candidate.ReplacementRationale.Trim(), StringComparison.Ordinal)
+            || WorkflowAnnotationMarkers.Any(marker =>
+                text.Contains(marker, StringComparison.OrdinalIgnoreCase)));
+        if (visibleWorkflowAnnotation is not null)
+        {
+            findings.Add(new ArticleCandidateVisualContractFinding(
+                "candidate-workflow-annotation-visible",
+                "Publication artwork must keep planning rationale, source notes, and review status in audit metadata rather than visible text."));
         }
 
         if (candidate.SourceFigureReferences.Count == 0)

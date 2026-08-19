@@ -250,6 +250,54 @@ public sealed class ArticleScientificFigureSetTests
     }
 
     [Fact]
+    public void VisualContract_RejectsWorkflowAnnotationsInPublicationArtwork()
+    {
+        var candidate = CreateCandidates().Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.Mechanism);
+        var renderer = new ArticleScientificFigureCandidateRenderer();
+
+        foreach (var annotation in new[]
+                 {
+                     candidate.ReplacementRationale,
+                     "替代/解释来源：图1、图2",
+                     "候选图 | 非按比例",
+                     "仅供 Gate 1 科学核验",
+                 })
+        {
+            var artifact = renderer.Render(candidate, 1);
+            var document = XDocument.Parse(artifact.Svg);
+            XNamespace svg = "http://www.w3.org/2000/svg";
+            document.Descendants(svg + "g").Single(element =>
+                element.Attribute("data-element-kind") is not null).Add(new XElement(
+                svg + "text",
+                new XAttribute("x", 100),
+                new XAttribute("y", 700),
+                new XAttribute("data-content-kind", "annotation"),
+                annotation));
+            var mutatedSvg = document.ToString(SaveOptions.DisableFormatting);
+            var mutatedArtifact = artifact with
+            {
+                Svg = mutatedSvg,
+                Sha256 = Hash(Encoding.UTF8.GetBytes(mutatedSvg)),
+            };
+            var exports = new ScientificFigureExporter().Export(
+                new ScientificFigureExportRequest(
+                    mutatedArtifact,
+                    mutatedArtifact.Sha256,
+                    1200,
+                    800));
+
+            var report = new ArticleCandidateVisualContractReviewer().Review(
+                candidate,
+                mutatedArtifact,
+                exports);
+
+            Assert.Contains(report.Findings, finding =>
+                finding.Code == "candidate-workflow-annotation-visible");
+        }
+    }
+
+    [Fact]
     public async Task SamplePdf_ProducesCompleteAuditedFigureSetWhenExplicitlyRequested()
     {
         var sourcePath = Environment.GetEnvironmentVariable(
