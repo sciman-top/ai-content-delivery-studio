@@ -24,7 +24,7 @@ public sealed record ArticleOpticalVisualRegion(
     ScientificPixelRegion Region,
     ScientificExpectedVisualCheck ExpectedCheck);
 
-public sealed class ArticleOpticalScientificReviewer
+public sealed class ArticleOpticalScientificReviewer : IArticleScientificFigureReviewer
 {
     private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
     private static readonly Regex LinePath = new(

@@ -39,6 +39,26 @@ public sealed class ArticleScientificFigurePlanningTests
     }
 
     [Fact]
+    public void Plan_RoutesSnowArticleToThermalProfileInsteadOfOpticalProfile()
+    {
+        var candidates = new ArticleScientificFigurePlanningService().Plan(
+            CreateThermalExtraction(),
+            "“下雪不冷，融雪冷”的正确解释",
+            "初中物理教师与学生");
+
+        Assert.True(candidates.Count == 7, string.Join(", ", candidates.Select(item => item.Kind)));
+        Assert.DoesNotContain(candidates, item =>
+            item.Kind is ArticleScientificFigureCandidateKind.Mechanism
+                or ArticleScientificFigureCandidateKind.LensEquationGraph
+                or ArticleScientificFigureCandidateKind.ExperimentalComparison
+                or ArticleScientificFigureCandidateKind.Comparison
+                or ArticleScientificFigureCandidateKind.CorrectiveLensControl);
+        Assert.Contains(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.ThermalConductivityComparison);
+        Assert.Contains(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard);
+        Assert.All(candidates, item => Assert.Equal(ArticleScientificFigureGateStatus.PendingHumanApproval, item.GateOneStatus));
+    }
+
+    [Fact]
     public void RenderOpticalPathPreview_PreservesPendingGateOneBoundary()
     {
         var candidate = new ArticleScientificFigurePlanningService().Plan(
@@ -291,6 +311,30 @@ public sealed class ArticleScientificFigurePlanningTests
         return ScientificDocumentExtraction.Create(
             sourceAssetId,
             "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            ScientificExtractorIdentity.Create("test-extractor", "1.0"),
+            ScientificExtractionQuality.Create(
+                isScanned: false,
+                ocrApplied: false,
+                ScientificReadingOrderStatus.Reliable,
+                ScientificRequiredContentStatus.Complete),
+            blocks,
+            []);
+    }
+
+    private static ScientificDocumentExtraction CreateThermalExtraction()
+    {
+        var blocks = new[]
+        {
+            Block("thermal-page-1", 1, "寒冷空气与暖湿空气相遇，锋面抬升，水蒸气凝华成雪。"),
+            Block("thermal-page-2", 2, "盆地和高山地形会阻滞南下寒冷空气，地面仍较暖。"),
+            Block("thermal-page-3", 3, "导热系数 λ W/(m·K)，空气0.02，水蒸气0.02，水0.6，棉毛0.05。"),
+            Block("thermal-page-4", 4, "传热方式包括热传导、热对流、热辐射、相变潜热。冬季和夏季作用不同。"),
+            Block("thermal-page-5", 5, "相对湿度较高，衣物潮湿，导热系数增大，热量快速散去。"),
+            Block("thermal-page-6", 6, "干热时汗液的蒸发快，湿热时汗液蒸发受阻。"),
+        };
+        return ScientificDocumentExtraction.Create(
+            Guid.NewGuid(),
+            "sha256:2222222222222222222222222222222222222222222222222222222222222222",
             ScientificExtractorIdentity.Create("test-extractor", "1.0"),
             ScientificExtractionQuality.Create(
                 isScanned: false,

@@ -195,6 +195,32 @@ public sealed class ArticleScientificFigureSetTests
         Assert.Contains(review.Findings, finding => finding.Code == "optics-source-photo-coverage-invalid");
     }
 
+    [Theory]
+    [InlineData(ArticleScientificFigureCandidateKind.ThermalTransferModes, "人体红外散热", "人体红外：可忽略", "thermal-radiation-negligible-overclaim")]
+    [InlineData(ArticleScientificFigureCandidateKind.ThermalHumidityClothing, "高相对湿度使衣物保温性下降", "融雪时的湿度上升使衣物保温性下降", "thermal-snowmelt-humidity-overclaim")]
+    public void DeterministicThermalReview_BlocksScientificOverclaims(
+        ArticleScientificFigureCandidateKind kind,
+        string currentText,
+        string overclaim,
+        string expectedCode)
+    {
+        var candidate = CreateThermalCandidate(kind);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var mutatedSvg = artifact.Svg.Replace(currentText, overclaim, StringComparison.Ordinal);
+        var review = new ArticleThermalScientificReviewer().Review(
+            candidate,
+            artifact with
+            {
+                Svg = mutatedSvg,
+                Sha256 = Hash(Encoding.UTF8.GetBytes(mutatedSvg)),
+            },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(review.Passed);
+        Assert.Contains(review.Findings, finding => finding.Code == expectedCode);
+    }
+
     [Fact]
     public void EvidenceBoardRenderer_UsesContentHeightForSixPhotographs()
     {
@@ -298,6 +324,56 @@ public sealed class ArticleScientificFigureSetTests
     }
 
     [Fact]
+    public async Task ThermalCjkPdf_UsesBoundedFontRepresentation()
+    {
+        var evidenceText = "导热系数 λ W/(m·K)，空气0.02，水蒸气0.02，水0.6，棉毛0.05。";
+        var evidence = ArticleScientificFigureEvidence.Create(
+            ScientificSourceBlock.Create(
+                "thermal-conductivity-source",
+                ScientificSourceBlockKind.Table,
+                ScientificSourceLocation.Create(
+                    2,
+                    "conductivity table",
+                    boundingRegion: null,
+                    ScientificCharacterRange.Create(0, evidenceText.Length)),
+                evidenceText,
+                isRequired: true,
+                ScientificRecoveryStatus.Recovered),
+            excerptLength: 240);
+        var candidate = new ArticleScientificFigureCandidate(
+            "thermal-conductivity-test",
+            "下雪不冷，融雪冷",
+            ArticleScientificFigureCandidateKind.ThermalConductivityComparison,
+            "空气、水蒸气、液态水与棉毛的导热系数比较",
+            "比较导热系数",
+            "保留原文数据和单位。",
+            "教师与学生",
+            ScientificFigureRiskLevel.High,
+            [evidence],
+            ["表1"],
+            ArticleScientificFigureDisposition.ReplaceExisting,
+            "重绘原文小表格。",
+            RequiresGateOneApproval: true,
+            GateOneStatus: ArticleScientificFigureGateStatus.PendingHumanApproval,
+            DeliveryStatus: ArticleScientificFigureDeliveryStatus.NotCreated);
+        var service = new ArticleScientificFigureSetService(
+            new FakeSourceFigureExtractor(),
+            new FakeEvidenceBoardRenderer(),
+            new ArticleScientificFigureCandidateRenderer(),
+            new ScientificFigureExporter(),
+            new FakeScientificVisualReviewProvider(),
+            new SkiaScientificReviewImageCropper(),
+            scientificReviewer: new ArticleThermalScientificReviewer());
+
+        var run = await service.RunAsync("article.pdf", [candidate], CancellationToken.None);
+
+        var result = Assert.Single(run.Items);
+        Assert.True(result.PassedVisualReview);
+        var pdf = Assert.Single(result.Exports!.Artifacts, item => item.Format == "pdf");
+        Assert.InRange(pdf.Bytes.Length, 1, 1_000_000);
+    }
+
+    [Fact]
     public async Task SamplePdf_ProducesCompleteAuditedFigureSetWhenExplicitlyRequested()
     {
         var sourcePath = Environment.GetEnvironmentVariable(
@@ -328,24 +404,38 @@ public sealed class ArticleScientificFigureSetTests
             extraction,
             Path.GetFileNameWithoutExtension(sourcePath),
             "初中物理教师与学生");
+        var scientificReviewer = candidates.Any(item =>
+                item.Kind is ArticleScientificFigureCandidateKind.ThermalFrontMechanism
+                    or ArticleScientificFigureCandidateKind.ThermalBasinException
+                    or ArticleScientificFigureCandidateKind.ThermalConductivityComparison
+                    or ArticleScientificFigureCandidateKind.ThermalTransferModes
+                    or ArticleScientificFigureCandidateKind.ThermalHumidityClothing
+                    or ArticleScientificFigureCandidateKind.ThermalDryWetHeat)
+            ? new ArticleThermalScientificReviewer() as IArticleScientificFigureReviewer
+            : new ArticleOpticalScientificReviewer();
         var run = await new ArticleScientificFigureSetService(
             new PdfPigArticleSourceFigureExtractor(),
             new SkiaArticleSourceEvidenceBoardRenderer(),
             new ArticleScientificFigureCandidateRenderer(),
             new ScientificFigureExporter(),
             new FakeScientificVisualReviewProvider(),
-            new SkiaScientificReviewImageCropper()).RunAsync(
+            new SkiaScientificReviewImageCropper(),
+            scientificReviewer: scientificReviewer).RunAsync(
                 sourcePath,
                 candidates,
                 CancellationToken.None);
 
-        Assert.True(run.Complete);
-        Assert.Equal(8, run.SourceAudit.PageCount);
-        Assert.True(run.SourceAudit.Assets.Count >= 6);
-        Assert.Equal(6, run.Items.Count);
-        Assert.Equal(6, run.Items.Single(item =>
+        Assert.True(run.Complete, string.Join(Environment.NewLine, run.Items
+            .Where(item => !item.PassedVisualReview)
+            .Select(item => $"{item.Candidate.Kind}: contract=[{string.Join(',', item.ContractReview.Findings.Select(f => f.Code))}] "
+                + $"science=[{string.Join(',', item.DeterministicScientificReview.Findings.Select(f => f.Code))}] "
+                + $"visual=[{string.Join(',', item.VisualReview.Findings.Select(f => f.Code))}]")));
+        Assert.Equal(extraction.Blocks.Select(block => block.Location.PageNumber).Distinct().Count(), run.SourceAudit.PageCount);
+        Assert.NotEmpty(run.SourceAudit.Assets);
+        Assert.Equal(candidates.Count, run.Items.Count);
+        Assert.NotEmpty(run.Items.Single(item =>
             item.Candidate.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard)
-            .EvidenceBoard!.SourceAssetIds.Count);
+            .EvidenceBoard!.SourceAssetIds);
         await PersistRunAsync(sourcePath, extraction, run, outputDirectory);
     }
 
@@ -390,7 +480,7 @@ public sealed class ArticleScientificFigureSetTests
         var itemReports = new List<object>();
         foreach (var item in run.Items)
         {
-            var prefix = Prefix(item.Candidate.Kind);
+            var prefix = Prefix(item.Candidate);
             var files = new List<string>();
             if (item.Svg is not null)
             {
@@ -478,8 +568,8 @@ public sealed class ArticleScientificFigureSetTests
             run.Complete,
             visualReviewProvider = "fake-scientific-visual",
             visualReviewBoundary = "fake-first contract path; not a live multimodal-model or scientific-expert verdict",
-            deterministicReview = "article-optics-v1",
-            deterministicReviewBoundary = "machine-checkable optics invariants; not human Gate 1",
+            deterministicReview = run.Items.Select(item => item.DeterministicScientificReview.PackageId).Distinct().Single(),
+            deterministicReviewBoundary = "machine-checkable domain invariants; not human Gate 1",
             gateOneStatus = "pending for every candidate",
             gateTwoStatus = "not-run",
             deliveryStatus = "not-created",
@@ -544,16 +634,59 @@ public sealed class ArticleScientificFigureSetTests
             [new ScientificProviderFinding(code, kind, "candidate-full-frame", code)],
             $"trace-{code}");
 
-    private static string Prefix(ArticleScientificFigureCandidateKind kind) => kind switch
+    private static string Prefix(ArticleScientificFigureCandidate candidate) => candidate.Kind switch
     {
         ArticleScientificFigureCandidateKind.Mechanism => "01-secondary-imaging",
         ArticleScientificFigureCandidateKind.LensEquationGraph => "02-lens-equation",
         ArticleScientificFigureCandidateKind.ExperimentalComparison => "03-screen-retina",
         ArticleScientificFigureCandidateKind.Comparison => "04-observation-position",
         ArticleScientificFigureCandidateKind.CorrectiveLensControl => "05-corrective-lens",
-        ArticleScientificFigureCandidateKind.SourceEvidenceBoard => "06-source-evidence-board",
-        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
+        ArticleScientificFigureCandidateKind.SourceEvidenceBoard => candidate.ArticleTitle.Contains("下雪", StringComparison.Ordinal)
+            ? "07-source-evidence-board"
+            : "06-source-evidence-board",
+        ArticleScientificFigureCandidateKind.ThermalFrontMechanism => "01-thermal-snow-front",
+        ArticleScientificFigureCandidateKind.ThermalBasinException => "02-thermal-basin-exception",
+        ArticleScientificFigureCandidateKind.ThermalConductivityComparison => "03-thermal-conductivity",
+        ArticleScientificFigureCandidateKind.ThermalTransferModes => "04-thermal-transfer-modes",
+        ArticleScientificFigureCandidateKind.ThermalHumidityClothing => "05-thermal-humidity-clothing",
+        ArticleScientificFigureCandidateKind.ThermalDryWetHeat => "06-thermal-dry-wet-heat",
+        _ => throw new ArgumentOutOfRangeException(nameof(candidate), candidate.Kind, null),
     };
+
+    private static ArticleScientificFigureCandidate CreateThermalCandidate(
+        ArticleScientificFigureCandidateKind kind)
+    {
+        const string evidenceText = "相对湿度、传热方式与人体散热的文章证据。";
+        var evidence = ArticleScientificFigureEvidence.Create(
+            ScientificSourceBlock.Create(
+                "thermal-source",
+                ScientificSourceBlockKind.Paragraph,
+                ScientificSourceLocation.Create(
+                    3,
+                    "thermal paragraph",
+                    boundingRegion: null,
+                    ScientificCharacterRange.Create(0, evidenceText.Length)),
+                evidenceText,
+                isRequired: true,
+                ScientificRecoveryStatus.NotRequired),
+            excerptLength: 240);
+        return new ArticleScientificFigureCandidate(
+            $"thermal-{kind}",
+            "下雪不冷，融雪冷",
+            kind,
+            "热学图解",
+            "呈现文章中的热学关系。",
+            "保留条件，拒绝过强因果。",
+            "教师与学生",
+            ScientificFigureRiskLevel.High,
+            [evidence],
+            ["第三页"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement,
+            "重绘文章关系。",
+            RequiresGateOneApproval: true,
+            GateOneStatus: ArticleScientificFigureGateStatus.PendingHumanApproval,
+            DeliveryStatus: ArticleScientificFigureDeliveryStatus.NotCreated);
+    }
 
     private static Task WriteJsonAsync(string path, object value) =>
         File.WriteAllTextAsync(path, JsonSerializer.Serialize(value, new JsonSerializerOptions

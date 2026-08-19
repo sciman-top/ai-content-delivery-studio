@@ -25,6 +25,11 @@ public sealed class ArticleScientificFigurePlanningService
 
         var normalizedTitle = RequireText(articleTitle, nameof(articleTitle));
         var normalizedAudience = RequireText(audience, nameof(audience));
+        if (IsThermalArticle(normalizedTitle, extraction))
+        {
+            return PlanThermal(extraction, normalizedTitle, normalizedAudience);
+        }
+
         var candidates = new List<ArticleScientificFigureCandidate>();
         AddIfEvidenceFound(
             candidates,
@@ -118,6 +123,91 @@ public sealed class ArticleScientificFigurePlanningService
             Audience = normalizedAudience,
         }).ToArray();
     }
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanThermal(
+        ScientificDocumentExtraction extraction,
+        string articleTitle,
+        string audience)
+    {
+        var candidates = new List<ArticleScientificFigureCandidate>();
+        AddIfEvidenceFound(candidates, "thermal-snow-front", ArticleScientificFigureCandidateKind.ThermalFrontMechanism,
+            "暖湿空气与寒冷空气相遇形成降雪", "解释锋面抬升、凝华成雪与高空放热的位置关系。",
+            "用剖面示意图区分高空成雪与地面气温，避免把高空放热直接等同于地面升温。",
+            ScientificFigureRiskLevel.High, "凝华成雪", extraction.Blocks, ["图1"],
+            ArticleScientificFigureDisposition.ReplaceExisting, "重绘原文图1的锋面和气流关系。");
+        AddIfEvidenceFound(candidates, "thermal-basin-exception", ArticleScientificFigureCandidateKind.ThermalBasinException,
+            "盆地地形下的下雪特例", "解释盆地、高山南坡或大峡谷中寒冷空气滞留时的局地例外。",
+            "用地形剖面表示冷空气下沉受阻和地面仍较暖的特例，不把特例推广为一般规律。",
+            ScientificFigureRiskLevel.High, "盆地", extraction.Blocks, ["图2"],
+            ArticleScientificFigureDisposition.ReplaceExisting, "重绘原文图2的山谷地形与冷空气滞留关系。");
+        AddIfEvidenceFound(candidates, "thermal-conductivity-data", ArticleScientificFigureCandidateKind.ThermalConductivityComparison,
+            "空气、水蒸气、液态水与棉毛的导热系数比较", "将文章给出的导热系数数据转成可读的比较图。",
+            "保留原文数据与单位；突出水蒸气与空气接近、液态水更强以及潮湿棉毛导热增大的条件链。",
+            ScientificFigureRiskLevel.High, "导热系数", extraction.Blocks, ["表1"],
+            ArticleScientificFigureDisposition.ReplaceExisting, "把原文小表格重绘为带单位的水平条形图。");
+        AddIfEvidenceFound(candidates, "thermal-transfer-modes", ArticleScientificFigureCandidateKind.ThermalTransferModes,
+            "冬夏散热方式的主导差异", "比较热传导、热对流、热辐射和相变潜热在冬夏语境中的作用。",
+            "用四种传热方式与季节场景的关系图组织文章小结，不把示意强度当作定量测量。",
+            ScientificFigureRiskLevel.High, "热对流", extraction.Blocks, ["第4节"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "把分散的传热文字组织成四模块图。");
+        AddIfEvidenceFound(candidates, "thermal-humidity-clothing", ArticleScientificFigureCandidateKind.ThermalHumidityClothing,
+            "相对湿度、潮湿衣物与湿冷体感", "解释融雪和湿冷中衣物潮湿导致保温性下降的链条。",
+            "只表达空气湿度、衣物含水、导热增大和人体散热加快之间的文章主张，不伪造体感测量。",
+            ScientificFigureRiskLevel.High, "相对湿度", extraction.Blocks, ["第五节"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "将湿冷与融雪的因果链拆成闭环箭头图。");
+        AddIfEvidenceFound(candidates, "thermal-dry-wet-heat", ArticleScientificFigureCandidateKind.ThermalDryWetHeat,
+            "干热与湿热的汗液蒸发对照", "解释相对湿度如何改变汗液蒸发和夏季体感。",
+            "用同一人体散热入口对照干热快速蒸发与湿热蒸发受阻，避免把温度本身改写成湿度结论。",
+            ScientificFigureRiskLevel.High, "汗液的蒸发", extraction.Blocks, ["第六节"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "将文章末节的干热/湿热例子转为对照图。");
+
+        var sourceEvidence = extraction.Blocks
+            .Where(block => !string.IsNullOrWhiteSpace(block.OriginalText))
+            .Take(3)
+            .Select(block => ArticleScientificFigureEvidence.Create(block, excerptLength: 240))
+            .ToArray();
+        if (sourceEvidence.Length > 0)
+        {
+            candidates.Add(new ArticleScientificFigureCandidate(
+                "candidate-thermal-source-evidence-board",
+                articleTitle,
+                ArticleScientificFigureCandidateKind.SourceEvidenceBoard,
+                "原文热学图表证据板",
+                "保留文章中的原始手绘图和导热系数表作为来源证据。",
+                "只做来源保真的提取与排版，不把原始图表当成新的科学证明。",
+                audience,
+                ScientificFigureRiskLevel.High,
+                sourceEvidence,
+                ["图1", "图2", "表1"],
+                ArticleScientificFigureDisposition.ConsolidateSourceEvidence,
+                "保留原文热学图表的像素证据，确定性重绘另行交付。",
+                RequiresGateOneApproval: true,
+                GateOneStatus: ArticleScientificFigureGateStatus.PendingHumanApproval,
+                DeliveryStatus: ArticleScientificFigureDeliveryStatus.NotCreated));
+        }
+
+        if (candidates.Count < 6)
+        {
+            throw new InvalidOperationException(
+                "The thermal article did not expose enough located evidence for the complete figure set.");
+        }
+
+        return candidates.Select((candidate, index) => candidate with
+        {
+            CandidateId = $"article-{StableSlug(articleTitle)}-{index + 1:D2}-{candidate.Kind.ToString().ToLowerInvariant()}",
+            ArticleTitle = articleTitle,
+            Audience = audience,
+        }).ToArray();
+    }
+
+    private static bool IsThermalArticle(
+        string articleTitle,
+        ScientificDocumentExtraction extraction) =>
+        articleTitle.Contains("下雪", StringComparison.Ordinal)
+        || articleTitle.Contains("融雪", StringComparison.Ordinal)
+        || extraction.Blocks.Any(block =>
+            block.OriginalText?.Contains("相对湿度", StringComparison.Ordinal) == true
+            && block.OriginalText.Contains("传热", StringComparison.Ordinal));
 
     private static void AddIfEvidenceFound(
         ICollection<ArticleScientificFigureCandidate> candidates,
@@ -228,6 +318,12 @@ public enum ArticleScientificFigureCandidateKind
     LensEquationGraph = 3,
     CorrectiveLensControl = 4,
     SourceEvidenceBoard = 5,
+    ThermalFrontMechanism = 6,
+    ThermalBasinException = 7,
+    ThermalConductivityComparison = 8,
+    ThermalTransferModes = 9,
+    ThermalHumidityClothing = 10,
+    ThermalDryWetHeat = 11,
 }
 
 public enum ArticleScientificFigureDisposition

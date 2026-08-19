@@ -51,63 +51,33 @@ try {
     $env:ARTICLE_SCIENTIFIC_FIGURE_SET_OUTPUT_DIRECTORY = $previousOutputDirectory
 }
 
+$reportPath = Join-Path $resolvedOutputDirectory "article-figure-set-report.json"
+$report = Get-Content -Raw -LiteralPath $reportPath |
+    ConvertFrom-Json
 $requiredFiles = @(
     "article-figure-set-plan.json",
     "source-figure-audit.json",
-    "article-figure-set-report.json",
-    "01-secondary-imaging.svg",
-    "01-secondary-imaging.png",
-    "01-secondary-imaging.pdf",
-    "02-lens-equation.svg",
-    "02-lens-equation.png",
-    "02-lens-equation.pdf",
-    "03-screen-retina.svg",
-    "03-screen-retina.png",
-    "03-screen-retina.pdf",
-    "04-observation-position.svg",
-    "04-observation-position.png",
-    "04-observation-position.pdf",
-    "05-corrective-lens.svg",
-    "05-corrective-lens.png",
-    "05-corrective-lens.pdf",
-    "06-source-evidence-board.png"
-)
-foreach ($prefix in @(
-    "01-secondary-imaging",
-    "02-lens-equation",
-    "03-screen-retina",
-    "04-observation-position",
-    "05-corrective-lens",
-    "06-source-evidence-board")) {
-    $requiredFiles += "$prefix.visual-review.json"
-}
-
-$missing = @($requiredFiles | Where-Object {
+    "article-figure-set-report.json"
+) + @($report.items | ForEach-Object { $_.files })
+$missing = @($requiredFiles | Sort-Object -Unique | Where-Object {
     -not (Test-Path -LiteralPath (Join-Path $resolvedOutputDirectory $_) -PathType Leaf)
 })
 if ($missing.Count -gt 0) {
     throw "Article run did not produce required files: $($missing -join ', ')"
 }
 
-$report = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory "article-figure-set-report.json") |
-    ConvertFrom-Json
-if (-not $report.complete -or $report.resultCount -ne 6 -or $report.requestedCandidateCount -ne 6 `
-    -or $report.deterministicReview -ne "article-optics-v1" `
+if (-not $report.complete -or $report.resultCount -ne $report.requestedCandidateCount `
+    -or $report.resultCount -lt 1 `
+    -or $report.deterministicReview -notin @("article-optics-v1", "article-thermal-v1") `
     -or $report.gateOneStatus -ne "pending for every candidate") {
     throw "Article figure-set report is incomplete."
 }
 
-foreach ($prefix in @(
-    "01-secondary-imaging",
-    "02-lens-equation",
-    "03-screen-retina",
-    "04-observation-position",
-    "05-corrective-lens",
-    "06-source-evidence-board")) {
-    $review = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory "$prefix.visual-review.json") |
+foreach ($reviewFile in @($report.items | ForEach-Object { $_.files | Where-Object { $_ -like "*.visual-review.json" } })) {
+    $review = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory $reviewFile) |
         ConvertFrom-Json
     if (-not $review.deterministicScientificPassed `
-        -or $review.deterministicScientificPackage -ne "article-optics-v1" `
+        -or $review.deterministicScientificPackage -ne $report.deterministicReview `
         -or $review.gateOneStatus -ne "PendingHumanApproval" `
         -or @($review.expectedVisualChecks).Count -eq 0 `
         -or @($review.typedCrops).Count -eq 0) {
@@ -115,6 +85,6 @@ foreach ($prefix in @(
     }
 }
 
-Write-Host "[OK] Six-item article candidate set persisted under workspace: $resolvedOutputDirectory" -ForegroundColor Green
-Write-Host "[OK] Every PNG has article-optics-v1, typed-crop, and fake-first visual-review evidence." -ForegroundColor Green
+Write-Host "[OK] $($report.resultCount)-item article candidate set persisted under workspace: $resolvedOutputDirectory" -ForegroundColor Green
+Write-Host "[OK] Every candidate has $($report.deterministicReview), typed-crop, and fake-first visual-review evidence." -ForegroundColor Green
 Write-Host "[BOUNDARY] Scientific Gate 1, live multimodal review, expert acceptance, Gate 2, and delivery are not complete." -ForegroundColor Yellow

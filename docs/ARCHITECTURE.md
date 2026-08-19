@@ -93,6 +93,8 @@ source extraction
 
 Scientific meaning cannot be changed by automatic layout repair. Unsupported, contradictory, missing-evidence, OCR-heavy, or observation-like inputs fail closed. Provider review is advisory; accepted source claims and human gates remain authoritative.
 
+Article illustration uses a domain-profile seam: planning selects an admitted profile from located source evidence, while each profile supplies its deterministic renderer expectations and scientific reviewer. The set runner depends only on that reviewer interface. `article-optics-v1` and `article-thermal-v1` therefore share extraction, export, visual review, bounded repair, evidence reporting, and Gate boundaries without treating one domain's invariants as universal.
+
 Publication artwork contains only the title and labels needed to communicate the scientific content. Planning rationale, source/page identifiers, candidate disclaimers, and Gate status remain in SVG metadata or sidecar audit records rather than being printed into the artwork. Gate-review previews may display those notices, but the publication renderer and its visual contract reject them in final candidate SVGs. Source-evidence boards preserve the selected source pixels while keeping source identity and hashes in the audit record.
 
 ## Delivery And Diagnostics

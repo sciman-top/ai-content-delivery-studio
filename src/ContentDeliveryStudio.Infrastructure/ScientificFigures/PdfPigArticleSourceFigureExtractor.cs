@@ -139,11 +139,17 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
     public ArticleSourceEvidenceBoard Render(ArticleSourceFigureAudit audit)
     {
         ArgumentNullException.ThrowIfNull(audit);
-        var selected = audit.Assets
+        var photographic = audit.Assets
             .Where(IsPhotographic)
             .DistinctBy(asset => asset.Sha256, StringComparer.OrdinalIgnoreCase)
             .Take(8)
             .ToArray();
+        var selected = photographic.Length > 0
+            ? photographic
+            : audit.Assets
+                .DistinctBy(asset => asset.Sha256, StringComparer.OrdinalIgnoreCase)
+                .Take(8)
+                .ToArray();
         if (selected.Length == 0)
         {
             var diagnostics = string.Join(", ", audit.Assets.Select(asset =>

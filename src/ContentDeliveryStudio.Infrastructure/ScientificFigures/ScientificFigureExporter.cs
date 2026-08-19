@@ -232,7 +232,7 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
             SKColorType.Rgba8888,
             SKAlphaType.Premul))
             ?? throw new InvalidOperationException("Could not create the PNG render surface.");
-        DrawDocument(surface.Canvas, document, width, height);
+        DrawDocument(surface.Canvas, document, width, height, outlineText: false);
         using var image = surface.Snapshot();
         using var encoded = image.Encode(SKEncodedImageFormat.Png, quality: 100)
             ?? throw new InvalidOperationException("Could not encode the scientific PNG.");
@@ -263,14 +263,23 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
             using var pdf = SKDocument.CreatePdf(stream, metadata)
                 ?? throw new InvalidOperationException("Could not create the scientific PDF.");
             var canvas = pdf.BeginPage(width, height);
-            DrawDocument(canvas, document, width, height);
+            // Skia's PDF backend embeds the complete CJK font when text is emitted as
+            // text, turning a small one-page figure into a multi-megabyte file. Convert
+            // glyphs to vector outlines for the PDF derivative; the authoritative SVG
+            // and its accessible text/semantics remain unchanged.
+            DrawDocument(canvas, document, width, height, outlineText: true);
             pdf.EndPage();
             pdf.Close();
             return stream.ToArray();
         }
     }
 
-    private static void DrawDocument(SKCanvas canvas, XDocument document, int width, int height)
+    private static void DrawDocument(
+        SKCanvas canvas,
+        XDocument document,
+        int width,
+        int height,
+        bool outlineText)
     {
         var root = document.Root!;
         var sourceWidth = Number(root, "width");
@@ -295,7 +304,7 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
             }
             else if (element.Name == Svg + "text")
             {
-                DrawText(canvas, element);
+                DrawText(canvas, element, outlineText);
             }
         }
 
@@ -399,7 +408,7 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
         canvas.DrawPath(path, paint);
     }
 
-    private static void DrawText(SKCanvas canvas, XElement element)
+    private static void DrawText(SKCanvas canvas, XElement element, bool outlineText)
     {
         using var paint = new SKPaint
         {
@@ -418,13 +427,92 @@ public sealed class ScientificFigureExporter : IScientificFigureExporter
             var unsupported => throw new InvalidOperationException(
                 $"The SVG contains an unsupported text anchor: {unsupported}."),
         };
-        canvas.DrawText(
-            element.Value,
-            Number(element, "x"),
-            Number(element, "y"),
-            alignment,
-            font,
-            paint);
+        var x = Number(element, "x");
+        var y = Number(element, "y");
+        if (!outlineText)
+        {
+            canvas.DrawText(element.Value, x, y, alignment, font, paint);
+            return;
+        }
+
+        if (element.Value.All(character => character <= 0x7F))
+        {
+            using var asciiTypeface = SKTypeface.FromFamilyName("Segoe UI");
+            using var asciiFont = new SKFont(asciiTypeface, font.Size);
+            canvas.DrawText(element.Value, x, y, alignment, asciiFont, paint);
+            return;
+        }
+
+        var runs = SplitAsciiRuns(element.Value);
+        var advances = runs.Select(run => MeasureRun(run.Text, run.IsAscii, font.Size, font, paint)).ToArray();
+        var totalAdvance = advances.Sum();
+        x -= alignment switch
+        {
+            SKTextAlign.Center => totalAdvance / 2,
+            SKTextAlign.Right => totalAdvance,
+            _ => 0,
+        };
+        for (var index = 0; index < runs.Count; index++)
+        {
+            var run = runs[index];
+            if (run.IsAscii)
+            {
+                using var asciiTypeface = SKTypeface.FromFamilyName("Segoe UI");
+                using var asciiFont = new SKFont(asciiTypeface, font.Size);
+                canvas.DrawText(run.Text, x, y, SKTextAlign.Left, asciiFont, paint);
+            }
+            else
+            {
+                using var path = font.GetTextPath(run.Text, new SKPoint(x, y));
+                canvas.DrawPath(path, paint);
+            }
+
+            x += advances[index];
+        }
+    }
+
+    private static float MeasureRun(
+        string text,
+        bool isAscii,
+        float size,
+        SKFont fallback,
+        SKPaint paint)
+    {
+        if (!isAscii)
+        {
+            return fallback.MeasureText(text, paint);
+        }
+
+        using var typeface = SKTypeface.FromFamilyName("Segoe UI");
+        using var font = new SKFont(typeface, size);
+        return font.MeasureText(text, paint);
+    }
+
+    private static IReadOnlyList<(string Text, bool IsAscii)> SplitAsciiRuns(string text)
+    {
+        if (text.Length == 0)
+        {
+            return [];
+        }
+
+        var runs = new List<(string Text, bool IsAscii)>();
+        var start = 0;
+        var ascii = text[0] <= 0x7F;
+        for (var index = 1; index < text.Length; index++)
+        {
+            var currentAscii = text[index] <= 0x7F;
+            if (currentAscii == ascii)
+            {
+                continue;
+            }
+
+            runs.Add((text[start..index], ascii));
+            start = index;
+            ascii = currentAscii;
+        }
+
+        runs.Add((text[start..], ascii));
+        return runs;
     }
 
     private static SKTypeface ResolveTypeface(string familyName, string text)

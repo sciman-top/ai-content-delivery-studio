@@ -245,7 +245,7 @@ public sealed class ArticleScientificFigureSetService
     private readonly IScientificVisualReviewProvider _visualReviewProvider;
     private readonly IScientificReviewImageCropper _cropper;
     private readonly ArticleCandidateVisualContractReviewer _contractReviewer;
-    private readonly ArticleOpticalScientificReviewer _scientificReviewer;
+    private readonly IArticleScientificFigureReviewer _scientificReviewer;
 
     public ArticleScientificFigureSetService(
         IArticleSourceFigureExtractor sourceFigureExtractor,
@@ -255,7 +255,7 @@ public sealed class ArticleScientificFigureSetService
         IScientificVisualReviewProvider visualReviewProvider,
         IScientificReviewImageCropper cropper,
         ArticleCandidateVisualContractReviewer? contractReviewer = null,
-        ArticleOpticalScientificReviewer? scientificReviewer = null)
+        IArticleScientificFigureReviewer? scientificReviewer = null)
     {
         _sourceFigureExtractor = sourceFigureExtractor;
         _evidenceBoardRenderer = evidenceBoardRenderer;
