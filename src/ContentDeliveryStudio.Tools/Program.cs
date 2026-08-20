@@ -1,18 +1,72 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 
 return args.FirstOrDefault() switch
 {
     "promote-article-figure-set" => Promote(args[1..]),
+    "assess-article-figure-review" => AssessReview(args[1..]),
     _ => Usage(),
 };
+
+static int AssessReview(string[] args)
+{
+    try
+    {
+        var options = ParseOptions(
+            args,
+            "source",
+            "reviewer",
+            "authorization-reference",
+            "notes",
+            "confirm-every-candidate-visually-inspected",
+            "require-independent-human-expert",
+            "reviewed-at");
+        var request = new ArticleScientificFigureReviewAutomationRequest(
+            Required(options, "source"),
+            Required(options, "reviewer"),
+            Required(options, "authorization-reference"),
+            Required(options, "notes"),
+            ConfirmEveryCandidateVisuallyInspected: Flag(
+                options,
+                "confirm-every-candidate-visually-inspected"),
+            RequireIndependentHumanExpertCertification: Flag(
+                options,
+                "require-independent-human-expert"),
+            DateTimeOffset.Parse(
+                Required(options, "reviewed-at"),
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.RoundtripKind));
+        var result = new ArticleScientificFigureReviewAutomationService().Assess(request);
+        Console.WriteLine(JsonSerializer.Serialize(result, OutputJsonOptions()));
+        return 0;
+    }
+    catch (Exception exception)
+    {
+        Console.Error.WriteLine($"[ERROR] {exception.Message}");
+        return 1;
+    }
+}
 
 static int Promote(string[] args)
 {
     try
     {
-        var options = ParseOptions(args);
+        var options = ParseOptions(
+            args,
+            "source",
+            "delivery-root",
+            "article-slug",
+            "package-id",
+            "reviewer",
+            "operator-kind",
+            "authorization-reference",
+            "approve-gate-one",
+            "gate-one-notes",
+            "approve-gate-two",
+            "gate-two-notes",
+            "approved-at");
         var actor = Required(options, "operator-kind") switch
         {
             "human" => ArticleScientificFigureApprovalActor.Human,
@@ -37,10 +91,7 @@ static int Promote(string[] args)
             Required(options, "gate-two-notes"),
             approvedAt);
         var result = new ArticleScientificFigureDeliveryPromoter().Promote(request);
-        Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions
-        {
-            WriteIndented = true,
-        }));
+        Console.WriteLine(JsonSerializer.Serialize(result, OutputJsonOptions()));
         return 0;
     }
     catch (Exception exception)
@@ -50,23 +101,9 @@ static int Promote(string[] args)
     }
 }
 
-static Dictionary<string, string?> ParseOptions(string[] args)
+static Dictionary<string, string?> ParseOptions(string[] args, params string[] allowedNames)
 {
-    var allowed = new HashSet<string>(StringComparer.Ordinal)
-    {
-        "source",
-        "delivery-root",
-        "article-slug",
-        "package-id",
-        "reviewer",
-        "operator-kind",
-        "authorization-reference",
-        "approve-gate-one",
-        "gate-one-notes",
-        "approve-gate-two",
-        "gate-two-notes",
-        "approved-at",
-    };
+    var allowed = allowedNames.ToHashSet(StringComparer.Ordinal);
     var options = new Dictionary<string, string?>(StringComparer.Ordinal);
     for (var index = 0; index < args.Length; index++)
     {
@@ -124,13 +161,24 @@ static bool Flag(IReadOnlyDictionary<string, string?> options, string name)
     return true;
 }
 
+static JsonSerializerOptions OutputJsonOptions() => new()
+{
+    WriteIndented = true,
+    Converters = { new JsonStringEnumConverter() },
+};
+
 static int Usage()
 {
     Console.Error.WriteLine(
-        "Usage: ContentDeliveryStudio.Tools promote-article-figure-set "
+        "Usage:\n"
+        + "  ContentDeliveryStudio.Tools promote-article-figure-set "
         + "--source <review-ready-dir> --delivery-root <dir> --article-slug <slug> "
         + "--package-id <id> --reviewer <name> --operator-kind <human|authorized_agent> "
         + "[--authorization-reference <text>] --approve-gate-one --gate-one-notes <text> "
-        + "--approve-gate-two --gate-two-notes <text> --approved-at <ISO-8601>");
+        + "--approve-gate-two --gate-two-notes <text> --approved-at <ISO-8601>\n"
+        + "  ContentDeliveryStudio.Tools assess-article-figure-review "
+        + "--source <review-ready-dir> --reviewer <name> --authorization-reference <text> "
+        + "--notes <text> --confirm-every-candidate-visually-inspected "
+        + "[--require-independent-human-expert] --reviewed-at <ISO-8601>");
     return 2;
 }

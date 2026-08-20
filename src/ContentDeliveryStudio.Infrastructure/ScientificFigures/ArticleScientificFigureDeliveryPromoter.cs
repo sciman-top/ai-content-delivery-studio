@@ -41,7 +41,24 @@ public sealed partial class ArticleScientificFigureDeliveryPromoter
         var report = ReadAndValidateReport(reportDocument.RootElement);
         ValidatePlan(sourceDirectory, report);
         var audit = ReadAndValidateAudit(sourceDirectory, report.SourceSha256);
-        var mappings = BuildMappings(sourceDirectory, report, audit);
+        var mappings = BuildMappings(sourceDirectory, report, audit).ToList();
+        if (request.Actor == ArticleScientificFigureApprovalActor.AuthorizedAgent)
+        {
+            new ArticleScientificFigureReviewAutomationService().ValidateReceipt(
+                sourceDirectory,
+                request.Reviewer,
+                request.AuthorizationReference!);
+            mappings.Add(Mapping(
+                sourceDirectory,
+                ArticleScientificFigureReviewAutomationService.ReceiptFileName,
+                $"reviews/{ArticleScientificFigureReviewAutomationService.ReceiptFileName}",
+                "review"));
+            mappings.Add(Mapping(
+                sourceDirectory,
+                ArticleScientificFigureReviewAutomationService.AssessmentFileName,
+                $"reviews/{ArticleScientificFigureReviewAutomationService.AssessmentFileName}",
+                "review"));
+        }
 
         Directory.CreateDirectory(articleDirectory);
         EnsureNoReparsePoints(deliveryRoot, articleDirectory);
@@ -465,6 +482,8 @@ public sealed partial class ArticleScientificFigureDeliveryPromoter
             },
             reviewedCandidateCount = report.ItemCount,
             sourceVisualReviewProvider = report.VisualReviewProvider,
+            authorizedAgentVisualReceiptValidated =
+                request.Actor == ArticleScientificFigureApprovalActor.AuthorizedAgent,
             liveProviderAccepted = false,
             independentHumanExpertAccepted = false,
         };

@@ -42,8 +42,21 @@ matching `outputs/` category. An explicit `-OutputDirectory` remains available f
 compatibility, but callers then own its classification.
 
 After every candidate has passed the declared deterministic and visual checks, an
-explicitly authorized operator can approve both gates and atomically promote the
-unchanged files into an immutable article-set package:
+explicitly authorized agent first records a hash-bound per-candidate visual receipt
+and a machine-readable human-review assessment:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/review-article-scientific-figure-set.ps1 `
+  -ReviewReadyDirectory outputs/review-ready/article-figure-sets/example/20260820-v1 `
+  -Reviewer codex-agent-authorized-by-sciman `
+  -AuthorizationReference "Codex task authorization: user message on 2026-08-20" `
+  -Notes "Inspected every PNG, PDF rerender, scientific relation, and source board." `
+  -ConfirmEveryCandidateVisuallyInspected
+```
+
+If the assessment route is `AuthorizedAgentAccept`, no separate onsite or
+per-candidate user review is required for repository delivery. The same authorized
+operator can then approve both gates and atomically promote the unchanged files:
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/promote-article-scientific-figure-set.ps1 `
@@ -60,12 +73,21 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/promote-article-scientific
 ```
 
 Promotion fails closed for incomplete reports, missing explicit approvals,
-authorized agents without an authorization reference, failed sidecars, missing or
-hash-drifted files, unsafe paths, or an existing package destination. Publishable
+authorized agents without an authorization reference or current hash-bound receipt,
+failed sidecars, authority/candidate file drift, unsafe paths, or an existing package
+destination. Publishable
 SVG/PNG/PDF files go to `figures/`; source boards and extracted source assets remain
 under `evidence/`. `manifest.json` binds every copied file to its review-ready SHA-256
 without recording absolute machine paths. An authorized-agent decision is recorded
 truthfully and does not become live-provider or independent-human-expert acceptance.
+
+`High`-risk or fake-first runs still require fresh task authorization and an actual
+authorized-agent inspection; they are not eligible for unattended standing approval.
+Low/medium-risk runs with an independent visual provider can be marked eligible for a
+future standing-automation policy, but that policy must be separately authorized.
+Requesting independent expert certification always routes to a human expert. Any
+change to a plan, report, audit, SVG, PNG, PDF, or review sidecar invalidates the
+receipt and restores the review gate.
 
 Run the idempotent local migration when older top-level output names are present:
 
@@ -77,6 +99,8 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/organize-local-outputs.ps1
 The organizer never deletes or merges histories. It fails if a destination already
 exists, writes `outputs/OUTPUT-CATALOG.json` with stable managed mappings and the
 last-run moves, and discovers every valid article delivery manifest into
-`finalDeliveryPackages`. `deliveries/README.txt` is regenerated with the current
+`finalDeliveryPackages`. It also publishes `reviewReadyAssessments`, including the
+review route and whether onsite, per-candidate user, or independent-expert review is
+still required. `deliveries/README.txt` is regenerated with the current
 package list, so running the organizer cannot overwrite final-delivery truth with a
 stale "no delivery" message.

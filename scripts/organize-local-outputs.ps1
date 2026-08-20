@@ -182,12 +182,104 @@ $finalDeliveryPackages = @(Get-ChildItem -LiteralPath $articleDeliveriesRoot -Fi
             independentHumanExpertAccepted = $manifest.IndependentHumanExpertAccepted
         }
     } | Sort-Object articleSlug, packageId)
+$reviewReadyAssessments = @(Get-ChildItem `
+        -LiteralPath (Join-Path $outputsRoot "review-ready\article-figure-sets") `
+        -Filter "human-review-assessment.json" `
+        -File `
+        -Recurse `
+        -ErrorAction SilentlyContinue |
+    ForEach-Object {
+        $assessment = Get-Content -Raw -LiteralPath $_.FullName | ConvertFrom-Json
+        $runDirectory = Split-Path -Parent $_.FullName
+        $relativePath = [System.IO.Path]::GetRelativePath($outputsRoot, $runDirectory).Replace('\', '/')
+        $segments = $relativePath.Split('/')
+        $receiptPath = Join-Path $runDirectory "authorized-agent-visual-receipt.json"
+        if ($segments.Count -ne 4 -or $segments[0] -ne "review-ready" `
+            -or $segments[1] -ne "article-figure-sets" `
+            -or $assessment.schemaVersion -ne 1 `
+            -or -not (Test-Path -LiteralPath $receiptPath -PathType Leaf)) {
+            throw "Invalid article human-review assessment: $($_.FullName)"
+        }
+        if ($assessment.route -eq "AuthorizedAgentAccept" `
+            -and (-not $assessment.eligibleForPromotion `
+                -or $assessment.requiresHumanOnsiteReview `
+                -or $assessment.requiresPerCandidateUserReview `
+                -or $assessment.requiresIndependentHumanExpert)) {
+            throw "Authorized-agent assessment contains contradictory review requirements: $($_.FullName)"
+        }
+
+        [ordered]@{
+            articleSlug = $segments[2]
+            runId = $segments[3]
+            relativePath = $relativePath
+            route = $assessment.route
+            eligibleForPromotion = $assessment.eligibleForPromotion
+            requiresHumanOnsiteReview = $assessment.requiresHumanOnsiteReview
+            requiresPerCandidateUserReview = $assessment.requiresPerCandidateUserReview
+            requiresIndependentHumanExpert = $assessment.requiresIndependentHumanExpert
+            eligibleForFutureStandingAutomation = $assessment.eligibleForFutureStandingAutomation
+            candidateCount = $assessment.candidateCount
+            maximumRiskLevel = $assessment.maximumRiskLevel
+            visualReviewProvider = $assessment.visualReviewProvider
+            assessmentSha256 = "sha256:" + (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            receiptSha256 = "sha256:" + (Get-FileHash -LiteralPath $receiptPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        }
+    } | Sort-Object articleSlug, runId)
+foreach ($package in $finalDeliveryPackages) {
+    $assessment = @($reviewReadyAssessments | Where-Object {
+        $_.articleSlug -eq $package.articleSlug -and $_.runId -eq $package.packageId
+    })
+    if ($assessment.Count -gt 1) {
+        throw "Multiple human-review assessments match final package: $($package.relativePath)"
+    }
+    if ($assessment.Count -eq 1) {
+        $packageDirectory = Join-Path $deliveriesRoot ($package.relativePath -replace '/', '\')
+        $manifest = Get-Content -Raw -LiteralPath (Join-Path $packageDirectory "manifest.json") |
+            ConvertFrom-Json
+        $assessmentDirectory = Join-Path $outputsRoot ($assessment[0].relativePath -replace '/', '\')
+        $receipt = Get-Content -Raw -LiteralPath (Join-Path $assessmentDirectory "authorized-agent-visual-receipt.json") |
+            ConvertFrom-Json
+        $manifestSourceFiles = @{}
+        foreach ($file in @($manifest.Files | Where-Object { $null -ne $_.SourceRelativePath })) {
+            $manifestSourceFiles[$file.SourceRelativePath] = $file.Sha256
+        }
+        $receiptFiles = @($receipt.authorityFiles) + @($receipt.candidates | ForEach-Object { $_.files })
+        foreach ($file in $receiptFiles) {
+            if (-not $manifestSourceFiles.ContainsKey($file.relativePath) `
+                -or $manifestSourceFiles[$file.relativePath] -ne $file.sha256) {
+                throw "Review receipt does not match final package bytes: $($package.relativePath)/$($file.relativePath)"
+            }
+        }
+    }
+
+    $package["humanReviewRoute"] = if ($assessment.Count -eq 1) {
+        $assessment[0].route
+    } else {
+        "not-recorded"
+    }
+    $package["requiresHumanOnsiteReview"] = if ($assessment.Count -eq 1) {
+        $assessment[0].requiresHumanOnsiteReview
+    } else {
+        $null
+    }
+    $package["requiresPerCandidateUserReview"] = if ($assessment.Count -eq 1) {
+        $assessment[0].requiresPerCandidateUserReview
+    } else {
+        $null
+    }
+    $package["reviewReceiptSha256"] = if ($assessment.Count -eq 1) {
+        $assessment[0].receiptSha256
+    } else {
+        $null
+    }
+}
 $catalog = [ordered]@{
-    schemaVersion = 2
+    schemaVersion = 3
     generatedAt = [DateTimeOffset]::Now.ToString("O")
     finalDeliveryRoot = $deliveriesRoot
     finalDeliveryRule = "Only Gate-2-approved immutable packages belong under deliveries/."
     finalDeliveryPackages = $finalDeliveryPackages
+    reviewReadyAssessments = $reviewReadyAssessments
     reviewReadyRoot = Join-Path $outputsRoot "review-ready"
     reviewReadyRule = "Machine-complete candidates awaiting scientific Gate 1 and final Gate 2 approval."
     validationRoot = Join-Path $outputsRoot "validation"
@@ -216,6 +308,8 @@ FINAL DELIVERIES ARE NOT STORED HERE.
 Only Gate-2-approved immutable packages belong in:
 $deliveriesRoot
 Current final package count: $($finalDeliveryPackages.Count)
+Review-ready assessments requiring onsite human review: $(@($reviewReadyAssessments | Where-Object requiresHumanOnsiteReview).Count)
+Review-ready assessments requiring per-candidate user review: $(@($reviewReadyAssessments | Where-Object requiresPerCandidateUserReview).Count)
 
 See OUTPUT-CATALOG.json for machine-readable roots and the migration receipt.
 "@
@@ -228,7 +322,8 @@ $deliveryPackageLines = if ($finalDeliveryPackages.Count -eq 0) {
     "No final article figure-set packages currently exist."
 } else {
     @($finalDeliveryPackages | ForEach-Object {
-        "- {0} | {1} figure assets | actor={2}" -f $_.relativePath, $_.figureAssetCount, $_.actor
+        "- {0} | {1} figure assets | actor={2} | review={3}" -f `
+            $_.relativePath, $_.figureAssetCount, $_.actor, $_.humanReviewRoute
     }) -join [Environment]::NewLine
 }
 $deliveriesReadme = @"

@@ -34,9 +34,20 @@ public sealed class LocalOutputOrganizationScriptTests
                     IndependentHumanExpertAccepted = false,
                     Files = new[]
                     {
-                        new { PackageRelativePath = "figures/01.svg", Role = "figure" },
-                        new { PackageRelativePath = "figures/01.png", Role = "figure" },
-                        new { PackageRelativePath = "figures/01.pdf", Role = "figure" },
+                        new
+                        {
+                            SourceRelativePath = "01.svg",
+                            PackageRelativePath = "figures/01.svg",
+                            Role = "figure",
+                            Sha256 = $"sha256:{new string('a', 64)}",
+                        },
+                        new
+                        {
+                            SourceRelativePath = "article-figure-set-plan.json",
+                            PackageRelativePath = "metadata/article-figure-set-plan.json",
+                            Role = "metadata",
+                            Sha256 = $"sha256:{new string('b', 64)}",
+                        },
                     },
                 }));
             await File.WriteAllTextAsync(
@@ -45,6 +56,58 @@ public sealed class LocalOutputOrganizationScriptTests
                 {
                     gateOne = new { approved = true },
                     gateTwo = new { approved = true },
+                }));
+            var reviewReady = Path.Combine(
+                root,
+                "outputs",
+                "review-ready",
+                "article-figure-sets",
+                "sample-article",
+                "20260820-v1");
+            Directory.CreateDirectory(reviewReady);
+            await File.WriteAllTextAsync(
+                Path.Combine(reviewReady, "authorized-agent-visual-receipt.json"),
+                JsonSerializer.Serialize(new
+                {
+                    schemaVersion = 1,
+                    reviewer = "authorized-agent",
+                    authorityFiles = new[]
+                    {
+                        new
+                        {
+                            relativePath = "article-figure-set-plan.json",
+                            sha256 = $"sha256:{new string('b', 64)}",
+                        },
+                    },
+                    candidates = new[]
+                    {
+                        new
+                        {
+                            files = new[]
+                            {
+                                new
+                                {
+                                    relativePath = "01.svg",
+                                    sha256 = $"sha256:{new string('a', 64)}",
+                                },
+                            },
+                        },
+                    },
+                }));
+            await File.WriteAllTextAsync(
+                Path.Combine(reviewReady, "human-review-assessment.json"),
+                JsonSerializer.Serialize(new
+                {
+                    schemaVersion = 1,
+                    route = "AuthorizedAgentAccept",
+                    eligibleForPromotion = true,
+                    requiresHumanOnsiteReview = false,
+                    requiresPerCandidateUserReview = false,
+                    requiresIndependentHumanExpert = false,
+                    eligibleForFutureStandingAutomation = false,
+                    candidateCount = 2,
+                    maximumRiskLevel = "High",
+                    visualReviewProvider = "fake-scientific-visual",
                 }));
             var script = Path.Combine(
                 FindRepositoryRoot(),
@@ -63,19 +126,28 @@ public sealed class LocalOutputOrganizationScriptTests
             Assert.Equal(0, result.ExitCode);
             using var catalog = JsonDocument.Parse(await File.ReadAllTextAsync(
                 Path.Combine(root, "outputs", "OUTPUT-CATALOG.json")));
-            Assert.Equal(2, catalog.RootElement.GetProperty("schemaVersion").GetInt32());
+            Assert.Equal(3, catalog.RootElement.GetProperty("schemaVersion").GetInt32());
             var finalPackage = Assert.Single(catalog.RootElement
                 .GetProperty("finalDeliveryPackages")
                 .EnumerateArray());
             Assert.Equal("sample-article", finalPackage.GetProperty("articleSlug").GetString());
-            Assert.Equal(3, finalPackage.GetProperty("figureAssetCount").GetInt32());
+            Assert.Equal(1, finalPackage.GetProperty("figureAssetCount").GetInt32());
             Assert.Equal("authorized_agent", finalPackage.GetProperty("actor").GetString());
+            Assert.Equal(
+                "AuthorizedAgentAccept",
+                finalPackage.GetProperty("humanReviewRoute").GetString());
+            var assessment = Assert.Single(catalog.RootElement
+                .GetProperty("reviewReadyAssessments")
+                .EnumerateArray());
+            Assert.Equal("AuthorizedAgentAccept", assessment.GetProperty("route").GetString());
+            Assert.False(assessment.GetProperty("requiresHumanOnsiteReview").GetBoolean());
+            Assert.False(assessment.GetProperty("requiresPerCandidateUserReview").GetBoolean());
             var readme = await File.ReadAllTextAsync(Path.Combine(root, "deliveries", "README.txt"));
             Assert.Contains(
                 "article-figure-sets/sample-article/20260820-v1",
                 readme,
                 StringComparison.Ordinal);
-            Assert.Contains("3 figure assets", readme, StringComparison.Ordinal);
+            Assert.Contains("1 figure assets", readme, StringComparison.Ordinal);
             Assert.DoesNotContain("No final article figure-set packages", readme, StringComparison.Ordinal);
         }
         finally

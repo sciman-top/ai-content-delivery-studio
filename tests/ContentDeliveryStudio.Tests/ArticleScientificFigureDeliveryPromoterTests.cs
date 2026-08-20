@@ -23,7 +23,11 @@ public sealed class ArticleScientificFigureDeliveryPromoterTests
         Assert.True(File.Exists(Path.Combine(result.PackageDirectory, "evidence", "02-source-evidence-board.png")));
         Assert.True(File.Exists(Path.Combine(result.PackageDirectory, "evidence", "source-assets", "page-1-image-1.png")));
         Assert.Equal(3, result.FigureAssetCount);
-        Assert.Equal(3, result.ReviewCount);
+        Assert.Equal(5, result.ReviewCount);
+        Assert.True(File.Exists(Path.Combine(
+            result.PackageDirectory,
+            "reviews",
+            ArticleScientificFigureReviewAutomationService.ReceiptFileName)));
 
         using var manifest = JsonDocument.Parse(File.ReadAllText(result.ManifestPath));
         var entries = manifest.RootElement.GetProperty("Files").EnumerateArray().ToArray();
@@ -69,6 +73,44 @@ public sealed class ArticleScientificFigureDeliveryPromoterTests
 
         Assert.Throws<InvalidOperationException>(() =>
             new ArticleScientificFigureDeliveryPromoter().Promote(request));
+    }
+
+    [Fact]
+    public void Promote_AuthorizedAgentRequiresHashBoundVisualReceipt()
+    {
+        using var fixture = PromotionFixture.Create();
+        File.Delete(Path.Combine(
+            fixture.ReviewReadyDirectory,
+            ArticleScientificFigureReviewAutomationService.ReceiptFileName));
+        File.Delete(Path.Combine(
+            fixture.ReviewReadyDirectory,
+            ArticleScientificFigureReviewAutomationService.AssessmentFileName));
+
+        Assert.Throws<InvalidOperationException>(() =>
+            new ArticleScientificFigureDeliveryPromoter().Promote(fixture.Request));
+    }
+
+    [Fact]
+    public void Promote_HumanApprovalDoesNotRequireAuthorizedAgentReceipt()
+    {
+        using var fixture = PromotionFixture.Create();
+        File.Delete(Path.Combine(
+            fixture.ReviewReadyDirectory,
+            ArticleScientificFigureReviewAutomationService.ReceiptFileName));
+        File.Delete(Path.Combine(
+            fixture.ReviewReadyDirectory,
+            ArticleScientificFigureReviewAutomationService.AssessmentFileName));
+        var request = fixture.Request with
+        {
+            Actor = ArticleScientificFigureApprovalActor.Human,
+            AuthorizationReference = null,
+            Reviewer = "human-reviewer",
+        };
+
+        var result = new ArticleScientificFigureDeliveryPromoter().Promote(request);
+
+        Assert.True(Directory.Exists(result.PackageDirectory));
+        Assert.Equal(3, result.ReviewCount);
     }
 
     [Fact]
@@ -193,10 +235,24 @@ public sealed class ArticleScientificFigureDeliveryPromoterTests
 
             WriteReview("01-figure", "candidate-figure", "Mechanism");
             WriteReview("02-source-evidence-board", "candidate-evidence", "SourceEvidenceBoard");
-            WriteJson("article-figure-set-plan.json", new[]
+            WriteJson("article-figure-set-plan.json", new object[]
             {
-                new { CandidateId = "candidate-figure", Kind = "Mechanism", ArticleTitle = "Sample article" },
-                new { CandidateId = "candidate-evidence", Kind = "SourceEvidenceBoard", ArticleTitle = "Sample article" },
+                new
+                {
+                    CandidateId = "candidate-figure",
+                    Kind = "Mechanism",
+                    ArticleTitle = "Sample article",
+                    RiskLevel = "High",
+                    Evidence = new[] { new { SourceBlockId = "block-1", Excerpt = "source" } },
+                },
+                new
+                {
+                    CandidateId = "candidate-evidence",
+                    Kind = "SourceEvidenceBoard",
+                    ArticleTitle = "Sample article",
+                    RiskLevel = "High",
+                    Evidence = new[] { new { SourceBlockId = "block-1", Excerpt = "source" } },
+                },
             });
             WriteJson("source-figure-audit.json", new
             {
@@ -246,6 +302,15 @@ public sealed class ArticleScientificFigureDeliveryPromoterTests
                     },
                 },
             });
+            new ArticleScientificFigureReviewAutomationService().Assess(
+                new ArticleScientificFigureReviewAutomationRequest(
+                    ReviewReadyDirectory,
+                    Request.Reviewer,
+                    Request.AuthorizationReference!,
+                    "Inspected every candidate and approved the exact bytes for delivery.",
+                    ConfirmEveryCandidateVisuallyInspected: true,
+                    RequireIndependentHumanExpertCertification: false,
+                    DateTimeOffset.Parse("2026-08-20T09:55:00+08:00")));
         }
 
         private void WriteReview(string prefix, string candidateId, string kind) =>
