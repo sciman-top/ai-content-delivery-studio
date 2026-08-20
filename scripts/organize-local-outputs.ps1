@@ -144,11 +144,50 @@ $managedMappings = @(
     [ordered]@{ source = "delivery-selector-packaged-accessibility-probe.json"; destination = "diagnostics/accessibility/delivery-selector-packaged-accessibility-probe.json" },
     [ordered]@{ source = "phase7-packaged-accessibility-probe.json"; destination = "diagnostics/accessibility/phase7-packaged-accessibility-probe.json" }
 )
+$articleDeliveriesRoot = Join-Path $deliveriesRoot "article-figure-sets"
+$finalDeliveryPackages = @(Get-ChildItem -LiteralPath $articleDeliveriesRoot -Filter "manifest.json" -File -Recurse |
+    ForEach-Object {
+        $manifest = Get-Content -Raw -LiteralPath $_.FullName | ConvertFrom-Json
+        $packageDirectory = Split-Path -Parent $_.FullName
+        $relativePath = [System.IO.Path]::GetRelativePath($deliveriesRoot, $packageDirectory).Replace('\', '/')
+        $segments = $relativePath.Split('/')
+        if ($segments.Count -ne 3 -or $segments[0] -ne "article-figure-sets" `
+            -or $manifest.SchemaVersion -ne 1 `
+            -or $manifest.ArticleSlug -ne $segments[1] `
+            -or $manifest.PackageId -ne $segments[2] `
+            -or @($manifest.Files).Count -eq 0) {
+            throw "Invalid article delivery manifest: $($_.FullName)"
+        }
+
+        $approvalPath = Join-Path $packageDirectory "approvals.json"
+        if (-not (Test-Path -LiteralPath $approvalPath -PathType Leaf)) {
+            throw "Article delivery approval snapshot is missing: $approvalPath"
+        }
+        $approvals = Get-Content -Raw -LiteralPath $approvalPath | ConvertFrom-Json
+        if (-not $approvals.gateOne.approved -or -not $approvals.gateTwo.approved) {
+            throw "Article delivery package does not contain both approvals: $packageDirectory"
+        }
+
+        [ordered]@{
+            articleSlug = $manifest.ArticleSlug
+            packageId = $manifest.PackageId
+            relativePath = $relativePath
+            manifestSha256 = "sha256:" + (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            approvedAt = $manifest.ApprovedAt
+            actor = $manifest.Actor
+            candidateCount = $manifest.CandidateCount
+            figureAssetCount = @($manifest.Files | Where-Object Role -eq "figure").Count
+            evidenceAssetCount = @($manifest.Files | Where-Object Role -eq "evidence").Count
+            liveProviderAccepted = $manifest.LiveProviderAccepted
+            independentHumanExpertAccepted = $manifest.IndependentHumanExpertAccepted
+        }
+    } | Sort-Object articleSlug, packageId)
 $catalog = [ordered]@{
-    schemaVersion = 1
+    schemaVersion = 2
     generatedAt = [DateTimeOffset]::Now.ToString("O")
     finalDeliveryRoot = $deliveriesRoot
     finalDeliveryRule = "Only Gate-2-approved immutable packages belong under deliveries/."
+    finalDeliveryPackages = $finalDeliveryPackages
     reviewReadyRoot = Join-Path $outputsRoot "review-ready"
     reviewReadyRule = "Machine-complete candidates awaiting scientific Gate 1 and final Gate 2 approval."
     validationRoot = Join-Path $outputsRoot "validation"
@@ -176,6 +215,7 @@ diagnostics/        Provider smoke, accessibility probes, verification, and queu
 FINAL DELIVERIES ARE NOT STORED HERE.
 Only Gate-2-approved immutable packages belong in:
 $deliveriesRoot
+Current final package count: $($finalDeliveryPackages.Count)
 
 See OUTPUT-CATALOG.json for machine-readable roots and the migration receipt.
 "@
@@ -184,16 +224,26 @@ See OUTPUT-CATALOG.json for machine-readable roots and the migration receipt.
     $outputsReadme,
     [System.Text.UTF8Encoding]::new($false))
 
+$deliveryPackageLines = if ($finalDeliveryPackages.Count -eq 0) {
+    "No final article figure-set packages currently exist."
+} else {
+    @($finalDeliveryPackages | ForEach-Object {
+        "- {0} | {1} figure assets | actor={2}" -f $_.relativePath, $_.figureAssetCount, $_.actor
+    }) -join [Environment]::NewLine
+}
 $deliveriesReadme = @"
 FINAL DELIVERIES
 
 This directory is reserved for immutable, Gate-2-approved delivery packages.
-Current machine-complete article candidates remain under:
-$outputsRoot\review-ready\article-figure-sets
+Current final article figure-set packages:
+$deliveryPackageLines
 
-Do not copy validation runs, crops, source assets, or fake-provider review evidence here.
-The application delivery writer creates categorized packages with images/, prompts/,
-metadata/, manifest.json, manifest.csv, and review-report.md after human approval.
+Do not manually copy validation runs or review-ready candidates here.
+Promote article figure sets only through:
+scripts/promote-article-scientific-figure-set.ps1
+
+Each package separates figures/, evidence/, reviews/, and metadata/. Read its
+approvals.json, manifest.json, and review-report.md for authority and hash bindings.
 "@
 [System.IO.File]::WriteAllText(
     (Join-Path $deliveriesRoot "README.txt"),
