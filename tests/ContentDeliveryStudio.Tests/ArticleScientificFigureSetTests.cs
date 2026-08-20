@@ -24,6 +24,11 @@ public sealed class ArticleScientificFigureSetTests
             CancellationToken.None);
 
         Assert.True(run.Complete);
+        Assert.Equal(
+            ArticleHumanReviewMode.ScientificApprovalAndPerCandidateVisualSpotCheck,
+            run.HumanReviewRecommendation.Mode);
+        Assert.False(run.HumanReviewRecommendation.IndependentVisualReviewPassed);
+        Assert.True(run.HumanReviewRecommendation.RequiresEveryCandidateVisualSpotCheck);
         Assert.Equal(candidates.Select(item => item.CandidateId), run.RequestedCandidateIds);
         Assert.Equal(6, run.Items.Count);
         Assert.Equal(6, visual.InvocationCount);
@@ -38,6 +43,28 @@ public sealed class ArticleScientificFigureSetTests
             Assert.Equal(ArticleScientificFigureGateStatus.PendingHumanApproval, item.Candidate.GateOneStatus);
             Assert.False(string.IsNullOrWhiteSpace(item.VisualReview.ProviderTraceId));
         });
+    }
+
+    [Fact]
+    public async Task ProviderVisualPass_AllowsSampledDeliveryReviewWithoutPerCandidateSpotCheck()
+    {
+        var visual = new SequenceVisualReviewProvider(new ScientificProviderReviewResult(
+            ScientificReviewVerdict.Pass,
+            [],
+            "provider-pass",
+            ScientificProviderReviewOrigin.ProviderResponse));
+
+        var run = await CreateService(visual).RunAsync(
+            "article.pdf",
+            CreateCandidates(),
+            CancellationToken.None);
+
+        Assert.True(run.Complete);
+        Assert.Equal(
+            ArticleHumanReviewMode.ScientificApprovalAndSampledDeliveryReview,
+            run.HumanReviewRecommendation.Mode);
+        Assert.True(run.HumanReviewRecommendation.IndependentVisualReviewPassed);
+        Assert.False(run.HumanReviewRecommendation.RequiresEveryCandidateVisualSpotCheck);
     }
 
     [Fact]
@@ -219,6 +246,40 @@ public sealed class ArticleScientificFigureSetTests
 
         Assert.False(review.Passed);
         Assert.Contains(review.Findings, finding => finding.Code == expectedCode);
+    }
+
+    [Fact]
+    public void DeterministicThermalReview_BlocksBasinAirThatDescendsToGround()
+    {
+        var candidate = CreateThermalCandidate(ArticleScientificFigureCandidateKind.ThermalBasinException);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var mutatedSvg = artifact.Svg.Replace(
+            "M 650 350 L 790 405",
+            "M 650 350 L 790 590",
+            StringComparison.Ordinal);
+
+        var review = ReviewThermalMutation(candidate, artifact, mutatedSvg);
+
+        Assert.False(review.Passed);
+        Assert.Contains(review.Findings, finding =>
+            finding.Code == "thermal-basin-cold-air-altitude-invalid");
+    }
+
+    [Fact]
+    public void DeterministicThermalReview_BlocksEqualDryAndHumidEvaporationArrows()
+    {
+        var candidate = CreateThermalCandidate(ArticleScientificFigureCandidateKind.ThermalDryWetHeat);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var mutatedSvg = artifact.Svg.Replace(
+            "M 180 430 L 480 430",
+            "M 180 430 L 280 430",
+            StringComparison.Ordinal);
+
+        var review = ReviewThermalMutation(candidate, artifact, mutatedSvg);
+
+        Assert.False(review.Passed);
+        Assert.Contains(review.Findings, finding =>
+            finding.Code == "thermal-evaporation-rate-contrast-invalid");
     }
 
     [Fact]
@@ -570,6 +631,11 @@ public sealed class ArticleScientificFigureSetTests
             visualReviewBoundary = "fake-first contract path; not a live multimodal-model or scientific-expert verdict",
             deterministicReview = run.Items.Select(item => item.DeterministicScientificReview.PackageId).Distinct().Single(),
             deterministicReviewBoundary = "machine-checkable domain invariants; not human Gate 1",
+            machinePreflightComplete = run.Complete,
+            independentVisualReviewPassed = run.HumanReviewRecommendation.IndependentVisualReviewPassed,
+            humanReviewMode = run.HumanReviewRecommendation.Mode,
+            requiresEveryCandidateVisualSpotCheck = run.HumanReviewRecommendation.RequiresEveryCandidateVisualSpotCheck,
+            humanReviewRationale = run.HumanReviewRecommendation.Rationale,
             gateOneStatus = "pending for every candidate",
             gateTwoStatus = "not-run",
             deliveryStatus = "not-created",
@@ -686,6 +752,23 @@ public sealed class ArticleScientificFigureSetTests
             RequiresGateOneApproval: true,
             GateOneStatus: ArticleScientificFigureGateStatus.PendingHumanApproval,
             DeliveryStatus: ArticleScientificFigureDeliveryStatus.NotCreated);
+    }
+
+    private static ArticleOpticalScientificReviewReport ReviewThermalMutation(
+        ArticleScientificFigureCandidate candidate,
+        ScientificSvgArtifact artifact,
+        string mutatedSvg)
+    {
+        var mutatedArtifact = artifact with
+        {
+            Svg = mutatedSvg,
+            Sha256 = Hash(Encoding.UTF8.GetBytes(mutatedSvg)),
+        };
+        return new ArticleThermalScientificReviewer().Review(
+            candidate,
+            mutatedArtifact,
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
     }
 
     private static Task WriteJsonAsync(string path, object value) =>

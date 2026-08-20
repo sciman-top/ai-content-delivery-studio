@@ -327,17 +327,17 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Text("雪", 770, 330, 20, Magenta, "middle"));
         group.Add(Text("地面仍较暖", 760, 625, 18, Amber, "middle"));
         group.Add(Line(90, 610, 1110, 610, Green, 3));
-        group.Add(Line(150, 260, 390, 340, Blue, 4, arrow: true));
-        group.Add(Line(390, 340, 525, 300, Blue, 4, arrow: true));
-        group.Add(Line(525, 300, 650, 350, Blue, 4, arrow: true));
-        group.Add(Line(650, 350, 790, 405, Blue, 4, arrow: true));
+        group.Add(ThermalLine(150, 260, 390, 340, Blue, 4, "basin-cold-air-aloft", arrow: true));
+        group.Add(ThermalLine(390, 340, 525, 300, Blue, 4, "basin-cold-air-aloft", arrow: true));
+        group.Add(ThermalLine(525, 300, 650, 350, Blue, 4, "basin-cold-air-aloft", arrow: true));
+        group.Add(ThermalLine(650, 350, 790, 405, Blue, 4, "basin-cold-air-aloft", arrow: true));
         group.Add(Line(300, 600, 430, 380, Ink, 4));
         group.Add(Line(430, 380, 500, 300, Ink, 4));
         group.Add(Line(500, 300, 570, 390, Ink, 4));
         group.Add(Line(570, 390, 650, 600, Ink, 4));
         group.Add(Line(650, 600, 830, 600, Ink, 4));
         group.Add(Line(830, 600, 990, 430, Ink, 4));
-        group.Add(Text("冷空气下沉受地形阻滞", 610, 700, 17, Amber, "middle"));
+        group.Add(Text("冷空气越过高山后仍在高空，未快速下沉", 610, 700, 17, Amber, "middle"));
     }
 
     private static void RenderThermalConductivity(XElement group)
@@ -403,7 +403,15 @@ public sealed class ArticleScientificFigureCandidateRenderer
         }
         for (var i = 0; i < nodes.Length - 1; i++)
         {
-            group.Add(Line(nodes[i].Item2 + 190, 380, nodes[i + 1].Item2, 380, Ink, 3, arrow: true));
+            group.Add(ThermalLine(
+                nodes[i].Item2 + 190,
+                380,
+                nodes[i + 1].Item2,
+                380,
+                Ink,
+                3,
+                "humidity-causal-link",
+                arrow: true));
         }
         group.Add(Text("高相对湿度使衣物保温性下降，人体热量散失加快", 600, 610, 18, Amber, "middle"));
     }
@@ -416,8 +424,8 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Text("湿热", 870, 235, 24, Amber, "middle"));
         group.Add(Text("汗液蒸发", 330, 350, 22, Ink, "middle"));
         group.Add(Text("汗液蒸发", 870, 350, 22, Ink, "middle"));
-        group.Add(Line(180, 430, 480, 430, Blue, 5, arrow: true));
-        group.Add(Line(820, 430, 920, 430, Amber, 5, arrow: true));
+        group.Add(ThermalLine(180, 430, 480, 430, Blue, 5, "dry-evaporation-rate", arrow: true));
+        group.Add(ThermalLine(820, 430, 920, 430, Amber, 5, "humid-evaporation-rate", arrow: true));
         group.Add(Text("蒸发快，较舒适", 330, 500, 18, Blue, "middle"));
         group.Add(Text("蒸发受阻，闷热", 870, 500, 18, Amber, "middle"));
         group.Add(Text("相对湿度改变汗液蒸发速率", 600, 690, 18, Ink, "middle"));
@@ -552,6 +560,21 @@ public sealed class ArticleScientificFigureCandidateRenderer
             new XAttribute("stroke-width", Number(width)),
             new XAttribute("data-element-graphic", "true"),
             arrow ? new XAttribute("marker-end", "url(#arrowhead)") : null);
+
+    private static XElement ThermalLine(
+        double x1,
+        double y1,
+        double x2,
+        double y2,
+        string color,
+        double width,
+        string role,
+        bool arrow = false)
+    {
+        var line = Line(x1, y1, x2, y2, color, width, arrow);
+        line.SetAttributeValue("data-thermal-role", role);
+        return line;
+    }
 
     private static XElement Text(
         string value,

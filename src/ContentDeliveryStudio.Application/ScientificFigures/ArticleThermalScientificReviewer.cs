@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -182,6 +183,8 @@ public sealed class ArticleThermalScientificReviewer : IArticleScientificFigureR
                 Require("高山", "thermal-mountain-missing");
                 Require("盆地", "thermal-basin-missing");
                 Require("地面仍较暖", "thermal-warm-ground-missing");
+                Require("仍在高空，未快速下沉", "thermal-basin-aloft-condition-missing");
+                ReviewBasinColdAirGeometry(document, candidate, findings);
                 break;
             case ArticleScientificFigureCandidateKind.ThermalConductivityComparison:
                 Require("导热系数 λ", "thermal-conductivity-axis-missing");
@@ -211,15 +214,97 @@ public sealed class ArticleThermalScientificReviewer : IArticleScientificFigureR
                 Require("热量快速散去", "thermal-heat-loss-missing");
                 Forbid("直接吸收人体热量", "thermal-direct-body-heat-overclaim");
                 Forbid("融雪时的湿度上升", "thermal-snowmelt-humidity-overclaim");
+                ReviewForwardCausalLinks(document, candidate, findings);
                 break;
             case ArticleScientificFigureCandidateKind.ThermalDryWetHeat:
                 Require("干热", "thermal-dry-heat-missing");
                 Require("湿热", "thermal-wet-heat-missing");
                 Require("汗液蒸发", "thermal-sweat-evaporation-missing");
                 Require("蒸发受阻", "thermal-evaporation-inhibited-missing");
+                ReviewEvaporationRateGeometry(document, candidate, findings);
                 break;
         }
     }
+
+    private static void ReviewBasinColdAirGeometry(
+        XDocument document,
+        ArticleScientificFigureCandidate candidate,
+        ICollection<ArticleOpticalScientificFinding> findings)
+    {
+        var segments = ReadRoleLines(document, "basin-cold-air-aloft");
+        if (segments.Count != 4
+            || segments.Any(line => Math.Max(line.Y1, line.Y2) > 430)
+            || segments.Max(line => Math.Max(line.X1, line.X2)) < 700)
+        {
+            findings.Add(Finding(
+                "thermal-basin-cold-air-altitude-invalid",
+                candidate.CandidateId,
+                "The cold-air path must cross the mountain while remaining clearly aloft above the basin ground."));
+        }
+    }
+
+    private static void ReviewForwardCausalLinks(
+        XDocument document,
+        ArticleScientificFigureCandidate candidate,
+        ICollection<ArticleOpticalScientificFinding> findings)
+    {
+        var links = ReadRoleLines(document, "humidity-causal-link");
+        if (links.Count != 3 || links.Any(line => line.X2 <= line.X1 || line.Y2 != line.Y1))
+        {
+            findings.Add(Finding(
+                "thermal-humidity-causal-direction-invalid",
+                candidate.CandidateId,
+                "Humidity, damp clothing, conductivity, and heat loss must form three forward causal links."));
+        }
+    }
+
+    private static void ReviewEvaporationRateGeometry(
+        XDocument document,
+        ArticleScientificFigureCandidate candidate,
+        ICollection<ArticleOpticalScientificFinding> findings)
+    {
+        var dry = ReadRoleLines(document, "dry-evaporation-rate");
+        var humid = ReadRoleLines(document, "humid-evaporation-rate");
+        if (dry.Count != 1
+            || humid.Count != 1
+            || Length(dry[0]) < 2 * Length(humid[0]))
+        {
+            findings.Add(Finding(
+                "thermal-evaporation-rate-contrast-invalid",
+                candidate.CandidateId,
+                "The dry-heat evaporation arrow must be visibly at least twice the humid-heat arrow length."));
+        }
+    }
+
+    private static IReadOnlyList<ThermalLineGeometry> ReadRoleLines(
+        XDocument document,
+        string role) =>
+        document.Descendants(Svg + "path")
+            .Where(path => string.Equals((string?)path.Attribute("data-thermal-role"), role, StringComparison.Ordinal))
+            .Select(path => TryReadLine((string?)path.Attribute("d")))
+            .Where(line => line is not null)
+            .Select(line => line!.Value)
+            .ToArray();
+
+    private static ThermalLineGeometry? TryReadLine(string? value)
+    {
+        var parts = value?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts is not ["M", var x1, var y1, "L", var x2, var y2]
+            || !double.TryParse(x1, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedX1)
+            || !double.TryParse(y1, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedY1)
+            || !double.TryParse(x2, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedX2)
+            || !double.TryParse(y2, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedY2))
+        {
+            return null;
+        }
+
+        return new ThermalLineGeometry(parsedX1, parsedY1, parsedX2, parsedY2);
+    }
+
+    private static double Length(ThermalLineGeometry line) =>
+        Math.Sqrt(Math.Pow(line.X2 - line.X1, 2) + Math.Pow(line.Y2 - line.Y1, 2));
+
+    private readonly record struct ThermalLineGeometry(double X1, double Y1, double X2, double Y2);
 
     private static ArticleOpticalScientificFinding Finding(string code, string id, string evidence) =>
         new(code, id, evidence);

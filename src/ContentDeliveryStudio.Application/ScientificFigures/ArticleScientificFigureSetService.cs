@@ -214,6 +214,35 @@ public sealed record ArticleScientificFigureSetRun(
     IReadOnlyList<string> RequestedCandidateIds,
     IReadOnlyList<ArticleScientificFigureSetItemResult> Items)
 {
+    public ArticleHumanReviewRecommendation HumanReviewRecommendation
+    {
+        get
+        {
+            if (!Complete)
+            {
+                return new ArticleHumanReviewRecommendation(
+                    ArticleHumanReviewMode.Blocked,
+                    IndependentVisualReviewPassed: false,
+                    RequiresEveryCandidateVisualSpotCheck: true,
+                    "Resolve all machine findings before human approval.");
+            }
+
+            var independentVisualReviewPassed = Items.All(item =>
+                item.VisualReview.Origin == ScientificProviderReviewOrigin.ProviderResponse);
+            return independentVisualReviewPassed
+                ? new ArticleHumanReviewRecommendation(
+                    ArticleHumanReviewMode.ScientificApprovalAndSampledDeliveryReview,
+                    IndependentVisualReviewPassed: true,
+                    RequiresEveryCandidateVisualSpotCheck: false,
+                    "Review source claims and exceptions at Gate 1; sample the contact sheet and approve delivery at Gate 2.")
+                : new ArticleHumanReviewRecommendation(
+                    ArticleHumanReviewMode.ScientificApprovalAndPerCandidateVisualSpotCheck,
+                    IndependentVisualReviewPassed: false,
+                    RequiresEveryCandidateVisualSpotCheck: true,
+                    "Fake-first visual evidence cannot replace a quick visual spot check of every candidate; deterministic checks need not be repeated manually.");
+        }
+    }
+
     public bool Complete
     {
         get
@@ -234,6 +263,19 @@ public sealed record ArticleScientificFigureSetRun(
         }
     }
 }
+
+public enum ArticleHumanReviewMode
+{
+    Blocked = 0,
+    ScientificApprovalAndPerCandidateVisualSpotCheck = 1,
+    ScientificApprovalAndSampledDeliveryReview = 2,
+}
+
+public sealed record ArticleHumanReviewRecommendation(
+    ArticleHumanReviewMode Mode,
+    bool IndependentVisualReviewPassed,
+    bool RequiresEveryCandidateVisualSpotCheck,
+    string Rationale);
 
 public sealed class ArticleScientificFigureSetService
 {

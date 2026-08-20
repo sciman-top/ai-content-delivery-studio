@@ -137,7 +137,7 @@ public sealed class ArticleScientificFigurePlanningService
             ArticleScientificFigureDisposition.ReplaceExisting, "重绘原文图1的锋面和气流关系。");
         AddIfEvidenceFound(candidates, "thermal-basin-exception", ArticleScientificFigureCandidateKind.ThermalBasinException,
             "盆地地形下的下雪特例", "解释盆地、高山南坡或大峡谷中寒冷空气滞留时的局地例外。",
-            "用地形剖面表示冷空气下沉受阻和地面仍较暖的特例，不把特例推广为一般规律。",
+            "用地形剖面表示冷空气越过高山后未快速下沉、地面仍较暖的特例，不把特例推广为一般规律。",
             ScientificFigureRiskLevel.High, "盆地", extraction.Blocks, ["图2"],
             ArticleScientificFigureDisposition.ReplaceExisting, "重绘原文图2的山谷地形与冷空气滞留关系。");
         AddIfEvidenceFound(candidates, "thermal-conductivity-data", ArticleScientificFigureCandidateKind.ThermalConductivityComparison,
