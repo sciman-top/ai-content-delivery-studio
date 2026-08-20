@@ -141,7 +141,7 @@ function New-TrialSession {
     }
 
     $candidateSessionPath = if ([string]::IsNullOrWhiteSpace($SessionPath)) {
-        Join-Path $OutputsRoot "scientific-figure-operator-trials/$RunId"
+        Join-Path $OutputsRoot "operator-trials/scientific-figures/$RunId"
     } elseif ([System.IO.Path]::IsPathRooted($SessionPath)) {
         $SessionPath
     } else {

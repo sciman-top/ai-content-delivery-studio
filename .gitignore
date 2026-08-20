@@ -13,6 +13,7 @@ publish/
 
 workspace/
 outputs/
+deliveries/
 secrets/
 
 *.db

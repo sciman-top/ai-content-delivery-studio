@@ -69,10 +69,15 @@ named evidence output directory. They are never promoted merely because a visual
 provider returned `Pass`. A delivery writer receives only human-approved
 `ReviewDecision.Pass` items and writes the final `images/` directory atomically.
 
-Article figure scripts therefore continue to write their six-candidate runs under
-`workspace/article-figure-runs/`; the current article candidates remain
+Article figure scripts therefore continue to write their candidate runs under
+`workspace/article-figure-runs/` by default; the current article candidates remain
 `PendingHumanApproval` until the separate scientific Gate 1 and Gate 2 decisions
 are complete.
+
+For repository-local runs, [LOCAL_OUTPUTS.md](LOCAL_OUTPUTS.md) defines the visible
+`outputs/` classification and the separate ignored `deliveries/` root. In
+particular, `outputs/review-ready/` means machine-complete and ready for human
+review; it does not mean approved or delivered.
 
 ## Local classroom deployment
 

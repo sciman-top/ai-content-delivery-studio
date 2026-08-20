@@ -2,7 +2,10 @@ param(
     [Parameter(Mandatory = $true)]
     [ValidateNotNullOrEmpty()]
     [string]$SourcePath,
-    [string]$OutputDirectory
+    [string]$OutputDirectory,
+    [ValidateSet("Workspace", "Validation", "ReviewReady")]
+    [string]$OutputClass = "Workspace",
+    [string]$RunName
 )
 
 Set-StrictMode -Version Latest
@@ -27,9 +30,37 @@ if ([System.IO.Path]::GetExtension($resolvedSourcePath) -ine ".pdf") {
     throw "Article source must be a PDF: $resolvedSourcePath"
 }
 
-if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
-    $runName = "{0}-complete-set" -f (Get-Date -Format "yyyyMMdd-HHmmss")
-    $OutputDirectory = Join-Path $studioDataRoot (Join-Path "workspace\article-figure-runs" $runName)
+$outputDirectoryWasExplicit = -not [string]::IsNullOrWhiteSpace($OutputDirectory)
+if (-not $outputDirectoryWasExplicit) {
+    $safeRunName = if ([string]::IsNullOrWhiteSpace($RunName)) {
+        $sourceBaseName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedSourcePath)
+        $invalidFileNameChars = [System.IO.Path]::GetInvalidFileNameChars()
+        $normalized = -join @($sourceBaseName.ToCharArray() | ForEach-Object {
+            if ($invalidFileNameChars -contains $_) { '-' } else { $_ }
+        })
+        "{0}-{1}" -f $normalized.Trim().TrimEnd('.'), (Get-Date -Format "yyyyMMdd-HHmmss")
+    } else {
+        $RunName.Trim()
+    }
+    if ([string]::IsNullOrWhiteSpace($safeRunName) -or
+        [System.IO.Path]::IsPathRooted($safeRunName) -or
+        $safeRunName.Contains([System.IO.Path]::DirectorySeparatorChar) -or
+        $safeRunName.Contains([System.IO.Path]::AltDirectorySeparatorChar) -or
+        ($safeRunName -in @('.', '..'))) {
+        throw "RunName must be one safe directory name."
+    }
+
+    $OutputDirectory = switch ($OutputClass) {
+        "Workspace" {
+            Join-Path $studioDataRoot (Join-Path "workspace\article-figure-runs" $safeRunName)
+        }
+        "Validation" {
+            Join-Path $repoRoot (Join-Path "outputs\validation\article-figure-sets" $safeRunName)
+        }
+        "ReviewReady" {
+            Join-Path $repoRoot (Join-Path "outputs\review-ready\article-figure-sets" $safeRunName)
+        }
+    }
 } elseif (-not [System.IO.Path]::IsPathRooted($OutputDirectory)) {
     $OutputDirectory = Join-Path $repoRoot $OutputDirectory
 }
@@ -85,6 +116,8 @@ foreach ($reviewFile in @($report.items | ForEach-Object { $_.files | Where-Obje
     }
 }
 
-Write-Host "[OK] $($report.resultCount)-item article candidate set persisted under workspace: $resolvedOutputDirectory" -ForegroundColor Green
+$effectiveOutputClass = if ($outputDirectoryWasExplicit) { "Explicit" } else { $OutputClass }
+Write-Host "[OK] $($report.resultCount)-item article candidate set persisted: $resolvedOutputDirectory" -ForegroundColor Green
 Write-Host "[OK] Every candidate has $($report.deterministicReview), typed-crop, and fake-first visual-review evidence." -ForegroundColor Green
+Write-Host "[CLASS] $effectiveOutputClass; this location is not a final-delivery package." -ForegroundColor Cyan
 Write-Host "[BOUNDARY] Scientific Gate 1, live multimodal review, expert acceptance, Gate 2, and delivery are not complete." -ForegroundColor Yellow

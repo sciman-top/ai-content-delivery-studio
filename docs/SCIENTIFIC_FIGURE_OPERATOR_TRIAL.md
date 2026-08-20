@@ -49,7 +49,7 @@ Do not run the relative `scripts\...` path from a home directory such as
 `C:\Users\<name>`; that path exists only below the repository root.
 
 The script creates a unique ignored session under
-`outputs/scientific-figure-operator-trials/`, forces `PROVIDER_MODE=fake`,
+`outputs/operator-trials/scientific-figures/`, forces `PROVIDER_MODE=fake`,
 redirects the app database and local files into that session, and starts the
 WPF app. The caller's environment is restored after the app exits.
 
@@ -93,7 +93,7 @@ the completed trial. `OperatorKind` defaults to `human`:
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
   -Mode Finalize `
-  -SessionPath outputs/scientific-figure-operator-trials/<run-id> `
+  -SessionPath outputs/operator-trials/scientific-figures/<run-id> `
   -Outcome accepted `
   -Reviewer "<human reviewer>" `
   -Notes "<what was inspected and why it is acceptable>" `
@@ -107,7 +107,7 @@ reference:
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
   -Mode Finalize `
-  -SessionPath outputs/scientific-figure-operator-trials/<run-id> `
+  -SessionPath outputs/operator-trials/scientific-figures/<run-id> `
   -Outcome accepted `
   -Reviewer "<authorized agent reviewer>" `
   -Notes "<what was visibly inspected and why it is acceptable>" `
@@ -131,7 +131,7 @@ fails closed.
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
   -Mode Finalize `
-  -SessionPath outputs/scientific-figure-operator-trials/<run-id> `
+  -SessionPath outputs/operator-trials/scientific-figures/<run-id> `
   -Outcome rejected `
   -Reviewer "<human reviewer>" `
   -Notes "<blocking observation and required correction>" `

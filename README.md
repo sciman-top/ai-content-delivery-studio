@@ -81,7 +81,7 @@ The lightweight implementation loop is in [docs/AI_CODING_WORKFLOW.md](docs/AI_C
 - Current external blockers: [docs/TASKS.md](docs/TASKS.md)
 - Direction: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- User and operator guidance: [docs/USER_GUIDE.md](docs/USER_GUIDE.md), [docs/OPERATOR_RISK_POLICY.md](docs/OPERATOR_RISK_POLICY.md)
+- User and operator guidance: [docs/USER_GUIDE.md](docs/USER_GUIDE.md), [docs/LOCAL_OUTPUTS.md](docs/LOCAL_OUTPUTS.md), [docs/OPERATOR_RISK_POLICY.md](docs/OPERATOR_RISK_POLICY.md)
 - Provider boundaries: [docs/PROVIDER_CONFIGURATION.md](docs/PROVIDER_CONFIGURATION.md), [docs/PROVIDER_ROUTING_POLICY.md](docs/PROVIDER_ROUTING_POLICY.md)
 - Reference routing: [docs/REFERENCE_BASIS.md](docs/REFERENCE_BASIS.md), [docs/REFERENCE_EVIDENCE_POLICY.md](docs/REFERENCE_EVIDENCE_POLICY.md)
 - Durable decisions: [docs/adr](docs/adr)

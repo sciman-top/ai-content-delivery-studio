@@ -43,7 +43,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass `
 
 不要在 `C:\Users\<用户名>` 之类的主目录中直接使用相对路径 `scripts\...`；该相对路径只存在于仓库根目录下。
 
-脚本会在 `outputs/scientific-figure-operator-trials/` 下创建唯一且被 Git 忽略的会话，强制设置 `PROVIDER_MODE=fake`，把数据库和应用本地文件重定向到该会话，并启动 WPF 应用。应用退出后，调用者原有环境变量会恢复。
+脚本会在 `outputs/operator-trials/scientific-figures/` 下创建唯一且被 Git 忽略的会话，强制设置 `PROVIDER_MODE=fake`，把数据库和应用本地文件重定向到该会话，并启动 WPF 应用。应用退出后，调用者原有环境变量会恢复。
 
 如果只想准备会话文件而不打开 WPF：
 
@@ -78,7 +78,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-oper
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
   -Mode Finalize `
-  -SessionPath outputs/scientific-figure-operator-trials/<run-id> `
+  -SessionPath outputs/operator-trials/scientific-figures/<run-id> `
   -Outcome accepted `
   -Reviewer "<真人审查人>" `
   -Notes "<检查内容和批准理由>" `
@@ -91,7 +91,7 @@ reviewer 和可追溯授权依据：
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
   -Mode Finalize `
-  -SessionPath outputs/scientific-figure-operator-trials/<run-id> `
+  -SessionPath outputs/operator-trials/scientific-figures/<run-id> `
   -Outcome accepted `
   -Reviewer "<授权 agent reviewer>" `
   -Notes "<实际检查内容和批准理由>" `
@@ -113,7 +113,7 @@ SVG/PNG/PDF hash，随后在会话本地 `trial.json` 中记录 schema v2
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-scientific-figure-operator-trial.ps1 `
   -Mode Finalize `
-  -SessionPath outputs/scientific-figure-operator-trials/<run-id> `
+  -SessionPath outputs/operator-trials/scientific-figures/<run-id> `
   -Outcome rejected `
   -Reviewer "<真人审查人>" `
   -Notes "<阻断问题和所需纠正>" `

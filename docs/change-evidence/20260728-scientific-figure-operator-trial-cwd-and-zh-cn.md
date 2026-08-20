@@ -45,7 +45,7 @@ passed after the change as `1 / 1`.
 An additional probe was run with working directory `C:\Users\sciman` and the
 absolute script path. It exited `0` and created:
 
-`outputs/scientific-figure-operator-trials/external-cwd-probe-20260728-01`
+`outputs/operator-trials/scientific-figures/external-cwd-probe-20260728-01`
 
 The probe remained `pending_operator`; it used `Mode Prepare`, did not launch
 WPF, did not call a provider, and did not create human evidence.

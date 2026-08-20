@@ -322,7 +322,8 @@ public sealed class ScientificFigureOperatorTrialScriptTests
         var runId = $"test-{Guid.NewGuid():N}";
         var relativeSessionPath = Path.Combine(
             "outputs",
-            "test-scientific-figure-operator-trials",
+            "operator-trials",
+            "test-scientific-figures",
             runId);
         return new TrialFixture(repositoryRoot, runId, relativeSessionPath);
     }

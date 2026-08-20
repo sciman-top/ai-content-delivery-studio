@@ -34,6 +34,7 @@ Quick 只运行一次构建和指定测试；Full 只运行非发布测试、ref
 ## 文档入口
 
 - [docs/zh-CN/README.md](docs/zh-CN/README.md)
+- [本地输出与最终交付目录](docs/zh-CN/LOCAL_OUTPUTS.md)
 - [docs/PRD_V1.md](docs/PRD_V1.md)
 - [docs/TASKS.md](docs/TASKS.md)
 - [docs/ROADMAP.md](docs/ROADMAP.md)

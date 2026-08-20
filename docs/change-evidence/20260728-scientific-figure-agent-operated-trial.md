@@ -22,7 +22,7 @@ trial harness `Finalize` mode.
 - Run ID: `agent-native-20260728-01`
 - Repository commit at launch: `7046a8dec82a9a5af961c8c9f567c411467cf2da`
 - Ignored session root:
-  `outputs/scientific-figure-operator-trials/agent-native-20260728-01`
+  `outputs/operator-trials/scientific-figures/agent-native-20260728-01`
 - Lifecycle after the WPF process exited: `status=awaiting_finalize`,
   `evidenceLevel=pending_operator`, `providerMode=fake`, and
   `liveAccepted=false`
@@ -67,7 +67,7 @@ accepted evidence artifacts.
 
 The WPF export wrote the declared local package:
 
-`outputs/scientific-figure-operator-trials/agent-native-20260728-01/delivery/scientific-figure.zip`
+`outputs/operator-trials/scientific-figures/agent-native-20260728-01/delivery/scientific-figure.zip`
 
 - ZIP size: `548433` bytes
 - ZIP SHA-256:

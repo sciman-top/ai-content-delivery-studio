@@ -18,7 +18,7 @@
 
 - Run ID：`agent-native-20260728-01`
 - 启动时仓库提交：`7046a8dec82a9a5af961c8c9f567c411467cf2da`
-- 被 Git 忽略的会话根：`outputs/scientific-figure-operator-trials/agent-native-20260728-01`
+- 被 Git 忽略的会话根：`outputs/operator-trials/scientific-figures/agent-native-20260728-01`
 - WPF 退出后的生命周期：`status=awaiting_finalize`、`evidenceLevel=pending_operator`、`providerMode=fake`、`liveAccepted=false`
 - 运行数据只写入会话内 `data/studio.sqlite`，没有使用正常用户 workspace 或 accepted evidence 路径
 - WPF 和 harness 进程都已退出，没有执行 finalization
@@ -43,7 +43,7 @@ Gate 2 reviewer 被刻意填写为 `codex-agent`，备注为 `Agent-operated fak
 
 WPF 导出的本地包为：
 
-`outputs/scientific-figure-operator-trials/agent-native-20260728-01/delivery/scientific-figure.zip`
+`outputs/operator-trials/scientific-figures/agent-native-20260728-01/delivery/scientific-figure.zip`
 
 - ZIP 大小：`548433` 字节
 - ZIP SHA-256：`C3E09F21374C48B0B74979F9A5A0B5E97CD7BF0F7A3B040E7D46C47551F6B959`

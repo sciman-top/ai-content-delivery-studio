@@ -29,7 +29,7 @@
 
 随后从 `C:\Users\sciman` 工作目录使用绝对脚本路径执行 `Mode Prepare`，命令 exit code 为 `0`，并创建：
 
-`outputs/scientific-figure-operator-trials/external-cwd-probe-20260728-01`
+`outputs/operator-trials/scientific-figures/external-cwd-probe-20260728-01`
 
 该探针保持 `pending_operator`，没有启动 WPF、调用 provider 或制造人工证据。
 
