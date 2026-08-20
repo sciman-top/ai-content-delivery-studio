@@ -139,26 +139,18 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
     public ArticleSourceEvidenceBoard Render(ArticleSourceFigureAudit audit)
     {
         ArgumentNullException.ThrowIfNull(audit);
-        var photographic = audit.Assets
-            .Where(IsPhotographic)
+        var selected = audit.Assets
             .DistinctBy(asset => asset.Sha256, StringComparer.OrdinalIgnoreCase)
             .Take(8)
             .ToArray();
-        var selected = photographic.Length > 0
-            ? photographic
-            : audit.Assets
-                .DistinctBy(asset => asset.Sha256, StringComparer.OrdinalIgnoreCase)
-                .Take(8)
-                .ToArray();
         if (selected.Length == 0)
         {
             var diagnostics = string.Join(", ", audit.Assets.Select(asset =>
             {
-                var metrics = PhotographicMetrics(asset);
-                return $"{asset.AssetId}@p{asset.PageNumber}:{asset.PixelWidth}x{asset.PixelHeight}:chroma={metrics.Chroma}:contrast={metrics.Contrast:0.0}";
+                return $"{asset.AssetId}@p{asset.PageNumber}:{asset.PixelWidth}x{asset.PixelHeight}";
             }));
             throw new InvalidOperationException(
-                $"Source PDF contains no photographic evidence assets. Evaluated: {diagnostics}");
+                $"Source PDF contains no source evidence assets. Evaluated: {diagnostics}");
         }
 
         var rows = (selected.Length + Columns - 1) / Columns;
@@ -200,59 +192,6 @@ public sealed class SkiaArticleSourceEvidenceBoardRenderer : IArticleSourceEvide
             selected.Select(item => item.AssetId).ToArray());
     }
 
-    private static bool IsPhotographic(ArticleSourceFigureAsset asset)
-    {
-        using var bitmap = SKBitmap.Decode(asset.PngBytes);
-        if (bitmap is null || bitmap.Width < 600 || bitmap.Height < 300)
-        {
-            return false;
-        }
-
-        var metrics = PhotographicMetrics(bitmap);
-        return metrics.Chroma >= 28 || metrics.Contrast >= 45;
-    }
-
-    private static (int Chroma, double Contrast) PhotographicMetrics(
-        ArticleSourceFigureAsset asset)
-    {
-        using var bitmap = SKBitmap.Decode(asset.PngBytes);
-        return bitmap is null || bitmap.Width < 600 || bitmap.Height < 300
-            ? (0, 0)
-            : PhotographicMetrics(bitmap);
-    }
-
-    private static (int Chroma, double Contrast) PhotographicMetrics(SKBitmap bitmap)
-    {
-        long colorRange = 0;
-        double luminanceSum = 0;
-        double luminanceSquaredSum = 0;
-        var samples = 0;
-        var xStep = Math.Max(1, bitmap.Width / 24);
-        var yStep = Math.Max(1, bitmap.Height / 16);
-        for (var y = 0; y < bitmap.Height; y += yStep)
-        {
-            for (var x = 0; x < bitmap.Width; x += xStep)
-            {
-                var color = bitmap.GetPixel(x, y);
-                colorRange += Math.Max(color.Red, Math.Max(color.Green, color.Blue))
-                    - Math.Min(color.Red, Math.Min(color.Green, color.Blue));
-                var luminance = ((299d * color.Red) + (587d * color.Green) + (114d * color.Blue))
-                    / 1000d;
-                luminanceSum += luminance;
-                luminanceSquaredSum += luminance * luminance;
-                samples++;
-            }
-        }
-
-        if (samples == 0)
-        {
-            return (0, 0);
-        }
-
-        var mean = luminanceSum / samples;
-        var variance = Math.Max(0, (luminanceSquaredSum / samples) - (mean * mean));
-        return ((int)(colorRange / samples), Math.Sqrt(variance));
-    }
 
     private static void DrawCard(
         SKCanvas canvas,

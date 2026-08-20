@@ -90,6 +90,24 @@ public sealed class ArticleScientificFigureCandidateRenderer
             case ArticleScientificFigureCandidateKind.ThermalDryWetHeat:
                 RenderThermalDryWetHeat(group);
                 break;
+            case ArticleScientificFigureCandidateKind.GravityTerminology:
+                RenderGravityTerminology(group);
+                break;
+            case ArticleScientificFigureCandidateKind.GravityOrbitFreeFall:
+                RenderGravityOrbitFreeFall(group);
+                break;
+            case ArticleScientificFigureCandidateKind.GravityElevatorFreeFall:
+                RenderGravityElevatorFreeFall(group);
+                break;
+            case ArticleScientificFigureCandidateKind.GravitySurfaceRotation:
+                RenderGravitySurfaceRotation(group);
+                break;
+            case ArticleScientificFigureCandidateKind.GravityCaseComparison:
+                RenderGravityCaseComparison(group);
+                break;
+            case ArticleScientificFigureCandidateKind.GravityReferenceFrames:
+                RenderGravityReferenceFrames(group);
+                break;
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(candidate),
@@ -431,6 +449,119 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Text("相对湿度改变汗液蒸发速率", 600, 690, 18, Ink, "middle"));
     }
 
+    private static void RenderGravityTerminology(XElement group)
+    {
+        var cards = new[]
+        {
+            (70d, "地球引力 Fg", "真实相互作用力", "Fg = GMm/r²", Blue),
+            (390d, "有效重力 m·g_eff", "指定参考系中的合成量", "地球固连系含自转离心项", Green),
+            (710d, "支持力/拉力 N 或 T", "秤或测力计的直接读数来源", "自由落体时可约为 0", Magenta),
+        };
+        foreach (var card in cards)
+        {
+            group.Add(Rect(card.Item1, 175, 285, 360, Panel, "#CBD5E1", 1));
+            group.Add(Text(card.Item2, card.Item1 + 142, 230, 21, card.Item5, "middle"));
+            group.Add(Text(card.Item3, card.Item1 + 142, 300, 16, Ink, "middle"));
+            group.Add(Text(card.Item4, card.Item1 + 142, 365, 16, Muted, "middle"));
+        }
+
+        group.Add(Rect(70, 575, 960, 105, "#FFF7ED", "#FDBA74", 1));
+        group.Add(Text("NIST/ISO 的 weight 不是默认等同于秤读数", 550, 618, 19, Amber, "middle"));
+        group.Add(Text("先声明参考系与术语约定，再写公式和结论", 550, 655, 18, Ink, "middle"));
+    }
+
+    private static void RenderGravityOrbitFreeFall(XElement group)
+    {
+        DrawCircle(group, 350, 430, 190, Blue, 3);
+        group.Add(Text("地球", 350, 440, 28, Blue, "middle"));
+        group.Add(Rect(830, 360, 170, 110, Panel, "#64748B", 2));
+        group.Add(Text("空间站", 915, 425, 22, Ink, "middle"));
+        group.Add(GravityLine(830, 415, 540, 425, Blue, 5, "orbit-gravity", arrow: true));
+        group.Add(Text("Fg 与 a 均指向地心", 690, 390, 18, Blue, "middle"));
+        group.Add(GravityLine(1035, 465, 1035, 285, Magenta, 4, "orbit-velocity", arrow: true));
+        group.Add(Text("切向速度 v", 1020, 270, 17, Magenta, "end"));
+        group.Add(Rect(665, 555, 430, 115, "#ECFDF5", "#6EE7B7", 1));
+        group.Add(Text("g(r) = GM/r² ≠ 0", 880, 598, 21, Green, "middle"));
+        group.Add(Text("共同自由落体：秤读数 N ≈ 0", 880, 638, 19, Ink, "middle"));
+    }
+
+    private static void RenderGravityElevatorFreeFall(XElement group)
+    {
+        group.Add(Rect(300, 155, 600, 485, Panel, "#64748B", 3));
+        group.Add(Line(330, 560, 870, 560, Muted, 4));
+        DrawCircle(group, 600, 380, 55, Ink, 3);
+        group.Add(Text("物体 m", 600, 388, 18, Ink, "middle"));
+        group.Add(GravityLine(600, 445, 600, 545, Blue, 5, "elevator-gravity", arrow: true));
+        group.Add(Text("Fg = mg", 625, 505, 18, Blue));
+        group.Add(GravityLine(780, 220, 780, 390, Magenta, 5, "elevator-acceleration", arrow: true));
+        group.Add(Text("电梯与物体 a ≈ g", 800, 305, 18, Magenta));
+        group.Add(Text("支持力 N ≈ 0", 600, 610, 20, Green, "middle"));
+        group.Add(Text("地球引力与自由落体加速度并未消失", 600, 705, 19, Amber, "middle"));
+    }
+
+    private static void RenderGravitySurfaceRotation(XElement group)
+    {
+        const double cx = 430;
+        const double cy = 430;
+        DrawCircle(group, cx, cy, 225, Blue, 3);
+        group.Add(Line(cx, 155, cx, 705, Muted, 2));
+        group.Add(Text("自转轴", cx - 12, 180, 16, Muted, "end"));
+        DrawCircle(group, 590, 270, 10, Magenta, 4);
+        group.Add(Text("物体", 615, 265, 18, Ink));
+        group.Add(GravityLine(590, 280, 470, 400, Blue, 5, "surface-gravity", arrow: true));
+        group.Add(Text("引力场 g_grav", 565, 355, 17, Blue));
+        group.Add(GravityLine(600, 270, 760, 270, Magenta, 4, "surface-centrifugal", arrow: true));
+        group.Add(Text("离心项 ω²r⊥", 780, 275, 17, Magenta));
+        group.Add(GravityLine(590, 282, 495, 388, Green, 6, "surface-effective-gravity", arrow: true));
+        group.Add(Text("有效重力 g_eff", 680, 420, 18, Green));
+        group.Add(GravityLine(585, 258, 680, 152, Amber, 4, "surface-support", arrow: true));
+        group.Add(Text("地面合支持力 R", 700, 145, 17, Amber));
+        group.Add(Rect(750, 500, 370, 150, "#FFF7ED", "#FDBA74", 1));
+        group.Add(Text("g_eff = g_grav + a_cf", 935, 550, 20, Amber, "middle"));
+        group.Add(Text("向心加速度是运动学结果", 935, 592, 17, Ink, "middle"));
+        group.Add(Text("不是额外的相互作用力", 935, 625, 17, Ink, "middle"));
+    }
+
+    private static void RenderGravityCaseComparison(XElement group)
+    {
+        var columns = new[]
+        {
+            (70d, "绕地轨道", "Fg ≠ 0", "a_orbit ≠ 0", "N ≈ 0", Blue),
+            (390d, "自由落体电梯", "Fg ≠ 0", "a ≈ g ≠ 0", "N ≈ 0", Magenta),
+            (710d, "地表相对静止", "Fg ≠ 0", "g_eff ≠ 0", "N ≈ m·g_eff", Green),
+        };
+        foreach (var column in columns)
+        {
+            group.Add(Rect(column.Item1, 170, 285, 430, Panel, "#CBD5E1", 1));
+            group.Add(Text(column.Item2, column.Item1 + 142, 225, 21, column.Item6, "middle"));
+            group.Add(Text("地球引力", column.Item1 + 32, 320, 16, Muted));
+            group.Add(Text(column.Item3, column.Item1 + 245, 320, 19, Ink, "end"));
+            group.Add(Text("物体加速度", column.Item1 + 32, 405, 16, Muted));
+            group.Add(Text(column.Item4, column.Item1 + 245, 405, 19, Ink, "end"));
+            group.Add(Text("秤读数/支持力", column.Item1 + 142, 480, 16, Muted, "middle"));
+            group.Add(Text(column.Item5, column.Item1 + 142, 525, 19, column.Item6, "middle"));
+        }
+        group.Add(Text("失重判据：支持力/秤读数接近零，而不是地球引力消失", 550, 685, 19, Amber, "middle"));
+    }
+
+    private static void RenderGravityReferenceFrames(XElement group)
+    {
+        group.Add(Rect(70, 165, 460, 450, "#EFF6FF", "#93C5FD", 1));
+        group.Add(Rect(610, 165, 460, 450, "#FFF7ED", "#FDBA74", 1));
+        group.Add(Text("惯性系", 300, 220, 24, Blue, "middle"));
+        group.Add(Text("只画真实相互作用力", 300, 280, 19, Ink, "middle"));
+        group.Add(Text("ΣF_real = m·a", 300, 350, 22, Blue, "middle"));
+        group.Add(Text("向心力 = 合力的径向角色", 300, 430, 17, Muted, "middle"));
+        group.Add(Text("不要再额外添加一支“向心力”箭头", 300, 505, 16, Amber, "middle"));
+
+        group.Add(Text("随动/旋转非惯性系", 840, 220, 24, Magenta, "middle"));
+        group.Add(Text("声明参考系后加入惯性力", 840, 280, 19, Ink, "middle"));
+        group.Add(Text("ΣF_real + F_inertial = m·a_rel", 840, 350, 21, Magenta, "middle"));
+        group.Add(Text("自由落体随动系可见近似平衡", 840, 430, 17, Muted, "middle"));
+        group.Add(Text("不得与惯性系方程混用", 840, 505, 17, Amber, "middle"));
+        group.Add(Text("先选参考系 → 列真实力 → 必要时加惯性力 → 再解释秤读数", 570, 690, 18, Green, "middle"));
+    }
+
     private static void DrawLens(
         XElement group,
         double x,
@@ -525,6 +656,29 @@ public sealed class ArticleScientificFigureCandidateRenderer
         double width) =>
         group.Add(Line(x1, y1, x2, y2, color, width, arrow: true));
 
+    private static void DrawCircle(
+        XElement group,
+        double centerX,
+        double centerY,
+        double radius,
+        string color,
+        double width)
+    {
+        const int segments = 48;
+        for (var index = 0; index < segments; index++)
+        {
+            var start = 2 * Math.PI * index / segments;
+            var end = 2 * Math.PI * (index + 1) / segments;
+            group.Add(Line(
+                centerX + radius * Math.Cos(start),
+                centerY + radius * Math.Sin(start),
+                centerX + radius * Math.Cos(end),
+                centerY + radius * Math.Sin(end),
+                color,
+                width));
+        }
+    }
+
     private static XElement Rect(
         double x,
         double y,
@@ -573,6 +727,21 @@ public sealed class ArticleScientificFigureCandidateRenderer
     {
         var line = Line(x1, y1, x2, y2, color, width, arrow);
         line.SetAttributeValue("data-thermal-role", role);
+        return line;
+    }
+
+    private static XElement GravityLine(
+        double x1,
+        double y1,
+        double x2,
+        double y2,
+        string color,
+        double width,
+        string role,
+        bool arrow = false)
+    {
+        var line = Line(x1, y1, x2, y2, color, width, arrow);
+        line.SetAttributeValue("data-gravity-role", role);
         return line;
     }
 

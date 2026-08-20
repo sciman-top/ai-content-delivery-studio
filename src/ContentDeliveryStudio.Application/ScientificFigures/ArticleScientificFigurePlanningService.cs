@@ -25,9 +25,20 @@ public sealed class ArticleScientificFigurePlanningService
 
         var normalizedTitle = RequireText(articleTitle, nameof(articleTitle));
         var normalizedAudience = RequireText(audience, nameof(audience));
+        if (IsGravityArticle(normalizedTitle, extraction))
+        {
+            return PlanGravity(extraction, normalizedTitle, normalizedAudience);
+        }
+
         if (IsThermalArticle(normalizedTitle, extraction))
         {
             return PlanThermal(extraction, normalizedTitle, normalizedAudience);
+        }
+
+        if (!IsOpticalArticle(normalizedTitle, extraction))
+        {
+            throw new InvalidOperationException(
+                "The scientific article domain is unsupported; no figure profile was selected.");
         }
 
         var candidates = new List<ArticleScientificFigureCandidate>();
@@ -200,6 +211,108 @@ public sealed class ArticleScientificFigurePlanningService
         }).ToArray();
     }
 
+    private static IReadOnlyList<ArticleScientificFigureExternalReference> GravityExternalReferences() =>
+    [
+        new(
+            "NASA",
+            "What is Microgravity?",
+            "https://www.nasa.gov/centers-and-facilities/glenn/what-is-microgravity/",
+            "2026-08-20",
+            "Adopted for the non-zero orbital gravity, shared free-fall, and near-zero scale-reading boundary."),
+        new(
+            "NIST",
+            "NIST Guide to the SI, Chapter 8.3 Weight",
+            "https://www.nist.gov/pml/special-publication-811/nist-guide-si-chapter-8",
+            "2026-08-20",
+            "Adopted for the ISO 80000-4-aligned reference-frame definition of weight and the Earth-rotation centrifugal term."),
+    ];
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanGravity(
+        ScientificDocumentExtraction extraction,
+        string articleTitle,
+        string audience)
+    {
+        var candidates = new List<ArticleScientificFigureCandidate>();
+        AddIfEvidenceFound(candidates, "gravity-terms", ArticleScientificFigureCandidateKind.GravityTerminology,
+            "引力、有效重力与秤读数的术语边界", "先声明参考系和术语约定，再比较 gravitation、gravity、weight 与秤读数。",
+            "地球引力、给定参考系中的有效重力和支持力/拉力读数是不同物理量；不能只凭英文单词互相替代。",
+            ScientificFigureRiskLevel.High, "Gravitation", extraction.Blocks, ["第二部分"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "用标准化术语卡片替代把 weight 直接等同于秤读数的混合定义。");
+        AddIfEvidenceFound(candidates, "gravity-orbit", ArticleScientificFigureCandidateKind.GravityOrbitFreeFall,
+            "轨道中的共同自由落体与失重", "解释空间站内秤读数接近零而地球引力和轨道加速度仍不为零。",
+            "轨道器、物体和秤共同自由落体；地球引力提供向心加速度，支持力接近零。",
+            ScientificFigureRiskLevel.High, "空间站", extraction.Blocks, ["题例 1"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "纠正以秤读数为零推断轨道 g 为零的概念跳跃。");
+        AddIfEvidenceFound(candidates, "gravity-elevator", ArticleScientificFigureCandidateKind.GravityElevatorFreeFall,
+            "自由落体电梯中的力与秤读数", "在同一图中区分地球引力、物体加速度和秤的支持力。",
+            "当电梯与物体以 a 约等于 g 共同下落时，地球引力仍存在，而支持力 N 约等于零。",
+            ScientificFigureRiskLevel.High, "自由下落的电梯", extraction.Blocks, ["题例 2"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "把真实力和随动参考系中的惯性力分栏，避免混用。");
+        AddIfEvidenceFound(candidates, "gravity-earth-rotation", ArticleScientificFigureCandidateKind.GravitySurfaceRotation,
+            "地表自转与有效重力", "表示地球引力、自转离心项、有效重力和地面支持力之间的关系。",
+            "在地球固连旋转参考系中，有效重力由引力场与离心项合成；向心加速度不是额外的一种相互作用力。",
+            ScientificFigureRiskLevel.High, "地球表面的物体", extraction.Blocks, ["题例 3"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "重绘原文地球图并明确旋转轴、纬度和矢量角色。");
+        AddIfEvidenceFound(candidates, "gravity-case-comparison", ArticleScientificFigureCandidateKind.GravityCaseComparison,
+            "三种场景中的引力、加速度与秤读数", "并排比较轨道、自由落体电梯和地表静止三个场景。",
+            "三种场景都受地球引力；是否失重由支持力/秤读数判断，不能由引力是否存在判断。",
+            ScientificFigureRiskLevel.High, "重量为零", extraction.Blocks, ["题例 1", "题例 2", "题例 3"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "用统一列名消除同词异义和跨参考系比较。");
+        AddIfEvidenceFound(candidates, "gravity-frame-rules", ArticleScientificFigureCandidateKind.GravityReferenceFrames,
+            "惯性系与非惯性系的受力记账规则", "给出两套不可混用的受力分析规则。",
+            "惯性系只画真实相互作用力；随动或旋转非惯性系可加入惯性力，但必须声明参考系。",
+            ScientificFigureRiskLevel.High, "非惯性系", extraction.Blocks, ["第三部分"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "把参考系选择变成显式步骤，阻止重复计入向心力或离心力。");
+
+        var sourceEvidence = extraction.Blocks
+            .Where(block => !string.IsNullOrWhiteSpace(block.OriginalText))
+            .Take(3)
+            .Select(block => ArticleScientificFigureEvidence.Create(block, excerptLength: 240))
+            .ToArray();
+        if (sourceEvidence.Length > 0)
+        {
+            candidates.Add(new ArticleScientificFigureCandidate(
+                "candidate-gravity-source-evidence-board",
+                articleTitle,
+                ArticleScientificFigureCandidateKind.SourceEvidenceBoard,
+                "原文重力图表证据板",
+                "保留题图、地球自转受力图和 ISO 摘录作为来源证据。",
+                "只做来源保真的提取与排版，不把原图中的术语或箭头自动确认为科学事实。",
+                audience,
+                ScientificFigureRiskLevel.High,
+                sourceEvidence,
+                ["开篇题图", "地球自转图", "ISO 80000-4 摘录"],
+                ArticleScientificFigureDisposition.ConsolidateSourceEvidence,
+                "保留原文像素证据；科学性更正由确定性重绘图承担。",
+                RequiresGateOneApproval: true,
+                GateOneStatus: ArticleScientificFigureGateStatus.PendingHumanApproval,
+                DeliveryStatus: ArticleScientificFigureDeliveryStatus.NotCreated));
+        }
+
+        if (candidates.Count < 7)
+        {
+            throw new InvalidOperationException(
+                "The gravity article did not expose enough located evidence for the complete figure set.");
+        }
+
+        var externalReferences = GravityExternalReferences();
+        return candidates.Select((candidate, index) => candidate with
+        {
+            CandidateId = $"article-{StableSlug(articleTitle)}-{index + 1:D2}-{candidate.Kind.ToString().ToLowerInvariant()}",
+            ArticleTitle = articleTitle,
+            Audience = audience,
+            ExternalScientificReferences = externalReferences,
+        }).ToArray();
+    }
+
+    private static bool IsGravityArticle(
+        string articleTitle,
+        ScientificDocumentExtraction extraction) =>
+        articleTitle.Contains("重力", StringComparison.Ordinal)
+        || extraction.Blocks.Any(block =>
+            block.OriginalText?.Contains("Gravitation", StringComparison.Ordinal) == true
+            && block.OriginalText.Contains("Weight", StringComparison.Ordinal));
+
     private static bool IsThermalArticle(
         string articleTitle,
         ScientificDocumentExtraction extraction) =>
@@ -208,6 +321,15 @@ public sealed class ArticleScientificFigurePlanningService
         || extraction.Blocks.Any(block =>
             block.OriginalText?.Contains("相对湿度", StringComparison.Ordinal) == true
             && block.OriginalText.Contains("传热", StringComparison.Ordinal));
+
+    private static bool IsOpticalArticle(
+        string articleTitle,
+        ScientificDocumentExtraction extraction) =>
+        articleTitle.Contains("凸透镜", StringComparison.Ordinal)
+        || articleTitle.Contains("光路", StringComparison.Ordinal)
+        || extraction.Blocks.Any(block =>
+            block.OriginalText?.Contains("二次凸透镜成像", StringComparison.Ordinal) == true
+            && block.OriginalText.Contains("视网膜", StringComparison.Ordinal));
 
     private static void AddIfEvidenceFound(
         ICollection<ArticleScientificFigureCandidate> candidates,
@@ -283,7 +405,17 @@ public sealed record ArticleScientificFigureCandidate(
     string ReplacementRationale,
     bool RequiresGateOneApproval,
     ArticleScientificFigureGateStatus GateOneStatus,
-    ArticleScientificFigureDeliveryStatus DeliveryStatus);
+    ArticleScientificFigureDeliveryStatus DeliveryStatus)
+{
+    public IReadOnlyList<ArticleScientificFigureExternalReference> ExternalScientificReferences { get; init; } = [];
+}
+
+public sealed record ArticleScientificFigureExternalReference(
+    string Publisher,
+    string Title,
+    string Url,
+    string AccessedOn,
+    string AdoptionDecision);
 
 public sealed record ArticleScientificFigureEvidence(
     string SourceBlockId,
@@ -324,6 +456,12 @@ public enum ArticleScientificFigureCandidateKind
     ThermalTransferModes = 9,
     ThermalHumidityClothing = 10,
     ThermalDryWetHeat = 11,
+    GravityTerminology = 12,
+    GravityOrbitFreeFall = 13,
+    GravityElevatorFreeFall = 14,
+    GravitySurfaceRotation = 15,
+    GravityCaseComparison = 16,
+    GravityReferenceFrames = 17,
 }
 
 public enum ArticleScientificFigureDisposition

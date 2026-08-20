@@ -59,6 +59,18 @@ public sealed class ArticleScientificFigurePlanningTests
     }
 
     [Fact]
+    public void Plan_UnknownDomainFailsClosedInsteadOfDefaultingToOptics()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            new ArticleScientificFigurePlanningService().Plan(
+                CreateUnknownDomainExtraction(),
+                "植物蒸腾作用的课堂观察",
+                "初中科学教师与学生"));
+
+        Assert.Contains("domain is unsupported", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RenderOpticalPathPreview_PreservesPendingGateOneBoundary()
     {
         var candidate = new ArticleScientificFigurePlanningService().Plan(
@@ -344,6 +356,19 @@ public sealed class ArticleScientificFigurePlanningTests
             blocks,
             []);
     }
+
+    private static ScientificDocumentExtraction CreateUnknownDomainExtraction() =>
+        ScientificDocumentExtraction.Create(
+            Guid.NewGuid(),
+            "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+            ScientificExtractorIdentity.Create("test-extractor", "1.0"),
+            ScientificExtractionQuality.Create(
+                isScanned: false,
+                ocrApplied: false,
+                ScientificReadingOrderStatus.Reliable,
+                ScientificRequiredContentStatus.Complete),
+            [Block("biology-page-1", 1, "观察叶片在不同湿度条件下的失水变化。")],
+            []);
 
     private static ScientificSourceBlock Block(string id, int page, string text) =>
         ScientificSourceBlock.Create(

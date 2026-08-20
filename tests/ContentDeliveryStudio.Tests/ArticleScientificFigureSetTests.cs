@@ -14,6 +14,60 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class ArticleScientificFigureSetTests
 {
     [Fact]
+    public void PlanningRoutesGravityArticleToCompleteGravityProfile()
+    {
+        var candidates = CreateGravityCandidates();
+
+        Assert.Equal(7, candidates.Count);
+        Assert.Equal(6, candidates.Count(candidate =>
+            candidate.Kind != ArticleScientificFigureCandidateKind.SourceEvidenceBoard));
+        Assert.All(candidates, candidate =>
+        {
+            Assert.Equal(["NASA", "NIST"], candidate.ExternalScientificReferences
+                .Select(reference => reference.Publisher)
+                .OrderBy(value => value, StringComparer.Ordinal));
+        });
+        Assert.IsType<ArticleGravityScientificReviewer>(
+            ArticleScientificFigureReviewerFactory.CreateFor(candidates));
+    }
+
+    [Fact]
+    public void ReviewerFactory_SourceEvidenceWithoutDomainCandidateFailsClosed()
+    {
+        var sourceEvidence = CreateCandidates().Single(candidate =>
+            candidate.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard);
+
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            ArticleScientificFigureReviewerFactory.CreateFor([sourceEvidence]));
+
+        Assert.Contains("No supported article scientific review profile", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DeterministicGravityReview_BlocksZeroGravityInOrbit()
+    {
+        var candidate = CreateGravityCandidates().Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.GravityOrbitFreeFall);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var mutatedSvg = artifact.Svg.Replace(
+            "g(r) = GM/r² ≠ 0",
+            "重力为零",
+            StringComparison.Ordinal);
+        var review = new ArticleGravityScientificReviewer().Review(
+            candidate,
+            artifact with
+            {
+                Svg = mutatedSvg,
+                Sha256 = Hash(Encoding.UTF8.GetBytes(mutatedSvg)),
+            },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(review.Passed);
+        Assert.Contains(review.Findings, finding => finding.Code == "gravity-orbit-zero-overclaim");
+    }
+
+    [Fact]
     public async Task FigureSet_RequiresOneReviewedResultPerPlannedCandidate()
     {
         var candidates = CreateCandidates();
@@ -318,6 +372,24 @@ public sealed class ArticleScientificFigureSetTests
     }
 
     [Fact]
+    public void EvidenceBoardRenderer_RetainsNonPhotographicScientificFigures()
+    {
+        var assets = new[]
+        {
+            CreateSourceFigureAsset("photo", CreatePhotographicPng(1)),
+            CreateSourceFigureAsset("line-art", CreateLineArtPng()),
+        };
+        var audit = new ArticleSourceFigureAudit(
+            $"sha256:{new string('c', 64)}",
+            PageCount: 2,
+            assets);
+
+        var board = new SkiaArticleSourceEvidenceBoardRenderer().Render(audit);
+
+        Assert.Equal(assets.Select(asset => asset.AssetId), board.SourceAssetIds);
+    }
+
+    [Fact]
     public void CandidateRenderer_OmitsWorkflowAnnotationsFromVisibleSvg()
     {
         foreach (var candidate in CreateCandidates().Where(item =>
@@ -465,15 +537,7 @@ public sealed class ArticleScientificFigureSetTests
             extraction,
             Path.GetFileNameWithoutExtension(sourcePath),
             "初中物理教师与学生");
-        var scientificReviewer = candidates.Any(item =>
-                item.Kind is ArticleScientificFigureCandidateKind.ThermalFrontMechanism
-                    or ArticleScientificFigureCandidateKind.ThermalBasinException
-                    or ArticleScientificFigureCandidateKind.ThermalConductivityComparison
-                    or ArticleScientificFigureCandidateKind.ThermalTransferModes
-                    or ArticleScientificFigureCandidateKind.ThermalHumidityClothing
-                    or ArticleScientificFigureCandidateKind.ThermalDryWetHeat)
-            ? new ArticleThermalScientificReviewer() as IArticleScientificFigureReviewer
-            : new ArticleOpticalScientificReviewer();
+        var scientificReviewer = ArticleScientificFigureReviewerFactory.CreateFor(candidates);
         var run = await new ArticleScientificFigureSetService(
             new PdfPigArticleSourceFigureExtractor(),
             new SkiaArticleSourceEvidenceBoardRenderer(),
@@ -708,6 +772,7 @@ public sealed class ArticleScientificFigureSetTests
         ArticleScientificFigureCandidateKind.Comparison => "04-observation-position",
         ArticleScientificFigureCandidateKind.CorrectiveLensControl => "05-corrective-lens",
         ArticleScientificFigureCandidateKind.SourceEvidenceBoard => candidate.ArticleTitle.Contains("下雪", StringComparison.Ordinal)
+            || candidate.ArticleTitle.Contains("重力", StringComparison.Ordinal)
             ? "07-source-evidence-board"
             : "06-source-evidence-board",
         ArticleScientificFigureCandidateKind.ThermalFrontMechanism => "01-thermal-snow-front",
@@ -716,6 +781,12 @@ public sealed class ArticleScientificFigureSetTests
         ArticleScientificFigureCandidateKind.ThermalTransferModes => "04-thermal-transfer-modes",
         ArticleScientificFigureCandidateKind.ThermalHumidityClothing => "05-thermal-humidity-clothing",
         ArticleScientificFigureCandidateKind.ThermalDryWetHeat => "06-thermal-dry-wet-heat",
+        ArticleScientificFigureCandidateKind.GravityTerminology => "01-gravity-terminology",
+        ArticleScientificFigureCandidateKind.GravityOrbitFreeFall => "02-gravity-orbit-free-fall",
+        ArticleScientificFigureCandidateKind.GravityElevatorFreeFall => "03-gravity-elevator-free-fall",
+        ArticleScientificFigureCandidateKind.GravitySurfaceRotation => "04-gravity-surface-rotation",
+        ArticleScientificFigureCandidateKind.GravityCaseComparison => "05-gravity-case-comparison",
+        ArticleScientificFigureCandidateKind.GravityReferenceFrames => "06-gravity-reference-frames",
         _ => throw new ArgumentOutOfRangeException(nameof(candidate), candidate.Kind, null),
     };
 
@@ -752,6 +823,37 @@ public sealed class ArticleScientificFigureSetTests
             RequiresGateOneApproval: true,
             GateOneStatus: ArticleScientificFigureGateStatus.PendingHumanApproval,
             DeliveryStatus: ArticleScientificFigureDeliveryStatus.NotCreated);
+    }
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> CreateGravityCandidates()
+    {
+        const string text = "Gravitation Gravity Weight 空间站 自由下落的电梯 地球表面的物体 重量为零 非惯性系";
+        var block = ScientificSourceBlock.Create(
+            "gravity-source",
+            ScientificSourceBlockKind.Paragraph,
+            ScientificSourceLocation.Create(
+                1,
+                "gravity article",
+                boundingRegion: null,
+                ScientificCharacterRange.Create(0, text.Length)),
+            text,
+            isRequired: true,
+            ScientificRecoveryStatus.NotRequired);
+        var extraction = ScientificDocumentExtraction.Create(
+            Guid.NewGuid(),
+            new string('d', 64).Insert(0, "sha256:"),
+            ScientificExtractorIdentity.Create("test", "1"),
+            ScientificExtractionQuality.Create(
+                isScanned: false,
+                ocrApplied: false,
+                ScientificReadingOrderStatus.Reliable,
+                ScientificRequiredContentStatus.Complete),
+            [block],
+            []);
+        return new ArticleScientificFigurePlanningService().Plan(
+            extraction,
+            "“重力”定义的混乱",
+            "初中物理教师与学生");
     }
 
     private static ArticleOpticalScientificReviewReport ReviewThermalMutation(
@@ -791,6 +893,36 @@ public sealed class ArticleScientificFigureSetTests
         using var image = SKImage.FromBitmap(bitmap);
         using var encoded = image.Encode(SKEncodedImageFormat.Png, quality: 100);
         return encoded.ToArray();
+    }
+
+    private static byte[] CreateLineArtPng()
+    {
+        using var bitmap = new SKBitmap(420, 320);
+        bitmap.Erase(SKColors.White);
+        using var canvas = new SKCanvas(bitmap);
+        using var paint = new SKPaint { Color = SKColors.Black, StrokeWidth = 3 };
+        canvas.DrawLine(20, 160, 400, 160, paint);
+        canvas.DrawLine(210, 20, 210, 300, paint);
+        using var image = SKImage.FromBitmap(bitmap);
+        using var encoded = image.Encode(SKEncodedImageFormat.Png, quality: 100);
+        return encoded.ToArray();
+    }
+
+    private static ArticleSourceFigureAsset CreateSourceFigureAsset(string id, byte[] png)
+    {
+        using var bitmap = SKBitmap.Decode(png);
+        return new ArticleSourceFigureAsset(
+            id,
+            PageNumber: 1,
+            PageImageIndex: 1,
+            bitmap.Width,
+            bitmap.Height,
+            PageLeft: 10,
+            PageBottom: 10,
+            PageWidth: 400,
+            PageHeight: 300,
+            Hash(png),
+            png);
     }
 
     private static string Mutate(string svg, string mutation)
