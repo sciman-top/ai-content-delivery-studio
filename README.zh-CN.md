@@ -29,7 +29,7 @@
 .\scripts\preflight-release.ps1
 ```
 
-Quick 只运行一次构建和指定测试；Full 只运行非发布测试、reference contract 与 diff hygiene；Release 只调用一次 Full，再追加 release-only 测试、变更 C# 格式、扫描和 publish/package 检查。
+Quick 只运行一次构建和指定测试；Full 只运行非发布、非 live 测试、reference contract 与 diff hygiene；Release 只调用一次 Full，再追加 release-only 测试、变更 C# 格式、扫描和 publish/package 检查。CI 只有在显式 release workflow dispatch 时才执行 Release。
 
 ## 文档入口
 

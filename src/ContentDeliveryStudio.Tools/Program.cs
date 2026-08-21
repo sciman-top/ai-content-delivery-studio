@@ -2,13 +2,55 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Infrastructure.ScientificFigures;
+using ContentDeliveryStudio.Tools;
 
-return args.FirstOrDefault() switch
+return await DispatchAsync(args);
+
+static async Task<int> DispatchAsync(string[] args)
 {
-    "promote-article-figure-set" => Promote(args[1..]),
-    "assess-article-figure-review" => AssessReview(args[1..]),
-    _ => Usage(),
-};
+    return args.FirstOrDefault() switch
+    {
+        "generate-article-figure" => await GenerateArticleFigureAsync(args[1..]),
+        "generate-article-figure-set" => await GenerateArticleFigureSetAsync(args[1..]),
+        "promote-article-figure-set" => Promote(args[1..]),
+        "assess-article-figure-review" => AssessReview(args[1..]),
+        _ => Usage(),
+    };
+}
+
+static async Task<int> GenerateArticleFigureAsync(string[] args)
+{
+    try
+    {
+        var options = ParseOptions(args, "source", "output");
+        await ArticleScientificFigureCommands.RunSingleAsync(
+            Required(options, "source"),
+            Required(options, "output"));
+        return 0;
+    }
+    catch (Exception exception)
+    {
+        Console.Error.WriteLine($"[ERROR] {exception.Message}");
+        return 1;
+    }
+}
+
+static async Task<int> GenerateArticleFigureSetAsync(string[] args)
+{
+    try
+    {
+        var options = ParseOptions(args, "source", "output");
+        await ArticleScientificFigureCommands.RunSetAsync(
+            Required(options, "source"),
+            Required(options, "output"));
+        return 0;
+    }
+    catch (Exception exception)
+    {
+        Console.Error.WriteLine($"[ERROR] {exception.Message}");
+        return 1;
+    }
+}
 
 static int AssessReview(string[] args)
 {
@@ -171,6 +213,8 @@ static int Usage()
 {
     Console.Error.WriteLine(
         "Usage:\n"
+        + "  ContentDeliveryStudio.Tools generate-article-figure --source <pdf> --output <dir>\n"
+        + "  ContentDeliveryStudio.Tools generate-article-figure-set --source <pdf> --output <dir>\n"
         + "  ContentDeliveryStudio.Tools promote-article-figure-set "
         + "--source <review-ready-dir> --delivery-root <dir> --article-slug <slug> "
         + "--package-id <id> --reviewer <name> --operator-kind <human|authorized_agent> "

@@ -107,7 +107,7 @@ Diagnostics describe actual provider calls, project state, and package results. 
 
 - Focused tests prove the affected behavior or contract.
 - Quick adds one solution build plus an explicit focused test filter.
-- Full runs one build, non-release tests, mapped reference contract, and diff hygiene.
+- Full runs one build, non-release/non-live tests, mapped reference contract, and diff hygiene.
 - Release invokes Full once, then adds release-only tests, changed-C# formatting, scans, and publish/package checks.
 
 Source-token counts, private call ordering, duplicate wrappers, and per-change governance receipts are not architectural contracts. Native UI Automation or operator evidence is required for claims about packaged desktop behavior.

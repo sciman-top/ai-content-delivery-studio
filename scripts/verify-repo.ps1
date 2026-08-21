@@ -113,8 +113,8 @@ Invoke-Step -Label "dotnet build" -Action {
 if ($Mode -eq "Quick") {
     $testArgs += @("--filter", $TestFilter)
 } else {
-    $testArgs += @("--filter", "Category!=ReleaseOnly")
-    Write-Host "[BOUNDARY] Full runs the core suite once; Category=ReleaseOnly is reserved for release preflight." -ForegroundColor Yellow
+    $testArgs += @("--filter", "Category!=ReleaseOnly&Category!=LiveProvider")
+    Write-Host "[BOUNDARY] Full runs the core suite once; ReleaseOnly and LiveProvider lanes require explicit release/live entrypoints." -ForegroundColor Yellow
 }
 
 Invoke-Step -Label "dotnet test" -Action {

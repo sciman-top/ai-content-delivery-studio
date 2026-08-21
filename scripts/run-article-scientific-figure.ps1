@@ -35,18 +35,17 @@ if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
 $resolvedOutputDirectory = [System.IO.Path]::GetFullPath($OutputDirectory)
 New-Item -ItemType Directory -Force -Path $resolvedOutputDirectory | Out-Null
 
-$previousSourcePath = $env:ARTICLE_SCIENTIFIC_FIGURE_SOURCE_PATH
-$previousOutputDirectory = $env:ARTICLE_SCIENTIFIC_FIGURE_OUTPUT_DIRECTORY
-try {
-    $env:ARTICLE_SCIENTIFIC_FIGURE_SOURCE_PATH = $resolvedSourcePath
-    $env:ARTICLE_SCIENTIFIC_FIGURE_OUTPUT_DIRECTORY = $resolvedOutputDirectory
-    & dotnet test (Join-Path $repoRoot "ContentDeliveryStudio.sln") --filter ArticleScientificFigurePlanningTests
-    if ($LASTEXITCODE -ne 0) {
-        throw "Article scientific figure candidate run failed."
-    }
-} finally {
-    $env:ARTICLE_SCIENTIFIC_FIGURE_SOURCE_PATH = $previousSourcePath
-    $env:ARTICLE_SCIENTIFIC_FIGURE_OUTPUT_DIRECTORY = $previousOutputDirectory
+$toolArguments = @(
+    "run",
+    "--project", (Join-Path $repoRoot "src\ContentDeliveryStudio.Tools\ContentDeliveryStudio.Tools.csproj"),
+    "--",
+    "generate-article-figure",
+    "--source", $resolvedSourcePath,
+    "--output", $resolvedOutputDirectory
+)
+& dotnet @toolArguments
+if ($LASTEXITCODE -ne 0) {
+    throw "Article scientific figure candidate run failed."
 }
 
 $reportPath = Join-Path $resolvedOutputDirectory "article-scientific-figure-report.json"

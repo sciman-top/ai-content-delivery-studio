@@ -36,6 +36,8 @@
 - build：`dotnet build ContentDeliveryStudio.sln`
 - test：`dotnet test ContentDeliveryStudio.sln --no-build`
 - focused closeout：未触及 provider、observability、persistence/schema、document/image rendering、publish/package/release 的规则、文档、测试、verifier、script/config，运行 `git diff --check` 与受影响 verifier/test；需要 solution feedback 时才运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore`，不机械叠加。
+- scientific figure 的单一 profile、reviewer、局部布局/文案或输出路径切片默认使用 focused；只有共享 renderer/exporter 不变量、provider/auth、persistence/schema、delivery hash/path 或跨 profile contract 才升级 Full。
+- 生产脚本通过 `ContentDeliveryStudio.Tools` 的命令 seam 执行文章生成；测试只验证可观察行为，不再作为生产 CLI。
 - contract/invariant：只有当前切片确需外部源码裁决时运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1 -RequireDecision`；Full 默认只做 parity 与映射提示，不强迫 evidence receipt。
 - hotspot：publish/package/release 切片运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`；它只调用一次 Full，再追加 release-only tests、changed-C# format、scan 与 publish/package。
 - full closeout：触及运行/交付风险，或 focused 发现跨面风险时运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Full`；它只执行一次 build、非 ReleaseOnly tests、reference contract 与 diff hygiene。

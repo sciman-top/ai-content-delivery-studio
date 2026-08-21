@@ -232,7 +232,7 @@ if (-not $SkipPublishWhatIf) {
             if ($LASTEXITCODE -ne 0) {
                 throw 'Publish package creation failed.'
             }
-            & ".\scripts\verify-publish-package.ps1" -PackagePath $preflightPackage
+            Write-Host "Publish package was already verified by publish-app.ps1: $preflightPackage"
         }
         finally {
             if (Test-Path -LiteralPath $preflightRoot) {

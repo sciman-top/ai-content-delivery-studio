@@ -93,19 +93,17 @@ if ($ResolveOutputDirectoryOnly) {
 }
 New-Item -ItemType Directory -Force -Path $resolvedOutputDirectory | Out-Null
 
-$previousSourcePath = $env:ARTICLE_SCIENTIFIC_FIGURE_SET_SOURCE_PATH
-$previousOutputDirectory = $env:ARTICLE_SCIENTIFIC_FIGURE_SET_OUTPUT_DIRECTORY
-try {
-    $env:ARTICLE_SCIENTIFIC_FIGURE_SET_SOURCE_PATH = $resolvedSourcePath
-    $env:ARTICLE_SCIENTIFIC_FIGURE_SET_OUTPUT_DIRECTORY = $resolvedOutputDirectory
-    $testName = "ContentDeliveryStudio.Tests.ArticleScientificFigureSetTests.SamplePdf_ProducesCompleteAuditedFigureSetWhenExplicitlyRequested"
-    & dotnet test (Join-Path $repoRoot "ContentDeliveryStudio.sln") --filter "FullyQualifiedName=$testName"
-    if ($LASTEXITCODE -ne 0) {
-        throw "Article scientific figure-set run failed."
-    }
-} finally {
-    $env:ARTICLE_SCIENTIFIC_FIGURE_SET_SOURCE_PATH = $previousSourcePath
-    $env:ARTICLE_SCIENTIFIC_FIGURE_SET_OUTPUT_DIRECTORY = $previousOutputDirectory
+$toolArguments = @(
+    "run",
+    "--project", (Join-Path $repoRoot "src\ContentDeliveryStudio.Tools\ContentDeliveryStudio.Tools.csproj"),
+    "--",
+    "generate-article-figure-set",
+    "--source", $resolvedSourcePath,
+    "--output", $resolvedOutputDirectory
+)
+& dotnet @toolArguments
+if ($LASTEXITCODE -ne 0) {
+    throw "Article scientific figure-set run failed."
 }
 
 $reportPath = Join-Path $resolvedOutputDirectory "article-figure-set-report.json"

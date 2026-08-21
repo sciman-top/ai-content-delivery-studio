@@ -6,6 +6,7 @@ on:
       - main
       - master
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -44,20 +45,19 @@ jobs:
 
           "USE_DIFF_RANGE=0" >> $env:GITHUB_ENV
 
-      - name: Run pull-request verification
-        if: github.event_name == 'pull_request'
-        shell: pwsh
-        run: |
-          .\scripts\verify-repo.ps1 -Mode Full -ReferenceEvidenceBaseRef $env:REFERENCE_BASE_REF -ReferenceEvidenceHeadRef $env:REFERENCE_HEAD_REF
-
-      - name: Run mainline release preflight
-        if: github.event_name == 'push'
+      - name: Run repository verification
+        if: github.event_name != 'workflow_dispatch'
         shell: pwsh
         run: |
           if ($env:USE_DIFF_RANGE -eq "1") {
-            .\scripts\preflight-release.ps1 -ReferenceEvidenceBaseRef $env:REFERENCE_BASE_REF -ReferenceEvidenceHeadRef $env:REFERENCE_HEAD_REF
+            .\scripts\verify-repo.ps1 -Mode Full -ReferenceEvidenceBaseRef $env:REFERENCE_BASE_REF -ReferenceEvidenceHeadRef $env:REFERENCE_HEAD_REF
           }
           else {
-            Write-Host "No reliable diff range available; running release preflight with parity-only reference verification."
-            .\scripts\preflight-release.ps1 -SkipReferenceEvidence
+            .\scripts\verify-repo.ps1 -Mode Full
           }
+
+      - name: Run release preflight
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: |
+          .\scripts\preflight-release.ps1

@@ -43,7 +43,7 @@ Release closeout:
 .\scripts\preflight-release.ps1
 ```
 
-Quick runs one build and the selected tests. Full runs the non-release suite, reference contract, and diff hygiene once. Release invokes Full once, then adds release-only tests, changed-C# formatting, scans, and publish/package checks.
+Quick runs one build and the selected tests. Full runs the non-release, non-live suite, reference contract, and diff hygiene once. Release invokes Full once, then adds release-only tests, changed-C# formatting, scans, and publish/package checks; CI runs it only through an explicit release workflow dispatch.
 
 Publish a local Windows build:
 
