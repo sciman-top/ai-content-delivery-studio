@@ -18,11 +18,55 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         else if (artifact is null) findings.Add(new("article-svg-missing", c.CandidateId, "Deterministic SVG is required."));
         else
         {
-            var text = string.Join("\n", XDocument.Parse(artifact.Svg).Descendants(Svg + "text").Select(x => x.Value));
-            foreach (var required in Required(c.Kind)) if (!text.Contains(required, StringComparison.Ordinal)) findings.Add(new("required-label-missing", c.CandidateId, required));
+            XDocument document;
+            try
+            {
+                document = XDocument.Parse(artifact.Svg);
+            }
+            catch (System.Xml.XmlException exception)
+            {
+                findings.Add(new("article-svg-invalid", c.CandidateId, exception.Message));
+                return Report(c, findings);
+            }
+
+            var text = string.Join("\n", document.Descendants(Svg + "text").Select(x => x.Value));
+            foreach (var required in Required(c.Kind))
+            {
+                if (!text.Contains(required, StringComparison.Ordinal))
+                    findings.Add(new("required-label-missing", c.CandidateId, required));
+            }
+
+            var graphics = document.Descendants()
+                .Where(element => element.Name == Svg + "path" || element.Name == Svg + "rect")
+                .Where(element => !element.Ancestors(Svg + "defs").Any())
+                .ToArray();
+            if (graphics.Length < 10)
+                findings.Add(new("article-graphic-density-insufficient", c.CandidateId,
+                    $"A scientific illustration requires at least 10 visible graphic primitives; found {graphics.Length}."));
+
+            var roles = document.Descendants(Svg + "path")
+                .Select(element => (string?)element.Attribute("data-article-role"))
+                .Where(role => !string.IsNullOrWhiteSpace(role))
+                .ToHashSet(StringComparer.Ordinal);
+            foreach (var requiredRole in RequiredRoles(c.Kind))
+            {
+                if (!roles.Contains(requiredRole))
+                    findings.Add(new("article-required-graphic-role-missing", c.CandidateId, requiredRole));
+            }
         }
-        var regions = BuildRegions(c);
-        return new ArticleOpticalScientificReviewReport(Profile(c), "located source evidence and deterministic profile invariants; human Gate 1 remains pending", findings, regions.Select(r => r.ExpectedCheck).ToArray());
+        return Report(c, findings);
+    }
+
+    private ArticleOpticalScientificReviewReport Report(
+        ArticleScientificFigureCandidate candidate,
+        IReadOnlyList<ArticleOpticalScientificFinding> findings)
+    {
+        var regions = BuildRegions(candidate);
+        return new ArticleOpticalScientificReviewReport(
+            Profile(candidate),
+            "located source evidence, required apparatus/topology roles, and deterministic profile invariants; human Gate 1 remains pending",
+            findings,
+            regions.Select(region => region.ExpectedCheck).ToArray());
     }
     public IReadOnlyList<ArticleOpticalVisualRegion> BuildRegions(ArticleScientificFigureCandidate c)
     {
@@ -38,11 +82,25 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         ArticleScientificFigureCandidateKind.BernoulliFanZones => ["吸风区", "压缩区", "风机"],
         ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => ["同一流线", "大气压"],
         ArticleScientificFigureCandidateKind.PinholeGeometry => ["小孔", "倒立实像", "可视范围"],
-        ArticleScientificFigureCandidateKind.PinholeFocusPlane => ["小孔处", "光源处", "像面"],
+        ArticleScientificFigureCandidateKind.PinholeFocusPlane => ["小孔处", "光源处", "像位置"],
         ArticleScientificFigureCandidateKind.PinholeObservation => ["近距", "远距", "全景"],
         ArticleScientificFigureCandidateKind.SuperconductingEnergy => ["电能", "磁能", "电流变化"],
         ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => ["闭合通路", "撤去励磁电源", "恒定电流"],
         ArticleScientificFigureCandidateKind.SuperconductingExcitation => ["heater", "超导开关", "励磁电源", "液氦"],
         _ => []
+    };
+
+    private static string[] RequiredRoles(ArticleScientificFigureCandidateKind kind) => kind switch
+    {
+        ArticleScientificFigureCandidateKind.BernoulliFanEnergy => ["intake-flow", "fan-blade", "electrical-work", "outlet-flow"],
+        ArticleScientificFigureCandidateKind.BernoulliFanZones => ["duct-wall", "suction-flow", "compression-flow"],
+        ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => ["same-streamline", "free-jet", "comparison-boundary"],
+        ArticleScientificFigureCandidateKind.PinholeGeometry => ["object", "barrier", "principal-ray", "image-plane", "inverted-image"],
+        ArticleScientificFigureCandidateKind.PinholeFocusPlane => ["focus-plane", "ray", "camera-input-ray", "camera-focused-ray", "sensor"],
+        ArticleScientificFigureCandidateKind.PinholeObservation => ["barrier", "aperture", "near-field", "far-field"],
+        ArticleScientificFigureCandidateKind.SuperconductingEnergy => ["circuit", "switch", "magnetic-field"],
+        ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => ["charging-loop", "persistent-current"],
+        ArticleScientificFigureCandidateKind.SuperconductingExcitation => ["excitation-circuit", "persistent-switch-branch", "heater-circuit"],
+        _ => [],
     };
 }

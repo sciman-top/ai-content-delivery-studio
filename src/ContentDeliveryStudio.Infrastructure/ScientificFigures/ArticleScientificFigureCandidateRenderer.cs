@@ -887,15 +887,209 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Text("不能由单一示例断言所有实验都等于同一支持力", 880, 520, 18, Amber, "middle"));
     }
 
-    private static void RenderBernoulliFanEnergy(XElement g) { g.Add(Text("风机做功", 600, 190, 28, Blue, "middle")); g.Add(Text("电功 → 气流总能", 600, 300, 26, Ink, "middle")); g.Add(Text("动能 + 静压 + 内能", 600, 390, 24, Green, "middle")); g.Add(Text("不能跨流线直接套用‘流速越快压强越小’", 600, 520, 22, Amber, "middle")); }
-    private static void RenderBernoulliFanZones(XElement g) { g.Add(Text("吸风区", 220, 260, 26, Blue, "middle")); g.Add(Text("风机", 600, 260, 26, Amber, "middle")); g.Add(Text("压缩区", 950, 260, 26, Magenta, "middle")); g.Add(Line(280, 350, 520, 350, Blue, 5, true)); g.Add(Line(680, 350, 900, 350, Magenta, 5, true)); g.Add(Text("低压", 220, 430, 22, Blue, "middle")); g.Add(Text("外界做功", 600, 430, 22, Amber, "middle")); g.Add(Text("高压", 950, 430, 22, Magenta, "middle")); }
-    private static void RenderBernoulliStreamlineBoundary(XElement g) { g.Add(Text("同一流线", 250, 210, 26, Blue, "middle")); g.Add(Line(120, 300, 1080, 300, Blue, 4, true)); g.Add(Text("静压比较沿同一流线", 600, 390, 24, Ink, "middle")); g.Add(Text("出口静压 ≈ 大气压", 600, 500, 24, Green, "middle")); g.Add(Text("A、C、D 未必同一流线", 600, 590, 22, Amber, "middle")); }
-    private static void RenderPinholeGeometry(XElement g) { g.Add(Text("小孔", 600, 190, 26, Ink, "middle")); g.Add(Line(600, 230, 600, 570, Ink, 8)); g.Add(Line(160, 320, 600, 400, Blue, 4, true)); g.Add(Line(160, 480, 600, 400, Blue, 4, true)); g.Add(Line(600, 400, 1030, 320, Magenta, 4, true)); g.Add(Line(600, 400, 1030, 480, Magenta, 4, true)); g.Add(Text("倒立实像", 1030, 540, 24, Magenta, "middle")); g.Add(Text("可视范围受小孔限制", 600, 650, 22, Amber, "middle")); }
-    private static void RenderPinholeFocusPlane(XElement g) { g.Add(Text("小孔处", 220, 250, 24, Blue, "middle")); g.Add(Text("光源处", 600, 250, 24, Green, "middle")); g.Add(Text("像面", 980, 250, 24, Magenta, "middle")); g.Add(Line(260, 360, 940, 360, Ink, 4, true)); g.Add(Text("手动对焦到哪里，就清晰呈现哪里的图像", 600, 500, 24, Ink, "middle")); }
-    private static void RenderPinholeObservation(XElement g) { g.Add(Text("近距：只能看到一部分", 300, 260, 24, Blue, "middle")); g.Add(Text("远距：更可能看到全景", 900, 260, 24, Green, "middle")); g.Add(Rect(150, 330, 300, 170, "#DBEAFE", Blue, 2)); g.Add(Rect(750, 330, 300, 170, "#DCFCE7", Green, 2)); g.Add(Text("全景", 900, 560, 24, Green, "middle")); }
-    private static void RenderSuperconductingEnergy(XElement g) { g.Add(Text("电流变化", 260, 250, 26, Blue, "middle")); g.Add(Line(350, 260, 500, 260, Blue, 5, true)); g.Add(Text("电能", 600, 250, 26, Amber, "middle")); g.Add(Line(700, 260, 850, 260, Amber, 5, true)); g.Add(Text("磁能", 960, 250, 26, Magenta, "middle")); g.Add(Text("恒定电流：静磁场不持续耗能", 600, 500, 25, Green, "middle")); }
-    private static void RenderSuperconductingPersistentCurrent(XElement g) { g.Add(Text("撤去励磁电源", 300, 230, 24, Blue, "middle")); g.Add(Line(430, 260, 760, 260, Blue, 5, true)); g.Add(Text("闭合通路", 900, 230, 24, Green, "middle")); g.Add(Text("恒定电流", 600, 430, 28, Magenta, "middle")); g.Add(Text("不是断开线圈回路", 600, 560, 24, Amber, "middle")); }
-    private static void RenderSuperconductingExcitation(XElement g) { g.Add(Text("励磁电源", 220, 220, 23, Blue, "middle")); g.Add(Text("heater", 500, 220, 23, Amber, "middle")); g.Add(Text("超导开关", 780, 220, 23, Magenta, "middle")); g.Add(Text("超导线圈", 600, 400, 28, Green, "middle")); g.Add(Text("液氦 4.2 K", 600, 520, 24, Blue, "middle")); g.Add(Text("加热→有电阻；冷却→恢复超导", 600, 630, 22, Ink, "middle")); }
+    private static void RenderBernoulliFanEnergy(XElement g)
+    {
+        g.Add(Rect(70, 175, 1060, 420, "#F8FAFC", "#CBD5E1", 2));
+        g.Add(Text("进气", 125, 245, 22, Blue));
+        for (var y = 285; y <= 465; y += 60) g.Add(ArticleLine(100, y, 300, y, Blue, 4, "intake-flow", true));
+        g.Add(Rect(300, 230, 250, 290, "#EFF6FF", Blue, 3));
+        g.Add(Text("电动风机", 425, 275, 25, Blue, "middle"));
+        DrawCircle(g, 425, 380, 76, Blue, 4);
+        for (var angle = 0; angle < 360; angle += 60)
+        {
+            var radians = angle * Math.PI / 180;
+            g.Add(ArticleLine(425, 380, 425 + 62 * Math.Cos(radians), 380 + 62 * Math.Sin(radians), Blue, 8, "fan-blade"));
+        }
+        g.Add(ArticleLine(425, 180, 425, 230, Amber, 5, "electrical-work", true));
+        g.Add(Text("电功输入", 425, 165, 20, Amber, "middle"));
+        g.Add(Rect(550, 260, 470, 240, "#ECFEFF", Green, 3));
+        g.Add(Text("出风通道", 785, 300, 22, Green, "middle"));
+        for (var y = 345; y <= 435; y += 45) g.Add(ArticleLine(580, y, 980, y, Green, 5, "outlet-flow", true));
+        g.Add(Text("风机做功使气流总能跨风机上升", 600, 645, 24, Ink, "middle"));
+        g.Add(Text("同一无功流段才可比较静压、动能与高度项", 600, 695, 19, Amber, "middle"));
+    }
+
+    private static void RenderBernoulliFanZones(XElement g)
+    {
+        g.Add(Rect(75, 180, 1050, 390, "#F8FAFC", "#CBD5E1", 2));
+        g.Add(ArticleLine(100, 260, 1000, 260, Ink, 5, "duct-wall"));
+        g.Add(ArticleLine(100, 500, 1000, 500, Ink, 5, "duct-wall"));
+        g.Add(Text("外界大气", 80, 620, 18, Muted));
+        g.Add(Rect(420, 260, 150, 240, "#FFF7ED", Amber, 3));
+        DrawCircle(g, 495, 380, 60, Amber, 4);
+        g.Add(Text("风机", 495, 470, 22, Amber, "middle"));
+        for (var y = 315; y <= 445; y += 65)
+        {
+            g.Add(ArticleLine(125, y, 390, y, Blue, 4, "suction-flow", true));
+            g.Add(ArticleLine(600, y, 950, y, Magenta, 5, "compression-flow", true));
+        }
+        g.Add(Text("吸风区：静压低于大气压", 255, 220, 23, Blue, "middle"));
+        g.Add(Text("压缩区：静压高于大气压", 790, 220, 23, Magenta, "middle"));
+        g.Add(Text("风机位置决定 b 点属于低压侧还是高压侧", 600, 640, 23, Ink, "middle"));
+        g.Add(Text("题图未给风机位置，因此不能仅由速度排序确定最大静压", 600, 690, 19, Amber, "middle"));
+    }
+
+    private static void RenderBernoulliStreamlineBoundary(XElement g)
+    {
+        g.Add(Rect(70, 155, 1060, 490, "#F8FAFC", "#CBD5E1", 2));
+        g.Add(Text("同一流线内（无风机做功的流段）", 330, 205, 21, Blue, "middle"));
+        // Draw the actual converging/diverging duct boundary so the area change is
+        // visible even when all explanatory labels are hidden.
+        g.Add(ArticleLine(100, 250, 330, 275, Ink, 4, "duct-wall"));
+        g.Add(ArticleLine(330, 275, 585, 250, Ink, 4, "duct-wall"));
+        g.Add(ArticleLine(100, 440, 330, 385, Ink, 4, "duct-wall"));
+        g.Add(ArticleLine(330, 385, 585, 440, Ink, 4, "duct-wall"));
+        g.Add(Text("A₁", 115, 238, 18, Ink, "middle"));
+        g.Add(Text("A₂（喉部）", 330, 420, 18, Ink, "middle"));
+        g.Add(Text("A₃", 570, 238, 18, Ink, "middle"));
+        for (var offset = -70; offset <= 70; offset += 70)
+        {
+            g.Add(ArticleLine(105, 345 + offset, 330, 330 + offset / 2, Blue, 3, "same-streamline"));
+            g.Add(ArticleLine(330, 330 + offset / 2, 585, 345 + offset, Blue, 3, "same-streamline", true));
+        }
+        g.Add(Text("截面变窄：速度增大、静压降低", 345, 475, 19, Blue, "middle"));
+        g.Add(ArticleLine(650, 275, 1080, 275, Green, 4, "free-jet", true));
+        g.Add(ArticleLine(650, 415, 1080, 415, Green, 4, "free-jet", true));
+        g.Add(Text("自由射流出口", 850, 205, 21, Green, "middle"));
+        g.Add(Text("出口静压 ≈ 大气压", 850, 485, 22, Green, "middle"));
+        g.Add(ArticleLine(615, 175, 615, 565, Amber, 2, "comparison-boundary"));
+        g.Add(Text("不能跨不同流线或跨风机直接比较", 600, 610, 21, Amber, "middle"));
+        g.Add(Text("A、C、D 的空间邻近不等于属于同一流线", 600, 700, 20, Ink, "middle"));
+    }
+
+    private static void RenderPinholeGeometry(XElement g)
+    {
+        g.Add(ArticleLine(95, 610, 95, 260, Ink, 5, "object"));
+        g.Add(ArticleLine(95, 260, 75, 300, Ink, 5, "object"));
+        g.Add(ArticleLine(95, 260, 115, 300, Ink, 5, "object"));
+        g.Add(Text("发光物体", 95, 645, 20, Ink, "middle"));
+        g.Add(ArticleLine(520, 170, 520, 355, Ink, 9, "barrier"));
+        g.Add(ArticleLine(520, 365, 520, 650, Ink, 9, "barrier"));
+        g.Add(Text("小孔", 520, 335, 21, Blue, "middle"));
+        g.Add(ArticleLine(95, 260, 520, 360, Blue, 3, "principal-ray", true));
+        g.Add(ArticleLine(520, 360, 1030, 610, Magenta, 3, "principal-ray", true));
+        g.Add(ArticleLine(95, 610, 520, 360, Blue, 3, "principal-ray", true));
+        g.Add(ArticleLine(520, 360, 1030, 260, Magenta, 3, "principal-ray", true));
+        g.Add(ArticleLine(1050, 180, 1050, 650, Green, 6, "image-plane"));
+        g.Add(ArticleLine(1010, 260, 1010, 610, Magenta, 5, "inverted-image"));
+        g.Add(ArticleLine(1010, 610, 990, 570, Magenta, 5, "inverted-image"));
+        g.Add(ArticleLine(1010, 610, 1030, 570, Magenta, 5, "inverted-image"));
+        g.Add(Text("倒立实像所在平面", 1040, 695, 20, Magenta, "end"));
+        g.Add(Text("可视范围", 790, 215, 18, Amber, "middle"));
+        g.Add(Text("孔径限制通光量；观察者能截取的像域还受瞳孔/镜头口径限制", 600, 740, 18, Amber, "middle"));
+    }
+
+    private static void RenderPinholeFocusPlane(XElement g)
+    {
+        var planes = new[] { (180d, "光源处/光源平面", Blue), (490d, "小孔处/小孔平面", Amber), (765d, "倒立像位置（无屏）", Magenta) };
+        foreach (var (x, label, color) in planes) { g.Add(ArticleLine(x, 190, x, 560, color, 4, "focus-plane")); g.Add(Text(label, x, 165, 20, color, "middle")); }
+        g.Add(ArticleLine(180, 260, 490, 365, Blue, 3, "ray", true));
+        g.Add(ArticleLine(180, 490, 490, 365, Blue, 3, "ray", true));
+        g.Add(ArticleLine(490, 365, 765, 490, Magenta, 3, "ray", true));
+        g.Add(ArticleLine(490, 365, 765, 260, Magenta, 3, "ray", true));
+        g.Add(Rect(835, 220, 275, 340, "#EFF6FF", Blue, 3));
+        DrawLens(g, 900, 270, 510, "相机镜头", Blue);
+        g.Add(ArticleLine(765, 260, 900, 300, Magenta, 3, "camera-input-ray", true));
+        g.Add(ArticleLine(765, 260, 900, 430, Magenta, 3, "camera-input-ray", true));
+        g.Add(ArticleLine(900, 300, 1060, 365, Green, 3, "camera-focused-ray", true));
+        g.Add(ArticleLine(900, 430, 1060, 365, Green, 3, "camera-focused-ray", true));
+        g.Add(ArticleLine(1060, 270, 1060, 510, Green, 5, "sensor"));
+        g.Add(Text("传感器", 1080, 535, 17, Green, "end"));
+        g.Add(Text("手动对焦：镜头把所选物距对应的平面清晰成像到传感器", 600, 625, 21, Ink, "middle"));
+        g.Add(Text("对焦小孔→孔清晰；对焦光源→正立物体清晰；对焦像位置→倒立像清晰（无需放屏）", 600, 685, 18, Amber, "middle"));
+    }
+
+    private static void RenderPinholeObservation(XElement g)
+    {
+        g.Add(Rect(55, 155, 530, 500, "#EFF6FF", Blue, 2));
+        g.Add(Rect(615, 155, 530, 500, "#ECFDF5", Green, 2));
+        g.Add(Text("光源近：视场只覆盖局部", 320, 195, 21, Blue, "middle"));
+        g.Add(Text("光源远：视场可覆盖全物体", 880, 195, 21, Green, "middle"));
+        g.Add(Text("近距", 90, 225, 17, Blue));
+        g.Add(Text("远距", 650, 225, 17, Green));
+        foreach (var left in new[] { 105d, 665d })
+        {
+            g.Add(ArticleLine(left + 175, 250, left + 175, 535, Ink, 6, "barrier"));
+            g.Add(ArticleLine(left + 172, 390, left + 178, 390, "#FFFFFF", 10, "aperture"));
+            g.Add(Rect(left + 360, 305, 100, 170, "#FFFFFF", Muted, 3));
+            DrawLens(g, left + 385, 330, 450, "相机", Muted);
+        }
+        g.Add(ArticleLine(105, 275, 280, 390, Blue, 3, "near-field", true));
+        g.Add(ArticleLine(105, 505, 280, 390, Blue, 3, "near-field", true));
+        g.Add(ArticleLine(280, 390, 465, 350, Blue, 3, "near-field", true));
+        g.Add(Rect(90, 250, 55, 280, "#DBEAFE", Blue, 3));
+        g.Add(Text("大物体", 118, 560, 17, Blue, "middle"));
+        g.Add(ArticleLine(645, 320, 840, 390, Green, 3, "far-field", true));
+        g.Add(ArticleLine(645, 460, 840, 390, Green, 3, "far-field", true));
+        g.Add(ArticleLine(840, 390, 1025, 340, Green, 3, "far-field", true));
+        g.Add(Rect(635, 305, 35, 170, "#D1FAE5", Green, 3));
+        g.Add(Text("全景", 652, 505, 17, Green, "middle"));
+        g.Add(Text("实验条件：相机靠近小孔，同时让光源远离小孔", 600, 710, 21, Ink, "middle"));
+    }
+
+    private static void RenderSuperconductingEnergy(XElement g)
+    {
+        g.Add(Rect(65, 170, 1070, 470, "#F8FAFC", "#CBD5E1", 2));
+        g.Add(ArticleLine(125, 400, 1070, 400, Ink, 4, "circuit"));
+        g.Add(Rect(130, 320, 170, 160, "#EFF6FF", Blue, 3)); g.Add(Text("直流电源", 215, 405, 22, Blue, "middle"));
+        for (var x = 425; x <= 720; x += 55) DrawCircle(g, x, 400, 32, Magenta, 3);
+        g.Add(Text("超导线圈 L", 575, 500, 22, Magenta, "middle"));
+        g.Add(ArticleLine(335, 355, 335, 445, Amber, 5, "switch")); g.Add(Text("开关", 335, 485, 18, Amber, "middle"));
+        for (var x = 430; x <= 720; x += 65) g.Add(ArticleLine(x, 270, x + 40, 270, Green, 3, "magnetic-field", true));
+        g.Add(Text("建立磁场：电流变化，电源向磁场输入能量", 600, 230, 22, Green, "middle"));
+        g.Add(Text("电能 → 磁能", 850, 330, 21, Amber, "middle"));
+        g.Add(Text("储能 W = ½LI²", 850, 385, 24, Ink, "middle"));
+        g.Add(Text("I 稳定后：磁场能保持不变；理想超导闭环无焦耳损耗", 600, 590, 21, Blue, "middle"));
+        g.Add(Text("断流时磁场衰减，磁能可通过感应电动势回到电路", 600, 700, 19, Amber, "middle"));
+    }
+
+    private static void RenderSuperconductingPersistentCurrent(XElement g)
+    {
+        g.Add(Rect(70, 155, 500, 500, "#FFF7ED", Amber, 2));
+        g.Add(Rect(630, 155, 500, 500, "#ECFDF5", Green, 2));
+        g.Add(Text("励磁阶段", 320, 200, 23, Amber, "middle")); g.Add(Text("持久电流阶段", 880, 200, 23, Green, "middle"));
+        g.Add(Rect(105, 330, 120, 110, "#FFFFFF", Blue, 3)); g.Add(Text("励磁电源", 165, 395, 18, Blue, "middle"));
+        g.Add(ArticleLine(225, 350, 495, 350, Amber, 4, "charging-loop", true));
+        g.Add(Text("励磁主回路接通", 360, 320, 17, Amber, "middle"));
+        for (var x = 325; x <= 465; x += 47) DrawCircle(g, x, 465, 28, Magenta, 3);
+        g.Add(ArticleLine(495, 350, 495, 465, Magenta, 4, "charging-loop"));
+        g.Add(ArticleLine(325, 465, 245, 465, Magenta, 4, "charging-loop", true));
+        g.Add(ArticleLine(245, 465, 297, 465, Magenta, 4, "charging-loop"));
+        g.Add(ArticleLine(245, 465, 245, 420, Magenta, 4, "charging-loop"));
+        g.Add(ArticleLine(245, 420, 225, 420, Magenta, 4, "charging-loop"));
+        g.Add(Text("线圈电流逐渐增大", 390, 540, 17, Magenta, "middle"));
+        DrawCircle(g, 880, 420, 165, Green, 5);
+        for (var angle = 0; angle < 360; angle += 90) { var r = angle * Math.PI / 180; g.Add(ArticleLine(880 + 130 * Math.Cos(r), 420 + 130 * Math.Sin(r), 880 + 130 * Math.Cos(r + .45), 420 + 130 * Math.Sin(r + .45), Green, 5, "persistent-current", true)); }
+        g.Add(Text("超导开关闭合", 880, 410, 20, Green, "middle")); g.Add(Text("恒定电流 I", 880, 450, 22, Magenta, "middle"));
+        g.Add(Text("闭合通路", 880, 520, 19, Green, "middle"));
+        g.Add(Text("撤去励磁电源 ≠ 断开线圈回路", 600, 710, 23, Ink, "middle"));
+    }
+
+    private static void RenderSuperconductingExcitation(XElement g)
+    {
+        g.Add(Rect(90, 175, 1020, 470, "#EFF6FF", Blue, 3));
+        g.Add(Text("液氦槽 4.2 K", 600, 615, 21, Blue, "middle"));
+        g.Add(Rect(135, 290, 150, 105, "#FFFFFF", Blue, 3)); g.Add(Text("励磁电源", 210, 352, 20, Blue, "middle"));
+        g.Add(ArticleLine(285, 315, 380, 315, Blue, 4, "excitation-circuit", true));
+        g.Add(ArticleLine(380, 315, 380, 445, Blue, 4, "excitation-circuit"));
+        for (var x = 420; x <= 805; x += 55) DrawCircle(g, x, 445, 34, Green, 4);
+        g.Add(ArticleLine(380, 445, 386, 445, Blue, 4, "excitation-circuit"));
+        g.Add(ArticleLine(840, 445, 895, 445, Blue, 4, "excitation-circuit"));
+        g.Add(ArticleLine(895, 445, 895, 370, Blue, 4, "excitation-circuit"));
+        g.Add(ArticleLine(895, 370, 285, 370, Blue, 4, "excitation-circuit", true));
+        g.Add(Text("MRI 主磁体超导线圈", 610, 520, 22, Green, "middle"));
+        g.Add(Rect(470, 235, 230, 70, "#FDF4FF", Magenta, 3)); g.Add(Text("超导开关（并联支路）", 585, 278, 18, Magenta, "middle"));
+        g.Add(ArticleLine(400, 315, 470, 270, Magenta, 3, "persistent-switch-branch"));
+        g.Add(ArticleLine(700, 270, 875, 370, Magenta, 3, "persistent-switch-branch"));
+        g.Add(Rect(760, 195, 150, 65, "#FFF7ED", Amber, 3)); g.Add(Text("加热电源", 835, 235, 17, Amber, "middle"));
+        g.Add(Rect(585, 185, 100, 40, "#FFF7ED", Amber, 3)); g.Add(Text("heater", 635, 211, 16, Amber, "middle"));
+        g.Add(ArticleLine(760, 225, 685, 205, Amber, 3, "heater-circuit", true));
+        g.Add(ArticleLine(910, 225, 685, 220, Amber, 3, "heater-circuit"));
+        g.Add(ArticleLine(635, 225, 635, 235, Amber, 3, "heater-circuit", true));
+        g.Add(Text("热耦合", 715, 205, 16, Amber, "middle"));
+        g.Add(Text("heater 仅热耦合超导开关，不串联主励磁回路", 600, 575, 18, Amber, "middle"));
+        g.Add(Text("① 加热开关使其有电阻 → ② 励磁升流 → ③ 冷却闭合超导回路 → ④ 撤去电源", 600, 700, 19, Ink, "middle"));
+    }
 
     private static void DrawLens(
         XElement group,
@@ -1077,6 +1271,21 @@ public sealed class ArticleScientificFigureCandidateRenderer
     {
         var line = Line(x1, y1, x2, y2, color, width, arrow);
         line.SetAttributeValue("data-gravity-role", role);
+        return line;
+    }
+
+    private static XElement ArticleLine(
+        double x1,
+        double y1,
+        double x2,
+        double y2,
+        string color,
+        double width,
+        string role,
+        bool arrow = false)
+    {
+        var line = Line(x1, y1, x2, y2, color, width, arrow);
+        line.SetAttributeValue("data-article-role", role);
         return line;
     }
 

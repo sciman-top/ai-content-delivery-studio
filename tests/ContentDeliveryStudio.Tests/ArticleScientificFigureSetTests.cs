@@ -668,6 +668,62 @@ public sealed class ArticleScientificFigureSetTests
         Assert.InRange(pdf.Bytes.Length, 1, 1_000_000);
     }
 
+    [Theory]
+    [InlineData(ArticleScientificFigureCandidateKind.BernoulliFanEnergy, "伯努利定律不适用于电吹风")]
+    [InlineData(ArticleScientificFigureCandidateKind.BernoulliFanZones, "伯努利定律不适用于电吹风")]
+    [InlineData(ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary, "伯努利定律不适用于电吹风")]
+    [InlineData(ArticleScientificFigureCandidateKind.PinholeGeometry, "不用光屏，相机手动对焦直接观察小孔成像")]
+    [InlineData(ArticleScientificFigureCandidateKind.PinholeFocusPlane, "不用光屏，相机手动对焦直接观察小孔成像")]
+    [InlineData(ArticleScientificFigureCandidateKind.PinholeObservation, "不用光屏，相机手动对焦直接观察小孔成像")]
+    [InlineData(ArticleScientificFigureCandidateKind.SuperconductingEnergy, "超导磁体")]
+    [InlineData(ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent, "超导磁体")]
+    [InlineData(ArticleScientificFigureCandidateKind.SuperconductingExcitation, "超导磁体")]
+    public void ExtendedProfileRenderer_ProvidesRequiredApparatusAndTopology(
+        ArticleScientificFigureCandidateKind kind,
+        string title)
+    {
+        var candidate = CreateProfileCandidate(kind, title);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+
+        var report = new ArticleMechanicsScientificReviewer().Review(
+            candidate,
+            artifact,
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.True(report.Passed, string.Join(" | ", report.Findings.Select(finding => $"{finding.Code}: {finding.Evidence}")));
+
+        // Regression guard for the two failures that previously looked like
+        // plausible diagrams but had a broken physical topology.
+        var svg = XElement.Parse(artifact.Svg);
+        if (kind == ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary)
+            Assert.True(svg.Descendants().Count(node => (string?)node.Attribute("data-article-role") == "duct-wall") >= 4);
+        if (kind == ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent)
+            Assert.True(svg.Descendants().Count(node => (string?)node.Attribute("data-article-role") == "charging-loop") >= 6);
+    }
+
+    [Fact]
+    public void ExtendedProfileReviewer_RejectsLabelOnlyArtworkWithoutRequiredGraphicRoles()
+    {
+        var candidate = CreateProfileCandidate(
+            ArticleScientificFigureCandidateKind.PinholeGeometry,
+            "不用光屏，相机手动对焦直接观察小孔成像");
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var stripped = artifact with
+        {
+            Svg = artifact.Svg.Replace("data-article-role", "data-unrelated-role", StringComparison.Ordinal),
+        };
+
+        var report = new ArticleMechanicsScientificReviewer().Review(
+            candidate,
+            stripped,
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(report.Passed);
+        Assert.Contains(report.Findings, finding => finding.Code == "article-required-graphic-role-missing");
+    }
+
     private static ArticleScientificFigureSetService CreateService(
         IScientificVisualReviewProvider visual,
         IArticleScientificFigureCandidateRenderer? renderer = null) =>

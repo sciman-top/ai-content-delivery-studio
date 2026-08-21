@@ -140,6 +140,22 @@ foreach ($reviewFile in @($report.items | ForEach-Object { $_.files | Where-Obje
     }
 }
 
+$semanticUtilityProfiles = @("article-bernoulli-v1", "article-pinhole-v1", "article-superconducting-v1")
+if ($report.deterministicReview -in $semanticUtilityProfiles) {
+    foreach ($svgFile in @($report.items | ForEach-Object { $_.files | Where-Object { $_ -like "*.svg" } })) {
+        [xml]$svg = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory $svgFile)
+        $graphicNodes = @($svg.SelectNodes("//*[local-name()='path' or local-name()='rect']") | Where-Object {
+            -not $_.SelectSingleNode("ancestor::*[local-name()='defs']")
+        })
+        $articleRoles = @($svg.SelectNodes("//*[@data-article-role]") | ForEach-Object {
+            $_.GetAttribute("data-article-role")
+        } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
+        if ($graphicNodes.Count -lt 10 -or $articleRoles.Count -lt 2) {
+            throw "Article semantic-utility gate failed for ${svgFile}: graphicNodes=$($graphicNodes.Count), articleRoles=$($articleRoles.Count). Label-only or structurally empty artwork is not an illustration."
+        }
+    }
+}
+
 $effectiveOutputClass = if ($outputDirectoryWasExplicit) { "Explicit" } else { $OutputClass }
 Write-Host "[OK] $($report.resultCount)-item article candidate set persisted: $resolvedOutputDirectory" -ForegroundColor Green
 Write-Host "[OK] Every candidate has $($report.deterministicReview), typed-crop, and fake-first visual-review evidence." -ForegroundColor Green

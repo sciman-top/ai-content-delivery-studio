@@ -36,13 +36,16 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-article-scientific-fig
 
 ## Review the latest artifacts
 
+- Apply a semantic-utility gate before checking polish. Mentally hide the title and explanatory prose: the remaining picture must still communicate the subject through apparatus, objects, spatial relationships, topology, rays, fields, states, or quantitative marks. A label-only card, empty comparison box, single generic arrow, or prose broken across a canvas is not an illustration and must fail review.
+- Require every figure to earn its place in the article. It must answer a question that is materially faster or clearer to understand visually than from the source paragraph alone. Delete or merge redundant candidates instead of preserving a fixed candidate count.
+- For mechanism and experiment figures, verify that all causally necessary participants are visible and connected. For comparison figures, both states must contain comparable visual evidence rather than differently colored empty panels. For circuits and apparatus, wiring/topology must be explicit; labels floating without connections fail.
 - Inspect every generated PNG with visual understanding. Check clipping, overlap, missing glyphs, low contrast, inconsistent styles, wrong arrows, incorrect wiring, axes, legends, and source-evidence crops.
 - Render every generated PDF through Poppler at a readable DPI and inspect the rerendered pages. PDF existence or text extraction is not visual proof.
 - Check the domain review sidecars and report. A fake visual pass and a deterministic scientific pass are separate facts.
 - Verify scientific claims against located source evidence and the profile reviewer. Treat model review as advisory; it cannot change accepted scientific meaning.
 - For text-dense artwork, retain deterministic post-render text composition rather than asking an image model to regenerate the whole image.
 
-If visual or scientific review finds a defect, identify whether it originates in planning, evidence selection, renderer geometry, reviewer logic, export, or output routing. Repair that causal seam and add a focused regression for the observed failure mode. Regenerate the affected set and inspect the new bytes; do not approve an older rendering after the code changes.
+If visual or scientific review finds a defect, identify whether it originates in planning, evidence selection, renderer geometry, reviewer logic, export, output routing, or the skill's acceptance wording. Repair every causal seam that admitted the defect and add a focused regression for the observed failure mode. Regenerate the affected set and inspect the new bytes; do not approve an older rendering after the code changes.
 
 ## Authority and closeout
 
