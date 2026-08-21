@@ -49,6 +49,12 @@ public static class ArticleScientificFigureReviewerFactory
         ArticleScientificFigureCandidateKind.ArchimedesPier,
         ArticleScientificFigureCandidateKind.ArchimedesPressureCaveat,
     ];
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> ExtendedKinds =
+    [
+        ArticleScientificFigureCandidateKind.BernoulliFanEnergy, ArticleScientificFigureCandidateKind.BernoulliFanZones, ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary,
+        ArticleScientificFigureCandidateKind.PinholeGeometry, ArticleScientificFigureCandidateKind.PinholeFocusPlane, ArticleScientificFigureCandidateKind.PinholeObservation,
+        ArticleScientificFigureCandidateKind.SuperconductingEnergy, ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent, ArticleScientificFigureCandidateKind.SuperconductingExcitation,
+    ];
 
     public static IArticleScientificFigureReviewer CreateFor(
         IReadOnlyCollection<ArticleScientificFigureCandidate> candidates)
@@ -68,7 +74,8 @@ public static class ArticleScientificFigureReviewerFactory
         var hasGravity = domainKinds.Any(GravityKinds.Contains);
         var hasThermistor = domainKinds.Any(ThermistorKinds.Contains);
         var hasArchimedes = domainKinds.Any(ArchimedesKinds.Contains);
-        if (new[] { hasThermal, hasGravity, hasThermistor, hasArchimedes }.Count(value => value) > 1)
+        var hasExtended = domainKinds.Any(ExtendedKinds.Contains);
+        if (new[] { hasThermal, hasGravity, hasThermistor, hasArchimedes, hasExtended }.Count(value => value) > 1)
         {
             throw new InvalidOperationException("An article figure set cannot mix scientific review profiles.");
         }
@@ -95,6 +102,11 @@ public static class ArticleScientificFigureReviewerFactory
         {
             EnsureAllKindsBelongTo(domainKinds, ArchimedesKinds, "archimedes");
             return new ArticleArchimedesScientificReviewer();
+        }
+        if (hasExtended)
+        {
+            EnsureAllKindsBelongTo(domainKinds, ExtendedKinds, "extended article");
+            return new ArticleMechanicsScientificReviewer();
         }
 
         if (domainKinds.Length > 0 && domainKinds.All(OpticalKinds.Contains))

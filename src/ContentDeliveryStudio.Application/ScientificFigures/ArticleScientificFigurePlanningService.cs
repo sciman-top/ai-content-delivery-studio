@@ -45,6 +45,13 @@ public sealed class ArticleScientificFigurePlanningService
             return PlanArchimedes(extraction, normalizedTitle, normalizedAudience);
         }
 
+        if (IsBernoulliArticle(normalizedTitle, extraction))
+            return PlanBernoulli(extraction, normalizedTitle, normalizedAudience);
+        if (IsPinholeArticle(normalizedTitle, extraction))
+            return PlanPinhole(extraction, normalizedTitle, normalizedAudience);
+        if (IsSuperconductingArticle(normalizedTitle, extraction))
+            return PlanSuperconducting(extraction, normalizedTitle, normalizedAudience);
+
         if (!IsOpticalArticle(normalizedTitle, extraction))
         {
             throw new InvalidOperationException(
@@ -461,6 +468,39 @@ public sealed class ArticleScientificFigurePlanningService
             block.OriginalText?.Contains("V 排", StringComparison.Ordinal) == true
             && block.OriginalText.Contains("浮力", StringComparison.Ordinal));
 
+    private static bool IsBernoulliArticle(string title, ScientificDocumentExtraction extraction) =>
+        title.Contains("伯努利", StringComparison.Ordinal) || extraction.Blocks.Any(b => b.OriginalText?.Contains("电吹风", StringComparison.Ordinal) == true);
+    private static bool IsPinholeArticle(string title, ScientificDocumentExtraction extraction) =>
+        title.Contains("小孔成像", StringComparison.Ordinal) || extraction.Blocks.Any(b => b.OriginalText?.Contains("手动对焦", StringComparison.Ordinal) == true);
+    private static bool IsSuperconductingArticle(string title, ScientificDocumentExtraction extraction) =>
+        title.Contains("超导磁体", StringComparison.Ordinal) || extraction.Blocks.Any(b => b.OriginalText?.Contains("超导线圈", StringComparison.Ordinal) == true);
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanProfile(
+        ScientificDocumentExtraction extraction, string title, string audience, string profile,
+        params (string seed, ArticleScientificFigureCandidateKind kind, string heading, string objective, string message, string keyword, string[] refs)[] specs)
+    {
+        var candidates = new List<ArticleScientificFigureCandidate>();
+        foreach (var s in specs)
+            AddIfEvidenceFound(candidates, s.seed, s.kind, s.heading, s.objective, s.message, ScientificFigureRiskLevel.High, s.keyword, extraction.Blocks, s.refs, ArticleScientificFigureDisposition.ReplaceExisting, "用确定性 SVG 重绘原文关系并保留来源证据。");
+        var source = extraction.Blocks.Where(b => !string.IsNullOrWhiteSpace(b.OriginalText)).Take(3).Select(b => ArticleScientificFigureEvidence.Create(b, 240)).ToArray();
+        if (source.Length > 0) candidates.Add(new ArticleScientificFigureCandidate("candidate-source", title, ArticleScientificFigureCandidateKind.SourceEvidenceBoard, "原文来源证据板", "保留原文证据", "仅作来源保真排版，不新增科学结论", audience, ScientificFigureRiskLevel.High, source, ["原文页面"], ArticleScientificFigureDisposition.ConsolidateSourceEvidence, "保留原文像素证据。", true, ArticleScientificFigureGateStatus.PendingHumanApproval, ArticleScientificFigureDeliveryStatus.NotCreated));
+        if (candidates.Count < 4) throw new InvalidOperationException($"The {profile} article did not expose enough located evidence for the complete figure set.");
+        return candidates.Select((c, i) => c with { CandidateId = $"article-{StableSlug(title)}-{i + 1:D2}-{c.Kind.ToString().ToLowerInvariant()}", ArticleTitle = title, Audience = audience }).ToArray();
+    }
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanBernoulli(ScientificDocumentExtraction e, string t, string a) => PlanProfile(e,t,a,"bernoulli",
+        ("fan-energy", ArticleScientificFigureCandidateKind.BernoulliFanEnergy, "电吹风：风机对气流做功", "区分风机做功与同一流线上的伯努利比较", "风机输入电功，提高气流总能；不能跨流线套用流速越快压强越小", "外界做功", ["图1"]),
+        ("fan-zones", ArticleScientificFigureCandidateKind.BernoulliFanZones, "吸风区、风机与压缩区", "标出吸风低压、风机和压缩高压区域", "风机位于能量输入边界，压力分区取决于结构", "吸风区", ["图2"]),
+        ("streamline-boundary", ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary, "同一流线与静压边界", "说明静压比较的流线和出口边界条件", "A、C、D 不必在同一流线上；出口静压近似大气压", "同一流线", ["第2节"]));
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanPinhole(ScientificDocumentExtraction e, string t, string a) => PlanProfile(e,t,a,"pinhole",
+        ("pinhole-geometry", ArticleScientificFigureCandidateKind.PinholeGeometry, "小孔成像几何关系", "展示倒立实像、物距像距与可视范围", "小孔筛选光线，物距较小时像面大且可视范围受限", "可视范围", ["图1"]),
+        ("focus-plane", ArticleScientificFigureCandidateKind.PinholeFocusPlane, "相机手动对焦的成像平面", "区分对焦小孔、光源和像面", "相机对焦到哪里，清晰呈现的就是哪里的图像", "手动对焦", ["第3节"]),
+        ("pinhole-observation", ArticleScientificFigureCandidateKind.PinholeObservation, "近距与远距观察对照", "对照光源距离改变时的可见范围", "相机靠近小孔且光源远离时更可能看到全景", "全景", ["图2", "图3"]));
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanSuperconducting(ScientificDocumentExtraction e, string t, string a) => PlanProfile(e,t,a,"superconducting",
+        ("magnetic-energy", ArticleScientificFigureCandidateKind.SuperconductingEnergy, "励磁中的电能与磁能", "表示电流建立时能量进入磁场", "电流变化时磁场能建立；恒定电流不持续消耗电能来维持静磁场", "磁能", ["第1节", "第2节"]),
+        ("persistent-current", ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent, "超导闭环持久电流", "区分撤去励磁电源与断开线圈回路", "撤去电源但线圈闭合，电流可持续；这不是把线圈断电", "闭合通路", ["第3节"]),
+        ("mri-excitation", ArticleScientificFigureCandidateKind.SuperconductingExcitation, "MRI 超导磁体励磁过程", "重绘 heater、超导开关、励磁电源和线圈连接", "加热开关使其有电阻，励磁后冷却恢复超导，再切断励磁电源", "励磁电源", ["图1", "第4节"]));
+
     private static void AddIfEvidenceFound(
         ICollection<ArticleScientificFigureCandidate> candidates,
         string seed,
@@ -603,6 +643,9 @@ public enum ArticleScientificFigureCandidateKind
     ArchimedesTopContact = 26,
     ArchimedesPier = 27,
     ArchimedesPressureCaveat = 28,
+    BernoulliFanEnergy = 29, BernoulliFanZones = 30, BernoulliStreamlineBoundary = 31,
+    PinholeGeometry = 32, PinholeFocusPlane = 33, PinholeObservation = 34,
+    SuperconductingEnergy = 35, SuperconductingPersistentCurrent = 36, SuperconductingExcitation = 37,
 }
 
 public enum ArticleScientificFigureDisposition

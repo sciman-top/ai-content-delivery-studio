@@ -413,7 +413,16 @@ public static class ArticleScientificFigureCommands
         ArticleScientificFigureCandidateKind.ArchimedesDepthDependence => "04-archimedes-depth",
         ArticleScientificFigureCandidateKind.ArchimedesTopContact => "05-archimedes-top-contact",
         ArticleScientificFigureCandidateKind.ArchimedesPier => "06-archimedes-pier",
-        ArticleScientificFigureCandidateKind.ArchimedesPressureCaveat => "07-archimedes-pressure-caveat",
+                ArticleScientificFigureCandidateKind.ArchimedesPressureCaveat => "07-archimedes-pressure-caveat",
+        ArticleScientificFigureCandidateKind.BernoulliFanEnergy => "01-bernoulli-fan-energy",
+        ArticleScientificFigureCandidateKind.BernoulliFanZones => "02-bernoulli-fan-zones",
+        ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => "03-bernoulli-streamline-boundary",
+        ArticleScientificFigureCandidateKind.PinholeGeometry => "01-pinhole-geometry",
+        ArticleScientificFigureCandidateKind.PinholeFocusPlane => "02-pinhole-focus-plane",
+        ArticleScientificFigureCandidateKind.PinholeObservation => "03-pinhole-observation",
+        ArticleScientificFigureCandidateKind.SuperconductingEnergy => "01-superconducting-energy",
+        ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => "02-superconducting-persistent-current",
+        ArticleScientificFigureCandidateKind.SuperconductingExcitation => "03-superconducting-excitation",
         _ => throw new ArgumentOutOfRangeException(nameof(candidate), candidate.Kind, null),
     };
 

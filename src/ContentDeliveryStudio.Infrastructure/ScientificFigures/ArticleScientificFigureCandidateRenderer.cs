@@ -145,6 +145,15 @@ public sealed class ArticleScientificFigureCandidateRenderer
             case ArticleScientificFigureCandidateKind.ArchimedesPressureCaveat:
                 RenderArchimedesPressureCaveat(group);
                 break;
+            case ArticleScientificFigureCandidateKind.BernoulliFanEnergy: RenderBernoulliFanEnergy(group); break;
+            case ArticleScientificFigureCandidateKind.BernoulliFanZones: RenderBernoulliFanZones(group); break;
+            case ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary: RenderBernoulliStreamlineBoundary(group); break;
+            case ArticleScientificFigureCandidateKind.PinholeGeometry: RenderPinholeGeometry(group); break;
+            case ArticleScientificFigureCandidateKind.PinholeFocusPlane: RenderPinholeFocusPlane(group); break;
+            case ArticleScientificFigureCandidateKind.PinholeObservation: RenderPinholeObservation(group); break;
+            case ArticleScientificFigureCandidateKind.SuperconductingEnergy: RenderSuperconductingEnergy(group); break;
+            case ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent: RenderSuperconductingPersistentCurrent(group); break;
+            case ArticleScientificFigureCandidateKind.SuperconductingExcitation: RenderSuperconductingExcitation(group); break;
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(candidate),
@@ -877,6 +886,16 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Text("需说明哪些表面接触流体", 880, 405, 20, Ink, "middle"));
         group.Add(Text("不能由单一示例断言所有实验都等于同一支持力", 880, 520, 18, Amber, "middle"));
     }
+
+    private static void RenderBernoulliFanEnergy(XElement g) { g.Add(Text("风机做功", 600, 190, 28, Blue, "middle")); g.Add(Text("电功 → 气流总能", 600, 300, 26, Ink, "middle")); g.Add(Text("动能 + 静压 + 内能", 600, 390, 24, Green, "middle")); g.Add(Text("不能跨流线直接套用‘流速越快压强越小’", 600, 520, 22, Amber, "middle")); }
+    private static void RenderBernoulliFanZones(XElement g) { g.Add(Text("吸风区", 220, 260, 26, Blue, "middle")); g.Add(Text("风机", 600, 260, 26, Amber, "middle")); g.Add(Text("压缩区", 950, 260, 26, Magenta, "middle")); g.Add(Line(280, 350, 520, 350, Blue, 5, true)); g.Add(Line(680, 350, 900, 350, Magenta, 5, true)); g.Add(Text("低压", 220, 430, 22, Blue, "middle")); g.Add(Text("外界做功", 600, 430, 22, Amber, "middle")); g.Add(Text("高压", 950, 430, 22, Magenta, "middle")); }
+    private static void RenderBernoulliStreamlineBoundary(XElement g) { g.Add(Text("同一流线", 250, 210, 26, Blue, "middle")); g.Add(Line(120, 300, 1080, 300, Blue, 4, true)); g.Add(Text("静压比较沿同一流线", 600, 390, 24, Ink, "middle")); g.Add(Text("出口静压 ≈ 大气压", 600, 500, 24, Green, "middle")); g.Add(Text("A、C、D 未必同一流线", 600, 590, 22, Amber, "middle")); }
+    private static void RenderPinholeGeometry(XElement g) { g.Add(Text("小孔", 600, 190, 26, Ink, "middle")); g.Add(Line(600, 230, 600, 570, Ink, 8)); g.Add(Line(160, 320, 600, 400, Blue, 4, true)); g.Add(Line(160, 480, 600, 400, Blue, 4, true)); g.Add(Line(600, 400, 1030, 320, Magenta, 4, true)); g.Add(Line(600, 400, 1030, 480, Magenta, 4, true)); g.Add(Text("倒立实像", 1030, 540, 24, Magenta, "middle")); g.Add(Text("可视范围受小孔限制", 600, 650, 22, Amber, "middle")); }
+    private static void RenderPinholeFocusPlane(XElement g) { g.Add(Text("小孔处", 220, 250, 24, Blue, "middle")); g.Add(Text("光源处", 600, 250, 24, Green, "middle")); g.Add(Text("像面", 980, 250, 24, Magenta, "middle")); g.Add(Line(260, 360, 940, 360, Ink, 4, true)); g.Add(Text("手动对焦到哪里，就清晰呈现哪里的图像", 600, 500, 24, Ink, "middle")); }
+    private static void RenderPinholeObservation(XElement g) { g.Add(Text("近距：只能看到一部分", 300, 260, 24, Blue, "middle")); g.Add(Text("远距：更可能看到全景", 900, 260, 24, Green, "middle")); g.Add(Rect(150, 330, 300, 170, "#DBEAFE", Blue, 2)); g.Add(Rect(750, 330, 300, 170, "#DCFCE7", Green, 2)); g.Add(Text("全景", 900, 560, 24, Green, "middle")); }
+    private static void RenderSuperconductingEnergy(XElement g) { g.Add(Text("电流变化", 260, 250, 26, Blue, "middle")); g.Add(Line(350, 260, 500, 260, Blue, 5, true)); g.Add(Text("电能", 600, 250, 26, Amber, "middle")); g.Add(Line(700, 260, 850, 260, Amber, 5, true)); g.Add(Text("磁能", 960, 250, 26, Magenta, "middle")); g.Add(Text("恒定电流：静磁场不持续耗能", 600, 500, 25, Green, "middle")); }
+    private static void RenderSuperconductingPersistentCurrent(XElement g) { g.Add(Text("撤去励磁电源", 300, 230, 24, Blue, "middle")); g.Add(Line(430, 260, 760, 260, Blue, 5, true)); g.Add(Text("闭合通路", 900, 230, 24, Green, "middle")); g.Add(Text("恒定电流", 600, 430, 28, Magenta, "middle")); g.Add(Text("不是断开线圈回路", 600, 560, 24, Amber, "middle")); }
+    private static void RenderSuperconductingExcitation(XElement g) { g.Add(Text("励磁电源", 220, 220, 23, Blue, "middle")); g.Add(Text("heater", 500, 220, 23, Amber, "middle")); g.Add(Text("超导开关", 780, 220, 23, Magenta, "middle")); g.Add(Text("超导线圈", 600, 400, 28, Green, "middle")); g.Add(Text("液氦 4.2 K", 600, 520, 24, Blue, "middle")); g.Add(Text("加热→有电阻；冷却→恢复超导", 600, 630, 22, Ink, "middle")); }
 
     private static void DrawLens(
         XElement group,

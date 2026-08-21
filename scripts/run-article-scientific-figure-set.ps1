@@ -123,7 +123,7 @@ if ($missing.Count -gt 0) {
 
 if (-not $report.complete -or $report.resultCount -ne $report.requestedCandidateCount `
     -or $report.resultCount -lt 1 `
-    -or $report.deterministicReview -notin @("article-optics-v1", "article-thermal-v1", "article-gravity-v1", "article-thermistor-v1", "article-archimedes-v1") `
+    -or $report.deterministicReview -notin @("article-optics-v1", "article-thermal-v1", "article-gravity-v1", "article-thermistor-v1", "article-archimedes-v1", "article-bernoulli-v1", "article-pinhole-v1", "article-superconducting-v1") `
     -or $report.gateOneStatus -ne "pending for every candidate") {
     throw "Article figure-set report is incomplete."
 }
