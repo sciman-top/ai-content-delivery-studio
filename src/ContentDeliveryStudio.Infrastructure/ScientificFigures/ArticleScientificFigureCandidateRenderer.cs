@@ -4,6 +4,7 @@ using System.Text;
 using System.Xml.Linq;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.ScientificFigures;
+using SkiaSharp;
 using FormulaPiece = ContentDeliveryStudio.Infrastructure.ScientificFigures.ScientificMathLayout.FormulaPiece;
 using MathRun = ContentDeliveryStudio.Infrastructure.ScientificFigures.ScientificMathLayout.MathRun;
 
@@ -502,14 +503,18 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Text("与 a 均指向地心", 647, 390, 18, Blue));
         group.Add(GravityLine(1035, 465, 1035, 285, Magenta, 4, "orbit-velocity", arrow: true));
         group.Add(Text("切向速度 v", 1020, 270, 17, Magenta, "end"));
-        group.Add(Rect(665, 555, 430, 115, "#ECFDF5", "#6EE7B7", 1));
-        group.Add(FractionFormula(@"g(r)=\frac{GM}{r^2}\ne0", 880, 592, 21, Green, "middle",
+        var callout = new XElement(
+            Svg + "g",
+            new XAttribute("data-layout-panel-id", "orbit-callout"));
+        callout.Add(Rect(665, 555, 430, 115, "#ECFDF5", "#6EE7B7", 1));
+        callout.Add(FractionFormula(@"g(r)=\frac{GM}{r^2}\ne0", 880, 592, 21, Green, "middle",
             FormulaPiece.Plain("g(r) = "), FormulaPiece.Fraction("GM", "r²"), FormulaPiece.Plain(" ≠ 0")));
         // Keep the explanatory label and formula inside the green callout. The
         // previous right-aligned label started at x≈660, outside the panel's
         // x=665 boundary at the generated 1200px canvas width.
-        group.Add(Text("共同自由落体：秤读数", 700, 642, 19, Ink, "start"));
-        group.Add(MathText(@"\mathbf{N}\approx0", 900, 642, 19, Ink, "start", MathRun.Vector("N"), MathRun.Normal(" ≈ 0")));
+        callout.Add(Text("共同自由落体：秤读数", 700, 642, 19, Ink, "start"));
+        callout.Add(MathText(@"\mathbf{N}\approx0", 900, 642, 19, Ink, "start", MathRun.Vector("N"), MathRun.Normal(" ≈ 0")));
+        group.Add(callout);
     }
 
     private static void RenderGravityElevatorFreeFall(XElement group)
@@ -891,6 +896,8 @@ public sealed class ArticleScientificFigureCandidateRenderer
                 $"Visible ordinary text contains an unparsed formula fragment: '{value}'.");
         }
 
+        var bounds = MeasureTextBounds(value, x, y, fontSize, anchor);
+
         return new(
             Svg + "text",
             new XAttribute("x", Number(x)),
@@ -899,9 +906,65 @@ public sealed class ArticleScientificFigureCandidateRenderer
             new XAttribute("font-family", "Microsoft YaHei"),
             new XAttribute("font-size", fontSize),
             new XAttribute("fill", color),
+            new XAttribute("data-text-bounds", FormatBounds(bounds)),
             new XAttribute("data-content-kind", FigureElementKind.Entity),
             value);
     }
+
+    private static SKRect MeasureTextBounds(
+        string value,
+        double x,
+        double baseline,
+        int fontSize,
+        string anchor)
+    {
+        using var paint = new SKPaint { IsAntialias = true };
+        using var typeface = ResolveTextTypeface(value);
+        using var font = new SKFont(typeface, fontSize);
+        var advance = font.MeasureText(value, out var glyphBounds, paint);
+        var origin = anchor switch
+        {
+            "middle" => x - advance / 2,
+            "end" => x - advance,
+            "start" => x,
+            _ => throw new InvalidOperationException($"Unsupported SVG text anchor: '{anchor}'."),
+        };
+        return new SKRect(
+            (float)(origin + glyphBounds.Left),
+            (float)(baseline + glyphBounds.Top),
+            (float)(origin + glyphBounds.Right),
+            (float)(baseline + glyphBounds.Bottom));
+    }
+
+    private static SKTypeface ResolveTextTypeface(string value)
+    {
+        const string family = "Microsoft YaHei";
+        var primary = SKTypeface.FromFamilyName(family);
+        if (primary.ContainsGlyphs(value))
+        {
+            return primary;
+        }
+
+        primary.Dispose();
+        var manager = SKFontManager.Default;
+        foreach (var character in value.Where(character => !char.IsWhiteSpace(character)))
+        {
+            var fallback = manager.MatchCharacter(family, character)
+                ?? manager.MatchCharacter(character);
+            if (fallback is not null && fallback.ContainsGlyphs(value))
+            {
+                return fallback;
+            }
+
+            fallback?.Dispose();
+        }
+
+        throw new InvalidOperationException(
+            $"No installed typeface can measure the approved SVG text: '{value}'.");
+    }
+
+    private static string FormatBounds(SKRect bounds) =>
+        string.Join(",", Number(bounds.Left), Number(bounds.Top), Number(bounds.Width), Number(bounds.Height));
 
     private static Guid StableGuid(string value)
     {

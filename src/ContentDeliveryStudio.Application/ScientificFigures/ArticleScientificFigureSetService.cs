@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
 
@@ -59,6 +60,9 @@ public sealed record ArticleCandidateVisualContractReport(
 public sealed class ArticleCandidateVisualContractReviewer
 {
     private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
+    private static readonly Regex PathNumber = new(
+        @"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?",
+        RegexOptions.CultureInvariant | RegexOptions.Compiled);
     private static readonly string[] WorkflowAnnotationMarkers =
     [
         "Gate 1",
@@ -162,6 +166,95 @@ public sealed class ArticleCandidateVisualContractReviewer
                     "candidate-text-outside-canvas",
                     $"Visible text is outside the canvas at ({x}, {y})."));
             }
+
+            if (text.Ancestors(Svg + "g")
+                .All(group => group.Attribute("data-math-bounds") is null))
+            {
+                if (!TryReadBoundsAttribute(text, "data-text-bounds", out var bounds))
+                {
+                    findings.Add(new ArticleCandidateVisualContractFinding(
+                        "candidate-text-bounds-invalid",
+                        "Visible ordinary text requires measured finite bounds."));
+                }
+                else if (!IsInsideCanvas(bounds, width, height))
+                {
+                    findings.Add(new ArticleCandidateVisualContractFinding(
+                        "candidate-text-bounds-outside-canvas",
+                        $"Visible text bounds exceed the canvas: {FormatBounds(bounds)}."));
+                }
+            }
+        }
+
+        foreach (var math in root.Descendants(Svg + "g")
+                     .Where(element => element.Attribute("data-math-bounds") is not null))
+        {
+            if (!TryReadMathBounds(math, out var bounds))
+            {
+                findings.Add(new ArticleCandidateVisualContractFinding(
+                    "candidate-math-bounds-invalid",
+                    "Scientific math groups require finite x, y, width, and height bounds."));
+            }
+            else if (!IsInsideCanvas(bounds, width, height))
+            {
+                findings.Add(new ArticleCandidateVisualContractFinding(
+                    "candidate-math-bounds-outside-canvas",
+                    $"Scientific math bounds exceed the canvas: {FormatBounds(bounds)}."));
+            }
+        }
+
+        foreach (var path in root.Descendants(Svg + "path")
+                     .Where(element => element.Ancestors(Svg + "defs").FirstOrDefault() is null
+                         && element.Ancestors(Svg + "g")
+                             .All(group => group.Attribute("data-math-bounds") is null)))
+        {
+            if (!TryReadPathBounds(path, out var bounds))
+            {
+                findings.Add(new ArticleCandidateVisualContractFinding(
+                    "candidate-path-geometry-invalid",
+                    "Visible paths require a finite coordinate geometry."));
+            }
+            else if (!IsInsideCanvas(bounds, width, height))
+            {
+                findings.Add(new ArticleCandidateVisualContractFinding(
+                    "candidate-path-bounds-outside-canvas",
+                    $"Visible path bounds exceed the canvas: {FormatBounds(bounds)}."));
+            }
+        }
+
+        foreach (var panel in root.Descendants(Svg + "g")
+                     .Where(element => element.Attribute("data-layout-panel-id") is not null))
+        {
+            var panelId = (string?)panel.Attribute("data-layout-panel-id")!;
+            var panelRects = panel.Elements(Svg + "rect").ToArray();
+            if (panelRects.Length != 1
+                || !TryReadRectBounds(panelRects[0], out var panelBounds))
+            {
+                findings.Add(new ArticleCandidateVisualContractFinding(
+                    "candidate-layout-panel-invalid",
+                    $"Layout panel '{panelId}' requires exactly one finite rect."));
+                continue;
+            }
+
+            var strokeWidth = Number(panelRects[0], "stroke-width");
+            var inset = double.IsFinite(strokeWidth) && strokeWidth > 0 ? strokeWidth / 2 : 0;
+            panelBounds = panelBounds.Inset(inset);
+            foreach (var content in panel.Descendants()
+                         .Where(element => element.Name == Svg + "g"
+                             && element.Attribute("data-math-bounds") is not null
+                             || element.Name == Svg + "text"
+                             && element.Ancestors(Svg + "g")
+                                 .All(group => group.Attribute("data-math-bounds") is null)))
+            {
+                if (!TryReadElementBounds(content, out var contentBounds)
+                    || IsInside(contentBounds, panelBounds))
+                {
+                    continue;
+                }
+
+                findings.Add(new ArticleCandidateVisualContractFinding(
+                    "candidate-panel-content-outside",
+                    $"Content in layout panel '{panelId}' exceeds panel bounds: {FormatBounds(contentBounds)} vs {FormatBounds(panelBounds)}."));
+            }
         }
 
         var pngs = exports.Artifacts.Where(item =>
@@ -182,6 +275,127 @@ public sealed class ArticleCandidateVisualContractReviewer
         return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
             ? parsed
             : double.NaN;
+    }
+
+    private static bool TryReadElementBounds(XElement element, out SvgBounds bounds)
+    {
+        if (element.Name == Svg + "g")
+        {
+            return TryReadMathBounds(element, out bounds);
+        }
+
+        if (element.Name == Svg + "text")
+        {
+            var x = Number(element, "x");
+            var y = Number(element, "y");
+            var fontSize = Number(element, "font-size");
+            if (!double.IsFinite(x) || !double.IsFinite(y) || !double.IsFinite(fontSize) || fontSize <= 0)
+            {
+                bounds = default;
+                return false;
+            }
+
+            return TryReadBoundsAttribute(element, "data-text-bounds", out bounds);
+        }
+
+        bounds = default;
+        return false;
+    }
+
+    private static bool TryReadRectBounds(XElement rect, out SvgBounds bounds)
+    {
+        var x = Number(rect, "x");
+        var y = Number(rect, "y");
+        var width = Number(rect, "width");
+        var height = Number(rect, "height");
+        if (!double.IsFinite(x) || !double.IsFinite(y)
+            || !double.IsFinite(width) || !double.IsFinite(height)
+            || width < 0 || height < 0)
+        {
+            bounds = default;
+            return false;
+        }
+
+        bounds = new SvgBounds(x, y, x + width, y + height);
+        return true;
+    }
+
+    private static bool TryReadMathBounds(XElement math, out SvgBounds bounds)
+        => TryReadBoundsAttribute(math, "data-math-bounds", out bounds);
+
+    private static bool TryReadBoundsAttribute(
+        XElement element,
+        string attribute,
+        out SvgBounds bounds)
+    {
+        var values = ((string?)element.Attribute(attribute))?.Split(',');
+        if (values is null || values.Length != 4
+            || !values.All(value => double.TryParse(
+                value,
+                NumberStyles.Float,
+                CultureInfo.InvariantCulture,
+                out _)))
+        {
+            bounds = default;
+            return false;
+        }
+
+        var parsed = values.Select(value => double.Parse(value, CultureInfo.InvariantCulture)).ToArray();
+        if (parsed.Any(value => !double.IsFinite(value)) || parsed[2] < 0 || parsed[3] < 0)
+        {
+            bounds = default;
+            return false;
+        }
+
+        bounds = new SvgBounds(parsed[0], parsed[1], parsed[0] + parsed[2], parsed[1] + parsed[3]);
+        return true;
+    }
+
+    private static bool TryReadPathBounds(XElement path, out SvgBounds bounds)
+    {
+        var values = PathNumber.Matches((string?)path.Attribute("d") ?? string.Empty)
+            .Select(match => double.Parse(match.Value, CultureInfo.InvariantCulture))
+            .ToArray();
+        if (values.Length < 2 || values.Length % 2 != 0 || values.Any(value => !double.IsFinite(value)))
+        {
+            bounds = default;
+            return false;
+        }
+
+        var stroke = Number(path, "stroke-width");
+        var halfStroke = double.IsFinite(stroke) && stroke > 0 ? stroke / 2 : 0;
+        var xs = values.Where((_, index) => index % 2 == 0).ToArray();
+        var ys = values.Where((_, index) => index % 2 == 1).ToArray();
+        bounds = new SvgBounds(
+            xs.Min() - halfStroke,
+            ys.Min() - halfStroke,
+            xs.Max() + halfStroke,
+            ys.Max() + halfStroke);
+        return true;
+    }
+
+    private static bool IsInsideCanvas(SvgBounds bounds, double width, double height) =>
+        IsInside(bounds, new SvgBounds(0, 0, width, height));
+
+    private static bool IsInside(SvgBounds bounds, SvgBounds container) =>
+        bounds.Left >= container.Left - 0.01
+        && bounds.Top >= container.Top - 0.01
+        && bounds.Right <= container.Right + 0.01
+        && bounds.Bottom <= container.Bottom + 0.01;
+
+    private static string FormatBounds(SvgBounds bounds) =>
+        string.Join(",", FormatNumber(bounds.Left), FormatNumber(bounds.Top), FormatNumber(bounds.Width), FormatNumber(bounds.Height));
+
+    private static string FormatNumber(double value) =>
+        value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private readonly record struct SvgBounds(double Left, double Top, double Right, double Bottom)
+    {
+        public double Width => Right - Left;
+        public double Height => Bottom - Top;
+
+        public SvgBounds Inset(double amount) =>
+            new(Left + amount, Top + amount, Right - amount, Bottom - amount);
     }
 }
 

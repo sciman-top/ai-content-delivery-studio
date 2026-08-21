@@ -517,6 +517,68 @@ public sealed class ArticleScientificFigureSetTests
     }
 
     [Fact]
+    public void VisualContract_RejectsTextThatEscapesAnExplicitLayoutPanel()
+    {
+        var candidate = CreateGravityCandidates().Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.GravityOrbitFreeFall);
+        var renderer = new ArticleScientificFigureCandidateRenderer();
+        var artifact = renderer.Render(candidate, 1);
+        var document = XDocument.Parse(artifact.Svg);
+        XNamespace svg = "http://www.w3.org/2000/svg";
+        var label = document.Descendants(svg + "text").Single(text =>
+            text.Value == "共同自由落体：秤读数");
+        label.SetAttributeValue("x", 850);
+        label.SetAttributeValue("text-anchor", "end");
+        label.SetAttributeValue("data-text-bounds", "660,625,190,22");
+        var mutatedSvg = document.ToString(SaveOptions.DisableFormatting);
+        var mutatedArtifact = artifact with
+        {
+            Svg = mutatedSvg,
+            Sha256 = Hash(Encoding.UTF8.GetBytes(mutatedSvg)),
+        };
+        var exports = new ScientificFigureExporter().Export(
+            new ScientificFigureExportRequest(mutatedArtifact, mutatedArtifact.Sha256, 1200, 800));
+
+        var report = new ArticleCandidateVisualContractReviewer().Review(
+            candidate,
+            mutatedArtifact,
+            exports);
+
+        Assert.Contains(report.Findings, finding =>
+            finding.Code == "candidate-panel-content-outside");
+    }
+
+    [Fact]
+    public void VisualContract_RejectsOutOfCanvasMathBounds()
+    {
+        var candidate = CreateGravityCandidates().Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.GravityOrbitFreeFall);
+        var renderer = new ArticleScientificFigureCandidateRenderer();
+        var artifact = renderer.Render(candidate, 1);
+        var document = XDocument.Parse(artifact.Svg);
+        XNamespace svg = "http://www.w3.org/2000/svg";
+        document.Descendants(svg + "g").Single(group =>
+            (string?)group.Attribute("data-math-tex") == @"\mathbf{N}\approx0")
+            .SetAttributeValue("data-math-bounds", "1190,790,30,30");
+        var mutatedSvg = document.ToString(SaveOptions.DisableFormatting);
+        var mutatedArtifact = artifact with
+        {
+            Svg = mutatedSvg,
+            Sha256 = Hash(Encoding.UTF8.GetBytes(mutatedSvg)),
+        };
+        var exports = new ScientificFigureExporter().Export(
+            new ScientificFigureExportRequest(mutatedArtifact, mutatedArtifact.Sha256, 1200, 800));
+
+        var report = new ArticleCandidateVisualContractReviewer().Review(
+            candidate,
+            mutatedArtifact,
+            exports);
+
+        Assert.Contains(report.Findings, finding =>
+            finding.Code == "candidate-math-bounds-outside-canvas");
+    }
+
+    [Fact]
     public async Task ThermalCjkPdf_UsesBoundedFontRepresentation()
     {
         var evidenceText = "导热系数 λ W/(m·K)，空气0.02，水蒸气0.02，水0.6，棉毛0.05。";
