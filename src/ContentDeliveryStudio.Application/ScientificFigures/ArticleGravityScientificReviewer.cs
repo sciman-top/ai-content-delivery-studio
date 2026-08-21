@@ -112,7 +112,7 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
             ArticleScientificFigureCandidateKind.GravityTerminology =>
             [Region("gravity-terms", ScientificVisualRegionKind.Element, 60, 150, 1050, 540,
                 "Gravitational interaction, effective gravity, and scale support/tension are distinct quantities.",
-                "地球引力 Fg; 有效重力 m·g_eff; 支持力/拉力 N 或 T",
+                "地球引力 F_g; 有效重力 g_eff; 支持力/拉力 N 或 T",
                 null,
                 ["reference frame and terminology must be declared"],
                 ["weight is always identical to scale reading"])],
@@ -190,7 +190,11 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
             return;
         }
 
-        var joined = string.Join("\n", document.Descendants(Svg + "text").Select(item => item.Value));
+        var joined = string.Join("\n",
+            document.Descendants(Svg + "text").Select(item => item.Value)
+                .Concat(document.Descendants()
+                    .Select(item => (string?)item.Attribute("data-math-tex"))
+                    .Where(value => !string.IsNullOrWhiteSpace(value))!));
         void Require(string value, string code)
         {
             if (!joined.Contains(value, StringComparison.Ordinal))
@@ -210,50 +214,58 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
         switch (candidate.Kind)
         {
             case ArticleScientificFigureCandidateKind.GravityTerminology:
-                Require("地球引力 Fg", "gravity-force-term-missing");
-                Require("有效重力 m·g_eff", "gravity-effective-term-missing");
-                Require("支持力/拉力 N 或 T", "gravity-scale-force-term-missing");
-                Require("weight 不是默认等同于秤读数", "gravity-weight-boundary-missing");
+                Require("地球引力", "gravity-force-term-missing");
+                Require(@"\mathbf{F}_g", "gravity-force-symbol-missing");
+                Require("有效重力", "gravity-effective-term-missing");
+                Require(@"\mathbf{g}_{\mathrm{eff}}", "gravity-effective-symbol-missing");
+                Require("支持力/拉力", "gravity-scale-force-term-missing");
+                Require(@"\mathbf{N}\;\text{或}\;\mathbf{T}", "gravity-scale-force-symbol-missing");
                 Forbid("Weight = 秤读数", "gravity-weight-scale-equivalence-overclaim");
+                Forbid("先声明参考系与术语约定，再写公式和结论", "gravity-editorial-note-visible");
                 break;
             case ArticleScientificFigureCandidateKind.GravityOrbitFreeFall:
-                Require("g(r) = GM/r² ≠ 0", "gravity-orbit-acceleration-missing");
+                Require(@"g(r)=\frac{GM}{r^2}\ne0", "gravity-orbit-acceleration-missing");
                 Require("共同自由落体", "gravity-orbit-free-fall-missing");
-                Require("秤读数 N ≈ 0", "gravity-orbit-scale-reading-missing");
+                Require(@"\mathbf{N}\approx0", "gravity-orbit-scale-reading-missing");
                 Forbid("重力为零", "gravity-orbit-zero-overclaim");
                 ReviewVector(document, candidate, "orbit-gravity", line => line.X2 < line.X1,
                     "gravity-orbit-vector-direction-invalid", findings);
                 break;
             case ArticleScientificFigureCandidateKind.GravityElevatorFreeFall:
-                Require("Fg = mg", "gravity-elevator-force-missing");
-                Require("a ≈ g", "gravity-elevator-acceleration-missing");
-                Require("支持力 N ≈ 0", "gravity-elevator-support-missing");
+                Require(@"\mathbf{F}_g=m\mathbf{g}", "gravity-elevator-force-missing");
+                Require(@"\mathbf{a}\approx\mathbf{g}", "gravity-elevator-acceleration-missing");
+                Require(@"\mathbf{N}\approx0", "gravity-elevator-support-missing");
                 Require("地球引力与自由落体加速度并未消失", "gravity-elevator-boundary-missing");
                 ReviewVector(document, candidate, "elevator-gravity", line => line.Y2 > line.Y1,
                     "gravity-elevator-vector-direction-invalid", findings);
                 break;
             case ArticleScientificFigureCandidateKind.GravitySurfaceRotation:
-                Require("引力场 g_grav", "gravity-surface-field-missing");
-                Require("离心项 ω²r⊥", "gravity-surface-centrifugal-missing");
-                Require("有效重力 g_eff", "gravity-surface-effective-missing");
+                Require("引力场", "gravity-surface-field-label-missing");
+                Require(@"\mathbf{g}_{\mathrm{grav}}", "gravity-surface-field-missing");
+                Require("离心项", "gravity-surface-centrifugal-label-missing");
+                Require(@"\mathbf{a}_{\mathrm{cf}}=\omega^2r_\perp", "gravity-surface-centrifugal-missing");
+                Require("有效重力", "gravity-surface-effective-label-missing");
                 Require("地面合支持力 R", "gravity-surface-support-missing");
+                Require(@"\mathbf{g}_{\mathrm{eff}}", "gravity-surface-effective-formula-missing");
+                Require(@"\mathbf{R}+m\mathbf{g}_{\mathrm{eff}}=0", "gravity-surface-equilibrium-formula-missing");
                 Require("不是额外的相互作用力", "gravity-centripetal-boundary-missing");
                 Forbid("向心力与引力是两个力", "gravity-centripetal-extra-force-overclaim");
                 ReviewVector(document, candidate, "surface-effective-gravity", line => Length(line) > 60,
                     "gravity-surface-effective-vector-invalid", findings);
                 ReviewVector(document, candidate, "surface-support", line => line.Y2 < line.Y1,
                     "gravity-surface-support-vector-invalid", findings);
+                ReviewSurfaceVectorComposition(document, candidate, findings);
                 break;
             case ArticleScientificFigureCandidateKind.GravityCaseComparison:
                 Require("绕地轨道", "gravity-case-orbit-missing");
                 Require("自由落体电梯", "gravity-case-elevator-missing");
                 Require("地表相对静止", "gravity-case-surface-missing");
                 Require("失重判据：支持力/秤读数接近零", "gravity-weightlessness-criterion-missing");
-                Require("a_orbit ≠ 0", "gravity-orbit-acceleration-comparison-missing");
+                Require(@"\mathbf{a}_{\mathrm{orbit}}\ne0", "gravity-orbit-acceleration-comparison-missing");
                 break;
             case ArticleScientificFigureCandidateKind.GravityReferenceFrames:
-                Require("ΣF_real = m·a", "gravity-inertial-equation-missing");
-                Require("ΣF_real + F_inertial = m·a_rel", "gravity-noninertial-equation-missing");
+                Require(@"\sum\mathbf{F}_{\mathrm{real}}=m\mathbf{a}", "gravity-inertial-equation-missing");
+                Require(@"\sum\mathbf{F}_{\mathrm{real}}+\mathbf{F}_{\mathrm{inertial}}=m\mathbf{a}_{\mathrm{rel}}", "gravity-noninertial-equation-missing");
                 Require("不得与惯性系方程混用", "gravity-frame-mixing-boundary-missing");
                 Require("不要再额外添加一支“向心力”箭头", "gravity-centripetal-double-count-boundary-missing");
                 break;
@@ -279,6 +291,59 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
             findings.Add(Finding(code, candidate.CandidateId, $"Gravity vector role is invalid: {role}"));
         }
     }
+
+    private static void ReviewSurfaceVectorComposition(
+        XDocument document,
+        ArticleScientificFigureCandidate candidate,
+        ICollection<ArticleOpticalScientificFinding> findings)
+    {
+        var gravity = ReadSingleVector(document, "surface-gravity");
+        var centrifugal = ReadSingleVector(document, "surface-centrifugal");
+        var effective = ReadSingleVector(document, "surface-effective-gravity");
+        var support = ReadSingleVector(document, "surface-support");
+        var effectiveForce = ReadSingleVector(document, "surface-effective-force");
+        if (gravity is null || centrifugal is null || effective is null
+            || !SamePoint(gravity.Value.X1, gravity.Value.Y1, centrifugal.Value.X1, centrifugal.Value.Y1)
+            || !SamePoint(gravity.Value.X1, gravity.Value.Y1, effective.Value.X1, effective.Value.Y1)
+            || !SamePoint(
+                effective.Value.X2,
+                effective.Value.Y2,
+                gravity.Value.X2 + centrifugal.Value.X2 - gravity.Value.X1,
+                gravity.Value.Y2 + centrifugal.Value.Y2 - gravity.Value.Y1))
+        {
+            findings.Add(Finding(
+                "gravity-surface-vector-sum-invalid",
+                candidate.CandidateId,
+                "Surface effective gravity must close the gravity-plus-centrifugal parallelogram."));
+        }
+
+        if (support is null || effectiveForce is null
+            || !SamePoint(support.Value.X1, support.Value.Y1, effectiveForce.Value.X1, effectiveForce.Value.Y1)
+            || !NearlyEqual(support.Value.X2 - support.Value.X1, -(effectiveForce.Value.X2 - effectiveForce.Value.X1))
+            || !NearlyEqual(support.Value.Y2 - support.Value.Y1, -(effectiveForce.Value.Y2 - effectiveForce.Value.Y1)))
+        {
+            findings.Add(Finding(
+                "gravity-surface-force-balance-invalid",
+                candidate.CandidateId,
+                "Static surface support must be equal and opposite to m times effective gravity."));
+        }
+    }
+
+    private static GravityLineGeometry? ReadSingleVector(XDocument document, string role)
+    {
+        var vectors = document.Descendants(Svg + "path")
+            .Where(path => string.Equals((string?)path.Attribute("data-gravity-role"), role, StringComparison.Ordinal))
+            .Select(path => TryReadLine((string?)path.Attribute("d")))
+            .Where(line => line is not null)
+            .Select(line => line!.Value)
+            .ToArray();
+        return vectors.Length == 1 ? vectors[0] : null;
+    }
+
+    private static bool SamePoint(double x1, double y1, double x2, double y2) =>
+        NearlyEqual(x1, x2) && NearlyEqual(y1, y2);
+
+    private static bool NearlyEqual(double first, double second) => Math.Abs(first - second) <= 0.1;
 
     private static GravityLineGeometry? TryReadLine(string? value)
     {

@@ -185,7 +185,12 @@ public sealed class ArticleScientificFigureCandidateRenderer
     private static void RenderLensEquationGraph(XElement group)
     {
         group.Add(Rect(68, 142, 1064, 520, Panel, "#CBD5E1", 1));
-        group.Add(Text("归一化约定：x = u/f，y = v/f；u、v 均表示相应距离的正值", 90, 178, 18, Ink));
+        group.Add(Text("归一化约定：", 90, 178, 18, Ink));
+        group.Add(FractionFormula(
+            @"x=\frac{u}{f},\ y=\frac{v}{f}",
+            220, 173, 18, Ink, "start",
+            FormulaPiece.Plain("x = "), FormulaPiece.Fraction("u", "f"), FormulaPiece.Plain("，y = "), FormulaPiece.Fraction("v", "f")));
+        group.Add(Text("；u、v 均表示相应距离的正值", 420, 178, 18, Ink));
         const double left = 130;
         const double bottom = 620;
         const double plotSize = 390;
@@ -193,8 +198,10 @@ public sealed class ArticleScientificFigureCandidateRenderer
         var scale = plotSize / maximum;
         group.Add(Line(left, bottom, left + plotSize, bottom, Ink, 2, arrow: true));
         group.Add(Line(left, bottom, left, bottom - plotSize, Ink, 2, arrow: true));
-        group.Add(Text("x = u/f", left + plotSize + 44, bottom + 6, 16, Ink));
-        group.Add(Text("y = v/f", left - 6, bottom - plotSize - 18, 16, Ink, "middle"));
+        group.Add(FractionFormula(@"x=\frac{u}{f}", left + plotSize + 44, bottom + 2, 16, Ink, "start",
+            FormulaPiece.Plain("x = "), FormulaPiece.Fraction("u", "f")));
+        group.Add(FractionFormula(@"y=\frac{v}{f}", left - 6, bottom - plotSize - 18, 16, Ink, "middle",
+            FormulaPiece.Plain("y = "), FormulaPiece.Fraction("v", "f")));
         group.Add(Line(left, bottom, left + plotSize, bottom - plotSize, Muted, 1));
         group.Add(Text("y = x", left + plotSize - 12, bottom - plotSize + 26, 15, Muted, "end"));
         group.Add(Line(left + scale, bottom, left + scale, bottom - plotSize, Amber, 1));
@@ -207,12 +214,18 @@ public sealed class ArticleScientificFigureCandidateRenderer
 
         group.Add(Rect(600, 224, 472, 324, "#FFFFFF", "#CBD5E1", 1));
         group.Add(Text("虚物到实像（u 为虚物距大小）", 628, 264, 18, Blue));
-        group.Add(Text("-1/u + 1/v = 1/f", 628, 298, 18, Ink));
-        group.Add(Text("y = x / (x + 1)，x > 0", 628, 330, 19, Blue));
+        group.Add(FractionFormula(@"-\frac{1}{u}+\frac{1}{v}=\frac{1}{f}", 628, 295, 18, Ink, "start",
+            FormulaPiece.Plain("−"), FormulaPiece.Fraction("1", "u"), FormulaPiece.Plain(" + "),
+            FormulaPiece.Fraction("1", "v"), FormulaPiece.Plain(" = "), FormulaPiece.Fraction("1", "f")));
+        group.Add(FractionFormula(@"y=\frac{x}{x+1},\ x>0", 628, 328, 19, Blue, "start",
+            FormulaPiece.Plain("y = "), FormulaPiece.Fraction("x", "x + 1"), FormulaPiece.Plain("，x > 0")));
         group.Add(Text("0 < y < 1，且 y < x", 628, 360, 16, Muted));
         group.Add(Text("实物到虚像（0 < u < f，v 为像距大小）", 628, 408, 18, Magenta));
-        group.Add(Text("1/u - 1/v = 1/f", 628, 442, 18, Ink));
-        group.Add(Text("y = x / (1 - x)，0 < x < 1", 628, 474, 19, Magenta));
+        group.Add(FractionFormula(@"\frac{1}{u}-\frac{1}{v}=\frac{1}{f}", 628, 439, 18, Ink, "start",
+            FormulaPiece.Fraction("1", "u"), FormulaPiece.Plain(" − "), FormulaPiece.Fraction("1", "v"),
+            FormulaPiece.Plain(" = "), FormulaPiece.Fraction("1", "f")));
+        group.Add(FractionFormula(@"y=\frac{x}{1-x},\ 0<x<1", 628, 472, 19, Magenta, "start",
+            FormulaPiece.Plain("y = "), FormulaPiece.Fraction("x", "1 − x"), FormulaPiece.Plain("，0 < x < 1")));
         group.Add(Text("两支互为反函数，关于 y = x 对称", 628, 520, 17, Amber));
     }
 
@@ -453,21 +466,26 @@ public sealed class ArticleScientificFigureCandidateRenderer
     {
         var cards = new[]
         {
-            (70d, "地球引力 Fg", "真实相互作用力", "Fg = GMm/r²", Blue),
-            (390d, "有效重力 m·g_eff", "指定参考系中的合成量", "地球固连系含自转离心项", Green),
-            (710d, "支持力/拉力 N 或 T", "秤或测力计的直接读数来源", "自由落体时可约为 0", Magenta),
+            (70d, "地球引力", "真实相互作用力", "", Blue),
+            (390d, "有效重力", "指定参考系中的合成量", "地球固连系含自转离心项", Green),
+            (710d, "支持力/拉力", "秤或测力计的直接读数来源", "自由落体时可约为 0", Magenta),
         };
         foreach (var card in cards)
         {
             group.Add(Rect(card.Item1, 175, 285, 360, Panel, "#CBD5E1", 1));
-            group.Add(Text(card.Item2, card.Item1 + 142, 230, 21, card.Item5, "middle"));
-            group.Add(Text(card.Item3, card.Item1 + 142, 300, 16, Ink, "middle"));
-            group.Add(Text(card.Item4, card.Item1 + 142, 365, 16, Muted, "middle"));
+            group.Add(Text(card.Item2, card.Item1 + 142, 220, 21, card.Item5, "middle"));
+            group.Add(Text(card.Item3, card.Item1 + 142, 315, 16, Ink, "middle"));
+            if (!string.IsNullOrWhiteSpace(card.Item4))
+            {
+                group.Add(Text(card.Item4, card.Item1 + 142, 390, 16, Muted, "middle"));
+            }
         }
 
-        group.Add(Rect(70, 575, 960, 105, "#FFF7ED", "#FDBA74", 1));
-        group.Add(Text("NIST/ISO 的 weight 不是默认等同于秤读数", 550, 618, 19, Amber, "middle"));
-        group.Add(Text("先声明参考系与术语约定，再写公式和结论", 550, 655, 18, Ink, "middle"));
+        group.Add(MathText(@"\mathbf{F}_g", 212, 260, 22, Blue, "middle", MathRun.Vector("F"), MathRun.Subscript("g")));
+        group.Add(MathText(@"F_g=", 152, 385, 18, Muted, "start", MathRun.ItalicRun("F"), MathRun.Subscript("g"), MathRun.Normal(" = ")));
+        group.Add(FractionFormula(@"\frac{GMm}{r^2}", 220, 380, 18, Muted, "start", FormulaPiece.Fraction("GMm", "r²")));
+        group.Add(MathText(@"\mathbf{g}_{\mathrm{eff}}", 532, 260, 22, Green, "middle", MathRun.Vector("g"), MathRun.Subscript("eff")));
+        group.Add(MathText(@"\mathbf{N}\;\text{或}\;\mathbf{T}", 852, 260, 22, Magenta, "middle", MathRun.Vector("N"), MathRun.Normal(" 或 "), MathRun.Vector("T")));
     }
 
     private static void RenderGravityOrbitFreeFall(XElement group)
@@ -477,12 +495,15 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Rect(830, 360, 170, 110, Panel, "#64748B", 2));
         group.Add(Text("空间站", 915, 425, 22, Ink, "middle"));
         group.Add(GravityLine(830, 415, 540, 425, Blue, 5, "orbit-gravity", arrow: true));
-        group.Add(Text("Fg 与 a 均指向地心", 690, 390, 18, Blue, "middle"));
+        group.Add(MathText(@"\mathbf{F}_g", 610, 390, 18, Blue, "start", MathRun.Vector("F"), MathRun.Subscript("g")));
+        group.Add(Text("与 a 均指向地心", 647, 390, 18, Blue));
         group.Add(GravityLine(1035, 465, 1035, 285, Magenta, 4, "orbit-velocity", arrow: true));
         group.Add(Text("切向速度 v", 1020, 270, 17, Magenta, "end"));
         group.Add(Rect(665, 555, 430, 115, "#ECFDF5", "#6EE7B7", 1));
-        group.Add(Text("g(r) = GM/r² ≠ 0", 880, 598, 21, Green, "middle"));
-        group.Add(Text("共同自由落体：秤读数 N ≈ 0", 880, 638, 19, Ink, "middle"));
+        group.Add(FractionFormula(@"g(r)=\frac{GM}{r^2}\ne0", 880, 592, 21, Green, "middle",
+            FormulaPiece.Plain("g(r) = "), FormulaPiece.Fraction("GM", "r²"), FormulaPiece.Plain(" ≠ 0")));
+        group.Add(Text("共同自由落体：秤读数", 850, 642, 19, Ink, "end"));
+        group.Add(MathText(@"\mathbf{N}\approx0", 865, 642, 19, Ink, "start", MathRun.Vector("N"), MathRun.Normal(" ≈ 0")));
     }
 
     private static void RenderGravityElevatorFreeFall(XElement group)
@@ -492,55 +513,97 @@ public sealed class ArticleScientificFigureCandidateRenderer
         DrawCircle(group, 600, 380, 55, Ink, 3);
         group.Add(Text("物体 m", 600, 388, 18, Ink, "middle"));
         group.Add(GravityLine(600, 445, 600, 545, Blue, 5, "elevator-gravity", arrow: true));
-        group.Add(Text("Fg = mg", 625, 505, 18, Blue));
+        group.Add(MathText(@"\mathbf{F}_g=m\mathbf{g}", 625, 505, 18, Blue, "start",
+            MathRun.Vector("F"), MathRun.Subscript("g"), MathRun.Normal(" = m"), MathRun.Vector("g")));
         group.Add(GravityLine(780, 220, 780, 390, Magenta, 5, "elevator-acceleration", arrow: true));
-        group.Add(Text("电梯与物体 a ≈ g", 800, 305, 18, Magenta));
-        group.Add(Text("支持力 N ≈ 0", 600, 610, 20, Green, "middle"));
+        group.Add(Text("电梯与物体", 800, 290, 18, Magenta));
+        group.Add(MathText(@"\mathbf{a}\approx\mathbf{g}", 800, 320, 18, Magenta, "start",
+            MathRun.Vector("a"), MathRun.Normal(" ≈ "), MathRun.Vector("g")));
+        group.Add(Text("支持力", 575, 610, 20, Green, "end"));
+        group.Add(MathText(@"\mathbf{N}\approx0", 590, 610, 20, Green, "start", MathRun.Vector("N"), MathRun.Normal(" ≈ 0")));
         group.Add(Text("地球引力与自由落体加速度并未消失", 600, 705, 19, Amber, "middle"));
     }
 
     private static void RenderGravitySurfaceRotation(XElement group)
     {
-        const double cx = 430;
+        const double cx = 340;
         const double cy = 430;
-        DrawCircle(group, cx, cy, 225, Blue, 3);
+        DrawCircle(group, cx, cy, 210, Blue, 3);
         group.Add(Line(cx, 155, cx, 705, Muted, 2));
         group.Add(Text("自转轴", cx - 12, 180, 16, Muted, "end"));
-        DrawCircle(group, 590, 270, 10, Magenta, 4);
-        group.Add(Text("物体", 615, 265, 18, Ink));
-        group.Add(GravityLine(590, 280, 470, 400, Blue, 5, "surface-gravity", arrow: true));
-        group.Add(Text("引力场 g_grav", 565, 355, 17, Blue));
-        group.Add(GravityLine(600, 270, 760, 270, Magenta, 4, "surface-centrifugal", arrow: true));
-        group.Add(Text("离心项 ω²r⊥", 780, 275, 17, Magenta));
-        group.Add(GravityLine(590, 282, 495, 388, Green, 6, "surface-effective-gravity", arrow: true));
-        group.Add(Text("有效重力 g_eff", 680, 420, 18, Green));
-        group.Add(GravityLine(585, 258, 680, 152, Amber, 4, "surface-support", arrow: true));
-        group.Add(Text("地面合支持力 R", 700, 145, 17, Amber));
-        group.Add(Rect(750, 500, 370, 150, "#FFF7ED", "#FDBA74", 1));
-        group.Add(Text("g_eff = g_grav + a_cf", 935, 550, 20, Amber, "middle"));
-        group.Add(Text("向心加速度是运动学结果", 935, 592, 17, Ink, "middle"));
-        group.Add(Text("不是额外的相互作用力", 935, 625, 17, Ink, "middle"));
+        const double px = 485;
+        const double py = 278;
+        const double gravityX = 370;
+        const double gravityY = 420;
+        const double centrifugalX = 535;
+        const double centrifugalY = 278;
+        const double effectiveX = 420;
+        const double effectiveY = 420;
+        DrawCircle(group, px, py, 10, Magenta, 4);
+        group.Add(Text("物体", px + 20, py - 14, 17, Ink));
+        group.Add(GravityLine(px, py, gravityX, gravityY, Blue, 5, "surface-gravity", arrow: true));
+        group.Add(Text("引力场", 255, 365, 17, Blue));
+        group.Add(MathText(@"\mathbf{g}_{\mathrm{grav}}", 325, 365, 17, Blue, "start",
+            MathRun.Vector("g"), MathRun.Subscript("grav")));
+        group.Add(GravityLine(px, py, centrifugalX, centrifugalY, Magenta, 4, "surface-centrifugal", arrow: true));
+        group.Add(Text("离心项", 550, 258, 17, Magenta));
+        group.Add(MathText(@"\mathbf{a}_{\mathrm{cf}}=\omega^2r_\perp", 550, 288, 17, Magenta, "start",
+            MathRun.Vector("a"), MathRun.Subscript("cf"), MathRun.Normal(" = ω"), MathRun.Superscript("2"),
+            MathRun.Normal("r"), MathRun.Subscript("⊥")));
+        group.Add(DashedGravityLine(gravityX, gravityY, effectiveX, effectiveY, Magenta, 2, "surface-centrifugal-translation"));
+        group.Add(DashedGravityLine(centrifugalX, centrifugalY, effectiveX, effectiveY, Blue, 2, "surface-gravity-translation"));
+        group.Add(GravityLine(px, py, effectiveX, effectiveY, Green, 6, "surface-effective-gravity", arrow: true));
+        group.Add(Text("有效重力", 470, 445, 18, Green));
+        group.Add(MathText(@"\mathbf{g}_{\mathrm{eff}}", 565, 445, 18, Green, "start",
+            MathRun.Vector("g"), MathRun.Subscript("eff")));
+        group.Add(Text("矢量平行四边形（地球固连系）", 350, 690, 17, Muted, "middle"));
+        group.Add(Text("向心加速度是运动学结果，不是额外的相互作用力", 350, 720, 16, Ink, "middle"));
+
+        group.Add(Rect(680, 145, 440, 495, "#FFF7ED", "#FDBA74", 1));
+        group.Add(Text("地表静止物体的受力平衡", 900, 195, 21, Amber, "middle"));
+        DrawCircle(group, 900, 350, 18, Ink, 3);
+        group.Add(GravityLine(900, 350, 970, 240, Amber, 5, "surface-support", arrow: true));
+        group.Add(Text("地面合支持力 R", 985, 218, 17, Amber));
+        group.Add(GravityLine(900, 350, 830, 460, Green, 5, "surface-effective-force", arrow: true));
+        group.Add(MathText(@"m\mathbf{g}_{\mathrm{eff}}", 810, 510, 17, Green, "middle",
+            MathRun.Normal("m"), MathRun.Vector("g"), MathRun.Subscript("eff")));
+        group.Add(MathText(@"\mathbf{R}+m\mathbf{g}_{\mathrm{eff}}=0", 900, 560, 21, Amber, "middle",
+            MathRun.Vector("R"), MathRun.Normal(" + m"), MathRun.Vector("g"), MathRun.Subscript("eff"), MathRun.Normal(" = 0")));
+        group.Add(Text("支持力不参与有效重力的定义", 900, 605, 16, Ink, "middle"));
     }
 
     private static void RenderGravityCaseComparison(XElement group)
     {
         var columns = new[]
         {
-            (70d, "绕地轨道", "Fg ≠ 0", "a_orbit ≠ 0", "N ≈ 0", Blue),
-            (390d, "自由落体电梯", "Fg ≠ 0", "a ≈ g ≠ 0", "N ≈ 0", Magenta),
-            (710d, "地表相对静止", "Fg ≠ 0", "g_eff ≠ 0", "N ≈ m·g_eff", Green),
+            (70d, "绕地轨道", Blue),
+            (390d, "自由落体电梯", Magenta),
+            (710d, "地表相对静止", Green),
         };
         foreach (var column in columns)
         {
             group.Add(Rect(column.Item1, 170, 285, 430, Panel, "#CBD5E1", 1));
-            group.Add(Text(column.Item2, column.Item1 + 142, 225, 21, column.Item6, "middle"));
+            group.Add(Text(column.Item2, column.Item1 + 142, 225, 21, column.Item3, "middle"));
             group.Add(Text("地球引力", column.Item1 + 32, 320, 16, Muted));
-            group.Add(Text(column.Item3, column.Item1 + 245, 320, 19, Ink, "end"));
             group.Add(Text("物体加速度", column.Item1 + 32, 405, 16, Muted));
-            group.Add(Text(column.Item4, column.Item1 + 245, 405, 19, Ink, "end"));
             group.Add(Text("秤读数/支持力", column.Item1 + 142, 480, 16, Muted, "middle"));
-            group.Add(Text(column.Item5, column.Item1 + 142, 525, 19, column.Item6, "middle"));
         }
+
+        foreach (var x in new[] { 315d, 635d, 955d })
+        {
+            group.Add(MathText(@"\mathbf{F}_g\ne0", x, 320, 19, Ink, "end",
+                MathRun.Vector("F"), MathRun.Subscript("g"), MathRun.Normal(" ≠ 0")));
+        }
+        group.Add(MathText(@"\mathbf{a}_{\mathrm{orbit}}\ne0", 315, 405, 19, Ink, "end",
+            MathRun.Vector("a"), MathRun.Subscript("orbit"), MathRun.Normal(" ≠ 0")));
+        group.Add(MathText(@"\mathbf{a}\approx\mathbf{g}\ne0", 635, 405, 19, Ink, "end",
+            MathRun.Vector("a"), MathRun.Normal(" ≈ "), MathRun.Vector("g"), MathRun.Normal(" ≠ 0")));
+        group.Add(MathText(@"\mathbf{g}_{\mathrm{eff}}\ne0", 955, 405, 19, Ink, "end",
+            MathRun.Vector("g"), MathRun.Subscript("eff"), MathRun.Normal(" ≠ 0")));
+        group.Add(MathText(@"\mathbf{N}\approx0", 212, 525, 19, Blue, "middle", MathRun.Vector("N"), MathRun.Normal(" ≈ 0")));
+        group.Add(MathText(@"\mathbf{N}\approx0", 532, 525, 19, Magenta, "middle", MathRun.Vector("N"), MathRun.Normal(" ≈ 0")));
+        group.Add(MathText(@"\mathbf{N}\approx m\mathbf{g}_{\mathrm{eff}}", 852, 525, 19, Green, "middle",
+            MathRun.Vector("N"), MathRun.Normal(" ≈ m"), MathRun.Vector("g"), MathRun.Subscript("eff")));
         group.Add(Text("失重判据：支持力/秤读数接近零，而不是地球引力消失", 550, 685, 19, Amber, "middle"));
     }
 
@@ -550,13 +613,16 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Rect(610, 165, 460, 450, "#FFF7ED", "#FDBA74", 1));
         group.Add(Text("惯性系", 300, 220, 24, Blue, "middle"));
         group.Add(Text("只画真实相互作用力", 300, 280, 19, Ink, "middle"));
-        group.Add(Text("ΣF_real = m·a", 300, 350, 22, Blue, "middle"));
+        group.Add(MathText(@"\sum\mathbf{F}_{\mathrm{real}}=m\mathbf{a}", 300, 350, 22, Blue, "middle",
+            MathRun.Normal("Σ"), MathRun.Vector("F"), MathRun.Subscript("real"), MathRun.Normal(" = m"), MathRun.Vector("a")));
         group.Add(Text("向心力 = 合力的径向角色", 300, 430, 17, Muted, "middle"));
         group.Add(Text("不要再额外添加一支“向心力”箭头", 300, 505, 16, Amber, "middle"));
 
         group.Add(Text("随动/旋转非惯性系", 840, 220, 24, Magenta, "middle"));
         group.Add(Text("声明参考系后加入惯性力", 840, 280, 19, Ink, "middle"));
-        group.Add(Text("ΣF_real + F_inertial = m·a_rel", 840, 350, 21, Magenta, "middle"));
+        group.Add(MathText(@"\sum\mathbf{F}_{\mathrm{real}}+\mathbf{F}_{\mathrm{inertial}}=m\mathbf{a}_{\mathrm{rel}}", 840, 350, 21, Magenta, "middle",
+            MathRun.Normal("Σ"), MathRun.Vector("F"), MathRun.Subscript("real"), MathRun.Normal(" + "),
+            MathRun.Vector("F"), MathRun.Subscript("inertial"), MathRun.Normal(" = m"), MathRun.Vector("a"), MathRun.Subscript("rel")));
         group.Add(Text("自由落体随动系可见近似平衡", 840, 430, 17, Muted, "middle"));
         group.Add(Text("不得与惯性系方程混用", 840, 505, 17, Amber, "middle"));
         group.Add(Text("先选参考系 → 列真实力 → 必要时加惯性力 → 再解释秤读数", 570, 690, 18, Green, "middle"));
@@ -745,6 +811,112 @@ public sealed class ArticleScientificFigureCandidateRenderer
         return line;
     }
 
+    private static XElement DashedGravityLine(
+        double x1,
+        double y1,
+        double x2,
+        double y2,
+        string color,
+        double width,
+        string role)
+    {
+        var line = GravityLine(x1, y1, x2, y2, color, width, role);
+        line.SetAttributeValue("stroke-dasharray", "7 6");
+        return line;
+    }
+
+    private static XElement MathText(
+        string tex,
+        double x,
+        double y,
+        int fontSize,
+        string color,
+        string anchor,
+        params MathRun[] runs)
+    {
+        var widths = runs.Select(run => run.Width(fontSize)).ToArray();
+        var totalWidth = widths.Sum();
+        var cursor = anchor switch
+        {
+            "middle" => x - (totalWidth / 2),
+            "end" => x - totalWidth,
+            _ => x,
+        };
+        var element = new XElement(
+            Svg + "g",
+            new XAttribute("data-math-tex", tex),
+            new XAttribute("aria-label", tex));
+        for (var index = 0; index < runs.Length; index++)
+        {
+            var run = runs[index];
+            var scriptScale = run.Script == MathScript.Normal ? 1d : 0.68d;
+            var runFontSize = Math.Max(10, (int)Math.Round(fontSize * scriptScale));
+            var baseline = run.Script switch
+            {
+                MathScript.Subscript => y + (fontSize * 0.30),
+                MathScript.Superscript => y - (fontSize * 0.48),
+                _ => y,
+            };
+            var text = Text(run.Value, cursor, baseline, runFontSize, color);
+            text.SetAttributeValue("font-family", "Cambria Math, STIX Two Math, Times New Roman");
+            if (run.Bold)
+            {
+                text.SetAttributeValue("font-weight", "700");
+            }
+            if (run.Italic)
+            {
+                text.SetAttributeValue("font-style", "italic");
+            }
+            element.Add(text);
+            cursor += widths[index];
+        }
+
+        return element;
+    }
+
+    private static XElement FractionFormula(
+        string tex,
+        double x,
+        double y,
+        int fontSize,
+        string color,
+        string anchor,
+        params FormulaPiece[] pieces)
+    {
+        var widths = pieces.Select(piece => piece.Width(fontSize)).ToArray();
+        var totalWidth = widths.Sum();
+        var cursor = anchor switch
+        {
+            "middle" => x - (totalWidth / 2),
+            "end" => x - totalWidth,
+            _ => x,
+        };
+        var group = new XElement(
+            Svg + "g",
+            new XAttribute("data-math-tex", tex),
+            new XAttribute("aria-label", tex));
+        for (var index = 0; index < pieces.Length; index++)
+        {
+            var piece = pieces[index];
+            var width = widths[index];
+            if (piece.Denominator is null)
+            {
+                group.Add(MathText(tex, cursor, y + 5, fontSize, color, "start", MathRun.Normal(piece.Text!)));
+            }
+            else
+            {
+                var fractionFontSize = Math.Max(11, (int)Math.Round(fontSize * 0.72));
+                group.Add(MathText(tex, cursor + (width / 2), y - 4, fractionFontSize, color, "middle", MathRun.ItalicRun(piece.Text!)));
+                group.Add(Line(cursor + 2, y + 2, cursor + width - 2, y + 2, color, 1.4));
+                group.Add(MathText(tex, cursor + (width / 2), y + 18, fractionFontSize, color, "middle", MathRun.ItalicRun(piece.Denominator)));
+            }
+
+            cursor += width;
+        }
+
+        return group;
+    }
+
     private static XElement Text(
         string value,
         double x,
@@ -774,4 +946,40 @@ public sealed class ArticleScientificFigureCandidateRenderer
 
     private static string Number(double value) =>
         value.ToString("0.###", CultureInfo.InvariantCulture);
+
+    private enum MathScript
+    {
+        Normal,
+        Subscript,
+        Superscript,
+    }
+
+    private sealed record MathRun(string Value, MathScript Script, bool Bold, bool Italic)
+    {
+        public static MathRun Normal(string value) => new(value, MathScript.Normal, Bold: false, Italic: false);
+        public static MathRun Vector(string value) => new(value, MathScript.Normal, Bold: true, Italic: true);
+        public static MathRun ItalicRun(string value) => new(value, MathScript.Normal, Bold: false, Italic: true);
+        public static MathRun Subscript(string value) => new(value, MathScript.Subscript, Bold: false, Italic: false);
+        public static MathRun Superscript(string value) => new(value, MathScript.Superscript, Bold: false, Italic: false);
+
+        public double Width(int fontSize)
+        {
+            var scale = Script == MathScript.Normal ? 1d : 0.68d;
+            return Math.Max(4, Value.Length * fontSize * scale * 0.56);
+        }
+    }
+
+    private sealed record FormulaPiece(string? Text, string? Denominator)
+    {
+        public static FormulaPiece Plain(string value) => new(value, null);
+        public static FormulaPiece Fraction(string numerator, string denominator) => new(numerator, denominator);
+
+        public double Width(int fontSize)
+        {
+            var characters = Denominator is null
+                ? Text!.Length
+                : Math.Max(Text!.Length, Denominator.Length);
+            return Math.Max(fontSize * 0.85, characters * fontSize * 0.56) + (Denominator is null ? 0 : 8);
+        }
+    }
 }

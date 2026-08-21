@@ -185,7 +185,10 @@ public sealed class ArticleOpticalScientificReviewer : IArticleScientificFigureR
         var document = Parse(artifact.Svg);
         var root = document.Root!;
         var text = root.Descendants(Svg + "text").Select(item => item.Value).ToArray();
-        var joined = string.Join("\n", text);
+        var joined = string.Join("\n",
+            text.Concat(root.Descendants()
+                .Select(item => (string?)item.Attribute("data-math-tex"))
+                .Where(value => !string.IsNullOrWhiteSpace(value))!));
         void Require(string value, string code, string itemId)
         {
             if (!joined.Contains(value, StringComparison.Ordinal))
@@ -234,11 +237,12 @@ public sealed class ArticleOpticalScientificReviewer : IArticleScientificFigureR
                 Require("S 是 L2 的物体", "optics-intermediate-image-role-invalid", "secondary-ray-topology");
                 break;
             case ArticleScientificFigureCandidateKind.LensEquationGraph:
-                Require("x = u/f，y = v/f；u、v 均表示相应距离的正值", "optics-symbol-unit-convention-invalid", "lens-formula-branches");
-                Require("y = x / (x + 1)，x > 0", "optics-virtual-object-branch-invalid", "lens-formula-branches");
-                Require("y = x / (1 - x)，0 < x < 1", "optics-real-object-branch-invalid", "lens-formula-branches");
+                Require(@"x=\frac{u}{f},\ y=\frac{v}{f}", "optics-symbol-unit-convention-invalid", "lens-formula-branches");
+                Require(@"y=\frac{x}{x+1},\ x>0", "optics-virtual-object-branch-invalid", "lens-formula-branches");
+                Require(@"y=\frac{x}{1-x},\ 0<x<1", "optics-real-object-branch-invalid", "lens-formula-branches");
+                Require("u、v 均表示相应距离的正值", "optics-positive-distance-convention-missing", "lens-formula-branches");
                 Require("两支互为反函数", "optics-inverse-branch-relationship-invalid", "lens-domain-graph");
-                Forbid("x / (x - 1)", "optics-wrong-formula-branch", "lens-formula-branches");
+                Forbid(@"\frac{x}{x-1}", "optics-wrong-formula-branch", "lens-formula-branches");
                 break;
             case ArticleScientificFigureCandidateKind.ExperimentalComparison:
                 Require("A. 光屏接收中间实像", "optics-screen-panel-missing", "screen-receiver-conditions");

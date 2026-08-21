@@ -50,7 +50,7 @@ public sealed class ArticleScientificFigureSetTests
             item.Kind == ArticleScientificFigureCandidateKind.GravityOrbitFreeFall);
         var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
         var mutatedSvg = artifact.Svg.Replace(
-            "g(r) = GM/r² ≠ 0",
+            @"g(r)=\frac{GM}{r^2}\ne0",
             "重力为零",
             StringComparison.Ordinal);
         var review = new ArticleGravityScientificReviewer().Review(
@@ -65,6 +65,54 @@ public sealed class ArticleScientificFigureSetTests
 
         Assert.False(review.Passed);
         Assert.Contains(review.Findings, finding => finding.Code == "gravity-orbit-zero-overclaim");
+    }
+
+    [Fact]
+    public void GravityRenderer_UsesTypesetMathAndSeparatesVectorSumFromForceBalance()
+    {
+        var candidates = CreateGravityCandidates();
+        var renderer = new ArticleScientificFigureCandidateRenderer();
+        var terminology = renderer.Render(candidates.Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.GravityTerminology), 1).Svg;
+        var surface = renderer.Render(candidates.Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.GravitySurfaceRotation), 1).Svg;
+        var frames = renderer.Render(candidates.Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.GravityReferenceFrames), 1).Svg;
+
+        Assert.DoesNotContain("先声明参考系与术语约定，再写公式和结论", terminology, StringComparison.Ordinal);
+        Assert.Contains(@"\mathbf{g}_{\mathrm{eff}}", surface, StringComparison.Ordinal);
+        Assert.Contains(@"\mathbf{R}+m\mathbf{g}_{\mathrm{eff}}=0", surface, StringComparison.Ordinal);
+        Assert.Contains("surface-gravity-translation", surface, StringComparison.Ordinal);
+        Assert.Contains("surface-centrifugal-translation", surface, StringComparison.Ordinal);
+        Assert.Contains(@"\sum\mathbf{F}_{\mathrm{real}}=m\mathbf{a}", frames, StringComparison.Ordinal);
+        Assert.Contains("data-math-tex", frames, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DeterministicGravityReview_BlocksUnclosedSurfaceVectorSum()
+    {
+        var candidate = CreateGravityCandidates().Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.GravitySurfaceRotation);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var document = XDocument.Parse(artifact.Svg, LoadOptions.PreserveWhitespace);
+        var svg = (XNamespace)"http://www.w3.org/2000/svg";
+        var effective = document.Descendants(svg + "path").Single(path =>
+            (string?)path.Attribute("data-gravity-role") == "surface-effective-gravity");
+        effective.SetAttributeValue("d", "M 485 278 L 435 420");
+        var mutatedSvg = document.ToString(SaveOptions.DisableFormatting);
+
+        var review = new ArticleGravityScientificReviewer().Review(
+            candidate,
+            artifact with
+            {
+                Svg = mutatedSvg,
+                Sha256 = Hash(Encoding.UTF8.GetBytes(mutatedSvg)),
+            },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(review.Passed);
+        Assert.Contains(review.Findings, finding => finding.Code == "gravity-surface-vector-sum-invalid");
     }
 
     [Fact]
@@ -197,9 +245,10 @@ public sealed class ArticleScientificFigureSetTests
         var corrective = renderer.Render(candidates.Single(item =>
             item.Kind == ArticleScientificFigureCandidateKind.CorrectiveLensControl), 1).Svg;
 
-        Assert.Contains("y = x / (x + 1)", graph, StringComparison.Ordinal);
-        Assert.Contains("y = x / (1 - x)", graph, StringComparison.Ordinal);
-        Assert.DoesNotContain("y = x / (x - 1)", graph, StringComparison.Ordinal);
+        Assert.Contains(@"y=\frac{x}{x+1},\ x&gt;0", graph, StringComparison.Ordinal);
+        Assert.Contains(@"y=\frac{x}{1-x},\ 0&lt;x&lt;1", graph, StringComparison.Ordinal);
+        Assert.DoesNotContain(@"\frac{x}{x-1}", graph, StringComparison.Ordinal);
+        Assert.Contains("data-math-tex", graph, StringComparison.Ordinal);
         Assert.Contains("L2 位于 S 右侧", positions, StringComparison.Ordinal);
         Assert.Contains("L2 与 S 平面重合", positions, StringComparison.Ordinal);
         Assert.Contains("L2 位于 S 左侧", positions, StringComparison.Ordinal);
@@ -929,7 +978,9 @@ public sealed class ArticleScientificFigureSetTests
     {
         return mutation switch
         {
-            "wrong-formula" => svg.Replace("x / (x + 1)", "x / (x - 1)", StringComparison.Ordinal),
+            "wrong-formula" => svg
+                .Replace(@"\frac{x}{x+1}", @"\frac{x}{x-1}", StringComparison.Ordinal)
+                .Replace("x + 1", "x − 1", StringComparison.Ordinal),
             "swap-lens" => svg.Replace("附加凹透镜", "附加凸透镜", StringComparison.Ordinal),
             "same-focus" => svg.Replace("x=\"1038\"", "x=\"990\"", StringComparison.Ordinal),
             "swap-plane-order" => svg.Replace("L2 位于 S 右侧", "L2 位于 S 左侧", StringComparison.Ordinal),
