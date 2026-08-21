@@ -44,6 +44,48 @@ public sealed class ArticleScientificFigureSetTests
     }
 
     [Fact]
+    public void ReviewerFactory_RoutesThermistorAndArchimedesProfiles()
+    {
+        var thermistor = CreateProfileCandidate(
+            ArticleScientificFigureCandidateKind.ThermistorCircuitDivider,
+            "2022新疆物理中考的第11题");
+        var archimedes = CreateProfileCandidate(
+            ArticleScientificFigureCandidateKind.ArchimedesWaterModel,
+            "阿基米德原理的本质、适用条件、修正");
+
+        Assert.IsType<ArticleThermistorScientificReviewer>(
+            ArticleScientificFigureReviewerFactory.CreateFor([thermistor]));
+        Assert.IsType<ArticleArchimedesScientificReviewer>(
+            ArticleScientificFigureReviewerFactory.CreateFor([archimedes]));
+    }
+
+    [Fact]
+    public void ThermistorReviewer_BlocksVoltmeterConnectedAcrossWrongNodes()
+    {
+        var candidate = CreateProfileCandidate(
+            ArticleScientificFigureCandidateKind.ThermistorCircuitDivider,
+            "2022新疆物理中考的第11题");
+        var renderer = new ArticleScientificFigureCandidateRenderer();
+        var artifact = renderer.Render(candidate, 1);
+        var mutatedSvg = artifact.Svg.Replace(
+            "M 330 360 L 360 320",
+            "M 330 360 L 250 320",
+            StringComparison.Ordinal);
+        var review = new ArticleThermistorScientificReviewer().Review(
+            candidate,
+            artifact with
+            {
+                Svg = mutatedSvg,
+                Sha256 = Hash(Encoding.UTF8.GetBytes(mutatedSvg)),
+            },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.Contains(review.Findings, finding =>
+            finding.Code == "thermistor-voltmeter-connection-invalid");
+    }
+
+    [Fact]
     public void DeterministicGravityReview_BlocksZeroGravityInOrbit()
     {
         var candidate = CreateGravityCandidates().Single(item =>
@@ -909,6 +951,17 @@ public sealed class ArticleScientificFigureSetTests
         ArticleScientificFigureCandidateKind.GravitySurfaceRotation => "04-gravity-surface-rotation",
         ArticleScientificFigureCandidateKind.GravityCaseComparison => "05-gravity-case-comparison",
         ArticleScientificFigureCandidateKind.GravityReferenceFrames => "06-gravity-reference-frames",
+        ArticleScientificFigureCandidateKind.ThermistorCircuitDivider => "01-thermistor-circuit-divider",
+        ArticleScientificFigureCandidateKind.ThermistorCurvature => "02-thermistor-curvature",
+        ArticleScientificFigureCandidateKind.ThermistorError => "03-thermistor-error",
+        ArticleScientificFigureCandidateKind.ThermistorSpecialValues => "04-thermistor-special-values",
+        ArticleScientificFigureCandidateKind.ArchimedesDefinition => "01-archimedes-definition",
+        ArticleScientificFigureCandidateKind.ArchimedesWaterModel => "02-archimedes-water-model",
+        ArticleScientificFigureCandidateKind.ArchimedesBottomContact => "03-archimedes-bottom-contact",
+        ArticleScientificFigureCandidateKind.ArchimedesDepthDependence => "04-archimedes-depth",
+        ArticleScientificFigureCandidateKind.ArchimedesTopContact => "05-archimedes-top-contact",
+        ArticleScientificFigureCandidateKind.ArchimedesPier => "06-archimedes-pier",
+        ArticleScientificFigureCandidateKind.ArchimedesPressureCaveat => "07-archimedes-pressure-caveat",
         _ => throw new ArgumentOutOfRangeException(nameof(candidate), candidate.Kind, null),
     };
 
@@ -976,6 +1029,40 @@ public sealed class ArticleScientificFigureSetTests
             extraction,
             "“重力”定义的混乱",
             "初中物理教师与学生");
+    }
+
+    private static ArticleScientificFigureCandidate CreateProfileCandidate(
+        ArticleScientificFigureCandidateKind kind,
+        string title)
+    {
+        const string evidenceText = "来源证据：文章中的物理图示和公式。";
+        var block = ScientificSourceBlock.Create(
+            $"profile-{kind}",
+            ScientificSourceBlockKind.Paragraph,
+            ScientificSourceLocation.Create(
+                1,
+                "profile test",
+                boundingRegion: null,
+                ScientificCharacterRange.Create(0, evidenceText.Length)),
+            evidenceText,
+            isRequired: true,
+            ScientificRecoveryStatus.NotRequired);
+        return new ArticleScientificFigureCandidate(
+            $"profile-{kind}",
+            title,
+            kind,
+            "profile test figure",
+            "profile test objective",
+            "profile test message",
+            "教师与学生",
+            ScientificFigureRiskLevel.High,
+            [ArticleScientificFigureEvidence.Create(block, excerptLength: 240)],
+            ["图1"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement,
+            "profile test rationale",
+            RequiresGateOneApproval: true,
+            GateOneStatus: ArticleScientificFigureGateStatus.PendingHumanApproval,
+            DeliveryStatus: ArticleScientificFigureDeliveryStatus.NotCreated);
     }
 
     private static ArticleOpticalScientificReviewReport ReviewThermalMutation(

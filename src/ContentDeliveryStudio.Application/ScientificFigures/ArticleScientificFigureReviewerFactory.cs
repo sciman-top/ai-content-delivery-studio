@@ -31,6 +31,25 @@ public static class ArticleScientificFigureReviewerFactory
         ArticleScientificFigureCandidateKind.GravityReferenceFrames,
     ];
 
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> ThermistorKinds =
+    [
+        ArticleScientificFigureCandidateKind.ThermistorCircuitDivider,
+        ArticleScientificFigureCandidateKind.ThermistorCurvature,
+        ArticleScientificFigureCandidateKind.ThermistorError,
+        ArticleScientificFigureCandidateKind.ThermistorSpecialValues,
+    ];
+
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> ArchimedesKinds =
+    [
+        ArticleScientificFigureCandidateKind.ArchimedesDefinition,
+        ArticleScientificFigureCandidateKind.ArchimedesWaterModel,
+        ArticleScientificFigureCandidateKind.ArchimedesBottomContact,
+        ArticleScientificFigureCandidateKind.ArchimedesDepthDependence,
+        ArticleScientificFigureCandidateKind.ArchimedesTopContact,
+        ArticleScientificFigureCandidateKind.ArchimedesPier,
+        ArticleScientificFigureCandidateKind.ArchimedesPressureCaveat,
+    ];
+
     public static IArticleScientificFigureReviewer CreateFor(
         IReadOnlyCollection<ArticleScientificFigureCandidate> candidates)
     {
@@ -47,9 +66,11 @@ public static class ArticleScientificFigureReviewerFactory
             .ToArray();
         var hasThermal = domainKinds.Any(ThermalKinds.Contains);
         var hasGravity = domainKinds.Any(GravityKinds.Contains);
-        if (hasThermal && hasGravity)
+        var hasThermistor = domainKinds.Any(ThermistorKinds.Contains);
+        var hasArchimedes = domainKinds.Any(ArchimedesKinds.Contains);
+        if (new[] { hasThermal, hasGravity, hasThermistor, hasArchimedes }.Count(value => value) > 1)
         {
-            throw new InvalidOperationException("An article figure set cannot mix thermal and gravity review profiles.");
+            throw new InvalidOperationException("An article figure set cannot mix scientific review profiles.");
         }
 
         if (hasGravity)
@@ -62,6 +83,18 @@ public static class ArticleScientificFigureReviewerFactory
         {
             EnsureAllKindsBelongTo(domainKinds, ThermalKinds, "thermal");
             return new ArticleThermalScientificReviewer();
+        }
+
+        if (hasThermistor)
+        {
+            EnsureAllKindsBelongTo(domainKinds, ThermistorKinds, "thermistor");
+            return new ArticleThermistorScientificReviewer();
+        }
+
+        if (hasArchimedes)
+        {
+            EnsureAllKindsBelongTo(domainKinds, ArchimedesKinds, "archimedes");
+            return new ArticleArchimedesScientificReviewer();
         }
 
         if (domainKinds.Length > 0 && domainKinds.All(OpticalKinds.Contains))

@@ -35,6 +35,16 @@ public sealed class ArticleScientificFigurePlanningService
             return PlanThermal(extraction, normalizedTitle, normalizedAudience);
         }
 
+        if (IsThermistorArticle(normalizedTitle, extraction))
+        {
+            return PlanThermistor(extraction, normalizedTitle, normalizedAudience);
+        }
+
+        if (IsArchimedesArticle(normalizedTitle, extraction))
+        {
+            return PlanArchimedes(extraction, normalizedTitle, normalizedAudience);
+        }
+
         if (!IsOpticalArticle(normalizedTitle, extraction))
         {
             throw new InvalidOperationException(
@@ -305,6 +315,111 @@ public sealed class ArticleScientificFigurePlanningService
         }).ToArray();
     }
 
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanThermistor(
+        ScientificDocumentExtraction extraction,
+        string articleTitle,
+        string audience)
+    {
+        var candidates = new List<ArticleScientificFigureCandidate>();
+        AddIfEvidenceFound(candidates, "thermistor-circuit-divider", ArticleScientificFigureCandidateKind.ThermistorCircuitDivider,
+            "热敏电阻分压电路与电流变化", "把电源、定值电阻、热敏电阻和电压表的测量对象画清楚。",
+            "电压表测热敏电阻两端电压；串联电流随热敏电阻变化，不能把 ΔR=ΔU/I 当作恒流公式。",
+            ScientificFigureRiskLevel.High, "热敏电阻", extraction.Blocks, ["图甲"],
+            ArticleScientificFigureDisposition.ReplaceExisting, "重绘题图电路并标出分压关系与变电流边界。");
+        AddIfEvidenceFound(candidates, "thermistor-curvature", ArticleScientificFigureCandidateKind.ThermistorCurvature,
+            "分压函数的曲率与等电压间隔", "比较 U-R 凹函数和等电压间隔对应的电阻变化。",
+            "U=U总R1/(R0+R1) 对 R1 是递增凹函数；相同电压变化对应的 ΔR 随 R1 增大而增大。",
+            ScientificFigureRiskLevel.High, "凹函数", extraction.Blocks, ["图乙", "函数图象"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "用函数图替代原文小图并显式标注斜率递减。");
+        AddIfEvidenceFound(candidates, "thermistor-error", ArticleScientificFigureCandidateKind.ThermistorError,
+            "错误近似：把变电流当作恒流", "解释 ΔR=ΔU/I 只有在同一恒定电流下才可直接使用。",
+            "电流 I=U总/(R0+R1) 会随 R1 变化；本题不能用变化前或变化后的电流代替全过程电流。",
+            ScientificFigureRiskLevel.High, "错误原因", extraction.Blocks, ["错误解法"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "用两条电流状态和公式条件卡阻断恒流误用。");
+        AddIfEvidenceFound(candidates, "thermistor-special-values", ArticleScientificFigureCandidateKind.ThermistorSpecialValues,
+            "特殊值与极限法交叉验证", "用一个自洽参数例和两端极限验证选择题方向。",
+            "R1→0 时分压趋近 0，R1→∞ 时分压趋近 U总；示例参数只能作为方向验证，不是原题实测参数。",
+            ScientificFigureRiskLevel.High, "取特殊值", extraction.Blocks, ["解法 3", "解法 4"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "并列显示特殊值和极限边界，避免把示例参数当成题设。");
+        AddIfEvidenceFound(candidates, "thermistor-source-evidence", ArticleScientificFigureCandidateKind.SourceEvidenceBoard,
+            "原文热敏电阻题图证据板", "保留题图、电压温度图和原文推导作为来源证据。",
+            "只保留来源像素与页码，不把原文结论或示例参数自动升级为事实。",
+            ScientificFigureRiskLevel.High, "电路中", extraction.Blocks, ["图甲", "图乙"],
+            ArticleScientificFigureDisposition.ConsolidateSourceEvidence, "保留原图证据，确定性重绘另行表达。");
+        return CompleteProfile(candidates, articleTitle, audience, 5, "thermistor");
+    }
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanArchimedes(
+        ScientificDocumentExtraction extraction,
+        string articleTitle,
+        string audience)
+    {
+        var candidates = new List<ArticleScientificFigureCandidate>();
+        AddIfEvidenceFound(candidates, "archimedes-definition", ArticleScientificFigureCandidateKind.ArchimedesDefinition,
+            "V浸、V排与排开液体体积", "区分浸入体积、排开体积和底部贴合时的接触条件。",
+            "V排通常等于物体浸入液体所占据的体积；但 ρ液V排g 等于液压合力需要所有相关表面与流体接触的条件。",
+            ScientificFigureRiskLevel.High, "V排", extraction.Blocks, ["图2", "图3"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "用剖面和接触状态解释体积定义，不把蓝色涂色当成唯一 V排定义。");
+        AddIfEvidenceFound(candidates, "archimedes-water-model", ArticleScientificFigureCandidateKind.ArchimedesWaterModel,
+            "阿基米德原理的理想水体模型", "用同体积水体替换物体解释液压合力来源。",
+            "在静止流体且表面均与流体接触的理想条件下，液压合力等于同体积流体的重力。",
+            ScientificFigureRiskLevel.High, "理想模型", extraction.Blocks, ["图5"],
+            ArticleScientificFigureDisposition.ReplaceExisting, "重绘压力分量与理想水体替换关系，并保留适用条件。");
+        AddIfEvidenceFound(candidates, "archimedes-bottom-contact", ArticleScientificFigureCandidateKind.ArchimedesBottomContact,
+            "底面贴合时的液压合力修正", "表示缺失底面液压力后，支持力与液压合力的受力平衡。",
+            "底面完全贴合会改变流体压力边界；不能无条件套用 F浮=ρ液gV排，需明确接触界面和压力模型。",
+            ScientificFigureRiskLevel.High, "贴合", extraction.Blocks, ["图1", "图2", "图3"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "把缺失压力项作为条件化修正，不把特例数值推广为普遍规律。");
+        AddIfEvidenceFound(candidates, "archimedes-depth", ArticleScientificFigureCandidateKind.ArchimedesDepthDependence,
+            "底面贴合下的深度依赖", "展示水深改变时底面压力项如何改变合力方向。",
+            "在给定接触模型下，缺失的界面压力可能随深度变化；‘浮力与深度无关’不能脱离适用条件。",
+            ScientificFigureRiskLevel.High, "水深", extraction.Blocks, ["第五部分"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "用参数轴表达条件化趋势，不把图示参数当成普遍实验定律。");
+        AddIfEvidenceFound(candidates, "archimedes-top-contact", ArticleScientificFigureCandidateKind.ArchimedesTopContact,
+            "顶部贴合时的压力方向", "对比顶部接触和底部接触时缺失压力项的方向差异。",
+            "顶部或底部与固体贴合都会改变流体边界；压力方向必须依接触面和参考受力图判定。",
+            ScientificFigureRiskLevel.High, "顶部", extraction.Blocks, ["第六部分"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "用边界条件标签避免把顶部修正与底部修正混为同一公式。");
+        AddIfEvidenceFound(candidates, "archimedes-pier", ArticleScientificFigureCandidateKind.ArchimedesPier,
+            "倾斜桥墩侧向压力抵消", "用同一高度截面的反向压力说明桥墩净竖直合力的几何原因。",
+            "对称且各高度横截面相同的倾斜桥墩，侧面压力的竖直分量需通过积分和边界条件核验；不能只看一块蓝色体积。",
+            ScientificFigureRiskLevel.High, "桥墩", extraction.Blocks, ["图1", "图2"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "重绘压力分量并把‘需积分核验’写入审查边界。");
+        AddIfEvidenceFound(candidates, "archimedes-pressure-caveat", ArticleScientificFigureCandidateKind.ArchimedesPressureCaveat,
+            "大气压与接触界面的实验边界", "区分表压模型、绝对压强和固体接触反力。",
+            "大气压是否计入取决于完整边界和受力系统；不能仅凭一个 p0S 项断言所有实验支持力都变成同一数值。",
+            ScientificFigureRiskLevel.High, "大气压", extraction.Blocks, ["第七部分"],
+            ArticleScientificFigureDisposition.AddExplanatoryReplacement, "把文章的绝对压强修正标为待 Gate 1 核验的模型，而不是自动结论。");
+        AddIfEvidenceFound(candidates, "archimedes-source-evidence", ArticleScientificFigureCandidateKind.SourceEvidenceBoard,
+            "原文阿基米德图表证据板", "保留桥墩、石鼓、水体模型和接触图作为来源证据。",
+            "来源板只保留原文像素和页码；争议公式由确定性重绘图分离表达。",
+            ScientificFigureRiskLevel.High, "浮力", extraction.Blocks, ["图1", "图2", "图3", "图4", "图5", "图6"],
+            ArticleScientificFigureDisposition.ConsolidateSourceEvidence, "保留原图证据，避免来源像素被误认为已验证结论。");
+        return CompleteProfile(candidates, articleTitle, audience, 8, "archimedes");
+    }
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> CompleteProfile(
+        List<ArticleScientificFigureCandidate> candidates,
+        string articleTitle,
+        string audience,
+        int minimumCount,
+        string profile)
+    {
+        if (candidates.Count < minimumCount)
+        {
+            throw new InvalidOperationException(
+                $"The {profile} article did not expose enough located evidence for the complete figure set: "
+                + string.Join(", ", candidates.Select(candidate => candidate.Kind)));
+        }
+
+        return candidates.Select((candidate, index) => candidate with
+        {
+            CandidateId = $"article-{StableSlug(articleTitle)}-{index + 1:D2}-{candidate.Kind.ToString().ToLowerInvariant()}",
+            ArticleTitle = articleTitle,
+            Audience = audience,
+        }).ToArray();
+    }
+
     private static bool IsGravityArticle(
         string articleTitle,
         ScientificDocumentExtraction extraction) =>
@@ -330,6 +445,21 @@ public sealed class ArticleScientificFigurePlanningService
         || extraction.Blocks.Any(block =>
             block.OriginalText?.Contains("二次凸透镜成像", StringComparison.Ordinal) == true
             && block.OriginalText.Contains("视网膜", StringComparison.Ordinal));
+
+    private static bool IsThermistorArticle(
+        string articleTitle,
+        ScientificDocumentExtraction extraction) =>
+        articleTitle.Contains("新疆物理中考", StringComparison.Ordinal)
+        || (extraction.Blocks.Any(block => block.OriginalText?.Contains("热敏电阻", StringComparison.Ordinal) == true)
+            && extraction.Blocks.Any(block => block.OriginalText?.Contains("电压表", StringComparison.Ordinal) == true));
+
+    private static bool IsArchimedesArticle(
+        string articleTitle,
+        ScientificDocumentExtraction extraction) =>
+        articleTitle.Contains("阿基米德", StringComparison.Ordinal)
+        || extraction.Blocks.Any(block =>
+            block.OriginalText?.Contains("V 排", StringComparison.Ordinal) == true
+            && block.OriginalText.Contains("浮力", StringComparison.Ordinal));
 
     private static void AddIfEvidenceFound(
         ICollection<ArticleScientificFigureCandidate> candidates,
@@ -462,6 +592,17 @@ public enum ArticleScientificFigureCandidateKind
     GravitySurfaceRotation = 15,
     GravityCaseComparison = 16,
     GravityReferenceFrames = 17,
+    ThermistorCircuitDivider = 18,
+    ThermistorCurvature = 19,
+    ThermistorError = 20,
+    ThermistorSpecialValues = 21,
+    ArchimedesDefinition = 22,
+    ArchimedesWaterModel = 23,
+    ArchimedesBottomContact = 24,
+    ArchimedesDepthDependence = 25,
+    ArchimedesTopContact = 26,
+    ArchimedesPier = 27,
+    ArchimedesPressureCaveat = 28,
 }
 
 public enum ArticleScientificFigureDisposition

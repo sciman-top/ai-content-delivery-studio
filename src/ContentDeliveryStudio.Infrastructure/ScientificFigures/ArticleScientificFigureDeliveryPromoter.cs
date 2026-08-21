@@ -175,7 +175,7 @@ public sealed partial class ArticleScientificFigureDeliveryPromoter
         }
 
         var deterministicReview = Text(root, "deterministicReview");
-        if (deterministicReview is not ("article-optics-v1" or "article-thermal-v1" or "article-gravity-v1"))
+        if (deterministicReview is not ("article-optics-v1" or "article-thermal-v1" or "article-gravity-v1" or "article-thermistor-v1" or "article-archimedes-v1"))
         {
             throw new InvalidOperationException("Article deterministic review package is unsupported.");
         }
