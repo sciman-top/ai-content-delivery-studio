@@ -4,6 +4,8 @@ using System.Text;
 using System.Xml.Linq;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.ScientificFigures;
+using FormulaPiece = ContentDeliveryStudio.Infrastructure.ScientificFigures.ScientificMathLayout.FormulaPiece;
+using MathRun = ContentDeliveryStudio.Infrastructure.ScientificFigures.ScientificMathLayout.MathRun;
 
 namespace ContentDeliveryStudio.Infrastructure.ScientificFigures;
 
@@ -18,6 +20,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
     private const string Green = "#087E8B";
     private const string Amber = "#B45309";
     private const string Panel = "#F8FAFC";
+    private static readonly ScientificMathLayout MathLayout = new();
 
     public ScientificSvgArtifact Render(
         ArticleScientificFigureCandidate candidate,
@@ -834,44 +837,16 @@ public sealed class ArticleScientificFigureCandidateRenderer
         string anchor,
         params MathRun[] runs)
     {
-        var widths = runs.Select(run => run.Width(fontSize)).ToArray();
-        var totalWidth = widths.Sum();
-        var cursor = anchor switch
-        {
-            "middle" => x - (totalWidth / 2),
-            "end" => x - totalWidth,
-            _ => x,
-        };
-        var element = new XElement(
-            Svg + "g",
-            new XAttribute("data-math-tex", tex),
-            new XAttribute("aria-label", tex));
-        for (var index = 0; index < runs.Length; index++)
-        {
-            var run = runs[index];
-            var scriptScale = run.Script == MathScript.Normal ? 1d : 0.68d;
-            var runFontSize = Math.Max(10, (int)Math.Round(fontSize * scriptScale));
-            var baseline = run.Script switch
-            {
-                MathScript.Subscript => y + (fontSize * 0.30),
-                MathScript.Superscript => y - (fontSize * 0.48),
-                _ => y,
-            };
-            var text = Text(run.Value, cursor, baseline, runFontSize, color);
-            text.SetAttributeValue("font-family", "Cambria Math, STIX Two Math, Times New Roman");
-            if (run.Bold)
-            {
-                text.SetAttributeValue("font-weight", "700");
-            }
-            if (run.Italic)
-            {
-                text.SetAttributeValue("font-style", "italic");
-            }
-            element.Add(text);
-            cursor += widths[index];
-        }
-
-        return element;
+        return MathLayout.Render(
+            new ScientificMathLayout.FormulaSpec(
+                tex,
+                new ScientificMathLayout.MathExpression(
+                    [new ScientificMathLayout.MathTextNode(runs)])),
+            x,
+            y,
+            fontSize,
+            color,
+            anchor);
     }
 
     private static XElement FractionFormula(
@@ -883,38 +858,20 @@ public sealed class ArticleScientificFigureCandidateRenderer
         string anchor,
         params FormulaPiece[] pieces)
     {
-        var widths = pieces.Select(piece => piece.Width(fontSize)).ToArray();
-        var totalWidth = widths.Sum();
-        var cursor = anchor switch
-        {
-            "middle" => x - (totalWidth / 2),
-            "end" => x - totalWidth,
-            _ => x,
-        };
-        var group = new XElement(
-            Svg + "g",
-            new XAttribute("data-math-tex", tex),
-            new XAttribute("aria-label", tex));
-        for (var index = 0; index < pieces.Length; index++)
-        {
-            var piece = pieces[index];
-            var width = widths[index];
-            if (piece.Denominator is null)
-            {
-                group.Add(MathText(tex, cursor, y + 5, fontSize, color, "start", MathRun.Normal(piece.Text!)));
-            }
-            else
-            {
-                var fractionFontSize = Math.Max(11, (int)Math.Round(fontSize * 0.72));
-                group.Add(MathText(tex, cursor + (width / 2), y - 4, fractionFontSize, color, "middle", MathRun.ItalicRun(piece.Text!)));
-                group.Add(Line(cursor + 2, y + 2, cursor + width - 2, y + 2, color, 1.4));
-                group.Add(MathText(tex, cursor + (width / 2), y + 18, fractionFontSize, color, "middle", MathRun.ItalicRun(piece.Denominator)));
-            }
-
-            cursor += width;
-        }
-
-        return group;
+        var nodes = pieces.Select(piece => piece.Denominator is null
+            ? (ScientificMathLayout.MathNode)new ScientificMathLayout.MathTextNode(
+                [ScientificMathLayout.MathRun.Normal(piece.Text!)])
+            : new ScientificMathLayout.MathFractionNode(piece.Text!, piece.Denominator))
+            .ToArray();
+        return MathLayout.Render(
+            new ScientificMathLayout.FormulaSpec(
+                tex,
+                new ScientificMathLayout.MathExpression(nodes)),
+            x,
+            y,
+            fontSize,
+            color,
+            anchor);
     }
 
     private static XElement Text(
@@ -923,8 +880,15 @@ public sealed class ArticleScientificFigureCandidateRenderer
         double y,
         int fontSize,
         string color,
-        string anchor = "start") =>
-        new(
+        string anchor = "start")
+    {
+        if (ScientificMathLayout.LooksLikeUnparsedFormula(value))
+        {
+            throw new InvalidOperationException(
+                $"Visible ordinary text contains an unparsed formula fragment: '{value}'.");
+        }
+
+        return new(
             Svg + "text",
             new XAttribute("x", Number(x)),
             new XAttribute("y", Number(y)),
@@ -934,6 +898,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
             new XAttribute("fill", color),
             new XAttribute("data-content-kind", FigureElementKind.Entity),
             value);
+    }
 
     private static Guid StableGuid(string value)
     {
@@ -947,39 +912,4 @@ public sealed class ArticleScientificFigureCandidateRenderer
     private static string Number(double value) =>
         value.ToString("0.###", CultureInfo.InvariantCulture);
 
-    private enum MathScript
-    {
-        Normal,
-        Subscript,
-        Superscript,
-    }
-
-    private sealed record MathRun(string Value, MathScript Script, bool Bold, bool Italic)
-    {
-        public static MathRun Normal(string value) => new(value, MathScript.Normal, Bold: false, Italic: false);
-        public static MathRun Vector(string value) => new(value, MathScript.Normal, Bold: true, Italic: true);
-        public static MathRun ItalicRun(string value) => new(value, MathScript.Normal, Bold: false, Italic: true);
-        public static MathRun Subscript(string value) => new(value, MathScript.Subscript, Bold: false, Italic: false);
-        public static MathRun Superscript(string value) => new(value, MathScript.Superscript, Bold: false, Italic: false);
-
-        public double Width(int fontSize)
-        {
-            var scale = Script == MathScript.Normal ? 1d : 0.68d;
-            return Math.Max(4, Value.Length * fontSize * scale * 0.56);
-        }
-    }
-
-    private sealed record FormulaPiece(string? Text, string? Denominator)
-    {
-        public static FormulaPiece Plain(string value) => new(value, null);
-        public static FormulaPiece Fraction(string numerator, string denominator) => new(numerator, denominator);
-
-        public double Width(int fontSize)
-        {
-            var characters = Denominator is null
-                ? Text!.Length
-                : Math.Max(Text!.Length, Denominator.Length);
-            return Math.Max(fontSize * 0.85, characters * fontSize * 0.56) + (Denominator is null ? 0 : 8);
-        }
-    }
 }
