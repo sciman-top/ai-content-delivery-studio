@@ -5,6 +5,58 @@ namespace ContentDeliveryStudio.Tests;
 
 public sealed class LocalOutputOrganizationScriptTests
 {
+    [Theory]
+    [InlineData("Validation", "outputs/validation/article-figure-sets/sample-article/20260821-v2")]
+    [InlineData("ReviewReady", "outputs/review-ready/article-figure-sets/sample-article/20260821-v2")]
+    public async Task ArticleRunner_NestsClassifiedOutputByArticleAndRun(
+        string outputClass,
+        string expectedRelativePath)
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"article-output-routing-{Guid.NewGuid():N}");
+        try
+        {
+            Directory.CreateDirectory(root);
+            Assert.Equal(0, (await RunAsync(root, "git", "init", "-q")).ExitCode);
+            var sourcePath = Path.Combine(root, "article.pdf");
+            await File.WriteAllTextAsync(sourcePath, "%PDF-1.4");
+            var script = Path.Combine(
+                FindRepositoryRoot(),
+                "scripts",
+                "run-article-scientific-figure-set.ps1");
+
+            var result = await RunAsync(
+                root,
+                "pwsh",
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                script,
+                "-SourcePath",
+                sourcePath,
+                "-OutputClass",
+                outputClass,
+                "-ArticleSlug",
+                "sample-article",
+                "-RunName",
+                "20260821-v2",
+                "-ResolveOutputDirectoryOnly");
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Equal(
+                Path.GetFullPath(Path.Combine(root, expectedRelativePath)),
+                result.StandardOutput.Trim());
+            Assert.False(Directory.Exists(result.StandardOutput.Trim()));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     [Fact]
     public async Task Organizer_IndexesFinalPackagesAndKeepsDeliveryReadmeCurrent()
     {

@@ -5,7 +5,9 @@ param(
     [string]$OutputDirectory,
     [ValidateSet("Workspace", "Validation", "ReviewReady")]
     [string]$OutputClass = "Workspace",
-    [string]$RunName
+    [string]$ArticleSlug,
+    [string]$RunName,
+    [switch]$ResolveOutputDirectoryOnly
 )
 
 Set-StrictMode -Version Latest
@@ -32,39 +34,63 @@ if ([System.IO.Path]::GetExtension($resolvedSourcePath) -ine ".pdf") {
 
 $outputDirectoryWasExplicit = -not [string]::IsNullOrWhiteSpace($OutputDirectory)
 if (-not $outputDirectoryWasExplicit) {
-    $safeRunName = if ([string]::IsNullOrWhiteSpace($RunName)) {
-        $sourceBaseName = [System.IO.Path]::GetFileNameWithoutExtension($resolvedSourcePath)
+    function ConvertTo-SafeDirectoryName {
+        param(
+            [Parameter(Mandatory = $true)]
+            [string]$Value,
+            [Parameter(Mandatory = $true)]
+            [string]$ParameterName
+        )
+
         $invalidFileNameChars = [System.IO.Path]::GetInvalidFileNameChars()
-        $normalized = -join @($sourceBaseName.ToCharArray() | ForEach-Object {
+        $normalized = -join @($Value.Trim().ToCharArray() | ForEach-Object {
             if ($invalidFileNameChars -contains $_) { '-' } else { $_ }
         })
-        "{0}-{1}" -f $normalized.Trim().TrimEnd('.'), (Get-Date -Format "yyyyMMdd-HHmmss")
-    } else {
-        $RunName.Trim()
-    }
-    if ([string]::IsNullOrWhiteSpace($safeRunName) -or
-        [System.IO.Path]::IsPathRooted($safeRunName) -or
-        $safeRunName.Contains([System.IO.Path]::DirectorySeparatorChar) -or
-        $safeRunName.Contains([System.IO.Path]::AltDirectorySeparatorChar) -or
-        ($safeRunName -in @('.', '..'))) {
-        throw "RunName must be one safe directory name."
+        $normalized = $normalized.Trim().TrimEnd('.')
+        if ([string]::IsNullOrWhiteSpace($normalized) -or
+            [System.IO.Path]::IsPathRooted($normalized) -or
+            $normalized.Contains([System.IO.Path]::DirectorySeparatorChar) -or
+            $normalized.Contains([System.IO.Path]::AltDirectorySeparatorChar) -or
+            ($normalized -in @('.', '..'))) {
+            throw "$ParameterName must resolve to one safe directory name."
+        }
+
+        return $normalized
     }
 
-    $OutputDirectory = switch ($OutputClass) {
+    $safeArticleSlug = if ([string]::IsNullOrWhiteSpace($ArticleSlug)) {
+        ConvertTo-SafeDirectoryName `
+            -Value ([System.IO.Path]::GetFileNameWithoutExtension($resolvedSourcePath)) `
+            -ParameterName "ArticleSlug"
+    } else {
+        ConvertTo-SafeDirectoryName -Value $ArticleSlug -ParameterName "ArticleSlug"
+    }
+    $safeRunName = if ([string]::IsNullOrWhiteSpace($RunName)) {
+        Get-Date -Format "yyyyMMdd-HHmmss"
+    } else {
+        ConvertTo-SafeDirectoryName -Value $RunName -ParameterName "RunName"
+    }
+
+    $classRoot = switch ($OutputClass) {
         "Workspace" {
-            Join-Path $studioDataRoot (Join-Path "workspace\article-figure-runs" $safeRunName)
+            Join-Path $studioDataRoot "workspace\article-figure-runs"
         }
         "Validation" {
-            Join-Path $repoRoot (Join-Path "outputs\validation\article-figure-sets" $safeRunName)
+            Join-Path $repoRoot "outputs\validation\article-figure-sets"
         }
         "ReviewReady" {
-            Join-Path $repoRoot (Join-Path "outputs\review-ready\article-figure-sets" $safeRunName)
+            Join-Path $repoRoot "outputs\review-ready\article-figure-sets"
         }
     }
+    $OutputDirectory = Join-Path (Join-Path $classRoot $safeArticleSlug) $safeRunName
 } elseif (-not [System.IO.Path]::IsPathRooted($OutputDirectory)) {
     $OutputDirectory = Join-Path $repoRoot $OutputDirectory
 }
 $resolvedOutputDirectory = [System.IO.Path]::GetFullPath($OutputDirectory)
+if ($ResolveOutputDirectoryOnly) {
+    Write-Output $resolvedOutputDirectory
+    return
+}
 New-Item -ItemType Directory -Force -Path $resolvedOutputDirectory | Out-Null
 
 $previousSourcePath = $env:ARTICLE_SCIENTIFIC_FIGURE_SET_SOURCE_PATH
@@ -112,7 +138,7 @@ foreach ($reviewFile in @($report.items | ForEach-Object { $_.files | Where-Obje
         -or $review.gateOneStatus -ne "PendingHumanApproval" `
         -or @($review.expectedVisualChecks).Count -eq 0 `
         -or @($review.typedCrops).Count -eq 0) {
-        throw "Article review evidence is incomplete: $prefix"
+        throw "Article review evidence is incomplete: $reviewFile"
     }
 }
 

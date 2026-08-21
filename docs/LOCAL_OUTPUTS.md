@@ -34,12 +34,16 @@ new top-level directory names:
 pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-article-scientific-figure-set.ps1 `
   -SourcePath paper/example.pdf `
   -OutputClass ReviewReady `
-  -RunName example-20260820-v1
+  -ArticleSlug example `
+  -RunName 20260820-v1
 ```
 
 `Workspace` remains the default. `Validation` and `ReviewReady` write under the
-matching `outputs/` category. An explicit `-OutputDirectory` remains available for
-compatibility, but callers then own its classification.
+matching `outputs/` category. Classified runs always use
+`article-figure-sets/<article-slug>/<run-name>` so retries do not pollute the category
+root. If `-ArticleSlug` is omitted, the source PDF basename becomes the article
+directory. An explicit `-OutputDirectory` remains available for compatibility, but
+callers then own its classification.
 
 After every candidate has passed the declared deterministic and visual checks, an
 explicitly authorized agent first records a hash-bound per-candidate visual receipt

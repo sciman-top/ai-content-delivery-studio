@@ -22,7 +22,18 @@ outputs/
 $env:CONTENT_DELIVERY_STUDIO_DELIVERY_ROOT = 'D:\CODE\ai-content-delivery-studio\deliveries'
 ```
 
-文章图组脚本使用 `-OutputClass Workspace|Validation|ReviewReady` 选择非最终输出类别。
+文章图组脚本使用 `-OutputClass Workspace|Validation|ReviewReady` 选择非最终输出类别，
+并统一写入 `article-figure-sets/<article-slug>/<run-name>`。例如：
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-article-scientific-figure-set.ps1 `
+  -SourcePath paper/example.pdf `
+  -OutputClass ReviewReady `
+  -ArticleSlug example `
+  -RunName 20260820-v1
+```
+
+省略 `-ArticleSlug` 时使用源 PDF 文件名作为文章目录；重跑批次不会再平铺到分类根目录。
 当每个候选都已通过声明的确定性及视觉检查后，经明确授权的操作员可同时批准
 Gate 1/Gate 2。`authorized_agent` 应先写入与每个候选精确哈希绑定的逐图视觉回执
 和人审最小化评估：
