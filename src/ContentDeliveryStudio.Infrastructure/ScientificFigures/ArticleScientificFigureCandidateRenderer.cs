@@ -505,8 +505,11 @@ public sealed class ArticleScientificFigureCandidateRenderer
         group.Add(Rect(665, 555, 430, 115, "#ECFDF5", "#6EE7B7", 1));
         group.Add(FractionFormula(@"g(r)=\frac{GM}{r^2}\ne0", 880, 592, 21, Green, "middle",
             FormulaPiece.Plain("g(r) = "), FormulaPiece.Fraction("GM", "r²"), FormulaPiece.Plain(" ≠ 0")));
-        group.Add(Text("共同自由落体：秤读数", 850, 642, 19, Ink, "end"));
-        group.Add(MathText(@"\mathbf{N}\approx0", 865, 642, 19, Ink, "start", MathRun.Vector("N"), MathRun.Normal(" ≈ 0")));
+        // Keep the explanatory label and formula inside the green callout. The
+        // previous right-aligned label started at x≈660, outside the panel's
+        // x=665 boundary at the generated 1200px canvas width.
+        group.Add(Text("共同自由落体：秤读数", 700, 642, 19, Ink, "start"));
+        group.Add(MathText(@"\mathbf{N}\approx0", 900, 642, 19, Ink, "start", MathRun.Vector("N"), MathRun.Normal(" ≈ 0")));
     }
 
     private static void RenderGravityElevatorFreeFall(XElement group)

@@ -74,6 +74,8 @@ public sealed class ArticleScientificFigureSetTests
         var renderer = new ArticleScientificFigureCandidateRenderer();
         var terminology = renderer.Render(candidates.Single(item =>
             item.Kind == ArticleScientificFigureCandidateKind.GravityTerminology), 1).Svg;
+        var orbit = renderer.Render(candidates.Single(item =>
+            item.Kind == ArticleScientificFigureCandidateKind.GravityOrbitFreeFall), 1).Svg;
         var surface = renderer.Render(candidates.Single(item =>
             item.Kind == ArticleScientificFigureCandidateKind.GravitySurfaceRotation), 1).Svg;
         var frames = renderer.Render(candidates.Single(item =>
@@ -86,6 +88,15 @@ public sealed class ArticleScientificFigureSetTests
         Assert.Contains("surface-centrifugal-translation", surface, StringComparison.Ordinal);
         Assert.Contains(@"\sum\mathbf{F}_{\mathrm{real}}=m\mathbf{a}", frames, StringComparison.Ordinal);
         Assert.Contains("data-math-tex", frames, StringComparison.Ordinal);
+
+        var orbitDocument = XDocument.Parse(orbit, LoadOptions.PreserveWhitespace);
+        var orbitLabel = orbitDocument.Descendants((XNamespace)"http://www.w3.org/2000/svg" + "text")
+            .Single(text => text.Value == "共同自由落体：秤读数");
+        Assert.Equal("700", (string?)orbitLabel.Attribute("x"));
+        Assert.Equal("start", (string?)orbitLabel.Attribute("text-anchor"));
+        var orbitFormula = orbitDocument.Descendants((XNamespace)"http://www.w3.org/2000/svg" + "g")
+            .Single(group => (string?)group.Attribute("data-math-tex") == @"\mathbf{N}\approx0");
+        Assert.Equal("900", (string?)orbitFormula.Element((XNamespace)"http://www.w3.org/2000/svg" + "text")?.Attribute("x"));
     }
 
     [Fact]
