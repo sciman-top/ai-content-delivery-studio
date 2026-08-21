@@ -47,7 +47,7 @@ Quick performs one solution build and one explicitly filtered test run. It skips
 Full performs exactly:
 
 ```text
-build -> tests where Category!=ReleaseOnly and Category!=LiveProvider -> reference contract -> diff hygiene
+build -> tests where Category!=ReleaseOnly, Category!=AcceptanceOnly, and Category!=LiveProvider -> reference contract -> diff hygiene
 ```
 
 It does not run release-only tests, a whole-solution formatter, packaging, the retired product-focus queue, or a second copy of any prior step.
@@ -58,9 +58,9 @@ It does not run release-only tests, a whole-solution formatter, packaging, the r
 .\scripts\preflight-release.ps1
 ```
 
-Release invokes Full once, then adds exactly one `Category=ReleaseOnly` test pass, changed-C# formatting (or full formatting only when formatter configuration changed), placeholder/conflict scans, publish/package verification, and the diff result already established by Full. Core and release-only tests are disjoint; reference governance is not repeated.
+Release invokes Full once, then adds exactly one `Category=ReleaseOnly` test pass, changed-C# formatting (or full formatting only when formatter configuration changed), placeholder/conflict scans, publish/package verification, and the diff result already established by Full. Core, release-only, and explicit acceptance tests are disjoint; reference governance is not repeated. `AcceptanceOnly` lanes are run only by their named acceptance harnesses.
 
-Pull requests and normal pushes use Full. Release preflight is an explicit `workflow_dispatch` action so ordinary commits do not publish a Windows package.
+Pull requests and normal pushes use Full. Release preflight is an explicit, confirmation-gated `workflow_dispatch` action so ordinary commits and accidental manual runs do not publish a Windows package.
 
 ## Tests
 

@@ -7,6 +7,12 @@ on:
       - master
   pull_request:
   workflow_dispatch:
+    inputs:
+      confirm_release_preflight:
+        description: "Confirm that this manual run is an intentional release preflight"
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -59,5 +65,10 @@ jobs:
       - name: Run release preflight
         if: github.event_name == 'workflow_dispatch'
         shell: pwsh
+        env:
+          CONFIRM_RELEASE_PREFLIGHT: ${{ inputs.confirm_release_preflight }}
         run: |
+          if ($env:CONFIRM_RELEASE_PREFLIGHT -ne "true") {
+            throw "Manual release preflight requires confirm_release_preflight=true."
+          }
           .\scripts\preflight-release.ps1

@@ -116,6 +116,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0dotnet.ps1" %*
                 buildInvocations,
                 line => line.StartsWith("test", StringComparison.OrdinalIgnoreCase));
             Assert.Contains("--filter Category!=ReleaseOnly", testInvocation);
+            Assert.Contains("Category!=AcceptanceOnly", testInvocation);
             Assert.DoesNotContain(buildInvocations, line => line.StartsWith("format", StringComparison.OrdinalIgnoreCase));
         }
         finally

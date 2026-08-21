@@ -25,7 +25,7 @@ $previousReportPath = $env:SCIENTIFIC_FIGURE_CORPUS_REPORT_PATH
 try {
     $env:SCIENTIFIC_FIGURE_CORPUS_REPORT_PATH = $resolvedOutputPath
     & dotnet test (Join-Path $repoRoot "ContentDeliveryStudio.sln") `
-        --filter ScientificFigureCorpusAcceptanceTests
+        --filter "Category=AcceptanceOnly"
     if ($LASTEXITCODE -ne 0) {
         throw "Scientific figure corpus acceptance tests failed."
     }

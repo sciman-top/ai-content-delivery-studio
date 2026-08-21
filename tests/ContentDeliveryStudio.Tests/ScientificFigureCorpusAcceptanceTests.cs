@@ -5,7 +5,7 @@ using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 
 namespace ContentDeliveryStudio.Tests;
 
-[Trait("Category", "ReleaseOnly")]
+[Trait("Category", "AcceptanceOnly")]
 public sealed class ScientificFigureCorpusAcceptanceTests
 {
     [Fact]
