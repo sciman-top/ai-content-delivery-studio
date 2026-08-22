@@ -36,6 +36,22 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/run-article-scientific-fig
 
 ## Review the latest artifacts
 
+- Apply the high-standard acceptance contract, not a path-count proxy. A figure is acceptable only when it is scientifically correct, visually intelligible, plausibly real in structure and context, focused on the article's key point, complete enough to show the causal chain, and materially more useful than the source paragraph alone. The contract is: "形象易懂、科学真实、重点突出、内容完整、图形独立承载信息、具有文章信息增益".
+- Treat these as separate checks:
+  - Scientific truth: objects, directions, formulas, units, causal claims, boundary conditions, and comparison scope are correct; a beautiful but misleading diagram fails.
+  - Visual intelligibility: a reader can identify the apparatus, states, start/end points, and principal change within a few seconds; spatial layout carries meaning rather than merely repeating labels.
+  - Structural realism: apparatus, rays, fluid paths, wires, fields, and state transitions are visibly connected and plausible. "Realistic" means credible structure and physics, not necessarily photorealistic rendering.
+  - Focus: the visual hierarchy makes the article's key question dominant; secondary annotations cannot compete with the mechanism or comparison.
+  - Completeness: include the necessary participants and links in the chain input -> mechanism -> intermediate state -> observation/output. Do not add decorative complexity to compensate for a missing causal participant.
+  - Information gain: the figure must answer a question faster or more accurately than prose. If hiding the explanatory text leaves only a title, boxes, generic arrows, or disconnected lines, fail it.
+- Use the following visual-understanding tests for every candidate:
+  - Hide the title and explanatory prose. The remaining geometry must still communicate the subject and its main relation.
+  - Apply a three-second test: identify what is being compared or explained without reading the article paragraph.
+  - Apply an endpoint/topology test: trace every principal ray, flow path, circuit, and coupling from source to destination; reject floating labels and visually implied but unconnected wires.
+  - Apply a counter-misreading test: ask what a novice could incorrectly infer (for example, an image position being a physical screen, a heater being in series, or a fan crossing being a no-work Bernoulli segment); repair the drawing if that misreading is plausible.
+  - Apply a focus/thumbnail test: at article size, the main apparatus and relation remain obvious; whitespace, color, and text do not bury the key visual.
+  - Apply a comparison test: both sides of a comparison show comparable objects, paths, and observation conditions; background color and labels alone are not evidence.
+- Classify outcomes explicitly: `machine_preflight` means files and deterministic invariants are valid; `agent_visual_inspection` means the actual PNG/PDF pixels passed the above visual tests; `Gate 1` remains a human/scientific expert decision; `Gate 2` and delivery are later states. Never promote a machine pass to a visual or expert pass.
 - Apply a semantic-utility gate before checking polish. Mentally hide the title and explanatory prose: the remaining picture must still communicate the subject through apparatus, objects, spatial relationships, topology, rays, fields, states, or quantitative marks. A label-only card, empty comparison box, single generic arrow, or prose broken across a canvas is not an illustration and must fail review.
 - Require every figure to earn its place in the article. It must answer a question that is materially faster or clearer to understand visually than from the source paragraph alone. Delete or merge redundant candidates instead of preserving a fixed candidate count.
 - For mechanism and experiment figures, verify that all causally necessary participants are visible and connected. For comparison figures, both states must contain comparable visual evidence rather than differently colored empty panels. For circuits and apparatus, wiring/topology must be explicit; labels floating without connections fail.

@@ -101,9 +101,26 @@ $toolArguments = @(
     "--source", $resolvedSourcePath,
     "--output", $resolvedOutputDirectory
 )
-& dotnet @toolArguments
-if ($LASTEXITCODE -ne 0) {
-    throw "Article scientific figure-set run failed."
+$buildMutex = [System.Threading.Mutex]::new($false, "ContentDeliveryStudio.ArticleFigureProduction.Build")
+$buildMutexAcquired = $false
+try {
+    try {
+        $buildMutexAcquired = $buildMutex.WaitOne([TimeSpan]::FromMinutes(10))
+    } catch [System.Threading.AbandonedMutexException] {
+        $buildMutexAcquired = $true
+    }
+    if (-not $buildMutexAcquired) {
+        throw "Timed out waiting for the shared article-figure build gate."
+    }
+    & dotnet @toolArguments
+    if ($LASTEXITCODE -ne 0) {
+        throw "Article scientific figure-set run failed."
+    }
+} finally {
+    if ($buildMutexAcquired) {
+        $buildMutex.ReleaseMutex()
+    }
+    $buildMutex.Dispose()
 }
 
 $reportPath = Join-Path $resolvedOutputDirectory "article-figure-set-report.json"
@@ -142,7 +159,25 @@ foreach ($reviewFile in @($report.items | ForEach-Object { $_.files | Where-Obje
 
 $semanticUtilityProfiles = @("article-bernoulli-v1", "article-pinhole-v1", "article-superconducting-v1")
 if ($report.deterministicReview -in $semanticUtilityProfiles) {
-    foreach ($svgFile in @($report.items | ForEach-Object { $_.files | Where-Object { $_ -like "*.svg" } })) {
+    $highStandardByKind = @{
+        "BernoulliFanEnergy" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("intake-flow", "fan-blade", "electrical-work", "outlet-flow", "fan-body", "outlet-channel") }
+        "BernoulliFanZones" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("duct-wall", "suction-flow", "compression-flow", "fan-body", "fan-blade") }
+        "BernoulliStreamlineBoundary" = @{ MinimumGraphicNodes = 16; RequiredRoles = @("same-streamline", "free-jet", "comparison-boundary", "duct-wall") }
+        "PinholeGeometry" = @{ MinimumGraphicNodes = 15; RequiredRoles = @("object", "barrier", "principal-ray", "image-plane", "inverted-image") }
+        "PinholeFocusPlane" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("focus-plane", "ray", "camera-body", "camera-input-ray", "camera-focused-ray", "sensor") }
+        "PinholeObservation" = @{ MinimumGraphicNodes = 28; RequiredRoles = @("barrier", "near-aperture", "far-aperture", "near-field", "far-field", "near-object", "far-object", "near-camera", "far-camera") }
+        "SuperconductingEnergy" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("circuit", "switch", "magnetic-field", "power-source", "coil") }
+        "SuperconductingPersistentCurrent" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("charging-loop", "charging-coil", "persistent-current") }
+        "SuperconductingExcitation" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("excitation-circuit", "persistent-switch-branch", "heater-circuit", "heater-element", "thermal-coupling", "cryostat", "main-coil") }
+    }
+    foreach ($item in @($report.items)) {
+        $svgFiles = @($item.files | Where-Object { $_ -like "*.svg" })
+        if ($svgFiles.Count -eq 0) { continue }
+        $expectation = $highStandardByKind[$item.kind]
+        if ($null -eq $expectation) {
+            throw "Article high-standard semantic gate has no contract for candidate kind '$($item.kind)'."
+        }
+        foreach ($svgFile in $svgFiles) {
         [xml]$svg = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory $svgFile)
         $graphicNodes = @($svg.SelectNodes("//*[local-name()='path' or local-name()='rect']") | Where-Object {
             -not $_.SelectSingleNode("ancestor::*[local-name()='defs']")
@@ -150,8 +185,11 @@ if ($report.deterministicReview -in $semanticUtilityProfiles) {
         $articleRoles = @($svg.SelectNodes("//*[@data-article-role]") | ForEach-Object {
             $_.GetAttribute("data-article-role")
         } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
-        if ($graphicNodes.Count -lt 10 -or $articleRoles.Count -lt 2) {
-            throw "Article semantic-utility gate failed for ${svgFile}: graphicNodes=$($graphicNodes.Count), articleRoles=$($articleRoles.Count). Label-only or structurally empty artwork is not an illustration."
+        $missingRoles = @($expectation.RequiredRoles | Where-Object { $_ -notin $articleRoles })
+        if ($graphicNodes.Count -lt $expectation.MinimumGraphicNodes -or $articleRoles.Count -lt 3 -or $missingRoles.Count -gt 0) {
+            $missing = if ($missingRoles.Count -gt 0) { $missingRoles -join ", " } else { "none" }
+            throw "Article high-standard semantic gate failed for ${svgFile} ($($item.kind)): graphicNodes=$($graphicNodes.Count), articleRoles=$($articleRoles.Count), missingRoles=$missing. The figure must contain visible apparatus/objects, causal relations, and a clear visual focus; label-only or structurally empty artwork is not an illustration."
+        }
         }
     }
 }

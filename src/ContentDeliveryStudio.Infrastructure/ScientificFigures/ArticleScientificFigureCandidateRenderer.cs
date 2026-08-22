@@ -892,7 +892,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(Rect(70, 175, 1060, 420, "#F8FAFC", "#CBD5E1", 2));
         g.Add(Text("进气", 125, 245, 22, Blue));
         for (var y = 285; y <= 465; y += 60) g.Add(ArticleLine(100, y, 300, y, Blue, 4, "intake-flow", true));
-        g.Add(Rect(300, 230, 250, 290, "#EFF6FF", Blue, 3));
+        g.Add(ArticleRect(300, 230, 250, 290, "#EFF6FF", Blue, 3, "fan-body"));
         g.Add(Text("电动风机", 425, 275, 25, Blue, "middle"));
         DrawCircle(g, 425, 380, 76, Blue, 4);
         for (var angle = 0; angle < 360; angle += 60)
@@ -902,7 +902,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
         }
         g.Add(ArticleLine(425, 180, 425, 230, Amber, 5, "electrical-work", true));
         g.Add(Text("电功输入", 425, 165, 20, Amber, "middle"));
-        g.Add(Rect(550, 260, 470, 240, "#ECFEFF", Green, 3));
+        g.Add(ArticleRect(550, 260, 470, 240, "#ECFEFF", Green, 3, "outlet-channel"));
         g.Add(Text("出风通道", 785, 300, 22, Green, "middle"));
         for (var y = 345; y <= 435; y += 45) g.Add(ArticleLine(580, y, 980, y, Green, 5, "outlet-flow", true));
         g.Add(Text("风机做功使气流总能跨风机上升", 600, 645, 24, Ink, "middle"));
@@ -915,8 +915,10 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(ArticleLine(100, 260, 1000, 260, Ink, 5, "duct-wall"));
         g.Add(ArticleLine(100, 500, 1000, 500, Ink, 5, "duct-wall"));
         g.Add(Text("外界大气", 80, 620, 18, Muted));
-        g.Add(Rect(420, 260, 150, 240, "#FFF7ED", Amber, 3));
-        DrawCircle(g, 495, 380, 60, Amber, 4);
+        g.Add(ArticleRect(420, 260, 150, 240, "#FFF7ED", Amber, 3, "fan-body"));
+        DrawArticleCircle(g, 495, 380, 60, Amber, 4, "fan-blade");
+        g.Add(ArticleLine(445, 330, 545, 430, Amber, 5, "fan-blade"));
+        g.Add(ArticleLine(545, 330, 445, 430, Amber, 5, "fan-blade"));
         g.Add(Text("风机", 495, 470, 22, Amber, "middle"));
         for (var y = 315; y <= 445; y += 65)
         {
@@ -948,6 +950,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
             g.Add(ArticleLine(330, 330 + offset / 2, 585, 345 + offset, Blue, 3, "same-streamline", true));
         }
         g.Add(Text("截面变窄：速度增大、静压降低", 345, 475, 19, Blue, "middle"));
+        g.Add(ArticleLine(330, 275, 330, 385, Amber, 2, "throat-section"));
         g.Add(ArticleLine(650, 275, 1080, 275, Green, 4, "free-jet", true));
         g.Add(ArticleLine(650, 415, 1080, 415, Green, 4, "free-jet", true));
         g.Add(Text("自由射流出口", 850, 205, 21, Green, "middle"));
@@ -965,6 +968,8 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(Text("发光物体", 95, 645, 20, Ink, "middle"));
         g.Add(ArticleLine(520, 170, 520, 355, Ink, 9, "barrier"));
         g.Add(ArticleLine(520, 365, 520, 650, Ink, 9, "barrier"));
+        g.Add(ArticleLine(510, 355, 530, 355, Ink, 4, "barrier"));
+        g.Add(ArticleLine(510, 365, 530, 365, Ink, 4, "barrier"));
         g.Add(Text("小孔", 520, 335, 21, Blue, "middle"));
         g.Add(ArticleLine(95, 260, 520, 360, Blue, 3, "principal-ray", true));
         g.Add(ArticleLine(520, 360, 1030, 610, Magenta, 3, "principal-ray", true));
@@ -987,13 +992,14 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(ArticleLine(180, 490, 490, 365, Blue, 3, "ray", true));
         g.Add(ArticleLine(490, 365, 765, 490, Magenta, 3, "ray", true));
         g.Add(ArticleLine(490, 365, 765, 260, Magenta, 3, "ray", true));
-        g.Add(Rect(835, 220, 275, 340, "#EFF6FF", Blue, 3));
+        g.Add(ArticleRect(835, 220, 275, 340, "#EFF6FF", Blue, 3, "camera-body"));
         DrawLens(g, 900, 270, 510, "相机镜头", Blue);
         g.Add(ArticleLine(765, 260, 900, 300, Magenta, 3, "camera-input-ray", true));
         g.Add(ArticleLine(765, 260, 900, 430, Magenta, 3, "camera-input-ray", true));
         g.Add(ArticleLine(900, 300, 1060, 365, Green, 3, "camera-focused-ray", true));
         g.Add(ArticleLine(900, 430, 1060, 365, Green, 3, "camera-focused-ray", true));
         g.Add(ArticleLine(1060, 270, 1060, 510, Green, 5, "sensor"));
+        g.Add(ArticleLine(1045, 270, 1075, 270, Green, 3, "sensor"));
         g.Add(Text("传感器", 1080, 535, 17, Green, "end"));
         g.Add(Text("手动对焦：镜头把所选物距对应的平面清晰成像到传感器", 600, 625, 21, Ink, "middle"));
         g.Add(Text("对焦小孔→孔清晰；对焦光源→正立物体清晰；对焦像位置→倒立像清晰（无需放屏）", 600, 685, 18, Amber, "middle"));
@@ -1009,20 +1015,23 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(Text("远距", 650, 225, 17, Green));
         foreach (var left in new[] { 105d, 665d })
         {
+            var side = left < 500 ? "near" : "far";
             g.Add(ArticleLine(left + 175, 250, left + 175, 535, Ink, 6, "barrier"));
-            g.Add(ArticleLine(left + 172, 390, left + 178, 390, "#FFFFFF", 10, "aperture"));
-            g.Add(Rect(left + 360, 305, 100, 170, "#FFFFFF", Muted, 3));
+            g.Add(ArticleLine(left + 172, 390, left + 178, 390, "#FFFFFF", 10, $"{side}-aperture"));
+            g.Add(ArticleRect(left + 360, 305, 100, 170, "#FFFFFF", Muted, 3, $"{side}-camera"));
             DrawLens(g, left + 385, 330, 450, "相机", Muted);
         }
         g.Add(ArticleLine(105, 275, 280, 390, Blue, 3, "near-field", true));
         g.Add(ArticleLine(105, 505, 280, 390, Blue, 3, "near-field", true));
         g.Add(ArticleLine(280, 390, 465, 350, Blue, 3, "near-field", true));
-        g.Add(Rect(90, 250, 55, 280, "#DBEAFE", Blue, 3));
+        g.Add(ArticleLine(420, 350, 445, 345, Blue, 2, "near-field"));
+        g.Add(ArticleRect(90, 250, 55, 280, "#DBEAFE", Blue, 3, "near-object"));
         g.Add(Text("大物体", 118, 560, 17, Blue, "middle"));
         g.Add(ArticleLine(645, 320, 840, 390, Green, 3, "far-field", true));
         g.Add(ArticleLine(645, 460, 840, 390, Green, 3, "far-field", true));
         g.Add(ArticleLine(840, 390, 1025, 340, Green, 3, "far-field", true));
-        g.Add(Rect(635, 305, 35, 170, "#D1FAE5", Green, 3));
+        g.Add(ArticleLine(980, 350, 1005, 343, Green, 2, "far-field"));
+        g.Add(ArticleRect(635, 305, 35, 170, "#D1FAE5", Green, 3, "far-object"));
         g.Add(Text("全景", 652, 505, 17, Green, "middle"));
         g.Add(Text("实验条件：相机靠近小孔，同时让光源远离小孔", 600, 710, 21, Ink, "middle"));
     }
@@ -1031,8 +1040,8 @@ public sealed class ArticleScientificFigureCandidateRenderer
     {
         g.Add(Rect(65, 170, 1070, 470, "#F8FAFC", "#CBD5E1", 2));
         g.Add(ArticleLine(125, 400, 1070, 400, Ink, 4, "circuit"));
-        g.Add(Rect(130, 320, 170, 160, "#EFF6FF", Blue, 3)); g.Add(Text("直流电源", 215, 405, 22, Blue, "middle"));
-        for (var x = 425; x <= 720; x += 55) DrawCircle(g, x, 400, 32, Magenta, 3);
+        g.Add(ArticleRect(130, 320, 170, 160, "#EFF6FF", Blue, 3, "power-source")); g.Add(Text("直流电源", 215, 405, 22, Blue, "middle"));
+        for (var x = 425; x <= 720; x += 55) DrawArticleCircle(g, x, 400, 32, Magenta, 3, "coil");
         g.Add(Text("超导线圈 L", 575, 500, 22, Magenta, "middle"));
         g.Add(ArticleLine(335, 355, 335, 445, Amber, 5, "switch")); g.Add(Text("开关", 335, 485, 18, Amber, "middle"));
         for (var x = 430; x <= 720; x += 65) g.Add(ArticleLine(x, 270, x + 40, 270, Green, 3, "magnetic-field", true));
@@ -1048,10 +1057,10 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(Rect(70, 155, 500, 500, "#FFF7ED", Amber, 2));
         g.Add(Rect(630, 155, 500, 500, "#ECFDF5", Green, 2));
         g.Add(Text("励磁阶段", 320, 200, 23, Amber, "middle")); g.Add(Text("持久电流阶段", 880, 200, 23, Green, "middle"));
-        g.Add(Rect(105, 330, 120, 110, "#FFFFFF", Blue, 3)); g.Add(Text("励磁电源", 165, 395, 18, Blue, "middle"));
+        g.Add(ArticleRect(105, 330, 120, 110, "#FFFFFF", Blue, 3, "power-source")); g.Add(Text("励磁电源", 165, 395, 18, Blue, "middle"));
         g.Add(ArticleLine(225, 350, 495, 350, Amber, 4, "charging-loop", true));
         g.Add(Text("励磁主回路接通", 360, 320, 17, Amber, "middle"));
-        for (var x = 325; x <= 465; x += 47) DrawCircle(g, x, 465, 28, Magenta, 3);
+        for (var x = 325; x <= 465; x += 47) DrawArticleCircle(g, x, 465, 28, Magenta, 3, "charging-coil");
         g.Add(ArticleLine(495, 350, 495, 465, Magenta, 4, "charging-loop"));
         g.Add(ArticleLine(325, 465, 245, 465, Magenta, 4, "charging-loop", true));
         g.Add(ArticleLine(245, 465, 297, 465, Magenta, 4, "charging-loop"));
@@ -1067,26 +1076,28 @@ public sealed class ArticleScientificFigureCandidateRenderer
 
     private static void RenderSuperconductingExcitation(XElement g)
     {
-        g.Add(Rect(90, 175, 1020, 470, "#EFF6FF", Blue, 3));
+        g.Add(ArticleRect(90, 175, 1020, 470, "#EFF6FF", Blue, 3, "cryostat"));
         g.Add(Text("液氦槽 4.2 K", 600, 615, 21, Blue, "middle"));
         g.Add(Rect(135, 290, 150, 105, "#FFFFFF", Blue, 3)); g.Add(Text("励磁电源", 210, 352, 20, Blue, "middle"));
         g.Add(ArticleLine(285, 315, 380, 315, Blue, 4, "excitation-circuit", true));
         g.Add(ArticleLine(380, 315, 380, 445, Blue, 4, "excitation-circuit"));
-        for (var x = 420; x <= 805; x += 55) DrawCircle(g, x, 445, 34, Green, 4);
+        for (var x = 420; x <= 805; x += 55) DrawArticleCircle(g, x, 445, 34, Green, 4, "main-coil");
         g.Add(ArticleLine(380, 445, 386, 445, Blue, 4, "excitation-circuit"));
         g.Add(ArticleLine(840, 445, 895, 445, Blue, 4, "excitation-circuit"));
         g.Add(ArticleLine(895, 445, 895, 370, Blue, 4, "excitation-circuit"));
         g.Add(ArticleLine(895, 370, 285, 370, Blue, 4, "excitation-circuit", true));
+        g.Add(ArticleLine(300, 370, 350, 370, Blue, 2, "excitation-circuit", true));
+        g.Add(ArticleLine(835, 445, 875, 445, Blue, 2, "excitation-circuit", true));
         g.Add(Text("MRI 主磁体超导线圈", 610, 520, 22, Green, "middle"));
-        g.Add(Rect(470, 235, 230, 70, "#FDF4FF", Magenta, 3)); g.Add(Text("超导开关（并联支路）", 585, 278, 18, Magenta, "middle"));
+        g.Add(ArticleRect(470, 235, 230, 70, "#FDF4FF", Magenta, 3, "superconducting-switch")); g.Add(Text("超导开关（并联支路）", 585, 278, 18, Magenta, "middle"));
         g.Add(ArticleLine(400, 315, 470, 270, Magenta, 3, "persistent-switch-branch"));
         g.Add(ArticleLine(700, 270, 875, 370, Magenta, 3, "persistent-switch-branch"));
         g.Add(Rect(760, 195, 150, 65, "#FFF7ED", Amber, 3)); g.Add(Text("加热电源", 835, 235, 17, Amber, "middle"));
-        g.Add(Rect(585, 185, 100, 40, "#FFF7ED", Amber, 3)); g.Add(Text("heater", 635, 211, 16, Amber, "middle"));
+        g.Add(ArticleRect(585, 185, 100, 40, "#FFF7ED", Amber, 3, "heater-element")); g.Add(Text("heater", 635, 211, 16, Amber, "middle"));
         g.Add(ArticleLine(760, 225, 685, 205, Amber, 3, "heater-circuit", true));
         g.Add(ArticleLine(910, 225, 685, 220, Amber, 3, "heater-circuit"));
-        g.Add(ArticleLine(635, 225, 635, 235, Amber, 3, "heater-circuit", true));
-        g.Add(Text("热耦合", 715, 205, 16, Amber, "middle"));
+        g.Add(ArticleLine(635, 225, 635, 235, Amber, 3, "thermal-coupling", true));
+        g.Add(Text("热耦合", 730, 205, 16, Amber, "middle"));
         g.Add(Text("heater 仅热耦合超导开关，不串联主励磁回路", 600, 575, 18, Amber, "middle"));
         g.Add(Text("① 加热开关使其有电阻 → ② 励磁升流 → ③ 冷却闭合超导回路 → ④ 撤去电源", 600, 700, 19, Ink, "middle"));
     }
@@ -1208,6 +1219,31 @@ public sealed class ArticleScientificFigureCandidateRenderer
         }
     }
 
+    private static void DrawArticleCircle(
+        XElement group,
+        double centerX,
+        double centerY,
+        double radius,
+        string color,
+        double width,
+        string role)
+    {
+        const int segments = 48;
+        for (var index = 0; index < segments; index++)
+        {
+            var start = 2 * Math.PI * index / segments;
+            var end = 2 * Math.PI * (index + 1) / segments;
+            group.Add(ArticleLine(
+                centerX + radius * Math.Cos(start),
+                centerY + radius * Math.Sin(start),
+                centerX + radius * Math.Cos(end),
+                centerY + radius * Math.Sin(end),
+                color,
+                width,
+                role));
+        }
+    }
+
     private static XElement Rect(
         double x,
         double y,
@@ -1226,6 +1262,22 @@ public sealed class ArticleScientificFigureCandidateRenderer
             new XAttribute("fill", fill),
             new XAttribute("stroke", stroke),
             new XAttribute("stroke-width", Number(strokeWidth)));
+
+    private static XElement ArticleRect(
+        double x,
+        double y,
+        double width,
+        double height,
+        string fill,
+        string stroke,
+        double strokeWidth,
+        string role)
+    {
+        var rect = Rect(x, y, width, height, fill, stroke, strokeWidth);
+        rect.SetAttributeValue("data-article-role", role);
+        rect.SetAttributeValue("data-element-graphic", "true");
+        return rect;
+    }
 
     private static XElement Line(
         double x1,

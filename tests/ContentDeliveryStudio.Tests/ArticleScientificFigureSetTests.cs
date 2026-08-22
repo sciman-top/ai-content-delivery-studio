@@ -724,6 +724,29 @@ public sealed class ArticleScientificFigureSetTests
         Assert.Contains(report.Findings, finding => finding.Code == "article-required-graphic-role-missing");
     }
 
+    [Fact]
+    public void ExtendedProfileReviewer_RejectsDisconnectedPinholeFocusTopology()
+    {
+        var candidate = CreateProfileCandidate(
+            ArticleScientificFigureCandidateKind.PinholeFocusPlane,
+            "不用光屏，相机手动对焦直接观察小孔成像");
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var document = XElement.Parse(artifact.Svg);
+        var brokenRay = document
+            .Descendants()
+            .First(element => (string?)element.Attribute("data-article-role") == "camera-focused-ray");
+        brokenRay.SetAttributeValue("d", "M 900 300 L 1040 350");
+
+        var report = new ArticleMechanicsScientificReviewer().Review(
+            candidate,
+            artifact with { Svg = document.ToString(SaveOptions.DisableFormatting) },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(report.Passed);
+        Assert.Contains(report.Findings, finding => finding.Code == "article-focus-ray-topology-invalid");
+    }
+
     private static ArticleScientificFigureSetService CreateService(
         IScientificVisualReviewProvider visual,
         IArticleScientificFigureCandidateRenderer? renderer = null) =>
