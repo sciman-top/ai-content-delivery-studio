@@ -159,16 +159,44 @@ foreach ($reviewFile in @($report.items | ForEach-Object { $_.files | Where-Obje
 
 $semanticUtilityProfiles = @("article-bernoulli-v1", "article-pinhole-v1", "article-superconducting-v1")
 if ($report.deterministicReview -in $semanticUtilityProfiles) {
+    function Test-SvgElementVisible {
+        param([Parameter(Mandatory = $true)][System.Xml.XmlElement]$Element)
+
+        $current = $Element
+        while ($null -ne $current -and $current -is [System.Xml.XmlElement]) {
+            if ($null -ne $current.SelectSingleNode("ancestor::*[local-name()='defs']") -or
+                $current.GetAttribute("display") -eq "none" -or
+                $current.GetAttribute("visibility") -in @("hidden", "collapse") -or
+                $current.GetAttribute("opacity") -eq "0") {
+                return $false
+            }
+            foreach ($declaration in ($current.GetAttribute("style") -split ";")) {
+                $parts = $declaration -split ":", 2
+                if ($parts.Count -ne 2) { continue }
+                $property = $parts[0].Trim().ToLowerInvariant()
+                $value = $parts[1].Trim().ToLowerInvariant()
+                if (($property -eq "display" -and $value -eq "none") -or
+                    ($property -eq "visibility" -and $value -in @("hidden", "collapse")) -or
+                    ($property -eq "opacity" -and $value -eq "0")) {
+                    return $false
+                }
+            }
+            $current = $current.ParentNode
+        }
+        return $true
+    }
+
+    $graphicElementNames = @("path", "rect", "circle", "ellipse", "line", "polyline", "polygon")
     $highStandardByKind = @{
         "BernoulliFanEnergy" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("intake-flow", "fan-blade", "electrical-work", "outlet-flow", "fan-body", "outlet-channel") }
         "BernoulliFanZones" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("duct-wall", "suction-flow", "compression-flow", "fan-body", "fan-blade") }
-        "BernoulliStreamlineBoundary" = @{ MinimumGraphicNodes = 16; RequiredRoles = @("same-streamline", "free-jet", "comparison-boundary", "duct-wall") }
+        "BernoulliStreamlineBoundary" = @{ MinimumGraphicNodes = 16; RequiredRoles = @("same-streamline", "free-jet", "comparison-boundary", "duct-wall", "throat-section") }
         "PinholeGeometry" = @{ MinimumGraphicNodes = 15; RequiredRoles = @("object", "barrier", "principal-ray", "image-plane", "inverted-image") }
         "PinholeFocusPlane" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("focus-plane", "ray", "camera-body", "camera-input-ray", "camera-focused-ray", "sensor") }
         "PinholeObservation" = @{ MinimumGraphicNodes = 28; RequiredRoles = @("barrier", "near-aperture", "far-aperture", "near-field", "far-field", "near-object", "far-object", "near-camera", "far-camera") }
-        "SuperconductingEnergy" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("circuit", "switch", "magnetic-field", "power-source", "coil") }
-        "SuperconductingPersistentCurrent" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("charging-loop", "charging-coil", "persistent-current") }
-        "SuperconductingExcitation" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("excitation-circuit", "persistent-switch-branch", "heater-circuit", "heater-element", "thermal-coupling", "cryostat", "main-coil") }
+        "SuperconductingEnergy" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("circuit", "switch", "magnetic-field", "power-source", "coil", "electrical-work") }
+        "SuperconductingPersistentCurrent" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("charging-loop", "charging-coil", "persistent-current", "power-source") }
+        "SuperconductingExcitation" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("excitation-circuit", "persistent-switch-branch", "superconducting-switch", "heater-circuit", "heater-element", "thermal-coupling", "cryostat", "main-coil") }
     }
     foreach ($item in @($report.items)) {
         $svgFiles = @($item.files | Where-Object { $_ -like "*.svg" })
@@ -179,11 +207,12 @@ if ($report.deterministicReview -in $semanticUtilityProfiles) {
         }
         foreach ($svgFile in $svgFiles) {
         [xml]$svg = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory $svgFile)
-        $graphicNodes = @($svg.SelectNodes("//*[local-name()='path' or local-name()='rect']") | Where-Object {
-            -not $_.SelectSingleNode("ancestor::*[local-name()='defs']")
+        $graphicNodes = @($svg.SelectNodes("//*") | Where-Object {
+            $_.LocalName -in $graphicElementNames -and (Test-SvgElementVisible $_
+            )
         })
         $articleRoles = @($svg.SelectNodes("//*[@data-article-role]") | ForEach-Object {
-            $_.GetAttribute("data-article-role")
+            if (Test-SvgElementVisible $_) { $_.GetAttribute("data-article-role") }
         } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
         $missingRoles = @($expectation.RequiredRoles | Where-Object { $_ -notin $articleRoles })
         if ($graphicNodes.Count -lt $expectation.MinimumGraphicNodes -or $articleRoles.Count -lt 3 -or $missingRoles.Count -gt 0) {

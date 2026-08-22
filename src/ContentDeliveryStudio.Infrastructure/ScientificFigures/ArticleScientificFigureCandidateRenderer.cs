@@ -1039,12 +1039,25 @@ public sealed class ArticleScientificFigureCandidateRenderer
     private static void RenderSuperconductingEnergy(XElement g)
     {
         g.Add(Rect(65, 170, 1070, 470, "#F8FAFC", "#CBD5E1", 2));
-        g.Add(ArticleLine(125, 400, 1070, 400, Ink, 4, "circuit"));
-        g.Add(ArticleRect(130, 320, 170, 160, "#EFF6FF", Blue, 3, "power-source")); g.Add(Text("直流电源", 215, 405, 22, Blue, "middle"));
-        for (var x = 425; x <= 720; x += 55) DrawArticleCircle(g, x, 400, 32, Magenta, 3, "coil");
-        g.Add(Text("超导线圈 L", 575, 500, 22, Magenta, "middle"));
-        g.Add(ArticleLine(335, 355, 335, 445, Amber, 5, "switch")); g.Add(Text("开关", 335, 485, 18, Amber, "middle"));
-        for (var x = 430; x <= 720; x += 65) g.Add(ArticleLine(x, 270, x + 40, 270, Green, 3, "magnetic-field", true));
+        g.Add(ArticleRect(130, 320, 170, 160, "#EFF6FF", Blue, 3, "power-source"));
+        g.Add(Text("直流电源", 215, 405, 22, Blue, "middle"));
+
+        // Draw a real excitation loop: source -> closed switch -> coil -> return.
+        g.Add(ArticleLine(300, 350, 385, 350, Ink, 4, "circuit", true));
+        g.Add(ArticleLine(435, 350, 460, 350, Ink, 4, "circuit", true));
+        g.Add(ArticleLine(460, 350, 460, 400, Ink, 4, "circuit"));
+        g.Add(ArticleLine(460, 400, 468, 400, Ink, 4, "circuit", true));
+        for (var x = 500; x <= 800; x += 55) DrawArticleCircle(g, x, 400, 32, Magenta, 3, "coil");
+        g.Add(ArticleLine(832, 400, 900, 400, Ink, 4, "circuit", true));
+        g.Add(ArticleLine(900, 400, 900, 450, Ink, 4, "circuit"));
+        g.Add(ArticleLine(900, 450, 300, 450, Ink, 4, "circuit", true));
+        g.Add(ArticleLine(385, 350, 420, 330, Amber, 5, "switch"));
+        g.Add(ArticleLine(420, 330, 435, 350, Amber, 5, "switch"));
+        g.Add(Text("闭合开关", 410, 300, 18, Amber, "middle"));
+        g.Add(Text("超导线圈 L", 650, 500, 22, Magenta, "middle"));
+        g.Add(ArticleLine(315, 535, 470, 535, Amber, 4, "electrical-work", true));
+        g.Add(Text("电功输入", 390, 565, 18, Amber, "middle"));
+        for (var x = 500; x <= 800; x += 65) g.Add(ArticleLine(x, 270, x + 40, 270, Green, 3, "magnetic-field", true));
         g.Add(Text("建立磁场：电流变化，电源向磁场输入能量", 600, 230, 22, Green, "middle"));
         g.Add(Text("电能 → 磁能", 850, 330, 21, Amber, "middle"));
         g.Add(Text("储能 W = ½LI²", 850, 385, 24, Ink, "middle"));

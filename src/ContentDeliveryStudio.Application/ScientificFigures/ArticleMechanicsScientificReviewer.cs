@@ -37,15 +37,12 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
                     findings.Add(new("required-label-missing", c.CandidateId, required));
             }
 
-            var graphics = document.Descendants()
-                .Where(element => element.Name == Svg + "path" || element.Name == Svg + "rect")
-                .Where(element => !element.Ancestors(Svg + "defs").Any())
-                .ToArray();
+            var graphics = VisibleGraphicElements(document).ToArray();
             if (graphics.Length < 10)
                 findings.Add(new("article-graphic-density-insufficient", c.CandidateId,
                     $"A scientific illustration requires at least 10 visible graphic primitives; found {graphics.Length}."));
 
-            var roleCounts = document.Descendants()
+            var roleCounts = VisibleGraphicElements(document)
                 .Select(element => (string?)element.Attribute("data-article-role"))
                 .Where(role => !string.IsNullOrWhiteSpace(role))
                 .GroupBy(role => role!, StringComparer.Ordinal)
@@ -109,13 +106,13 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
     {
         ArticleScientificFigureCandidateKind.BernoulliFanEnergy => ["intake-flow", "fan-blade", "electrical-work", "outlet-flow", "fan-body", "outlet-channel"],
         ArticleScientificFigureCandidateKind.BernoulliFanZones => ["duct-wall", "suction-flow", "compression-flow", "fan-body", "fan-blade"],
-        ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => ["same-streamline", "free-jet", "comparison-boundary"],
+        ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => ["same-streamline", "free-jet", "comparison-boundary", "throat-section"],
         ArticleScientificFigureCandidateKind.PinholeGeometry => ["object", "barrier", "principal-ray", "image-plane", "inverted-image"],
         ArticleScientificFigureCandidateKind.PinholeFocusPlane => ["focus-plane", "ray", "camera-body", "camera-input-ray", "camera-focused-ray", "sensor"],
         ArticleScientificFigureCandidateKind.PinholeObservation => ["barrier", "near-aperture", "far-aperture", "near-field", "far-field", "near-object", "far-object", "near-camera", "far-camera"],
-        ArticleScientificFigureCandidateKind.SuperconductingEnergy => ["circuit", "switch", "magnetic-field", "power-source", "coil"],
-        ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => ["charging-loop", "charging-coil", "persistent-current"],
-        ArticleScientificFigureCandidateKind.SuperconductingExcitation => ["excitation-circuit", "persistent-switch-branch", "heater-circuit", "heater-element", "thermal-coupling", "cryostat", "main-coil"],
+        ArticleScientificFigureCandidateKind.SuperconductingEnergy => ["circuit", "switch", "magnetic-field", "power-source", "coil", "electrical-work"],
+        ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => ["charging-loop", "charging-coil", "persistent-current", "power-source"],
+        ArticleScientificFigureCandidateKind.SuperconductingExcitation => ["excitation-circuit", "persistent-switch-branch", "superconducting-switch", "heater-circuit", "heater-element", "thermal-coupling", "cryostat", "main-coil"],
         _ => [],
     };
 
@@ -131,7 +128,7 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         },
         ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["duct-wall"] = 4, ["same-streamline"] = 6, ["free-jet"] = 2, ["comparison-boundary"] = 1,
+            ["duct-wall"] = 4, ["same-streamline"] = 6, ["free-jet"] = 2, ["comparison-boundary"] = 1, ["throat-section"] = 1,
         },
         ArticleScientificFigureCandidateKind.PinholeGeometry => new Dictionary<string, int>(StringComparer.Ordinal)
         {
@@ -147,15 +144,15 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         },
         ArticleScientificFigureCandidateKind.SuperconductingEnergy => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["circuit"] = 1, ["switch"] = 1, ["magnetic-field"] = 4, ["power-source"] = 1, ["coil"] = 5,
+            ["circuit"] = 7, ["switch"] = 2, ["magnetic-field"] = 4, ["power-source"] = 1, ["coil"] = 6, ["electrical-work"] = 1,
         },
         ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["charging-loop"] = 6, ["charging-coil"] = 3, ["persistent-current"] = 4,
+            ["charging-loop"] = 6, ["charging-coil"] = 3, ["persistent-current"] = 4, ["power-source"] = 1,
         },
         ArticleScientificFigureCandidateKind.SuperconductingExcitation => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["excitation-circuit"] = 8, ["persistent-switch-branch"] = 2, ["heater-circuit"] = 2, ["heater-element"] = 1, ["thermal-coupling"] = 1, ["cryostat"] = 1, ["main-coil"] = 6,
+            ["excitation-circuit"] = 8, ["persistent-switch-branch"] = 2, ["superconducting-switch"] = 1, ["heater-circuit"] = 2, ["heater-element"] = 1, ["thermal-coupling"] = 1, ["cryostat"] = 1, ["main-coil"] = 6,
         },
         _ => new Dictionary<string, int>(StringComparer.Ordinal),
     };
@@ -167,8 +164,7 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         var findings = new List<(string Code, string Evidence)>();
         if (!IsHighStandardProfile(kind)) return findings;
 
-        var graphicCount = document.Descendants()
-            .Count(element => (element.Name == Svg + "path" || element.Name == Svg + "rect") && !element.Ancestors(Svg + "defs").Any());
+        var graphicCount = VisibleGraphicElements(document).Count();
         if (graphicCount < MinimumGraphicCount(kind))
             findings.Add(("article-graphic-density-insufficient", $"This profile requires at least {MinimumGraphicCount(kind)} visible primitives for a content-bearing illustration; found {graphicCount}."));
 
@@ -180,14 +176,52 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
             findings.Add(("article-visual-role-diversity-insufficient", $"A high-standard figure requires at least three distinct visual roles; found {roleNames.Count}."));
 
         if (kind == ArticleScientificFigureCandidateKind.PinholeGeometry &&
-            !HasSharedEndpoint(document, "principal-ray", 520, 360, 4, 4))
-            findings.Add(("article-pinhole-ray-junction-invalid", "Principal rays must visibly converge at the aperture junction."));
+            (!HasSharedEndpoint(document, "principal-ray", 520, 360, 4, 4) ||
+             !HasEndpointNear(document, "principal-ray", 1030, 260, 4, 1) ||
+             !HasEndpointNear(document, "principal-ray", 1030, 610, 4, 1)))
+            findings.Add(("article-pinhole-ray-topology-invalid", "Principal rays must visibly converge at the aperture and reach both image endpoints."));
 
         if (kind == ArticleScientificFigureCandidateKind.PinholeFocusPlane &&
             (!HasSharedEndpoint(document, "ray", 490, 365, 4, 4) ||
              !HasSharedEndpoint(document, "camera-input-ray", 765, 260, 4, 2) ||
              !HasSharedEndpoint(document, "camera-focused-ray", 1060, 365, 4, 2)))
             findings.Add(("article-focus-ray-topology-invalid", "Focus-plane rays must join at the aperture, image position, lens input, and sensor target."));
+
+        if (kind == ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary &&
+            (!HasSharedEndpoint(document, "same-streamline", 330, 330, 4, 2) ||
+             !HasEndpointNear(document, "throat-section", 330, 275, 4, 1) ||
+             !HasEndpointNear(document, "throat-section", 330, 385, 4, 1)))
+            findings.Add(("article-bernoulli-throat-topology-invalid", "The converging duct, throat section, and same-streamline paths must visibly share the throat boundary."));
+
+        if (kind == ArticleScientificFigureCandidateKind.PinholeObservation &&
+            (!HasSharedEndpoint(document, "near-field", 280, 390, 4, 3) ||
+             !HasSharedEndpoint(document, "far-field", 840, 390, 4, 3)))
+            findings.Add(("article-observation-comparison-topology-invalid", "Near and far comparison paths must visibly join their respective apertures."));
+
+        if (kind == ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent &&
+            (!HasEndpointNear(document, "charging-loop", 225, 350, 4, 1) ||
+             !HasEndpointNear(document, "charging-loop", 225, 420, 4, 1) ||
+             !HasEndpointNear(document, "charging-loop", 495, 465, 4, 1) ||
+             !HasEndpointNear(document, "charging-loop", 325, 465, 4, 1)))
+            findings.Add(("article-persistent-current-topology-invalid", "The charging loop must visibly connect the excitation source to both sides of the coil."));
+
+        if (kind == ArticleScientificFigureCandidateKind.SuperconductingEnergy &&
+            (!HasEndpointNear(document, "circuit", 300, 350, 4, 1) ||
+             !HasEndpointNear(document, "circuit", 300, 450, 4, 1) ||
+             !HasEndpointNear(document, "circuit", 468, 400, 4, 1) ||
+             !HasEndpointNear(document, "circuit", 832, 400, 4, 1) ||
+             !HasEndpointNear(document, "switch", 385, 350, 4, 1) ||
+             !HasEndpointNear(document, "switch", 435, 350, 4, 1)))
+            findings.Add(("article-superconducting-energy-topology-invalid", "The excitation diagram must show a source-connected closed circuit through the switch and both sides of the coil."));
+
+        if (kind == ArticleScientificFigureCandidateKind.SuperconductingExcitation &&
+            (!HasEndpointNear(document, "excitation-circuit", 285, 315, 4, 1) ||
+             !HasEndpointNear(document, "excitation-circuit", 285, 370, 4, 1) ||
+             !HasEndpointNear(document, "heater-circuit", 685, 205, 4, 1) ||
+             !HasEndpointNear(document, "heater-circuit", 685, 220, 4, 1) ||
+             !HasEndpointNear(document, "thermal-coupling", 635, 225, 4, 1) ||
+             !HasEndpointNear(document, "thermal-coupling", 635, 235, 4, 1)))
+            findings.Add(("article-superconducting-heater-topology-invalid", "The heater circuit must terminate at the heater and the thermal-coupling marker must reach the switch branch without becoming a main-loop wire."));
 
         return findings;
     }
@@ -214,11 +248,46 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
 
     private static bool HasSharedEndpoint(XDocument document, string role, double x, double y, double tolerance, int minimum)
     {
+        return HasEndpointNear(document, role, x, y, tolerance, minimum);
+    }
+
+    private static bool HasEndpointNear(XDocument document, string role, double x, double y, double tolerance, int minimum)
+    {
         var endpointCount = document.Descendants(Svg + "path")
+            .Where(IsVisible)
             .Where(path => string.Equals((string?)path.Attribute("data-article-role"), role, StringComparison.Ordinal))
             .SelectMany(ReadLineEndpoints)
             .Count(point => Math.Abs(point.X - x) <= tolerance && Math.Abs(point.Y - y) <= tolerance);
         return endpointCount >= minimum;
+    }
+
+    private static IEnumerable<XElement> VisibleGraphicElements(XDocument document) => document.Descendants()
+        .Where(element => element.Name.LocalName is "path" or "rect" or "circle" or "ellipse" or "line" or "polyline" or "polygon")
+        .Where(IsVisible);
+
+    private static bool IsVisible(XElement element)
+    {
+        if (element.Ancestors(Svg + "defs").Any()) return false;
+        foreach (var node in element.AncestorsAndSelf())
+        {
+            if (string.Equals((string?)node.Attribute("display"), "none", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals((string?)node.Attribute("visibility"), "hidden", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals((string?)node.Attribute("visibility"), "collapse", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals((string?)node.Attribute("opacity"), "0", StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            var style = (string?)node.Attribute("style") ?? string.Empty;
+            foreach (var declaration in style.Split(';', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var parts = declaration.Split(':', 2, StringSplitOptions.TrimEntries);
+                if (parts.Length != 2) continue;
+                if ((parts[0].Equals("display", StringComparison.OrdinalIgnoreCase) && parts[1].Equals("none", StringComparison.OrdinalIgnoreCase)) ||
+                    (parts[0].Equals("visibility", StringComparison.OrdinalIgnoreCase) && (parts[1].Equals("hidden", StringComparison.OrdinalIgnoreCase) || parts[1].Equals("collapse", StringComparison.OrdinalIgnoreCase))) ||
+                    (parts[0].Equals("opacity", StringComparison.OrdinalIgnoreCase) && parts[1].Equals("0", StringComparison.OrdinalIgnoreCase)))
+                    return false;
+            }
+        }
+        return true;
     }
 
     private static IEnumerable<(double X, double Y)> ReadLineEndpoints(XElement path)

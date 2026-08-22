@@ -747,6 +747,100 @@ public sealed class ArticleScientificFigureSetTests
         Assert.Contains(report.Findings, finding => finding.Code == "article-focus-ray-topology-invalid");
     }
 
+    [Fact]
+    public void ExtendedProfileReviewer_RejectsHiddenGraphicRoles()
+    {
+        var candidate = CreateProfileCandidate(
+            ArticleScientificFigureCandidateKind.PinholeGeometry,
+            "不用光屏，相机手动对焦直接观察小孔成像");
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var document = XElement.Parse(artifact.Svg);
+        document
+            .Descendants()
+            .First(element => (string?)element.Attribute("data-article-role") == "image-plane")
+            .SetAttributeValue("style", "display:none");
+
+        var report = new ArticleMechanicsScientificReviewer().Review(
+            candidate,
+            artifact with { Svg = document.ToString(SaveOptions.DisableFormatting) },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(report.Passed);
+        Assert.Contains(report.Findings, finding => finding.Code == "article-required-graphic-role-missing");
+    }
+
+    [Fact]
+    public void ExtendedProfileReviewer_RejectsPinholeImageTargetTopology()
+    {
+        var candidate = CreateProfileCandidate(
+            ArticleScientificFigureCandidateKind.PinholeGeometry,
+            "不用光屏，相机手动对焦直接观察小孔成像");
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var document = XElement.Parse(artifact.Svg);
+        var brokenRay = document
+            .Descendants()
+            .First(element => (string?)element.Attribute("data-article-role") == "principal-ray" &&
+                ((string?)element.Attribute("d"))?.Contains("1030 610", StringComparison.Ordinal) == true);
+        brokenRay.SetAttributeValue("d", "M 520 360 L 700 500");
+
+        var report = new ArticleMechanicsScientificReviewer().Review(
+            candidate,
+            artifact with { Svg = document.ToString(SaveOptions.DisableFormatting) },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(report.Passed);
+        Assert.Contains(report.Findings, finding => finding.Code == "article-pinhole-ray-topology-invalid");
+    }
+
+    [Fact]
+    public void ExtendedProfileReviewer_RejectsDisconnectedSuperconductingThermalCoupling()
+    {
+        var candidate = CreateProfileCandidate(
+            ArticleScientificFigureCandidateKind.SuperconductingExcitation,
+            "超导磁体");
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var document = XElement.Parse(artifact.Svg);
+        var coupling = document
+            .Descendants()
+            .First(element => (string?)element.Attribute("data-article-role") == "thermal-coupling");
+        coupling.SetAttributeValue("d", "M 635 225 L 800 320");
+
+        var report = new ArticleMechanicsScientificReviewer().Review(
+            candidate,
+            artifact with { Svg = document.ToString(SaveOptions.DisableFormatting) },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(report.Passed);
+        Assert.Contains(report.Findings, finding => finding.Code == "article-superconducting-heater-topology-invalid");
+    }
+
+    [Fact]
+    public void ExtendedProfileReviewer_RejectsDisconnectedSuperconductingEnergyCircuit()
+    {
+        var candidate = CreateProfileCandidate(
+            ArticleScientificFigureCandidateKind.SuperconductingEnergy,
+            "超导磁体");
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var document = XElement.Parse(artifact.Svg);
+        var brokenCircuit = document
+            .Descendants()
+            .First(element => (string?)element.Attribute("data-article-role") == "circuit" &&
+                ((string?)element.Attribute("d"))?.Contains("832 400", StringComparison.Ordinal) == true);
+        brokenCircuit.SetAttributeValue("d", "M 700 400 L 760 350");
+
+        var report = new ArticleMechanicsScientificReviewer().Review(
+            candidate,
+            artifact with { Svg = document.ToString(SaveOptions.DisableFormatting) },
+            new FakeSourceFigureExtractor().Extract("article.pdf"),
+            board: null);
+
+        Assert.False(report.Passed);
+        Assert.Contains(report.Findings, finding => finding.Code == "article-superconducting-energy-topology-invalid");
+    }
+
     private static ArticleScientificFigureSetService CreateService(
         IScientificVisualReviewProvider visual,
         IArticleScientificFigureCandidateRenderer? renderer = null) =>
