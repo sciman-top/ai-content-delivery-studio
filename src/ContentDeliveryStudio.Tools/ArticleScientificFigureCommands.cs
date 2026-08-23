@@ -272,9 +272,10 @@ public static class ArticleScientificFigureCommands
             cancellationToken);
 
         var itemReports = new List<object>();
+        var evidenceBoardPrefix = EvidenceBoardPrefix(run.Items.Select(item => item.Candidate).ToArray());
         foreach (var item in run.Items)
         {
-            var prefix = Prefix(item.Candidate);
+            var prefix = Prefix(item.Candidate, evidenceBoardPrefix);
             var files = new List<string>();
             if (item.Svg is not null)
             {
@@ -383,17 +384,30 @@ public static class ArticleScientificFigureCommands
             cancellationToken);
     }
 
-    private static string Prefix(ArticleScientificFigureCandidate candidate) => candidate.Kind switch
+    /// <summary>
+    /// The evidence-board file gets the slot after its own profile's numbered
+    /// candidates: thermal and gravity profiles occupy 01–06, so their board
+    /// takes 07; every other profile leaves 06 free. Deriving this from the
+    /// batch's candidate kinds keeps the layout stable regardless of the
+    /// article title wording.
+    /// </summary>
+    private static string EvidenceBoardPrefix(IReadOnlyCollection<ArticleScientificFigureCandidate> candidates)
+    {
+        var occupiesSlot06 = candidates.Any(candidate =>
+            candidate.Kind is not ArticleScientificFigureCandidateKind.SourceEvidenceBoard
+            && (candidate.Kind.ToString().StartsWith("Thermal", StringComparison.Ordinal)
+                || candidate.Kind.ToString().StartsWith("Gravity", StringComparison.Ordinal)));
+        return occupiesSlot06 ? "07-source-evidence-board" : "06-source-evidence-board";
+    }
+
+    private static string Prefix(ArticleScientificFigureCandidate candidate, string evidenceBoardPrefix) => candidate.Kind switch
     {
         ArticleScientificFigureCandidateKind.Mechanism => "01-secondary-imaging",
         ArticleScientificFigureCandidateKind.LensEquationGraph => "02-lens-equation",
         ArticleScientificFigureCandidateKind.ExperimentalComparison => "03-screen-retina",
         ArticleScientificFigureCandidateKind.Comparison => "04-observation-position",
         ArticleScientificFigureCandidateKind.CorrectiveLensControl => "05-corrective-lens",
-        ArticleScientificFigureCandidateKind.SourceEvidenceBoard => candidate.ArticleTitle.Contains("下雪", StringComparison.Ordinal)
-            || candidate.ArticleTitle.Contains("重力", StringComparison.Ordinal)
-            ? "07-source-evidence-board"
-            : "06-source-evidence-board",
+        ArticleScientificFigureCandidateKind.SourceEvidenceBoard => evidenceBoardPrefix,
         ArticleScientificFigureCandidateKind.ThermalFrontMechanism => "01-thermal-snow-front",
         ArticleScientificFigureCandidateKind.ThermalBasinException => "02-thermal-basin-exception",
         ArticleScientificFigureCandidateKind.ThermalConductivityComparison => "03-thermal-conductivity",

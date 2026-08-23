@@ -113,7 +113,7 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         {
             RecordTelemetry(endpoint, response, body: null, providerTraceId: null, model: _options.ImageGenerationModel, latency: stopwatch.Elapsed);
             throw new HttpRequestException(
-                $"OpenAI image generation request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+                await OpenAiHttpError.ReadAndDescribeAsync("OpenAI image generation request", response, cancellationToken));
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -163,7 +163,7 @@ public sealed class OpenAiImageGenerationProvider : IImageGenerationProvider
         {
             RecordTelemetry(endpoint, response, body: null, providerTraceId: null, model: responsesModel, latency: stopwatch.Elapsed);
             throw new HttpRequestException(
-                $"OpenAI stateful image generation request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+                await OpenAiHttpError.ReadAndDescribeAsync("OpenAI stateful image generation request", response, cancellationToken));
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);

@@ -79,7 +79,7 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         {
             RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
-                $"OpenAI vision review request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+                await OpenAiHttpError.ReadAndDescribeAsync("OpenAI vision review request", response, cancellationToken));
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);

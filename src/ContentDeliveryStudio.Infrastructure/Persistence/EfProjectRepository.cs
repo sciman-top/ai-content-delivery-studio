@@ -310,8 +310,11 @@ public sealed class EfProjectRepository : IProjectRepository
                 $"Candidate image {reviewResult.CandidateImageId} does not belong to project {projectId}.");
         }
 
+        // A candidate should own at most one review result, but legacy rows
+        // may violate that; pick deterministically instead of failing the save.
         var existing = await _dbContext.ReviewResults
-            .SingleOrDefaultAsync(
+            .OrderBy(review => review.Id)
+            .FirstOrDefaultAsync(
                 review => review.CandidateImageId == reviewResult.CandidateImageId,
                 cancellationToken);
         if (existing is null)

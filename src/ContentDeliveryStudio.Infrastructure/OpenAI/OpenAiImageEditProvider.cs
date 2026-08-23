@@ -91,6 +91,12 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
         var stopwatch = Stopwatch.StartNew();
         using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
         stopwatch.Stop();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException(
+                await OpenAiHttpError.ReadAndDescribeAsync("OpenAI image edit request", response, cancellationToken));
+        }
+
         var rawBody = await response.Content.ReadAsByteArrayAsync(cancellationToken);
         using var document = ParseJsonOrThrow(rawBody);
         var providerTraceId = ExtractTraceId(document.RootElement);
@@ -106,11 +112,6 @@ public sealed class OpenAiImageEditProvider : IImageEditProvider
             _rateCard.ImageGenerationRequestUsd,
             _rateCard.Name);
         _telemetrySink.Record(telemetry);
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new HttpRequestException(
-                $"OpenAI image edit request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
-        }
 
         var imageBytes = GeneratedImageAssetInspector.DecodeBase64(ExtractImageBase64(document.RootElement));
         var generatedAt = DateTimeOffset.UtcNow;

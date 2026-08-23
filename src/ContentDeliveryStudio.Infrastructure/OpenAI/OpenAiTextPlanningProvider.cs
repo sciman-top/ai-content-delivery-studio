@@ -76,7 +76,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         {
             RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
-                $"OpenAI text planning request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+                await OpenAiHttpError.ReadAndDescribeAsync("OpenAI text planning request", response, cancellationToken));
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -173,7 +173,7 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         {
             RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
-                $"OpenAI text planning request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+                await OpenAiHttpError.ReadAndDescribeAsync("OpenAI document illustration planning request", response, cancellationToken));
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);

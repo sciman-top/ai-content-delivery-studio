@@ -30,7 +30,7 @@ static async Task<int> GenerateArticleFigureAsync(string[] args)
     }
     catch (Exception exception)
     {
-        Console.Error.WriteLine($"[ERROR] {exception.Message}");
+        Console.Error.WriteLine($"[ERROR] {exception}");
         return 1;
     }
 }
@@ -47,7 +47,7 @@ static async Task<int> GenerateArticleFigureSetAsync(string[] args)
     }
     catch (Exception exception)
     {
-        Console.Error.WriteLine($"[ERROR] {exception.Message}");
+        Console.Error.WriteLine($"[ERROR] {exception}");
         return 1;
     }
 }
@@ -86,7 +86,7 @@ static int AssessReview(string[] args)
     }
     catch (Exception exception)
     {
-        Console.Error.WriteLine($"[ERROR] {exception.Message}");
+        Console.Error.WriteLine($"[ERROR] {exception}");
         return 1;
     }
 }
@@ -138,7 +138,7 @@ static int Promote(string[] args)
     }
     catch (Exception exception)
     {
-        Console.Error.WriteLine($"[ERROR] {exception.Message}");
+        Console.Error.WriteLine($"[ERROR] {exception}");
         return 1;
     }
 }

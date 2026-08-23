@@ -142,7 +142,7 @@ public sealed class OpenAiScientificReviewProvider
                     }
 
                     throw new HttpRequestException(
-                        $"OpenAI scientific review request failed with status {(int)response.StatusCode} {response.ReasonPhrase}.");
+                        await OpenAiHttpError.ReadAndDescribeAsync($"OpenAI {operation} request", response, cancellationToken));
                 }
 
                 await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
