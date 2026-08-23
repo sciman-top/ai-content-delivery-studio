@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace ContentDeliveryStudio.Application.ScientificFigures;
@@ -9,40 +7,27 @@ namespace ContentDeliveryStudio.Application.ScientificFigures;
 /// The checks protect reference-frame, force, acceleration, and scale-reading
 /// boundaries owned by the renderer; human Gate 1 remains mandatory.
 /// </summary>
-public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureReviewer
+public sealed class ArticleGravityScientificReviewer : ArticleScientificReviewerBase
 {
-    private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
+    protected override string PackageId => "article-gravity-v1";
+    protected override string AuthorityBoundary =>
+        "located source evidence and deterministic gravity/reference-frame invariants; human Gate 1 remains pending";
+    protected override string GateSubject => "Gravity article";
+    protected override string EvidenceMissingCode => "article-gravity-evidence-missing";
+    protected override string EvidenceMissingMessage => "Deterministic gravity checks require located source evidence.";
+    protected override bool RequireEvidenceExcerpt => true;
+    protected override string BoardInvalidCode => "gravity-source-board-invalid";
+    protected override string BoardInvalidMessage => "Gravity source evidence requires non-empty hash-bound source assets.";
+    protected override bool ValidateBoardAgainstAudit => true;
+    protected override string SvgMissingCode => "article-gravity-svg-missing";
+    protected override string SvgMissingMessage => "Gravity review requires SVG authority.";
+    protected override string SvgInvalidCode => "article-gravity-svg-invalid";
+    protected override bool IncludeMathTexInCorpus => true;
 
-    public ArticleOpticalScientificReviewReport Review(
+    protected override void CheckExtraAdmission(
         ArticleScientificFigureCandidate candidate,
-        ScientificSvgArtifact? artifact,
-        ArticleSourceFigureAudit audit,
-        ArticleSourceEvidenceBoard? board)
+        ICollection<ArticleScientificFinding> findings)
     {
-        ArgumentNullException.ThrowIfNull(candidate);
-        ArgumentNullException.ThrowIfNull(audit);
-        var findings = new List<ArticleOpticalScientificFinding>();
-        var regions = BuildRegions(candidate);
-        if (!candidate.RequiresGateOneApproval
-            || candidate.GateOneStatus != ArticleScientificFigureGateStatus.PendingHumanApproval)
-        {
-            findings.Add(Finding(
-                "article-gate-one-boundary-invalid",
-                candidate.CandidateId,
-                "Gravity article candidates must remain pending explicit human Gate 1 approval."));
-        }
-
-        if (candidate.Evidence.Count == 0
-            || candidate.Evidence.Any(item => string.IsNullOrWhiteSpace(item.SourceBlockId)
-                || string.IsNullOrWhiteSpace(item.Excerpt)))
-        {
-            findings.Add(Finding(
-                "article-gravity-evidence-missing",
-                candidate.CandidateId,
-                "Deterministic gravity checks require located source evidence."));
-        }
-
-
         var externalPublishers = candidate.ExternalScientificReferences
             .Select(reference => reference.Publisher)
             .ToHashSet(StringComparer.Ordinal);
@@ -57,39 +42,15 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
                 candidate.CandidateId,
                 "Gravity corrections require explicit NASA and NIST scientific authority references."));
         }
-
-        if (candidate.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard)
-        {
-            if (board is null
-                || board.PngBytes.Length == 0
-                || board.SourceAssetIds.Count == 0
-                || board.SourceAssetIds.Any(id => !audit.Assets.Any(asset => asset.AssetId == id)))
-            {
-                findings.Add(Finding(
-                    "gravity-source-board-invalid",
-                    candidate.CandidateId,
-                    "Gravity source evidence requires non-empty hash-bound source assets."));
-            }
-        }
-        else
-        {
-            ReviewSvg(candidate, artifact, findings);
-        }
-
-        return new ArticleOpticalScientificReviewReport(
-            "article-gravity-v1",
-            "located source evidence and deterministic gravity/reference-frame invariants; human Gate 1 remains pending",
-            Array.AsReadOnly(findings.ToArray()),
-            Array.AsReadOnly(regions.Select(item => item.ExpectedCheck).ToArray()));
     }
 
-    public IReadOnlyList<ArticleOpticalVisualRegion> BuildRegions(
+    public override IReadOnlyList<ArticleScientificVisualRegion> BuildRegions(
         ArticleScientificFigureCandidate candidate)
     {
         ArgumentNullException.ThrowIfNull(candidate);
         var evidenceIds = candidate.Evidence.Select(item => item.SourceBlockId)
             .Distinct(StringComparer.Ordinal).ToArray();
-        ArticleOpticalVisualRegion Region(
+        ArticleScientificVisualRegion Region(
             string id,
             ScientificVisualRegionKind kind,
             int x,
@@ -110,91 +71,64 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
         return candidate.Kind switch
         {
             ArticleScientificFigureCandidateKind.GravityTerminology =>
-            [Region("gravity-terms", ScientificVisualRegionKind.Element, 60, 150, 1050, 540,
-                "Gravitational interaction, effective gravity, and scale support/tension are distinct quantities.",
-                "地球引力 F_g; 有效重力 g_eff; 支持力/拉力 N 或 T",
-                null,
-                ["reference frame and terminology must be declared"],
-                ["weight is always identical to scale reading"])],
+                [Region("gravity-terms", ScientificVisualRegionKind.Element, 60, 150, 1050, 540,
+                    "Gravitational interaction, effective gravity, and scale support/tension are distinct quantities.",
+                    "地球引力 F_g; 有效重力 g_eff; 支持力/拉力 N 或 T",
+                    null,
+                    ["reference frame and terminology must be declared"],
+                    ["weight is always identical to scale reading"])],
             ArticleScientificFigureCandidateKind.GravityOrbitFreeFall =>
-            [Region("orbit-free-fall", ScientificVisualRegionKind.Relation, 120, 170, 1000, 520,
-                "Earth gravity supplies non-zero inward orbital acceleration while the local support force is near zero.",
-                "g(r) = GM/r² ≠ 0; 秤读数 N ≈ 0",
-                "gravity and acceleration point toward Earth center",
-                ["spacecraft, object, and scale share free fall"],
-                ["gravity is zero in orbit", "orbital acceleration is zero"])],
+                [Region("orbit-free-fall", ScientificVisualRegionKind.Relation, 120, 170, 1000, 520,
+                    "Earth gravity supplies non-zero inward orbital acceleration while the local support force is near zero.",
+                    "g(r) = GM/r² ≠ 0; 秤读数 N ≈ 0",
+                    "gravity and acceleration point toward Earth center",
+                    ["spacecraft, object, and scale share free fall"],
+                    ["gravity is zero in orbit", "orbital acceleration is zero"])],
             ArticleScientificFigureCandidateKind.GravityElevatorFreeFall =>
-            [Region("elevator-free-fall", ScientificVisualRegionKind.Relation, 260, 140, 680, 570,
-                "A freely falling elevator and object retain Earth gravity and downward acceleration while support is near zero.",
-                "Fg = mg; a ≈ g; N ≈ 0",
-                "gravity and acceleration point downward",
-                ["idealized free fall"],
-                ["Earth gravity disappears"])],
+                [Region("elevator-free-fall", ScientificVisualRegionKind.Relation, 260, 140, 680, 570,
+                    "A freely falling elevator and object retain Earth gravity and downward acceleration while support is near zero.",
+                    "Fg = mg; a ≈ g; N ≈ 0",
+                    "gravity and acceleration point downward",
+                    ["idealized free fall"],
+                    ["Earth gravity disappears"])],
             ArticleScientificFigureCandidateKind.GravitySurfaceRotation =>
-            [Region("surface-effective-gravity", ScientificVisualRegionKind.Relation, 160, 150, 970, 530,
-                "In an Earth-fixed rotating frame, effective gravity combines gravitational and centrifugal accelerations.",
-                "g_eff = g_grav + a_cf",
-                "gravity points generally inward; centrifugal term points away from the rotation axis",
-                ["centripetal acceleration is a kinematic role of the net force"],
-                ["centripetal force is an additional interaction force"])],
+                [Region("surface-effective-gravity", ScientificVisualRegionKind.Relation, 160, 150, 970, 530,
+                    "In an Earth-fixed rotating frame, effective gravity combines gravitational and centrifugal accelerations.",
+                    "g_eff = g_grav + a_cf",
+                    "gravity points generally inward; centrifugal term points away from the rotation axis",
+                    ["centripetal acceleration is a kinematic role of the net force"],
+                    ["centripetal force is an additional interaction force"])],
             ArticleScientificFigureCandidateKind.GravityCaseComparison =>
-            [Region("gravity-case-table", ScientificVisualRegionKind.Element, 60, 150, 1000, 550,
-                "Orbit, free-fall elevator, and Earth surface all retain Earth gravity but differ in support-force reading.",
-                "Fg ≠ 0; N ≈ 0; N ≈ m·g_eff",
-                null,
-                ["same quantity is compared in every column"],
-                ["weightlessness proves no gravity"])],
+                [Region("gravity-case-table", ScientificVisualRegionKind.Element, 60, 150, 1000, 550,
+                    "Orbit, free-fall elevator, and Earth surface all retain Earth gravity but differ in support-force reading.",
+                    "Fg ≠ 0; N ≈ 0; N ≈ m·g_eff",
+                    null,
+                    ["same quantity is compared in every column"],
+                    ["weightlessness proves no gravity"])],
             ArticleScientificFigureCandidateKind.GravityReferenceFrames =>
-            [Region("gravity-frame-accounting", ScientificVisualRegionKind.Relation, 60, 150, 1020, 550,
-                "Inertial and non-inertial force accounting are valid only when the selected frame is explicit.",
-                "ΣF_real = m·a; ΣF_real + F_inertial = m·a_rel",
-                "choose frame before listing forces",
-                ["real and inertial forces are labeled separately"],
-                ["mixing inertial-frame and co-moving-frame equations"])],
+                [Region("gravity-frame-accounting", ScientificVisualRegionKind.Relation, 60, 150, 1020, 550,
+                    "Inertial and non-inertial force accounting are valid only when the selected frame is explicit.",
+                    "ΣF_real = m·a; ΣF_real + F_inertial = m·a_rel",
+                    "choose frame before listing forces",
+                    ["real and inertial forces are labeled separately"],
+                    ["mixing inertial-frame and co-moving-frame equations"])],
             ArticleScientificFigureCandidateKind.SourceEvidenceBoard =>
-            [Region("source-gravity-evidence", ScientificVisualRegionKind.Element, 0, 0, 1600, 1200,
-                "Selected source figures remain represented by hash-bound pixels.",
-                string.Join("; ", candidate.SourceFigureReferences),
-                null,
-                ["source-faithful pixels", "layout only"],
-                ["generated source figure", "missing source asset"])],
+                [Region("source-gravity-evidence", ScientificVisualRegionKind.Element, 0, 0, 1600, 1200,
+                    "Selected source figures remain represented by hash-bound pixels.",
+                    string.Join("; ", candidate.SourceFigureReferences),
+                    null,
+                    ["source-faithful pixels", "layout only"],
+                    ["generated source figure", "missing source asset"])],
             _ => throw new ArgumentOutOfRangeException(nameof(candidate), candidate.Kind, null),
         };
     }
 
-    private static void ReviewSvg(
+    protected override void ReviewSvgContent(
         ArticleScientificFigureCandidate candidate,
-        ScientificSvgArtifact? artifact,
-        ICollection<ArticleOpticalScientificFinding> findings)
+        XDocument document,
+        string joined,
+        ICollection<ArticleScientificFinding> findings)
     {
-        if (artifact is null)
-        {
-            findings.Add(Finding(
-                "article-gravity-svg-missing",
-                candidate.CandidateId,
-                "Gravity review requires SVG authority."));
-            return;
-        }
-
-        XDocument document;
-        try
-        {
-            var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
-            using var textReader = new StringReader(artifact.Svg);
-            using var xmlReader = XmlReader.Create(textReader, settings);
-            document = XDocument.Load(xmlReader, LoadOptions.None);
-        }
-        catch (XmlException exception)
-        {
-            findings.Add(Finding("article-gravity-svg-invalid", candidate.CandidateId, exception.Message));
-            return;
-        }
-
-        var joined = string.Join("\n",
-            document.Descendants(Svg + "text").Select(item => item.Value)
-                .Concat(document.Descendants()
-                    .Select(item => (string?)item.Attribute("data-math-tex"))
-                    .Where(value => !string.IsNullOrWhiteSpace(value))!));
         void Require(string value, string code)
         {
             if (!joined.Contains(value, StringComparison.Ordinal))
@@ -276,13 +210,13 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
         XDocument document,
         ArticleScientificFigureCandidate candidate,
         string role,
-        Func<GravityLineGeometry, bool> predicate,
+        Func<ArticleSvgLine, bool> predicate,
         string code,
-        ICollection<ArticleOpticalScientificFinding> findings)
+        ICollection<ArticleScientificFinding> findings)
     {
         var vectors = document.Descendants(Svg + "path")
             .Where(path => string.Equals((string?)path.Attribute("data-gravity-role"), role, StringComparison.Ordinal))
-            .Select(path => TryReadLine((string?)path.Attribute("d")))
+            .Select(path => TryReadSvgLine((string?)path.Attribute("d")))
             .Where(line => line is not null)
             .Select(line => line!.Value)
             .ToArray();
@@ -295,7 +229,7 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
     private static void ReviewSurfaceVectorComposition(
         XDocument document,
         ArticleScientificFigureCandidate candidate,
-        ICollection<ArticleOpticalScientificFinding> findings)
+        ICollection<ArticleScientificFinding> findings)
     {
         var gravity = ReadSingleVector(document, "surface-gravity");
         var centrifugal = ReadSingleVector(document, "surface-centrifugal");
@@ -329,11 +263,11 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
         }
     }
 
-    private static GravityLineGeometry? ReadSingleVector(XDocument document, string role)
+    private static ArticleSvgLine? ReadSingleVector(XDocument document, string role)
     {
         var vectors = document.Descendants(Svg + "path")
             .Where(path => string.Equals((string?)path.Attribute("data-gravity-role"), role, StringComparison.Ordinal))
-            .Select(path => TryReadLine((string?)path.Attribute("d")))
+            .Select(path => TryReadSvgLine((string?)path.Attribute("d")))
             .Where(line => line is not null)
             .Select(line => line!.Value)
             .ToArray();
@@ -344,27 +278,4 @@ public sealed class ArticleGravityScientificReviewer : IArticleScientificFigureR
         NearlyEqual(x1, x2) && NearlyEqual(y1, y2);
 
     private static bool NearlyEqual(double first, double second) => Math.Abs(first - second) <= 0.1;
-
-    private static GravityLineGeometry? TryReadLine(string? value)
-    {
-        var parts = value?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts is not ["M", var x1, var y1, "L", var x2, var y2]
-            || !double.TryParse(x1, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedX1)
-            || !double.TryParse(y1, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedY1)
-            || !double.TryParse(x2, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedX2)
-            || !double.TryParse(y2, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedY2))
-        {
-            return null;
-        }
-
-        return new GravityLineGeometry(parsedX1, parsedY1, parsedX2, parsedY2);
-    }
-
-    private static double Length(GravityLineGeometry line) =>
-        Math.Sqrt(Math.Pow(line.X2 - line.X1, 2) + Math.Pow(line.Y2 - line.Y1, 2));
-
-    private readonly record struct GravityLineGeometry(double X1, double Y1, double X2, double Y2);
-
-    private static ArticleOpticalScientificFinding Finding(string code, string id, string evidence) =>
-        new(code, id, evidence);
 }

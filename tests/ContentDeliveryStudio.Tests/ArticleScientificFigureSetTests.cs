@@ -998,7 +998,7 @@ public sealed class ArticleScientificFigureSetTests
             DeliveryStatus: ArticleScientificFigureDeliveryStatus.NotCreated);
     }
 
-    private static ArticleOpticalScientificReviewReport ReviewThermalMutation(
+    private static ArticleScientificReviewReport ReviewThermalMutation(
         ArticleScientificFigureCandidate candidate,
         ScientificSvgArtifact artifact,
         string mutatedSvg)

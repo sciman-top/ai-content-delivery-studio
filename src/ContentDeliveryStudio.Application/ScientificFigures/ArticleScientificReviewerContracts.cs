@@ -6,12 +6,32 @@ namespace ContentDeliveryStudio.Application.ScientificFigures;
 /// </summary>
 public interface IArticleScientificFigureReviewer
 {
-    ArticleOpticalScientificReviewReport Review(
+    ArticleScientificReviewReport Review(
         ArticleScientificFigureCandidate candidate,
         ScientificSvgArtifact? artifact,
         ArticleSourceFigureAudit audit,
         ArticleSourceEvidenceBoard? board);
 
-    IReadOnlyList<ArticleOpticalVisualRegion> BuildRegions(
+    IReadOnlyList<ArticleScientificVisualRegion> BuildRegions(
         ArticleScientificFigureCandidate candidate);
 }
+
+/// <summary>Shared review vocabulary for every admitted article-science domain.</summary>
+public sealed record ArticleScientificFinding(
+    string Code,
+    string ResponsibleItemId,
+    string Evidence);
+
+public sealed record ArticleScientificReviewReport(
+    string PackageId,
+    string AuthorityBoundary,
+    IReadOnlyList<ArticleScientificFinding> Findings,
+    IReadOnlyList<ScientificExpectedVisualCheck> ExpectedVisualChecks)
+{
+    public bool Passed => Findings.Count == 0;
+}
+
+public sealed record ArticleScientificVisualRegion(
+    ScientificVisualRegionKind Kind,
+    ScientificPixelRegion Region,
+    ScientificExpectedVisualCheck ExpectedCheck);

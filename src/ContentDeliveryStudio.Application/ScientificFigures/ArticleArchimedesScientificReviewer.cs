@@ -1,4 +1,3 @@
-using System.Xml;
 using System.Xml.Linq;
 
 namespace ContentDeliveryStudio.Application.ScientificFigures;
@@ -8,60 +7,27 @@ namespace ContentDeliveryStudio.Application.ScientificFigures;
 /// contains model-sensitive claims, so the reviewer deliberately requires the
 /// renderer to show conditions and caveats instead of accepting a bare formula.
 /// </summary>
-public sealed class ArticleArchimedesScientificReviewer : IArticleScientificFigureReviewer
+public sealed class ArticleArchimedesScientificReviewer : ArticleScientificReviewerBase
 {
-    private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
+    protected override string PackageId => "article-archimedes-v1";
+    protected override string AuthorityBoundary =>
+        "located source evidence and deterministic liquid-pressure invariants; human Gate 1 remains pending";
+    protected override string GateSubject => "Archimedes";
+    protected override string EvidenceMissingCode => "article-archimedes-evidence-missing";
+    protected override string EvidenceMissingMessage => "Archimedes review requires located source evidence.";
+    protected override string BoardInvalidCode => "archimedes-source-board-invalid";
+    protected override string BoardInvalidMessage => "Archimedes source evidence requires non-empty source pixels.";
+    protected override string SvgMissingCode => "article-archimedes-svg-missing";
+    protected override string SvgMissingMessage => "Archimedes review requires SVG authority.";
+    protected override string SvgInvalidCode => "article-archimedes-svg-invalid";
 
-    public ArticleOpticalScientificReviewReport Review(
-        ArticleScientificFigureCandidate candidate,
-        ScientificSvgArtifact? artifact,
-        ArticleSourceFigureAudit audit,
-        ArticleSourceEvidenceBoard? board)
-    {
-        ArgumentNullException.ThrowIfNull(candidate);
-        ArgumentNullException.ThrowIfNull(audit);
-        var findings = new List<ArticleOpticalScientificFinding>();
-        if (!candidate.RequiresGateOneApproval
-            || candidate.GateOneStatus != ArticleScientificFigureGateStatus.PendingHumanApproval)
-        {
-            findings.Add(Finding("article-gate-one-boundary-invalid", candidate.CandidateId,
-                "Archimedes candidates must remain pending explicit human Gate 1 approval."));
-        }
-
-        if (candidate.Evidence.Count == 0
-            || candidate.Evidence.Any(item => string.IsNullOrWhiteSpace(item.SourceBlockId)))
-        {
-            findings.Add(Finding("article-archimedes-evidence-missing", candidate.CandidateId,
-                "Archimedes review requires located source evidence."));
-        }
-
-        if (candidate.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard)
-        {
-            if (board is null || board.PngBytes.Length == 0 || board.SourceAssetIds.Count == 0)
-            {
-                findings.Add(Finding("archimedes-source-board-invalid", candidate.CandidateId,
-                    "Archimedes source evidence requires non-empty source pixels."));
-            }
-        }
-        else
-        {
-            ReviewSvg(candidate, artifact, findings);
-        }
-
-        return new ArticleOpticalScientificReviewReport(
-            "article-archimedes-v1",
-            "located source evidence and deterministic liquid-pressure invariants; human Gate 1 remains pending",
-            Array.AsReadOnly(findings.ToArray()),
-            Array.AsReadOnly(BuildRegions(candidate).Select(item => item.ExpectedCheck).ToArray()));
-    }
-
-    public IReadOnlyList<ArticleOpticalVisualRegion> BuildRegions(
+    public override IReadOnlyList<ArticleScientificVisualRegion> BuildRegions(
         ArticleScientificFigureCandidate candidate)
     {
         ArgumentNullException.ThrowIfNull(candidate);
         var evidenceIds = candidate.Evidence.Select(item => item.SourceBlockId)
             .Distinct(StringComparer.Ordinal).ToArray();
-        ArticleOpticalVisualRegion Region(string id, ScientificVisualRegionKind kind, string meaning,
+        ArticleScientificVisualRegion Region(string id, ScientificVisualRegionKind kind, string meaning,
             string? exact, string? direction, string[] conditions, string[] forbidden) => new(
             kind,
             new ScientificPixelRegion(55, 130, 1090, 575),
@@ -114,31 +80,12 @@ public sealed class ArticleArchimedesScientificReviewer : IArticleScientificFigu
         };
     }
 
-    private static void ReviewSvg(ArticleScientificFigureCandidate candidate,
-        ScientificSvgArtifact? artifact, ICollection<ArticleOpticalScientificFinding> findings)
+    protected override void ReviewSvgContent(
+        ArticleScientificFigureCandidate candidate,
+        XDocument document,
+        string joined,
+        ICollection<ArticleScientificFinding> findings)
     {
-        if (artifact is null)
-        {
-            findings.Add(Finding("article-archimedes-svg-missing", candidate.CandidateId,
-                "Archimedes review requires SVG authority."));
-            return;
-        }
-
-        XDocument document;
-        try
-        {
-            var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
-            using var textReader = new StringReader(artifact.Svg);
-            using var xmlReader = XmlReader.Create(textReader, settings);
-            document = XDocument.Load(xmlReader, LoadOptions.None);
-        }
-        catch (XmlException exception)
-        {
-            findings.Add(Finding("article-archimedes-svg-invalid", candidate.CandidateId, exception.Message));
-            return;
-        }
-
-        var joined = string.Join("\n", document.Descendants(Svg + "text").Select(item => item.Value));
         void Require(string value, string code)
         {
             if (!joined.Contains(value, StringComparison.Ordinal))
@@ -200,7 +147,4 @@ public sealed class ArticleArchimedesScientificReviewer : IArticleScientificFigu
                 break;
         }
     }
-
-    private static ArticleOpticalScientificFinding Finding(string code, string id, string evidence) =>
-        new(code, id, evidence);
 }

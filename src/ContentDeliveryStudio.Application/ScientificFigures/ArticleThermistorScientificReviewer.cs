@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace ContentDeliveryStudio.Application.ScientificFigures;
@@ -9,60 +7,27 @@ namespace ContentDeliveryStudio.Application.ScientificFigures;
 /// validate renderer-owned labels and relationships; they do not approve the
 /// source article or replace human Gate 1.
 /// </summary>
-public sealed class ArticleThermistorScientificReviewer : IArticleScientificFigureReviewer
+public sealed class ArticleThermistorScientificReviewer : ArticleScientificReviewerBase
 {
-    private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
+    protected override string PackageId => "article-thermistor-v1";
+    protected override string AuthorityBoundary =>
+        "located source evidence and deterministic thermistor-divider invariants; human Gate 1 remains pending";
+    protected override string GateSubject => "Thermistor";
+    protected override string EvidenceMissingCode => "article-thermistor-evidence-missing";
+    protected override string EvidenceMissingMessage => "Thermistor review requires located source evidence.";
+    protected override string BoardInvalidCode => "thermistor-source-board-invalid";
+    protected override string BoardInvalidMessage => "Thermistor source evidence requires non-empty source pixels.";
+    protected override string SvgMissingCode => "article-thermistor-svg-missing";
+    protected override string SvgMissingMessage => "Thermistor review requires SVG authority.";
+    protected override string SvgInvalidCode => "article-thermistor-svg-invalid";
 
-    public ArticleOpticalScientificReviewReport Review(
-        ArticleScientificFigureCandidate candidate,
-        ScientificSvgArtifact? artifact,
-        ArticleSourceFigureAudit audit,
-        ArticleSourceEvidenceBoard? board)
-    {
-        ArgumentNullException.ThrowIfNull(candidate);
-        ArgumentNullException.ThrowIfNull(audit);
-        var findings = new List<ArticleOpticalScientificFinding>();
-        if (!candidate.RequiresGateOneApproval
-            || candidate.GateOneStatus != ArticleScientificFigureGateStatus.PendingHumanApproval)
-        {
-            findings.Add(Finding("article-gate-one-boundary-invalid", candidate.CandidateId,
-                "Thermistor candidates must remain pending explicit human Gate 1 approval."));
-        }
-
-        if (candidate.Evidence.Count == 0
-            || candidate.Evidence.Any(item => string.IsNullOrWhiteSpace(item.SourceBlockId)))
-        {
-            findings.Add(Finding("article-thermistor-evidence-missing", candidate.CandidateId,
-                "Thermistor review requires located source evidence."));
-        }
-
-        if (candidate.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard)
-        {
-            if (board is null || board.PngBytes.Length == 0 || board.SourceAssetIds.Count == 0)
-            {
-                findings.Add(Finding("thermistor-source-board-invalid", candidate.CandidateId,
-                    "Thermistor source evidence requires non-empty source pixels."));
-            }
-        }
-        else
-        {
-            ReviewSvg(candidate, artifact, findings);
-        }
-
-        return new ArticleOpticalScientificReviewReport(
-            "article-thermistor-v1",
-            "located source evidence and deterministic thermistor-divider invariants; human Gate 1 remains pending",
-            Array.AsReadOnly(findings.ToArray()),
-            Array.AsReadOnly(BuildRegions(candidate).Select(item => item.ExpectedCheck).ToArray()));
-    }
-
-    public IReadOnlyList<ArticleOpticalVisualRegion> BuildRegions(
+    public override IReadOnlyList<ArticleScientificVisualRegion> BuildRegions(
         ArticleScientificFigureCandidate candidate)
     {
         ArgumentNullException.ThrowIfNull(candidate);
         var evidenceIds = candidate.Evidence.Select(item => item.SourceBlockId)
             .Distinct(StringComparer.Ordinal).ToArray();
-        ArticleOpticalVisualRegion Region(string id, ScientificVisualRegionKind kind, string meaning,
+        ArticleScientificVisualRegion Region(string id, ScientificVisualRegionKind kind, string meaning,
             string? exact, string? direction, string[] conditions, string[] forbidden) => new(
             kind,
             new ScientificPixelRegion(60, 135, 1080, 560),
@@ -100,31 +65,12 @@ public sealed class ArticleThermistorScientificReviewer : IArticleScientificFigu
         };
     }
 
-    private static void ReviewSvg(ArticleScientificFigureCandidate candidate,
-        ScientificSvgArtifact? artifact, ICollection<ArticleOpticalScientificFinding> findings)
+    protected override void ReviewSvgContent(
+        ArticleScientificFigureCandidate candidate,
+        XDocument document,
+        string joined,
+        ICollection<ArticleScientificFinding> findings)
     {
-        if (artifact is null)
-        {
-            findings.Add(Finding("article-thermistor-svg-missing", candidate.CandidateId,
-                "Thermistor review requires SVG authority."));
-            return;
-        }
-
-        XDocument document;
-        try
-        {
-            var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
-            using var textReader = new StringReader(artifact.Svg);
-            using var xmlReader = XmlReader.Create(textReader, settings);
-            document = XDocument.Load(xmlReader, LoadOptions.None);
-        }
-        catch (XmlException exception)
-        {
-            findings.Add(Finding("article-thermistor-svg-invalid", candidate.CandidateId, exception.Message));
-            return;
-        }
-
-        var joined = string.Join("\n", document.Descendants(Svg + "text").Select(item => item.Value));
         void Require(string value, string code)
         {
             if (!joined.Contains(value, StringComparison.Ordinal))
@@ -177,19 +123,19 @@ public sealed class ArticleThermistorScientificReviewer : IArticleScientificFigu
 
     private static void ReviewVoltmeterLeads(XDocument document,
         ArticleScientificFigureCandidate candidate,
-        ICollection<ArticleOpticalScientificFinding> findings)
+        ICollection<ArticleScientificFinding> findings)
     {
         var leads = document.Descendants(Svg + "path")
             .Where(path => (string?)path.Attribute("data-thermistor-role") is
                 "voltmeter-left-lead" or "voltmeter-right-lead")
-            .Select(path => ParseLine((string?)path.Attribute("d")))
+            .Select(path => TryReadSvgLine((string?)path.Attribute("d")))
             .Where(line => line is not null)
             .Select(line => line!.Value)
             .ToArray();
         var expected = new[]
         {
-            new ThermistorLine(330, 360, 360, 320),
-            new ThermistorLine(460, 360, 550, 320),
+            new ArticleSvgLine(330, 360, 360, 320),
+            new ArticleSvgLine(460, 360, 550, 320),
         };
         if (leads.Length != 2 || expected.Any(item => !leads.Contains(item)))
         {
@@ -197,24 +143,4 @@ public sealed class ArticleThermistorScientificReviewer : IArticleScientificFigu
                 "The voltmeter leads must connect across R1, not across R0 or the full series loop."));
         }
     }
-
-    private static ThermistorLine? ParseLine(string? value)
-    {
-        var parts = value?.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts is not ["M", var x1, var y1, "L", var x2, var y2]
-            || !double.TryParse(x1, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedX1)
-            || !double.TryParse(y1, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedY1)
-            || !double.TryParse(x2, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedX2)
-            || !double.TryParse(y2, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsedY2))
-        {
-            return null;
-        }
-
-        return new ThermistorLine(parsedX1, parsedY1, parsedX2, parsedY2);
-    }
-
-    private readonly record struct ThermistorLine(double X1, double Y1, double X2, double Y2);
-
-    private static ArticleOpticalScientificFinding Finding(string code, string id, string evidence) =>
-        new(code, id, evidence);
 }

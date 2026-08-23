@@ -65,44 +65,4 @@ public sealed class PlanningWorkflowCoordinatorTests
         Assert.Single(loaded.IllustrationPlans);
         Assert.Single(loaded.Series);
     }
-
-    private sealed class InMemoryProjectRepository : IProjectRepository
-    {
-        private readonly Dictionary<Guid, ImageProject> _projects = [];
-
-        public Task SaveAsync(ImageProject project, CancellationToken cancellationToken)
-        {
-            _projects[project.Id] = project;
-            return Task.CompletedTask;
-        }
-
-        public Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken)
-        {
-            _projects.TryGetValue(projectId, out var project);
-            return Task.FromResult(project);
-        }
-
-        public Task<IReadOnlyList<ProjectSummary>> ListAsync(CancellationToken cancellationToken)
-        {
-            return Task.FromResult<IReadOnlyList<ProjectSummary>>(
-                _projects.Values
-                    .OrderByDescending(project => project.UpdatedAt)
-                    .Select(project => new ProjectSummary(
-                        project.Id,
-                        project.Name,
-                        project.CreatedAt,
-                        project.UpdatedAt))
-                    .ToArray());
-        }
-
-        public Task SaveReviewResultAsync(Guid projectId, ReviewResult reviewResult, CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
-        {
-            return Task.FromResult<ReviewResult?>(null);
-        }
-    }
 }

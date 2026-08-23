@@ -6,9 +6,9 @@ namespace ContentDeliveryStudio.Application.ScientificFigures;
 public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigureReviewer
 {
     private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
-    public ArticleOpticalScientificReviewReport Review(ArticleScientificFigureCandidate c, ScientificSvgArtifact? artifact, ArticleSourceFigureAudit audit, ArticleSourceEvidenceBoard? board)
+    public ArticleScientificReviewReport Review(ArticleScientificFigureCandidate c, ScientificSvgArtifact? artifact, ArticleSourceFigureAudit audit, ArticleSourceEvidenceBoard? board)
     {
-        var findings = new List<ArticleOpticalScientificFinding>();
+        var findings = new List<ArticleScientificFinding>();
         if (c.Evidence.Count == 0) findings.Add(new("article-evidence-missing", c.CandidateId, "Located source evidence is required."));
         if (c.GateOneStatus != ArticleScientificFigureGateStatus.PendingHumanApproval) findings.Add(new("article-gate-one-boundary-invalid", c.CandidateId, "Human Gate 1 remains pending."));
         if (c.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard)
@@ -69,23 +69,23 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         return Report(c, findings);
     }
 
-    private ArticleOpticalScientificReviewReport Report(
+    private ArticleScientificReviewReport Report(
         ArticleScientificFigureCandidate candidate,
-        IReadOnlyList<ArticleOpticalScientificFinding> findings)
+        IReadOnlyList<ArticleScientificFinding> findings)
     {
         var regions = BuildRegions(candidate);
-        return new ArticleOpticalScientificReviewReport(
+        return new ArticleScientificReviewReport(
             Profile(candidate),
             "located source evidence, required apparatus/topology roles, and deterministic profile invariants; human Gate 1 remains pending",
             findings,
             regions.Select(region => region.ExpectedCheck).ToArray());
     }
-    public IReadOnlyList<ArticleOpticalVisualRegion> BuildRegions(ArticleScientificFigureCandidate c)
+    public IReadOnlyList<ArticleScientificVisualRegion> BuildRegions(ArticleScientificFigureCandidate c)
     {
         var ids = c.Evidence.Select(e => e.SourceBlockId).Distinct().ToArray();
         var label = c.Kind.ToString();
         var check = new ScientificExpectedVisualCheck($"expected-{label}", label, "The figure must be visually legible, scientifically grounded, and independently useful after explanatory prose is hidden.", string.Join("; ", Required(c.Kind)), null, ["SVG-first authoritative geometry", "visible apparatus/objects and causal relations", "clear visual focus on the article's key question"], ["unsupported scientific overclaim", "label-only artwork", "floating or disconnected apparatus labels"], ids, ScientificExpectedVisualAuthority.LocatedSourceEvidencePendingGateOne);
-        return [new ArticleOpticalVisualRegion(ScientificVisualRegionKind.Relation, new ScientificPixelRegion(40, 120, 1120, 580), check)];
+        return [new ArticleScientificVisualRegion(ScientificVisualRegionKind.Relation, new ScientificPixelRegion(40, 120, 1120, 580), check)];
     }
     private static string Profile(ArticleScientificFigureCandidate c) => c.Kind switch { ArticleScientificFigureCandidateKind.BernoulliFanEnergy or ArticleScientificFigureCandidateKind.BernoulliFanZones or ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => "article-bernoulli-v1", ArticleScientificFigureCandidateKind.PinholeGeometry or ArticleScientificFigureCandidateKind.PinholeFocusPlane or ArticleScientificFigureCandidateKind.PinholeObservation => "article-pinhole-v1", ArticleScientificFigureCandidateKind.SuperconductingEnergy or ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent or ArticleScientificFigureCandidateKind.SuperconductingExcitation => "article-superconducting-v1", _ when c.ArticleTitle.Contains("伯努利", StringComparison.Ordinal) => "article-bernoulli-v1", _ when c.ArticleTitle.Contains("小孔成像", StringComparison.Ordinal) => "article-pinhole-v1", _ => "article-superconducting-v1" };
     private static string[] Required(ArticleScientificFigureCandidateKind k) => k switch
@@ -120,39 +120,84 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
     {
         ArticleScientificFigureCandidateKind.BernoulliFanEnergy => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["intake-flow"] = 3, ["fan-blade"] = 4, ["electrical-work"] = 1, ["outlet-flow"] = 3, ["fan-body"] = 1, ["outlet-channel"] = 1,
+            ["intake-flow"] = 3,
+            ["fan-blade"] = 4,
+            ["electrical-work"] = 1,
+            ["outlet-flow"] = 3,
+            ["fan-body"] = 1,
+            ["outlet-channel"] = 1,
         },
         ArticleScientificFigureCandidateKind.BernoulliFanZones => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["duct-wall"] = 2, ["suction-flow"] = 3, ["compression-flow"] = 3, ["fan-body"] = 1, ["fan-blade"] = 3,
+            ["duct-wall"] = 2,
+            ["suction-flow"] = 3,
+            ["compression-flow"] = 3,
+            ["fan-body"] = 1,
+            ["fan-blade"] = 3,
         },
         ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["duct-wall"] = 4, ["same-streamline"] = 6, ["free-jet"] = 2, ["comparison-boundary"] = 1, ["throat-section"] = 1,
+            ["duct-wall"] = 4,
+            ["same-streamline"] = 6,
+            ["free-jet"] = 2,
+            ["comparison-boundary"] = 1,
+            ["throat-section"] = 1,
         },
         ArticleScientificFigureCandidateKind.PinholeGeometry => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["object"] = 3, ["barrier"] = 3, ["principal-ray"] = 4, ["image-plane"] = 1, ["inverted-image"] = 3,
+            ["object"] = 3,
+            ["barrier"] = 3,
+            ["principal-ray"] = 4,
+            ["image-plane"] = 1,
+            ["inverted-image"] = 3,
         },
         ArticleScientificFigureCandidateKind.PinholeFocusPlane => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["focus-plane"] = 3, ["ray"] = 4, ["camera-body"] = 1, ["camera-input-ray"] = 2, ["camera-focused-ray"] = 2, ["sensor"] = 1,
+            ["focus-plane"] = 3,
+            ["ray"] = 4,
+            ["camera-body"] = 1,
+            ["camera-input-ray"] = 2,
+            ["camera-focused-ray"] = 2,
+            ["sensor"] = 1,
         },
         ArticleScientificFigureCandidateKind.PinholeObservation => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["barrier"] = 2, ["near-aperture"] = 1, ["far-aperture"] = 1, ["near-field"] = 3, ["far-field"] = 3, ["near-object"] = 1, ["far-object"] = 1, ["near-camera"] = 1, ["far-camera"] = 1,
+            ["barrier"] = 2,
+            ["near-aperture"] = 1,
+            ["far-aperture"] = 1,
+            ["near-field"] = 3,
+            ["far-field"] = 3,
+            ["near-object"] = 1,
+            ["far-object"] = 1,
+            ["near-camera"] = 1,
+            ["far-camera"] = 1,
         },
         ArticleScientificFigureCandidateKind.SuperconductingEnergy => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["circuit"] = 7, ["switch"] = 2, ["magnetic-field"] = 4, ["power-source"] = 1, ["coil"] = 6, ["electrical-work"] = 1,
+            ["circuit"] = 7,
+            ["switch"] = 2,
+            ["magnetic-field"] = 4,
+            ["power-source"] = 1,
+            ["coil"] = 6,
+            ["electrical-work"] = 1,
         },
         ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["charging-loop"] = 6, ["charging-coil"] = 3, ["persistent-current"] = 4, ["power-source"] = 1,
+            ["charging-loop"] = 6,
+            ["charging-coil"] = 3,
+            ["persistent-current"] = 4,
+            ["power-source"] = 1,
         },
         ArticleScientificFigureCandidateKind.SuperconductingExcitation => new Dictionary<string, int>(StringComparer.Ordinal)
         {
-            ["excitation-circuit"] = 8, ["persistent-switch-branch"] = 2, ["superconducting-switch"] = 1, ["heater-circuit"] = 2, ["heater-element"] = 1, ["thermal-coupling"] = 1, ["cryostat"] = 1, ["main-coil"] = 6,
+            ["excitation-circuit"] = 8,
+            ["persistent-switch-branch"] = 2,
+            ["superconducting-switch"] = 1,
+            ["heater-circuit"] = 2,
+            ["heater-element"] = 1,
+            ["thermal-coupling"] = 1,
+            ["cryostat"] = 1,
+            ["main-coil"] = 6,
         },
         _ => new Dictionary<string, int>(StringComparer.Ordinal),
     };

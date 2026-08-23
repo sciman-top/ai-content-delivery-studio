@@ -1,89 +1,43 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using System.Xml;
 using System.Xml.Linq;
 
 namespace ContentDeliveryStudio.Application.ScientificFigures;
 
-public sealed record ArticleOpticalScientificFinding(
-    string Code,
-    string ResponsibleItemId,
-    string Evidence);
-
-public sealed record ArticleOpticalScientificReviewReport(
-    string PackageId,
-    string AuthorityBoundary,
-    IReadOnlyList<ArticleOpticalScientificFinding> Findings,
-    IReadOnlyList<ScientificExpectedVisualCheck> ExpectedVisualChecks)
+/// <summary>
+/// Deterministic checks for the admitted eye-lens/optics article profile. The
+/// checks protect convention, ray topology, and observation-condition boundaries
+/// owned by the renderer; human Gate 1 remains mandatory.
+/// </summary>
+public sealed class ArticleOpticalScientificReviewer : ArticleScientificReviewerBase
 {
-    public bool Passed => Findings.Count == 0;
-}
-
-public sealed record ArticleOpticalVisualRegion(
-    ScientificVisualRegionKind Kind,
-    ScientificPixelRegion Region,
-    ScientificExpectedVisualCheck ExpectedCheck);
-
-public sealed class ArticleOpticalScientificReviewer : IArticleScientificFigureReviewer
-{
-    private static readonly XNamespace Svg = "http://www.w3.org/2000/svg";
     private static readonly Regex LinePath = new(
         @"^M\s+(?<x1>-?\d+(?:\.\d+)?)\s+(?<y1>-?\d+(?:\.\d+)?)\s+L\s+(?<x2>-?\d+(?:\.\d+)?)\s+(?<y2>-?\d+(?:\.\d+)?)$",
         RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
-    public ArticleOpticalScientificReviewReport Review(
-        ArticleScientificFigureCandidate candidate,
-        ScientificSvgArtifact? artifact,
-        ArticleSourceFigureAudit audit,
-        ArticleSourceEvidenceBoard? board)
-    {
-        ArgumentNullException.ThrowIfNull(candidate);
-        ArgumentNullException.ThrowIfNull(audit);
-        var findings = new List<ArticleOpticalScientificFinding>();
-        var regions = BuildRegions(candidate);
-        if (!candidate.RequiresGateOneApproval
-            || candidate.GateOneStatus != ArticleScientificFigureGateStatus.PendingHumanApproval)
-        {
-            findings.Add(Finding(
-                "article-gate-one-boundary-invalid",
-                candidate.CandidateId,
-                "Article optical candidates must remain pending explicit human Gate 1 approval."));
-        }
+    protected override string PackageId => "article-optics-v1";
+    protected override string AuthorityBoundary =>
+        "located source evidence and deterministic optics invariants; human Gate 1 remains pending";
+    protected override string GateSubject => "Article optical";
+    protected override string EvidenceMissingCode => "article-optical-evidence-missing";
+    protected override bool RequireEvidenceExcerpt => true;
+    protected override string BoardInvalidCode => "optics-source-photo-coverage-invalid";
+    protected override string BoardInvalidMessage =>
+        "The evidence board must retain at least one distinct audited source asset for every referenced photo.";
+    protected override string SvgMissingCode => "article-optical-svg-missing";
+    protected override string SvgMissingMessage => "Optical review requires SVG authority.";
+    protected override string SvgInvalidCode => "article-optical-svg-invalid";
+    protected override bool RethrowSvgParseErrors => true;
+    protected override bool IncludeMathTexInCorpus => true;
 
-        if (candidate.Evidence.Count == 0
-            || candidate.Evidence.Any(item => string.IsNullOrWhiteSpace(item.SourceBlockId)
-                || string.IsNullOrWhiteSpace(item.Excerpt)))
-        {
-            findings.Add(Finding(
-                "article-optical-evidence-missing",
-                candidate.CandidateId,
-                "Deterministic checks require located source evidence."));
-        }
-
-        if (candidate.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard)
-        {
-            ReviewEvidenceBoard(candidate, audit, board, findings);
-        }
-        else
-        {
-            ReviewSvg(candidate, artifact, findings);
-        }
-
-        return new ArticleOpticalScientificReviewReport(
-            "article-optics-v1",
-            "located source evidence and deterministic optics invariants; human Gate 1 remains pending",
-            Array.AsReadOnly(findings.ToArray()),
-            Array.AsReadOnly(regions.Select(item => item.ExpectedCheck).ToArray()));
-    }
-
-    public IReadOnlyList<ArticleOpticalVisualRegion> BuildRegions(
+    public override IReadOnlyList<ArticleScientificVisualRegion> BuildRegions(
         ArticleScientificFigureCandidate candidate)
     {
         ArgumentNullException.ThrowIfNull(candidate);
         var evidenceIds = candidate.Evidence.Select(item => item.SourceBlockId)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
-        ArticleOpticalVisualRegion Region(
+        ArticleScientificVisualRegion Region(
             string id,
             ScientificVisualRegionKind kind,
             int x,
@@ -171,24 +125,32 @@ public sealed class ArticleOpticalScientificReviewer : IArticleScientificFigureR
         };
     }
 
-    private static void ReviewSvg(
+    protected override void CheckEvidenceBoard(
         ArticleScientificFigureCandidate candidate,
-        ScientificSvgArtifact? artifact,
-        ICollection<ArticleOpticalScientificFinding> findings)
+        ArticleSourceFigureAudit audit,
+        ArticleSourceEvidenceBoard? board,
+        ICollection<ArticleScientificFinding> findings)
     {
-        if (artifact is null)
+        var auditIds = audit.Assets.Select(item => item.AssetId).ToHashSet(StringComparer.Ordinal);
+        if (board is null
+            || board.SourceAssetIds.Count < candidate.SourceFigureReferences.Count
+            || board.SourceAssetIds.Distinct(StringComparer.Ordinal).Count() != board.SourceAssetIds.Count
+            || board.SourceAssetIds.Any(id => !auditIds.Contains(id)))
         {
-            findings.Add(Finding("article-optical-svg-missing", candidate.CandidateId, "Optical review requires SVG authority."));
-            return;
+            findings.Add(Finding(
+                "optics-source-photo-coverage-invalid",
+                "source-photo-evidence",
+                "The evidence board must retain at least one distinct audited source asset for every referenced photo."));
         }
+    }
 
-        var document = Parse(artifact.Svg);
+    protected override void ReviewSvgContent(
+        ArticleScientificFigureCandidate candidate,
+        XDocument document,
+        string joined,
+        ICollection<ArticleScientificFinding> findings)
+    {
         var root = document.Root!;
-        var text = root.Descendants(Svg + "text").Select(item => item.Value).ToArray();
-        var joined = string.Join("\n",
-            text.Concat(root.Descendants()
-                .Select(item => (string?)item.Attribute("data-math-tex"))
-                .Where(value => !string.IsNullOrWhiteSpace(value))!));
         void Require(string value, string code, string itemId)
         {
             if (!joined.Contains(value, StringComparison.Ordinal))
@@ -268,7 +230,7 @@ public sealed class ArticleOpticalScientificReviewer : IArticleScientificFigureR
 
     private static void ReviewFocusShift(
         XElement root,
-        ICollection<ArticleOpticalScientificFinding> findings)
+        ICollection<ArticleScientificFinding> findings)
     {
         var focusA = root.Descendants(Svg + "text").SingleOrDefault(item => item.Value.Contains("焦点 A", StringComparison.Ordinal));
         var focusB = root.Descendants(Svg + "text").SingleOrDefault(item => item.Value.Contains("焦点 B", StringComparison.Ordinal));
@@ -281,36 +243,6 @@ public sealed class ArticleOpticalScientificReviewer : IArticleScientificFigureR
         }
     }
 
-    private static void ReviewEvidenceBoard(
-        ArticleScientificFigureCandidate candidate,
-        ArticleSourceFigureAudit audit,
-        ArticleSourceEvidenceBoard? board,
-        ICollection<ArticleOpticalScientificFinding> findings)
-    {
-        var auditIds = audit.Assets.Select(item => item.AssetId).ToHashSet(StringComparer.Ordinal);
-        if (board is null
-            || board.SourceAssetIds.Count < candidate.SourceFigureReferences.Count
-            || board.SourceAssetIds.Distinct(StringComparer.Ordinal).Count() != board.SourceAssetIds.Count
-            || board.SourceAssetIds.Any(id => !auditIds.Contains(id)))
-        {
-            findings.Add(Finding(
-                "optics-source-photo-coverage-invalid",
-                "source-photo-evidence",
-                "The evidence board must retain at least one distinct audited source asset for every referenced photo."));
-        }
-    }
-
-    private static XDocument Parse(string svg)
-    {
-        var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null };
-        using var text = new StringReader(svg);
-        using var reader = XmlReader.Create(text, settings);
-        return XDocument.Load(reader, LoadOptions.None);
-    }
-
     private static double Number(XElement element, string attribute) =>
         double.Parse((string?)element.Attribute(attribute) ?? "NaN", CultureInfo.InvariantCulture);
-
-    private static ArticleOpticalScientificFinding Finding(string code, string id, string evidence) =>
-        new(code, id, evidence);
 }

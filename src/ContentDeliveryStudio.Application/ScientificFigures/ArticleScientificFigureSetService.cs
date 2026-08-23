@@ -410,7 +410,7 @@ public sealed record ArticleScientificFigureSetItemResult(
     ScientificFigureExportBundle? Exports,
     ArticleSourceEvidenceBoard? EvidenceBoard,
     ArticleCandidateVisualContractReport ContractReview,
-    ArticleOpticalScientificReviewReport DeterministicScientificReview,
+    ArticleScientificReviewReport DeterministicScientificReview,
     ScientificVisualReviewRequest VisualReviewRequest,
     ScientificProviderReviewResult VisualReview,
     IReadOnlyList<ArticleCandidateRepairRecord> Repairs,
@@ -581,7 +581,7 @@ public sealed class ArticleScientificFigureSetService
         ScientificFigureExportBundle? lastExports = null;
         ArticleCandidateVisualContractReport lastContract = new([]);
         ScientificProviderReviewResult lastVisual = FailedVisual("candidate-not-reviewed");
-        ArticleOpticalScientificReviewReport lastScientific = _scientificReviewer.Review(
+        ArticleScientificReviewReport lastScientific = _scientificReviewer.Review(
             candidate,
             artifact: null,
             audit,
