@@ -12,6 +12,7 @@ public static class AppDatabaseInitializer
         ArgumentNullException.ThrowIfNull(dbContext);
         await dbContext.Database.EnsureCreatedAsync(cancellationToken);
 
+        await EnsureImageProjectCompatibilityColumnsAsync(dbContext, cancellationToken);
         await EnsureGenerationTaskCompatibilityColumnsAsync(dbContext, cancellationToken);
         await EnsureCandidateImageCompatibilityColumnsAsync(dbContext, cancellationToken);
 
@@ -54,6 +55,47 @@ public static class AppDatabaseInitializer
                 ("ProjectId", "SpecificationId", "SpecificationVersion");
             """,
             cancellationToken);
+    }
+
+    private static async Task EnsureImageProjectCompatibilityColumnsAsync(
+        AppDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        var connection = dbContext.Database.GetDbConnection();
+        var shouldClose = connection.State is not ConnectionState.Open;
+        if (shouldClose)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        try
+        {
+            var existingColumns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            await using (var inspect = connection.CreateCommand())
+            {
+                inspect.CommandText = "PRAGMA table_info('Projects');";
+                await using var reader = await inspect.ExecuteReaderAsync(cancellationToken);
+                while (await reader.ReadAsync(cancellationToken))
+                {
+                    existingColumns.Add(reader.GetString(1));
+                }
+            }
+
+            if (!existingColumns.Contains("ConcurrencyVersion"))
+            {
+                await using var addColumn = connection.CreateCommand();
+                addColumn.CommandText =
+                    "ALTER TABLE \"Projects\" ADD COLUMN \"ConcurrencyVersion\" INTEGER NOT NULL DEFAULT 0;";
+                await addColumn.ExecuteNonQueryAsync(cancellationToken);
+            }
+        }
+        finally
+        {
+            if (shouldClose)
+            {
+                await connection.CloseAsync();
+            }
+        }
     }
 
     private static async Task EnsureGenerationTaskCompatibilityColumnsAsync(

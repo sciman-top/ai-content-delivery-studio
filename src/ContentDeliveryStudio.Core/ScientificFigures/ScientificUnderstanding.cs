@@ -190,6 +190,16 @@ public sealed record ScientificClaim
         ScientificUnderstandingGuard.RequireConfidence(confidence, nameof(confidence));
         ScientificUnderstandingGuard.RequireNoNullElements(evidenceLinks, nameof(evidenceLinks));
 
+        // Duplicate evidence keys would make persisted provenance replay ambiguous.
+        if (evidenceLinks.GroupBy(link =>
+                (link.SourceBlockId, link.QuotedText, link.Role, link.Confidence, link.ValidationState))
+            .Any(group => group.Count() > 1))
+        {
+            throw new ArgumentException(
+                "A scientific claim cannot attach duplicate evidence links for the same source block, quote, role, confidence, and validation state.",
+                nameof(evidenceLinks));
+        }
+
         var evidenceSnapshot = Array.AsReadOnly(evidenceLinks.ToArray());
         var supportingEvidence = Array.AsReadOnly(
             evidenceSnapshot

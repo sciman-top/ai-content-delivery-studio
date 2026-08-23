@@ -11,6 +11,34 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class GenerationWorkflowApplicationServiceTests
 {
     [Fact]
+    public async Task ExecuteQueue_SkipsTaskPausedByAnotherCallerDuringExecution()
+    {
+        var repository = new InMemoryProjectRepository();
+        var provider = new PausingImageGenerationProvider();
+        var service = new GenerationWorkflowApplicationService(repository, provider, imageEditProvider: null);
+        provider.Service = service;
+        provider.Repository = repository;
+        var project = await SeedGenerationProjectAsync(repository, itemCount: 2);
+        provider.ProjectId = project.Id;
+
+        var run = await service.RunGenerationQueueAsync(
+            project.Id,
+            Path.GetTempPath(),
+            CancellationToken.None);
+
+        Assert.Single(run.Tasks);
+        var loaded = await repository.LoadAsync(project.Id, CancellationToken.None);
+        var tasks = loaded!.Series.Single().Items
+            .SelectMany(item => item.GenerationTasks)
+            .ToArray();
+        Assert.Equal(2, tasks.Length);
+        Assert.Equal(
+            GenerationTaskStatus.Paused,
+            tasks.Single(task => task.Status is GenerationTaskStatus.Paused).Status);
+        Assert.DoesNotContain(tasks, task => task.Status is GenerationTaskStatus.Queued or GenerationTaskStatus.Running);
+    }
+
+    [Fact]
     public async Task CompatibilityRun_RejectsNonFakeProviderBeforePreparingTasks()
     {
         var repository = new InMemoryProjectRepository();
@@ -655,6 +683,43 @@ public sealed class GenerationWorkflowApplicationServiceTests
         public Task<ReviewResult?> LoadLatestReviewResultAsync(Guid candidateImageId, CancellationToken cancellationToken)
         {
             return Task.FromResult<ReviewResult?>(null);
+        }
+    }
+
+    private sealed class PausingImageGenerationProvider : IImageGenerationProvider
+    {
+        private readonly FakeImageGenerationProvider _inner = new();
+
+        public GenerationWorkflowApplicationService? Service { get; set; }
+
+        public InMemoryProjectRepository? Repository { get; set; }
+
+        public Guid ProjectId { get; set; }
+
+        public IProviderCapabilities Capabilities => _inner.Capabilities;
+
+        public int CallCount { get; private set; }
+
+        public async Task<ImageGenerationResult> GenerateImageAsync(
+            ImageGenerationRequest request,
+            CancellationToken cancellationToken)
+        {
+            CallCount++;
+            if (CallCount == 1 && Service is not null && Repository is not null)
+            {
+                var snapshot = await Repository.LoadAsync(ProjectId, cancellationToken);
+                var queuedTasks = snapshot!.Series
+                    .SelectMany(series => series.Items)
+                    .SelectMany(item => item.GenerationTasks)
+                    .Where(task => task.Status is GenerationTaskStatus.Queued)
+                    .ToArray();
+                foreach (var task in queuedTasks)
+                {
+                    await Service.PauseGenerationTaskAsync(ProjectId, task.Id, cancellationToken);
+                }
+            }
+
+            return await _inner.GenerateImageAsync(request, cancellationToken);
         }
     }
 

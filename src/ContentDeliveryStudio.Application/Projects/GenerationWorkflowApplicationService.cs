@@ -318,42 +318,42 @@ public sealed class GenerationWorkflowApplicationService
         CancellationToken cancellationToken)
     {
 
-        var project = await RequireProjectAsync(projectId, cancellationToken);
         var queue = new GenerationQueue(
             imageGenerationProvider,
             new GenerationQueueOptions(MaxConcurrency: 1, MaxRetries: 0));
-        var workItems = GetTaskEntries(project)
+        var project = await RequireProjectAsync(projectId, cancellationToken);
+        var taskIds = GetTaskEntries(project)
             .Where(entry => entry.Task.Status is GenerationTaskStatus.Queued
                 && (approvalReceiptId is null || entry.Task.ApprovalReceipt?.Id == approvalReceiptId))
             .OrderBy(entry => entry.Task.QueuePosition ?? int.MaxValue)
             .ThenBy(entry => entry.Task.CreatedAt)
             .ThenBy(entry => entry.Task.Id)
-            .Select((entry, index) => new DurableGenerationWorkItem(
-                CreateGenerationRequest(
-                    entry,
-                    outputDirectory,
-                    entry.Task.QueuePosition ?? index + 1),
-                entry.Task,
-                entry.Item,
-                entry.Prompt))
+            .Select(entry => entry.Task.Id)
             .ToArray();
 
-        var taskResults = new List<GenerationQueueTaskResult>(workItems.Length);
-        var images = new List<ImageGenerationResult>(workItems.Length);
-
-        if (approvalReceiptId is not null && workItems.Length == 0)
+        if (approvalReceiptId is not null && taskIds.Length == 0)
         {
             throw new InvalidOperationException("No queued generation operations match the approval receipt.");
         }
 
-        foreach (var workItem in workItems)
+        var taskResults = new List<GenerationQueueTaskResult>(taskIds.Length);
+        var images = new List<ImageGenerationResult>(taskIds.Length);
+        var executionIndex = 0;
+
+        foreach (var taskId in taskIds)
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 break;
             }
 
-            if (workItem.Task.Status is not GenerationTaskStatus.Queued)
+            // Re-read before every dispatch: pause, move, and approval-invalidation
+            // decisions made by other callers between items must not be bypassed
+            // by a stale snapshot, and the aggregate save is protected by the
+            // concurrency token (compare-and-set) when they race this loop anyway.
+            project = await RequireProjectAsync(projectId, cancellationToken);
+            var entry = GetTaskEntries(project).SingleOrDefault(item => item.Task.Id == taskId);
+            if (entry is null || entry.Task.Status is not GenerationTaskStatus.Queued)
             {
                 continue;
             }
@@ -363,32 +363,79 @@ public sealed class GenerationWorkflowApplicationService
                 ValidateLiveApprovalBeforeDispatch(project, imageGenerationProvider, receiptId);
             }
 
-            workItem.Task.Start(GetCheckpointTimestamp(workItem.Task));
-            await _repository.SaveAsync(project, cancellationToken);
+            executionIndex++;
+            var request = CreateGenerationRequest(
+                entry,
+                outputDirectory,
+                entry.Task.QueuePosition ?? executionIndex);
+            entry.Task.Start(GetCheckpointTimestamp(entry.Task));
+            try
+            {
+                await _repository.SaveAsync(project, cancellationToken);
+            }
+            catch (ProjectConcurrencyConflictException)
+            {
+                project = await RequireProjectAsync(projectId, cancellationToken);
+                entry = GetTaskEntries(project).SingleOrDefault(item => item.Task.Id == taskId);
+                if (entry is null || entry.Task.Status is not GenerationTaskStatus.Queued)
+                {
+                    continue;
+                }
+
+                if (approvalReceiptId is { } conflictReceiptId)
+                {
+                    ValidateLiveApprovalBeforeDispatch(project, imageGenerationProvider, conflictReceiptId);
+                }
+
+                entry.Task.Start(GetCheckpointTimestamp(entry.Task));
+                await _repository.SaveAsync(project, cancellationToken);
+            }
+
             SafeRecord(new GenerationQueueDiagnosticsEvent(
-                workItem.Task.UpdatedAt,
+                entry.Task.UpdatedAt,
                 GenerationQueueDiagnosticsEventName.ExecutionStarted,
                 projectId,
-                workItem.Task.Id,
-                workItem.Task.Status.ToString(),
-                workItem.Task.QueuePosition));
+                entry.Task.Id,
+                entry.Task.Status.ToString(),
+                entry.Task.QueuePosition));
 
-            var itemRun = await queue.RunAsync([workItem.Request], cancellationToken);
+            var itemRun = await queue.RunAsync([request], cancellationToken);
             var queueResult = itemRun.Tasks.Single();
-            var result = queueResult with { Id = workItem.Task.Id };
-            PersistTerminalResult(
-                workItem,
-                result,
-                itemRun.Images.SingleOrDefault(),
-                GetCheckpointTimestamp(workItem.Task));
-            await _repository.SaveAsync(project, CancellationToken.None);
+            var result = queueResult with { Id = entry.Task.Id };
+
+            // Terminal persistence must survive concurrent queue mutations: on
+            // conflict, re-read and re-apply the terminal decision to the fresh
+            // aggregate instead of overwriting it with this stale copy. Only
+            // this loop can transition Running, so the fresh task is still
+            // Running when the terminal save lost the race.
+            for (var terminalAttempt = 0; ; terminalAttempt++)
+            {
+                try
+                {
+                    PersistTerminalResult(
+                        entry,
+                        result,
+                        itemRun.Images.SingleOrDefault(),
+                        GetCheckpointTimestamp(entry.Task));
+                    await _repository.SaveAsync(project, CancellationToken.None);
+                    break;
+                }
+                catch (ProjectConcurrencyConflictException) when (terminalAttempt < 2)
+                {
+                    project = await RequireProjectAsync(projectId, CancellationToken.None);
+                    entry = GetTaskEntries(project).SingleOrDefault(item => item.Task.Id == taskId)
+                        ?? throw new InvalidOperationException(
+                            $"Generation task disappeared while persisting terminal state: {taskId}");
+                }
+            }
+
             SafeRecord(new GenerationQueueDiagnosticsEvent(
-                workItem.Task.UpdatedAt,
-                ToTerminalEventName(workItem.Task.Status),
+                entry.Task.UpdatedAt,
+                ToTerminalEventName(entry.Task.Status),
                 projectId,
-                workItem.Task.Id,
-                workItem.Task.Status.ToString(),
-                workItem.Task.QueuePosition));
+                entry.Task.Id,
+                entry.Task.Status.ToString(),
+                entry.Task.QueuePosition));
 
             taskResults.Add(result);
             images.AddRange(itemRun.Images);
@@ -865,7 +912,7 @@ public sealed class GenerationWorkflowApplicationService
     }
 
     private static void PersistTerminalResult(
-        DurableGenerationWorkItem workItem,
+        GenerationTaskEntry entry,
         GenerationQueueTaskResult result,
         ImageGenerationResult? generatedImage,
         DateTimeOffset persistedAt)
@@ -883,13 +930,13 @@ public sealed class GenerationWorkflowApplicationService
         switch (result.Status)
         {
             case GenerationTaskStatus.Succeeded:
-                workItem.Task.Succeed(persistedAt);
+                entry.Task.Succeed(persistedAt);
                 break;
             case GenerationTaskStatus.Failed:
-                workItem.Task.Fail(result.ErrorMessage ?? "Generation failed.", persistedAt);
+                entry.Task.Fail(result.ErrorMessage ?? "Generation failed.", persistedAt);
                 break;
             case GenerationTaskStatus.Cancelled:
-                workItem.Task.Cancel(result.ErrorMessage ?? "Generation cancelled.", persistedAt);
+                entry.Task.Cancel(result.ErrorMessage ?? "Generation cancelled.", persistedAt);
                 break;
             default:
                 throw new InvalidOperationException($"Queue returned non-terminal status {result.Status}.");
@@ -900,13 +947,13 @@ public sealed class GenerationWorkflowApplicationService
             return;
         }
 
-        workItem.Item.AddCandidateImage(
+        entry.Item.AddCandidateImage(
                 new CandidateImage(
                     generatedImage.CandidateImageId,
-                    workItem.Item.Id,
-                    workItem.Prompt.Id,
-                    workItem.Task.Id,
-                    workItem.Prompt.ProviderProfileId,
+                    entry.Item.Id,
+                    entry.Prompt.Id,
+                    entry.Task.Id,
+                    entry.Prompt.ProviderProfileId,
                     CandidateImageStatus.ReviewPending,
                     generatedImage.AssetPath,
                     generatedImage.MetadataPath,
@@ -931,12 +978,6 @@ public sealed class GenerationWorkflowApplicationService
         var sanitized = new string(value.Select(character => invalidChars.Contains(character) ? '-' : character).ToArray());
         return string.IsNullOrWhiteSpace(sanitized) ? "image" : sanitized.Trim();
     }
-
-    private sealed record DurableGenerationWorkItem(
-        ImageGenerationRequest Request,
-        GenerationTask Task,
-        SeriesItem Item,
-        PromptVersion Prompt);
 
     private sealed record GenerationTaskEntry(
         GenerationTask Task,

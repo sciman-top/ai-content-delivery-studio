@@ -308,6 +308,80 @@ public sealed class LocalBackupRestoreServiceTests
         }
     }
 
+    [Fact]
+    public void RecoverInterruptedRestoreTransactions_RepairsCrashedCommitAndCleansStaging()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"content-delivery-backup-recovery-{Guid.NewGuid():N}");
+        var target = Path.Combine(tempRoot, "restored");
+
+        try
+        {
+            Directory.CreateDirectory(target);
+            var transactionRoot = Path.Combine(tempRoot, ".restored.restore-deadbeef");
+            var rollbackRoot = Path.Combine(transactionRoot, "rollback", "nested");
+            var stagingRoot = Path.Combine(transactionRoot, "payload");
+            Directory.CreateDirectory(rollbackRoot);
+            Directory.CreateDirectory(stagingRoot);
+            File.WriteAllText(
+                Path.Combine(rollbackRoot, "stranded.txt"),
+                "original content moved out during commit");
+            File.WriteAllText(
+                Path.Combine(stagingRoot, "garbage.txt"),
+                "staged but never committed");
+
+            var recovery = LocalBackupRestoreService.RecoverInterruptedRestoreTransactions(target);
+
+            Assert.Equal(target, recovery.TargetDirectory);
+            Assert.Equal(["nested/stranded.txt"], recovery.RecoveredFiles);
+            Assert.Equal(1, recovery.CleanedUpTransactions);
+            Assert.Equal(
+                "original content moved out during commit",
+                File.ReadAllText(Path.Combine(target, "nested", "stranded.txt")));
+            Assert.False(Directory.Exists(transactionRoot));
+            Assert.False(File.Exists(Path.Combine(target, "garbage.txt")));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void RecoverInterruptedRestoreTransactions_KeepsNewerTargetContentOverStrandedOriginal()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"content-delivery-backup-recovery-{Guid.NewGuid():N}");
+        var target = Path.Combine(tempRoot, "restored");
+
+        try
+        {
+            Directory.CreateDirectory(target);
+            File.WriteAllText(Path.Combine(target, "shared.txt"), "newer target content");
+            var transactionRoot = Path.Combine(tempRoot, ".restored.restore-cafebabe");
+            var rollbackRoot = Path.Combine(transactionRoot, "rollback");
+            Directory.CreateDirectory(rollbackRoot);
+            File.WriteAllText(
+                Path.Combine(rollbackRoot, "shared.txt"),
+                "stale original stranded by a crash after full commit");
+
+            var recovery = LocalBackupRestoreService.RecoverInterruptedRestoreTransactions(target);
+
+            Assert.Empty(recovery.RecoveredFiles);
+            Assert.Equal(1, recovery.CleanedUpTransactions);
+            Assert.Equal("newer target content", File.ReadAllText(Path.Combine(target, "shared.txt")));
+            Assert.False(Directory.Exists(transactionRoot));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
     private static async Task WriteEntryAsync(ZipArchive archive, string path, string content)
     {
         var entry = archive.CreateEntry(path);

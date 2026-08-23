@@ -155,6 +155,11 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
             throw new IOException($"Restore target directory is occupied by a file: {targetRoot}");
         }
 
+        // A previous restore may have died mid-commit (for example on power loss),
+        // leaving original files stranded inside a hidden transaction directory.
+        // Repair those before staging anything new for the same target.
+        RecoverInterruptedRestoreTransactions(request.TargetDirectory, cancellationToken);
+
         using var archive = ZipFile.OpenRead(backupFilePath);
         var validatedFiles = await ValidateArchiveAsync(
             archive,
@@ -175,6 +180,7 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
         try
         {
             Directory.CreateDirectory(stagingRoot);
+            WriteTransactionJournal(transactionRoot, targetRoot);
             foreach (var validatedFile in validatedFiles)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -222,6 +228,105 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
             }
         }
     }
+
+    /// <summary>
+    /// Repairs restore transactions for this target that were interrupted by a
+    /// process crash or power loss: files stranded in a transaction's rollback
+    /// area are moved back to the target (unless the target already has newer
+    /// content), and the leftover hidden transaction directories are removed.
+    /// </summary>
+    public static InterruptedRestoreRecovery RecoverInterruptedRestoreTransactions(
+        string targetDirectory,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetDirectory);
+
+        cancellationToken.ThrowIfCancellationRequested();
+        var trimmedTargetRoot = Path.GetFullPath(targetDirectory)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        var targetParent = Path.GetDirectoryName(trimmedTargetRoot)
+            ?? throw new InvalidOperationException("Restore target cannot be a volume root.");
+        var targetName = Path.GetFileName(trimmedTargetRoot);
+        Directory.CreateDirectory(targetParent);
+
+        var recoveredFiles = new List<string>();
+        var cleanedUpTransactions = 0;
+        foreach (var transactionDirectory in Directory
+                     .EnumerateDirectories(targetParent, $".{targetName}.restore-*")
+                     .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var journal = TryReadTransactionJournal(transactionDirectory);
+            if (journal is not null
+                && !string.Equals(
+                    journal.TargetRoot,
+                    trimmedTargetRoot,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                // The journal records a different target than the transaction
+                // directory's location implies; never replay files elsewhere.
+                throw new IOException(
+                    $"Interrupted restore transaction {transactionDirectory} targets {journal.TargetRoot}, which does not match {trimmedTargetRoot}. Resolve it manually.");
+            }
+
+            var rollbackRoot = Path.Combine(transactionDirectory, "rollback");
+            if (Directory.Exists(rollbackRoot))
+            {
+                foreach (var rollbackFile in Directory
+                             .EnumerateFiles(rollbackRoot, "*", SearchOption.AllDirectories)
+                             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var relativePath = Path.GetRelativePath(rollbackRoot, rollbackFile);
+                    var destinationPath = Path.Combine(trimmedTargetRoot, relativePath);
+                    Directory.CreateDirectory(Path.GetDirectoryName(destinationPath)!);
+                    if (File.Exists(destinationPath))
+                    {
+                        // The target already has content at this path (from a
+                        // later restore or the user); keep it, drop the stale copy.
+                        File.Delete(rollbackFile);
+                    }
+                    else
+                    {
+                        File.Move(rollbackFile, destinationPath);
+                        recoveredFiles.Add(relativePath.Replace('\\', '/'));
+                    }
+                }
+            }
+
+            TryDeleteDirectory(transactionDirectory);
+            cleanedUpTransactions++;
+        }
+
+        return new InterruptedRestoreRecovery(trimmedTargetRoot, recoveredFiles, cleanedUpTransactions);
+    }
+
+    private static void WriteTransactionJournal(string transactionRoot, string targetRoot)
+    {
+        var journalPath = Path.Combine(transactionRoot, "transaction.json");
+        File.WriteAllText(
+            journalPath,
+            JsonSerializer.Serialize(
+                new TransactionJournal(TargetRoot: targetRoot, CreatedAtUtc: DateTimeOffset.UtcNow),
+                JsonOptions));
+    }
+
+    private static TransactionJournal? TryReadTransactionJournal(string transactionRoot)
+    {
+        try
+        {
+            var journalPath = Path.Combine(transactionRoot, "transaction.json");
+            return File.Exists(journalPath)
+                ? JsonSerializer.Deserialize<TransactionJournal>(File.ReadAllText(journalPath))
+                : null;
+        }
+        catch (Exception exception) when (exception is IOException or JsonException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    private sealed record TransactionJournal(string TargetRoot, DateTimeOffset CreatedAtUtc);
 
     private static void CommitStagedFiles(
         string stagingRoot,
@@ -712,3 +817,9 @@ internal sealed record LocalBackupRestoreLimits(
         }
     }
 }
+
+/// <summary>Outcome of repairing interrupted restore transactions for one target.</summary>
+public sealed record InterruptedRestoreRecovery(
+    string TargetDirectory,
+    IReadOnlyList<string> RecoveredFiles,
+    int CleanedUpTransactions);

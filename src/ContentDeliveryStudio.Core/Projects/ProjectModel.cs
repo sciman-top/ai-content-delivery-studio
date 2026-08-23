@@ -35,6 +35,9 @@ public sealed class ImageProject
 
     public DateTimeOffset UpdatedAt { get; private set; }
 
+    /// <summary>Optimistic concurrency token for the whole aggregate; managed by the EF repository.</summary>
+    public int ConcurrencyVersion { get; private set; }
+
     public IReadOnlyCollection<ImageSeries> Series => _series.AsReadOnly();
 
     public IReadOnlyCollection<ProviderProfile> ProviderProfiles => _providerProfiles.AsReadOnly();

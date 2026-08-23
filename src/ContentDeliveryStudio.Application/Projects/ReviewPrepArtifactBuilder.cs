@@ -21,7 +21,12 @@ public static class ReviewPrepArtifactBuilder
         var directory = LocalStudioDataPaths.ResolveWorkspaceProjectDirectory("review-prep", projectId);
 
         Directory.CreateDirectory(directory);
-        var fileName = $"{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{SanitizeFileName(itemTitle)}-review-prep.json";
+        // The second-precision timestamp plus title collides when two
+        // same-titled candidates are prepared within one second; the unique
+        // suffix keeps both manifests, and the temp+move landing keeps a
+        // crash from leaving a truncated review-prep artifact behind.
+        var fileName =
+            $"{DateTimeOffset.UtcNow:yyyyMMddHHmmss}-{SanitizeFileName(itemTitle)}-{Guid.NewGuid().ToString("N")[..8]}-review-prep.json";
         var manifestPath = Path.Combine(directory, fileName);
 
         var manifest = new ReviewPrepArtifactManifest(
@@ -32,10 +37,20 @@ public static class ReviewPrepArtifactBuilder
             CreateEvidenceSelections(assetPath, metadataPath, promptText),
             DateTimeOffset.UtcNow);
 
-        await File.WriteAllTextAsync(
-            manifestPath,
-            JsonSerializer.Serialize(manifest, JsonOptions),
-            cancellationToken);
+        var payload = JsonSerializer.Serialize(manifest, JsonOptions);
+        var temporaryPath = manifestPath + $".{Guid.NewGuid():N}.tmp";
+        try
+        {
+            await File.WriteAllTextAsync(temporaryPath, payload, cancellationToken);
+            File.Move(temporaryPath, manifestPath, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporaryPath))
+            {
+                File.Delete(temporaryPath);
+            }
+        }
 
         return new ReviewPrepArtifactContract(
             Summary: VisionReviewExecutionPolicy.CreateCompactSummary(itemTitle, promptText),

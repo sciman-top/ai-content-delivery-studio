@@ -11,6 +11,16 @@ public static class OpenAiHttpClientNames
 
 public static class OpenAiServiceCollectionExtensions
 {
+    /// <summary>
+    /// Raw-HTTP OpenAI calls are long-running: scientific review runs
+    /// multi-minute reasoning, so every attempt gets an explicit bounded
+    /// timeout instead of the library defaults. These values live on the
+    /// standard resilience pipeline, which owns the effective request
+    /// timeouts for this named client.
+    /// </summary>
+    public static readonly TimeSpan ScientificReviewAttemptTimeout = TimeSpan.FromMinutes(2);
+    public static readonly TimeSpan ScientificReviewTotalTimeout = TimeSpan.FromMinutes(5);
+
     public static IHttpClientBuilder AddOpenAiProviderHttpClient(
         this IServiceCollection services,
         OpenAiProviderOptions providerOptions)
@@ -40,11 +50,22 @@ public static class OpenAiServiceCollectionExtensions
                 client.BaseAddress = providerOptions.BaseUri;
             });
 
-        builder.AddStandardResilienceHandler(options =>
-        {
-            options.Retry.DisableForUnsafeHttpMethods();
-        });
-
+        // The standard resilience handler takes over HttpClient.Timeout (the
+        // factory forces InfiniteTimeSpan), so the effective bounded timeouts
+        // are the explicit attempt/total values configured below.
+        builder.AddStandardResilienceHandler(ConfigureScientificReviewResilience);
         return builder;
+    }
+
+    internal static void ConfigureScientificReviewResilience(
+        Microsoft.Extensions.Http.Resilience.HttpStandardResilienceOptions options)
+    {
+        options.AttemptTimeout.Timeout = ScientificReviewAttemptTimeout;
+        options.TotalRequestTimeout.Timeout = ScientificReviewTotalTimeout;
+        // Circuit-breaker sampling must be at least double the attempt
+        // timeout (library validation); the default 30s does not fit a
+        // 120s scientific-review attempt.
+        options.CircuitBreaker.SamplingDuration = TimeSpan.FromMinutes(5);
+        options.Retry.DisableForUnsafeHttpMethods();
     }
 }

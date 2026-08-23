@@ -289,6 +289,7 @@ internal static class ScientificFigureWorkflowJsonCodec
                 string.Equals(link.SourceBlockId, item.Evidence!.SourceBlockId, StringComparison.Ordinal)
                 && string.Equals(link.QuotedText, item.Evidence.QuotedText, StringComparison.Ordinal)
                 && link.Role == item.Evidence.Role
+                && link.Confidence == item.Evidence.Confidence
                 && link.ValidationState == item.Evidence.ValidationState);
             return ScientificFigureProvenance.FromEvidence(claim, evidence);
         }

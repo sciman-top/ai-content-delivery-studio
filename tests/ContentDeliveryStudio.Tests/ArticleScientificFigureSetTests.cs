@@ -191,7 +191,8 @@ public sealed class ArticleScientificFigureSetTests
         {
             Assert.True(item.PassedVisualReview);
             Assert.True(item.DeterministicScientificReview.Passed);
-            Assert.NotEmpty(item.VisualReviewRequest.RegionCrops);
+            Assert.NotNull(item.VisualReviewRequest);
+            Assert.NotEmpty(item.VisualReviewRequest!.RegionCrops);
             Assert.All(item.VisualReviewRequest.RegionCrops, crop => Assert.NotNull(crop.ExpectedCheck));
             Assert.Equal(ArticleScientificFigureGateStatus.PendingHumanApproval, item.Candidate.GateOneStatus);
             Assert.False(string.IsNullOrWhiteSpace(item.VisualReview.ProviderTraceId));
@@ -1103,6 +1104,48 @@ public sealed class ArticleScientificFigureSetTests
                 300,
                 $"sha256:{new string((char)('a' + index), 64)}",
                 [1, 2, 3])).ToArray());
+    }
+
+    [Fact]
+    public async Task InvalidEvidenceBoard_ProducesFailingItemResultInsteadOfAbortingTheSet()
+    {
+        var candidates = CreateCandidates();
+        var service = new ArticleScientificFigureSetService(
+            new FakeSourceFigureExtractor(),
+            new EmptyEvidenceBoardRenderer(),
+            new ArticleScientificFigureCandidateRenderer(),
+            new ScientificFigureExporter(),
+            new FakeScientificVisualReviewProvider(),
+            new SkiaScientificReviewImageCropper(),
+            scientificReviewer: ArticleScientificFigureReviewerFactory.CreateFor(candidates));
+
+        var run = await service.RunAsync("article.pdf", candidates, CancellationToken.None);
+
+        var boardItem = run.Items.Single(item =>
+            item.Candidate.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard);
+        Assert.False(boardItem.PassedVisualReview);
+        Assert.False(boardItem.ContractReview.Passed);
+        Assert.Contains(
+            "source-evidence-board-invalid",
+            boardItem.ContractReview.Findings.Select(finding => finding.Code));
+        Assert.Null(boardItem.VisualReviewRequest);
+        Assert.NotEqual(ScientificReviewVerdict.Pass, boardItem.VisualReview.Verdict);
+        Assert.All(
+            run.Items.Where(item => item.Candidate.Kind != ArticleScientificFigureCandidateKind.SourceEvidenceBoard),
+            item => Assert.True(item.PassedVisualReview));
+    }
+
+    private sealed class EmptyEvidenceBoardRenderer : IArticleSourceEvidenceBoardRenderer
+    {
+        public ArticleSourceEvidenceBoard Render(ArticleSourceFigureAudit audit)
+        {
+            return new ArticleSourceEvidenceBoard(
+                [],
+                "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                0,
+                0,
+                []);
+        }
     }
 
     private sealed class FakeEvidenceBoardRenderer : IArticleSourceEvidenceBoardRenderer

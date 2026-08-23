@@ -10,6 +10,7 @@ internal sealed class ImageProjectConfiguration : IEntityTypeConfiguration<Image
     {
         entity.HasKey(project => project.Id);
         entity.Property(project => project.Name).IsRequired();
+        entity.Property(project => project.ConcurrencyVersion).IsConcurrencyToken();
         entity.HasMany(project => project.Series)
             .WithOne()
             .HasForeignKey(series => series.ProjectId)

@@ -318,17 +318,20 @@ public static class ArticleScientificFigureCommands
                     deterministicScientificAuthority = item.DeterministicScientificReview.AuthorityBoundary,
                     deterministicScientificFindings = item.DeterministicScientificReview.Findings,
                     expectedVisualChecks = item.DeterministicScientificReview.ExpectedVisualChecks,
-                    typedCrops = item.VisualReviewRequest.RegionCrops.Select(crop => new
-                    {
-                        crop.CropId,
-                        crop.Kind,
-                        crop.ResponsibleItemId,
-                        crop.X,
-                        crop.Y,
-                        crop.Width,
-                        crop.Height,
-                        crop.ExpectedCheck,
-                    }),
+                    visualReviewRequested = item.VisualReviewRequest is not null,
+                    typedCrops = item.VisualReviewRequest is null
+                        ? []
+                        : item.VisualReviewRequest.RegionCrops.Select(crop => new
+                        {
+                            crop.CropId,
+                            crop.Kind,
+                            crop.ResponsibleItemId,
+                            crop.X,
+                            crop.Y,
+                            crop.Width,
+                            crop.Height,
+                            crop.ExpectedCheck,
+                        }).ToArray(),
                     item.VisualReview.Verdict,
                     item.VisualReview.Findings,
                     item.VisualReview.ProviderTraceId,

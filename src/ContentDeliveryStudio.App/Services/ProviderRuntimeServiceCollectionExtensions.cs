@@ -70,7 +70,15 @@ public static class ProviderRuntimeServiceCollectionExtensions
         services.AddSingleton(configuration);
         services.AddSingleton<IOpenAiSecretStore>(secretStore);
         services.AddSingleton<OpenAiSdkClientFactory>();
-        services.AddHttpClient("openai-image-edit", client => client.BaseAddress = configuration.Image.BaseUri);
+        services.AddHttpClient(
+            "openai-image-edit",
+            client =>
+            {
+                client.BaseAddress = configuration.Image.BaseUri;
+                // High-quality image edits routinely run for minutes; bound the
+                // wait explicitly instead of relying on the 100s library default.
+                client.Timeout = OpenAiProviderFailoverFactory.ImageGenerationTimeout;
+            });
         services.AddSingleton<ITextPlanningProvider>(serviceProvider =>
             OpenAiProviderFailoverFactory.CreateTextPlanningProvider(
                 configuration,
@@ -105,7 +113,11 @@ public static class ProviderRuntimeServiceCollectionExtensions
                 serviceProvider.GetService<IProviderCallTelemetrySink>()));
         services.AddSingleton<OpenAiScientificReviewProvider>(serviceProvider =>
             new OpenAiScientificReviewProvider(
-                new HttpClient { BaseAddress = configuration.Text.BaseUri },
+                // Live scientific review must consume the same named client the
+                // application registers (resilience pipeline, bounded timeouts)
+                // instead of constructing its own unconfigured HttpClient.
+                serviceProvider.GetRequiredService<IHttpClientFactory>()
+                    .CreateClient(OpenAiHttpClientNames.Provider),
                 OpenAiProviderOptions.FromTextProviderEnvironment(
                     configuration,
                     realApiEnabled: true),

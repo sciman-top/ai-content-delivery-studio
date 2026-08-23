@@ -1,7 +1,10 @@
 using System.Net;
+using ContentDeliveryStudio.App.Services;
+using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -772,9 +775,65 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Equal("https://api.openai.test/v1/", client.BaseAddress!.ToString());
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
         Assert.Equal(1, handler.CallCount);
+        // The standard resilience pipeline owns the timeouts, so the factory
+        // forces the raw client timeout to infinite; the bounded values are
+        // asserted directly against the shared configuration routine.
+        Assert.Equal(Timeout.InfiniteTimeSpan, client.Timeout);
+        var configured = new Microsoft.Extensions.Http.Resilience.HttpStandardResilienceOptions();
+        OpenAiServiceCollectionExtensions.ConfigureScientificReviewResilience(configured);
+        Assert.Equal(OpenAiServiceCollectionExtensions.ScientificReviewAttemptTimeout, configured.AttemptTimeout.Timeout);
+        Assert.Equal(OpenAiServiceCollectionExtensions.ScientificReviewTotalTimeout, configured.TotalRequestTimeout.Timeout);
+        Assert.Equal(TimeSpan.FromMinutes(5), configured.CircuitBreaker.SamplingDuration);
         Assert.Same(options, provider.GetRequiredService<OpenAiProviderOptions>());
         Assert.NotNull(provider.GetRequiredService<IOpenAiSecretStore>());
         Assert.NotNull(provider.GetRequiredService<OpenAiSdkClientFactory>());
+    }
+
+    [Fact]
+    public async Task LiveRuntimeComposition_ConsumesResilienceNamedClientForScientificReview()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var envPath = Path.Combine(directory, ".env");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            await File.WriteAllLinesAsync(
+                envPath,
+                [
+                    "TEXT_PROVIDER_BASE_URL=https://text.example/v1",
+                    "TEXT_PROVIDER_API_KEY=sk-text",
+                    "TEXT_PROVIDER_MODEL=gpt-5.5",
+                    "IMAGE_PROVIDER_BASE_URL=https://image.example/v1",
+                    "IMAGE_PROVIDER_MODEL=image-model",
+                    "IMAGE_PROVIDER_API_KEY_1=sk-image-1",
+                ]);
+
+            var services = new ServiceCollection();
+            services.AddOpenAiProviderHttpClient(new OpenAiProviderOptions());
+            services.AddContentDeliveryStudioProviderRuntime(
+                new ProviderRuntimeRegistrationOptions(ProviderMode: "live", EnvPath: envPath));
+
+            using var provider = services.BuildServiceProvider();
+
+            // The live scientific review singleton must be the provider wired to
+            // the application's resilience named client, and that client must
+            // carry the explicit bounded timeouts.
+            var scientificReview = provider.GetRequiredService<OpenAiScientificReviewProvider>();
+            Assert.NotNull(scientificReview);
+            Assert.IsType<OpenAiScientificReviewProvider>(
+                provider.GetRequiredService<IScientificSemanticReviewProvider>());
+            var namedClient = provider.GetRequiredService<IHttpClientFactory>()
+                .CreateClient(OpenAiHttpClientNames.Provider);
+            Assert.Equal(Timeout.InfiniteTimeSpan, namedClient.Timeout);
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
     }
 
     private sealed class StaticSecretStore(string? value) : IOpenAiSecretStore

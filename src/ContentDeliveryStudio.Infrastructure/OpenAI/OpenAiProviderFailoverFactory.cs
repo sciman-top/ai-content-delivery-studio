@@ -4,6 +4,14 @@ namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
 public static class OpenAiProviderFailoverFactory
 {
+    /// <summary>Explicit per-role timeouts for the raw failover transports:
+    /// reasoning text planning can take minutes; high-quality image generation
+    /// longer still. Without these the transports silently inherit the 100s
+    /// HttpClient default, which real image calls can exceed.</summary>
+    public static readonly TimeSpan TextPlanningTimeout = TimeSpan.FromMinutes(5);
+    public static readonly TimeSpan VisionReviewTimeout = TimeSpan.FromMinutes(10);
+    public static readonly TimeSpan ImageGenerationTimeout = TimeSpan.FromMinutes(10);
+
     public static ITextPlanningProvider CreateTextPlanningProvider(
         ProviderEnvironmentConfiguration configuration,
         IOpenAiSecretStore secretStore,
@@ -19,7 +27,7 @@ public static class OpenAiProviderFailoverFactory
             {
                 var options = OpenAiProviderOptions.FromTextEndpointEnvironment(endpoint, realApiEnabled);
                 return new OpenAiTextPlanningProvider(
-                    CreateHttpClient(options, httpClientFactory),
+                    CreateHttpClient(options, httpClientFactory, TextPlanningTimeout),
                     options,
                     secretStore,
                     telemetrySink);
@@ -47,7 +55,7 @@ public static class OpenAiProviderFailoverFactory
             {
                 var options = OpenAiProviderOptions.FromTextEndpointEnvironment(endpoint, realApiEnabled);
                 return new OpenAiVisionReviewProvider(
-                    CreateHttpClient(options, httpClientFactory),
+                    CreateHttpClient(options, httpClientFactory, VisionReviewTimeout),
                     options,
                     secretStore,
                     telemetrySink);
@@ -75,7 +83,7 @@ public static class OpenAiProviderFailoverFactory
             {
                 var options = OpenAiProviderOptions.FromImageEndpointEnvironment(endpoint, realApiEnabled);
                 return new OpenAiImageGenerationProvider(
-                    CreateHttpClient(options, httpClientFactory),
+                    CreateHttpClient(options, httpClientFactory, ImageGenerationTimeout),
                     options,
                     secretStore,
                     telemetrySink);
@@ -102,7 +110,8 @@ public static class OpenAiProviderFailoverFactory
 
     private static HttpClient CreateHttpClient(
         OpenAiProviderOptions options,
-        Func<OpenAiProviderOptions, HttpClient>? httpClientFactory)
+        Func<OpenAiProviderOptions, HttpClient>? httpClientFactory,
+        TimeSpan timeout)
     {
         if (httpClientFactory is not null)
         {
@@ -112,6 +121,7 @@ public static class OpenAiProviderFailoverFactory
         return new HttpClient
         {
             BaseAddress = options.BaseUri,
+            Timeout = timeout,
         };
     }
 }

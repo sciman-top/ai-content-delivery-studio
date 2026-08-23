@@ -58,7 +58,41 @@ public sealed class EfProjectRepository : IProjectRepository
         _dbContext.ChangeTracker.DetectChanges();
         ApplyAddedStateToNewEntries(snapshot, existingIds);
         TrackModifiedCreativeBriefs(project);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        BumpConcurrencyVersion(project);
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException exception)
+        {
+            // The failed save rolled back, so every tracked entity is a stale
+            // snapshot. Detach them: otherwise a subsequent LoadAsync on this
+            // same context would return the stale tracked instances through
+            // identity resolution instead of the database's current rows,
+            // defeating the caller's reload-and-retry contract.
+            _dbContext.ChangeTracker.Clear();
+            throw new ProjectConcurrencyConflictException(project.Id, exception);
+        }
+    }
+
+    /// <summary>
+    /// Advances the aggregate's optimistic token before every save. The EF
+    /// concurrency token compares the loaded snapshot (original value), so a
+    /// concurrent writer that advanced the version first makes this save fail
+    /// with <see cref="ProjectConcurrencyConflictException"/> instead of
+    /// silently overwriting the concurrent change. The bump must trigger on
+    /// any tracked aggregate change, not only root-scalar changes: queue
+    /// execution mutates just child entities (task state, candidate images)
+    /// while the root row itself stays unchanged.
+    /// </summary>
+    private void BumpConcurrencyVersion(ImageProject project)
+    {
+        if (_dbContext.ChangeTracker.HasChanges())
+        {
+            var projectEntry = _dbContext.Entry(project);
+            projectEntry.Property(aggregate => aggregate.ConcurrencyVersion).CurrentValue =
+                unchecked(project.ConcurrencyVersion + 1);
+        }
     }
 
     public Task<ImageProject?> LoadAsync(Guid projectId, CancellationToken cancellationToken)

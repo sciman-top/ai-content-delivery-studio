@@ -411,7 +411,7 @@ public sealed record ArticleScientificFigureSetItemResult(
     ArticleSourceEvidenceBoard? EvidenceBoard,
     ArticleCandidateVisualContractReport ContractReview,
     ArticleScientificReviewReport DeterministicScientificReview,
-    ScientificVisualReviewRequest VisualReviewRequest,
+    ScientificVisualReviewRequest? VisualReviewRequest,
     ScientificProviderReviewResult VisualReview,
     IReadOnlyList<ArticleCandidateRepairRecord> Repairs,
     int PresentationAttempts)
@@ -683,8 +683,13 @@ public sealed class ArticleScientificFigureSetService
                 "source-evidence-board-invalid",
                 "Evidence board requires hashed source-faithful pixels and valid source asset ids.")]);
         var scientific = _scientificReviewer.Review(candidate, artifact: null, audit, board);
-        var visualRequest = BuildVisualRequest(candidate, board);
-        var visual = contract.Passed && scientific.Passed
+        // A failing board contract is a reportable finding, not an exception:
+        // building a visual request from invalid board pixels would throw and
+        // abort the whole set, losing every other candidate's results.
+        ScientificVisualReviewRequest? visualRequest = contract.Passed && scientific.Passed
+            ? BuildVisualRequest(candidate, board)
+            : null;
+        var visual = visualRequest is not null
             ? await ReviewVisualAsync(
                 visualRequest,
                 cancellationToken)
