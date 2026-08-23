@@ -8,7 +8,7 @@
 
 本文件用于跟踪当前仓库对 [../PRD_V1.md](../PRD_V1.md) 中显式 V1 发布指标的证据状态。
 
-在核心文档集中，它是当前 V1 发布验证状态的正式文件。`ROADMAP.md` 和 `TASKS.md` 可以描述执行顺序或实现进展，但对当前发布声明必须让位于本文件。详见 [../DOCUMENTATION_GOVERNANCE.md](../DOCUMENTATION_GOVERNANCE.md)。
+在核心文档集中，它是当前 V1 发布验证状态的正式文件。`TASKS.md` 可以描述执行顺序或实现进展，但对当前发布声明必须让位于本文件。详见 [../DOCUMENTATION_GOVERNANCE.md](../DOCUMENTATION_GOVERNANCE.md)。
 
 这里对证据类型保持严格区分：
 
@@ -39,7 +39,7 @@
 
 | 发布指标 | 当前状态 | 当前证据 | 剩余缺口 |
 | --- | --- | --- | --- |
-| 主路径在不使用付费 API、且不手工改数据库的前提下，连续三次完成 fake-first 端到端运行。 | 已由 automated repo evidence 验证 | `PrimaryLaunchRouteVerificationTests.PrimaryLaunchRoute_CompletesThreeConsecutiveFakeFirstRunsWithoutManualDatabaseEdits` 证明了三次连续的短需求 -> brief -> blueprint -> series -> review -> delivery 运行，并使用 fake provider 与持久化本地状态检查。支撑切片覆盖仍在 `FakeWorkflowTests`、`ProjectApplicationServiceTests` 和 `BriefWorkflowApplicationServiceTests` 中。 | 未来仍可补一条面向用户的脚本来镜像这组测试，但发布指标已经有自动化证明。 |
+| 主路径在不使用付费 API、且不手工改数据库的前提下，连续三次完成 fake-first 端到端运行。 | 已由 automated repo evidence 验证 | `PrimaryLaunchRouteVerificationTests.PrimaryLaunchRoute_CompletesThreeConsecutiveFakeFirstRunsWithoutManualDatabaseEdits` 证明了三次连续的短需求 -> brief -> blueprint -> series -> review -> delivery 运行，并使用 fake provider 与持久化本地状态检查。支撑切片覆盖仍在 `ProjectApplicationServiceTests` 和 `BriefWorkflowApplicationServiceTests` 中。 | 未来仍可补一条面向用户的脚本来镜像这组测试，但发布指标已经有自动化证明。 |
 | 一组 `2-item` 样本序列能通过 opt-in OpenAI 路径完成，并验证 request provenance、review evidence 和 secret redaction。 | 已由 live provider evidence 验证 | `artifacts/live-openai-v1-sample/20260611-132947/live-v1-sample-summary.json` 记录了当前可用的 opt-in OpenAI 运行。当前自动化护栏保留在 provider contract、configuration、preflight、diagnostics、official-SDK 与 live-sample route 测试中。 | 只有当 provider 行为发生实质变化，或需要更新的 live snapshot 时，才需要刷新这组证据。 |
 | 文章或纯文本规划在默认情况下不依赖真实 provider，也能生成并提升已批准的插图目标。 | 已由 automated repo evidence 验证 | `SupportingValidationRouteVerificationTests.SupportingValidationRoute_CompletesFakeFirstDocumentPlanningThroughDelivery` 证明了文章/纯文本规划、已批准目标提升、fake-first 生成、review、approval 和 delivery export 的整条路径。`DocumentIllustrationWorkflowTests` 继续覆盖更窄的规划与 oversize-guard 边界。 | 以后仍值得补一条面向用户的脚本，但该指标已经具备自动化证明。 |
 | 教学海报证明路径能够导出确定性文本合成 provenance 和人工 approval evidence。 | 已由 automated repo evidence 验证 | `EducationalPosterLaunchProofTests.EducationalPosterProofPath_ExportsCompositionProvenanceAndApprovalEvidence` 证明了确定性合成、composition-report provenance 复制和 final approval evidence；组件覆盖保留在 `SkiaDeterministicTextComposerTests` 与 `DeliveryPackageTests`。 | 未来真实样本导出仍然有价值，但该指标已经具备自动化证明。 |
@@ -78,7 +78,6 @@
 
 ## 本快照使用的证据来源
 
-- `tests/ContentDeliveryStudio.Tests/FakeWorkflowTests.cs`
 - `tests/ContentDeliveryStudio.Tests/PrimaryLaunchRouteVerificationTests.cs`
 - `tests/ContentDeliveryStudio.Tests/BriefWorkflowApplicationServiceTests.cs`
 - `tests/ContentDeliveryStudio.Tests/SupportingValidationRouteVerificationTests.cs`

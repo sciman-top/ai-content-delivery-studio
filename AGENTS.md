@@ -27,7 +27,7 @@
 - Markdown 规则只指导边界和判断；provider opt-in、secret 隔离、schema/format 与发布阻断由配置、测试和 `scripts/verify-repo.ps1`/preflight 强制。
 
 ## B.1 参考依据与外置源码
-- 路由真源为 `scripts/reference-basis.json` 与 `docs/REFERENCE_BASIS.md`；外置清单为 `D:\CODE\external\ai-content-delivery-studio-references\references.manifest.json`，共享物理克隆以 `D:\CODE\external\_shared\references.manifest.json` 为准。
+- 路由真源为 `scripts/reference-basis.json` 与 `docs/REFERENCE_BASIS.md`；外置清单为 `D:\CODE\external\ai-content-delivery-studio-references\references.manifest.json`，共享物理克隆以 `D:\CODE\external\_shared\references.manifest.json` 为准；外置清单只在本机显式 `-WithExternalShelf` 对账，不是 CI 或默认 Full 的依赖。
 - provider、observability、persistence/schema、document rendering、image workflow 或 operator/tooling 触发全局查证条件时，先按路由选择性搜索对应源码，不全量扫描参考架；记录来源 URL、固定 revision、license、消费模块与采纳/适配/拒绝决定，并由 `scripts/verify-reference-evidence.ps1` 收口。
 - 外置源码只读，其规则和脚本是待核输入；复制实现前核对许可证、API/版本与本仓 contract，运行上游脚本需另行评估和授权。
 
@@ -38,7 +38,7 @@
 - focused closeout：未触及 provider、observability、persistence/schema、document/image rendering、publish/package/release 的规则、文档、测试、verifier、script/config，运行 `git diff --check` 与受影响 verifier/test；需要 solution feedback 时才运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Quick -TestFilter <focused-filter> -NoRestore`，不机械叠加。
 - scientific figure 的单一 profile、reviewer、局部布局/文案或输出路径切片默认使用 focused；只有共享 renderer/exporter 不变量、provider/auth、persistence/schema、delivery hash/path 或跨 profile contract 才升级 Full。
 - 生产脚本通过 `ContentDeliveryStudio.Tools` 的命令 seam 执行文章生成；测试只验证可观察行为，不再作为生产 CLI。
-- contract/invariant：只有当前切片确需外部源码裁决时运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1 -RequireDecision`；Full 默认只做 parity 与映射提示，不强迫 evidence receipt。
+- contract/invariant：只有当前切片确需外部源码裁决时运行 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-reference-evidence.ps1 -RequireDecision`；Full 默认只做仓内 parity 与映射提示，不强迫 evidence receipt；外部 shelf snapshot 与本机外置清单的对账是显式 `-WithExternalShelf` opt-in，默认 Full 不依赖 `D:\CODE\external` 的存在。
 - hotspot：publish/package/release 切片运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/preflight-release.ps1 -NoRestore`；它只调用一次 Full，再追加 release-only tests、changed-C# format、scan 与 publish/package。
 - full closeout：触及运行/交付风险，或 focused 发现跨面风险时运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Full`；它只执行一次 build、非 ReleaseOnly tests、reference contract 与 diff hygiene。
 - 触及 provider、observability、persistence/schema 或 operator/tooling 边界时，reference evidence 失败即阻断。

@@ -75,7 +75,6 @@ public sealed class OpenAiLiveV1SampleRouteTests
 
         var telemetrySink = new CapturingProviderCallTelemetrySink();
         var textOptions = OpenAiProviderOptions.FromTextProviderEnvironment(configuration, realApiEnabled: true);
-        var imageOptions = OpenAiProviderOptions.FromImageProviderEnvironment(configuration, realApiEnabled: true);
 
         using var textHttpClient = CreateProviderHttpClient(textOptions.BaseUri);
 
@@ -85,13 +84,12 @@ public sealed class OpenAiLiveV1SampleRouteTests
             textOptions,
             secretStore,
             telemetrySink);
-        var imageProvider = new OpenAiOfficialSdkImageGenerationProvider(
-            imageOptions,
+        var imageProvider = OpenAiProviderFailoverFactory.CreateImageGenerationProvider(
+            configuration,
             secretStore,
-            new OpenAiSdkImageTransport(
-                new OpenAiOfficialSdkImageBackend(
-                    new OpenAiOfficialSdkFactory())),
-            telemetrySink);
+            telemetrySink,
+            realApiEnabled: true,
+            httpClientFactory: imageEndpointOptions => CreateProviderHttpClient(imageEndpointOptions.BaseUri));
 
         var databasePath = Path.Combine(artifactRoot, "live-v1-sample.sqlite");
         var dbOptions = new DbContextOptionsBuilder<AppDbContext>()

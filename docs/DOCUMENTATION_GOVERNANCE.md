@@ -7,7 +7,6 @@ Documentation is intentionally small and role-based. Git history is the archive 
 | What does V1 promise? | [PRD_V1.md](./PRD_V1.md) |
 | What are the two current production lanes? | [PRD_POST_V1_PRODUCT_FOCUS.md](./PRD_POST_V1_PRODUCT_FOCUS.md) |
 | What remains actionable? | [TASKS.md](./TASKS.md) |
-| What direction should future work follow? | [ROADMAP.md](./ROADMAP.md) |
 | What historical release/live claims are valid? | [V1_LAUNCH_EVIDENCE.md](./V1_LAUNCH_EVIDENCE.md) |
 | How is the system organized? | [ARCHITECTURE.md](./ARCHITECTURE.md) |
 | How should AI implement a change? | [AI_CODING_WORKFLOW.md](./AI_CODING_WORKFLOW.md) |
@@ -16,7 +15,7 @@ Documentation is intentionally small and role-based. Git history is the archive 
 ## Rules
 
 - Code, tests, runtime behavior, and current configuration outrank stale narrative status.
-- Do not put changing test counts, transient dates, current branch state, or per-slice completion lists in README, TASKS, ROADMAP, or AGENTS.
+- Do not put changing test counts, transient dates, current branch state, or per-slice completion lists in README, TASKS, or AGENTS.
 - Do not create a spec, plan, evidence receipt, task queue entry, or governance check for an ordinary implementation slice.
 - Use an ADR only for a durable architectural decision with meaningful alternatives and compatibility impact.
 - Use `docs/change-evidence/` only for externally meaningful live, human, hardware, migration, waiver, or release acceptance that cannot be reconstructed from code and Git history.

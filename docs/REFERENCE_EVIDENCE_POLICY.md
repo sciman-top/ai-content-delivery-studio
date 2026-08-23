@@ -65,7 +65,15 @@ Manifest/document parity only:
 .\scripts\verify-reference-evidence.ps1 -ParityOnly
 ```
 
-Full and Release invoke the default check once through `verify-repo.ps1`. Quick does not invoke it. An implementation task invokes `-RequireDecision` separately only when its risk analysis requires external-source adjudication.
+The default check validates only in-repo surfaces (`scripts/reference-basis.json` against the generated block in this document). Comparing the committed shelf snapshot against the local external shelf manifest is an explicit opt-in:
+
+```powershell
+.\scripts\verify-reference-evidence.ps1 -WithExternalShelf
+```
+
+Run it on the machine that owns the external shelf after updating it, then commit the refreshed snapshot with `.\scripts\sync-reference-governance.ps1 -WithExternalShelf`. CI and machines without the external shelf stay green without the flag.
+
+Full and Release invoke the default check once through `verify-repo.ps1` (pass `-WithExternalShelf` through when needed). Quick does not invoke it. An implementation task invokes `-RequireDecision` separately only when its risk analysis requires external-source adjudication.
 
 ## Boundaries
 

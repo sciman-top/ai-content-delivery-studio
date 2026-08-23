@@ -6,12 +6,10 @@ using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Core.Providers;
 using ContentDeliveryStudio.Core.Styles;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
-using OpenAI.Responses;
 using SkiaSharp;
 
 namespace ContentDeliveryStudio.Tests;
 
-#pragma warning disable OPENAI001 // Tests intentionally verify ADR 0009 SDK text-planning migration details.
 public sealed class OpenAiProviderContractTests
 {
     [Fact]
@@ -400,179 +398,6 @@ public sealed class OpenAiProviderContractTests
         Assert.Equal(
             "document_illustration_plan",
             payload.RootElement.GetProperty("text").GetProperty("format").GetProperty("name").GetString());
-    }
-
-    [Fact]
-    public async Task SdkTextPlanningProvider_ParsesDocumentIllustrationPlanFromStructuredResponse()
-    {
-        var client = new FakeResponsesClient(
-            SdkJsonResponse(
-                """
-                {
-                  "id": "resp_sdk_doc_123",
-                  "output_text": "{\"brief\":{\"sourceKind\":\"Paste\",\"sourceDisplayName\":\"Quantum teaching note.txt\",\"title\":\"Quantum teaching note\",\"documentFamily\":\"Educational\",\"audience\":\"teachers\",\"sections\":[\"Introduction\"],\"keyClaims\":[\"Superposition needs a visual analogy.\"],\"visualOpportunities\":[\"Focus on the central comparison.\"],\"knownConstraints\":[\"avoid fake lab data\"],\"strictnessLevel\":\"Educational\"},\"plan\":{\"summary\":\"Create one educational concept diagram grounded in the supplied teaching note.\",\"coverageNotes\":[\"Cover the central classroom analogy first.\"],\"riskNotes\":[\"Do not imply real laboratory evidence or measured data.\"],\"targets\":[{\"title\":\"Concept diagram for superposition\",\"documentLocation\":\"Introduction\",\"purpose\":\"ConceptDiagram\",\"mustShow\":[\"A clear comparison between a single certain state and overlapping possible states\"],\"mustNotShow\":[\"fake lab apparatus readings\"],\"sourceEvidence\":[\"Superposition needs a visual analogy.\"],\"suggestedImageTypePresetId\":\"concept-diagram\",\"suggestedReviewRubricTemplateId\":\"educational-accuracy\",\"textPolicy\":\"DeterministicPostRender\",\"strictnessNotes\":[\"Use deterministic labels for any explanatory text.\"]}]}}"
-                }
-                """,
-                requestId: "req_sdk_doc_123"));
-        var provider = CreateSdkTextProvider(client);
-
-        var result = await provider.CreateDocumentIllustrationPlanAsync(
-            new DocumentIllustrationPlanningRequest(
-                "Quantum teaching note",
-                "Teachers need an intuitive explanation of superposition.",
-                "teachers",
-                DocumentFamily.Educational,
-                IllustrationStrictnessLevel.Educational,
-                ["Introduction"],
-                ["Superposition needs a visual analogy."],
-                ["avoid fake lab data"]),
-            CancellationToken.None);
-
-        Assert.Equal("resp_sdk_doc_123", result.ProviderTraceId);
-        Assert.Equal("Quantum teaching note", result.Brief.Title);
-        Assert.Single(result.Plan.Targets);
-        Assert.Equal(1, client.CallCount);
-        Assert.NotNull(client.LastOptions);
-        Assert.Equal("gpt-5.6-sol", client.LastOptions!.Model);
-        Assert.False(client.LastOptions.StoredOutputEnabled);
-        Assert.NotNull(client.LastOptions.TextOptions);
-    }
-
-    [Fact]
-    public async Task SdkTextPlanningProvider_AutoRouteSetsModelReasoningAndTelemetryTogether()
-    {
-        var telemetrySink = new RecordingTelemetrySink();
-        var client = new FakeResponsesClient(SdkJsonResponse(
-            """
-            {
-              "id": "resp_sdk_auto_plan",
-              "output_text": "{\"summary\":\"Auto plan\",\"items\":[{\"title\":\"Opening\",\"brief\":\"A brief\",\"promptDraft\":\"A prompt\"}]}",
-              "usage": {"input_tokens": 10, "output_tokens": 10, "total_tokens": 20}
-            }
-            """));
-        var provider = new OpenAiSdkTextPlanningProvider(
-            new OpenAiProviderOptions
-            {
-                RealApiEnabled = true,
-                TextRoutingMode = OpenAiTextRoutingMode.Auto,
-            },
-            client,
-            new StaticSecretStore("test-openai-key"),
-            telemetrySink);
-
-        await provider.CreatePlanAsync(
-            new PlanningRequest("routine topic", "teachers", 2),
-            CancellationToken.None);
-
-        Assert.Equal("gpt-5.6-terra", client.LastOptions!.Model);
-        Assert.NotNull(client.LastOptions.ReasoningOptions);
-        Assert.Equal("high", client.LastOptions.ReasoningOptions.ReasoningEffortLevel.ToString());
-        Assert.Equal("gpt-5.6-terra", Assert.Single(telemetrySink.Events).Model);
-    }
-
-    [Fact]
-    public async Task SdkTextPlanningProvider_RetriesSingleTransientUpstream502AndThenSucceeds()
-    {
-        var telemetrySink = new RecordingTelemetrySink();
-        var transientFailure = new OpenAiResponsesClientException(
-            SdkJsonResponse(
-                """{"error":{"type":"server_error","code":"upstream_error","message":"temporary upstream failure"}}""",
-                statusCode: 502,
-                reasonPhrase: "Bad Gateway",
-                requestId: "req_sdk_text_failed"),
-            new InvalidOperationException("HTTP 502 (server_error: upstream_error)"));
-        var client = new SequencedFakeResponsesClient(
-        [
-            transientFailure,
-            SdkJsonResponse(
-                """
-                {
-                  "id": "resp_sdk_text_retry",
-                  "output_text": "{\"summary\":\"Retry plan\",\"items\":[{\"title\":\"Opening\",\"brief\":\"A brief\",\"promptDraft\":\"A prompt\"}]}",
-                  "usage": {
-                    "input_tokens": 10,
-                    "output_tokens": 12,
-                    "total_tokens": 22
-                  }
-                }
-                """,
-                requestId: "req_sdk_text_retry"),
-        ]);
-        var provider = new OpenAiSdkTextPlanningProvider(
-            new OpenAiProviderOptions { RealApiEnabled = true },
-            client,
-            new StaticSecretStore("test-openai-key"),
-            telemetrySink,
-            new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
-
-        var result = await provider.CreatePlanAsync(
-            new PlanningRequest("topic", "audience", 1),
-            CancellationToken.None);
-
-        Assert.Equal("resp_sdk_text_retry", result.ProviderTraceId);
-        Assert.Equal("Retry plan", result.Summary);
-        Assert.Equal(2, client.CallCount);
-
-        var telemetry = Assert.Single(telemetrySink.Events);
-        Assert.Equal("openai-text-sdk", telemetry.ProviderId);
-        Assert.True(telemetry.Succeeded);
-        Assert.Equal(200, telemetry.HttpStatusCode);
-        Assert.Equal("req_sdk_text_retry", telemetry.RequestId);
-    }
-
-    [Fact]
-    public async Task SdkTextPlanningProvider_RejectsInvalidStructuredJsonWithExplicitMessage()
-    {
-        var client = new FakeResponsesClient(
-            SdkJsonResponse(
-                """
-                {
-                  "id": "resp_sdk_invalid_json",
-                  "output_text": "{ definitely not json"
-                }
-                """,
-                requestId: "req_sdk_invalid_json"));
-        var provider = CreateSdkTextProvider(client);
-
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            provider.CreatePlanAsync(
-                new PlanningRequest("topic", "audience", 1),
-                CancellationToken.None));
-
-        Assert.Contains("invalid", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("json", exception.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task SdkTextPlanningProvider_DoesNotRetryOrdinarySdkFailure()
-    {
-        var telemetrySink = new RecordingTelemetrySink();
-        var sdkFailure = new OpenAiResponsesClientException(
-            SdkJsonResponse(
-                """{"error":{"type":"rate_limit_error","message":"rate limited"}}""",
-                statusCode: 429,
-                reasonPhrase: "Too Many Requests",
-                requestId: "req_sdk_text_429"),
-            new InvalidOperationException("SDK request failed."));
-        var client = new SequencedFakeResponsesClient([sdkFailure]);
-        var provider = new OpenAiSdkTextPlanningProvider(
-            new OpenAiProviderOptions { RealApiEnabled = true },
-            client,
-            new StaticSecretStore("test-openai-key"),
-            telemetrySink,
-            new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
-
-        var exception = await Assert.ThrowsAsync<HttpRequestException>(() =>
-            provider.CreatePlanAsync(new PlanningRequest("topic", "audience", 1), CancellationToken.None));
-
-        Assert.Contains("429", exception.Message, StringComparison.Ordinal);
-        Assert.Equal(1, client.CallCount);
-
-        var telemetry = Assert.Single(telemetrySink.Events);
-        Assert.Equal("openai-text-sdk", telemetry.ProviderId);
-        Assert.Equal(429, telemetry.HttpStatusCode);
-        Assert.False(telemetry.Succeeded);
-        Assert.Equal("req_sdk_text_429", telemetry.RequestId);
     }
 
     [Fact]
@@ -1405,14 +1230,6 @@ public sealed class OpenAiProviderContractTests
             new StaticSecretStore("test-openai-key"));
     }
 
-    private static OpenAiSdkTextPlanningProvider CreateSdkTextProvider(FakeResponsesClient sdkClient)
-    {
-        return new OpenAiSdkTextPlanningProvider(
-            new OpenAiProviderOptions { RealApiEnabled = true },
-            sdkClient,
-            new StaticSecretStore("test-openai-key"));
-    }
-
     private static OpenAiImageGenerationProvider CreateImageProvider(HttpClient httpClient)
     {
         return new OpenAiImageGenerationProvider(
@@ -1468,23 +1285,6 @@ public sealed class OpenAiProviderContractTests
         return response;
     }
 
-    private static OpenAiResponsesClientResult SdkJsonResponse(
-        string content,
-        int statusCode = 200,
-        string? reasonPhrase = "OK",
-        string? requestId = null)
-    {
-        using var document = JsonDocument.Parse(content);
-        return new OpenAiResponsesClientResult(
-            document.RootElement.TryGetProperty("output_text", out var outputText)
-                ? outputText.GetString()
-                : null,
-            document.RootElement.Clone(),
-            statusCode,
-            reasonPhrase,
-            requestId);
-    }
-
     private sealed class CaptureHandler(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) : HttpMessageHandler, IDisposable
     {
         public HttpRequestMessage? LastRequest { get; private set; }
@@ -1527,61 +1327,6 @@ public sealed class OpenAiProviderContractTests
         }
     }
 
-    private sealed class FakeResponsesClient(OpenAiResponsesClientResult response) : IOpenAiResponsesClient
-    {
-        public CreateResponseOptions? LastOptions { get; private set; }
-
-        public int CallCount { get; private set; }
-
-        public bool ThrowOnCreate { get; set; }
-
-        public Task<OpenAiResponsesClientResult> CreateResponseAsync(
-            CreateResponseOptions options,
-            CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            CallCount++;
-            LastOptions = options;
-
-            if (ThrowOnCreate)
-            {
-                throw new OpenAiResponsesClientException(
-                    response,
-                    new InvalidOperationException("SDK request failed."));
-            }
-
-            return Task.FromResult(response);
-        }
-    }
-
-    private sealed class SequencedFakeResponsesClient(IReadOnlyList<object> results) : IOpenAiResponsesClient
-    {
-        public CreateResponseOptions? LastOptions { get; private set; }
-
-        public int CallCount { get; private set; }
-
-        public Task<OpenAiResponsesClientResult> CreateResponseAsync(
-            CreateResponseOptions options,
-            CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            LastOptions = options;
-            var index = Math.Min(CallCount, results.Count - 1);
-            CallCount++;
-
-            return results[index] switch
-            {
-                OpenAiResponsesClientResult response => Task.FromResult(response),
-                OpenAiResponsesClientException exception => throw exception,
-                Exception exception => throw exception,
-                var result => throw new InvalidOperationException(
-                    $"Unsupported fake SDK response result type: {result.GetType().FullName}."),
-            };
-        }
-    }
-
     private sealed class RecordingTelemetrySink : IProviderCallTelemetrySink
     {
         private readonly List<ProviderCallTelemetry> _events = [];
@@ -1594,4 +1339,3 @@ public sealed class OpenAiProviderContractTests
         }
     }
 }
-#pragma warning restore OPENAI001

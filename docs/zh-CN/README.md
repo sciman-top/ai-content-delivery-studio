@@ -27,7 +27,7 @@
 | 最终交付物在哪里，outputs 如何分类？ | [LOCAL_OUTPUTS.md](./LOCAL_OUTPUTS.md) |
 | 如何进行可信科研绘图的本地 fake-first 人工试运行？ | [SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md](./SCIENTIFIC_FIGURE_OPERATOR_TRIAL.md) |
 | 产品工作流、对象模型和 V1 设计边界是什么？ | [PRD_V1.md](./PRD_V1.md) 与 [../ARCHITECTURE.md](../ARCHITECTURE.md) |
-| 还要做什么、下一步车道如何划分？ | 先读英文 [../ROADMAP.md](../ROADMAP.md) 和 [../TASKS.md](../TASKS.md) |
+| 还要做什么、下一步车道如何划分？ | 先读英文 [../PRD_POST_V1_PRODUCT_FOCUS.md](../PRD_POST_V1_PRODUCT_FOCUS.md) 和 [../TASKS.md](../TASKS.md) |
 | 非 trivial 工程切片应当如何执行？ | 先读英文 [../AI_CODING_WORKFLOW.md](../AI_CODING_WORKFLOW.md) 和 [../../AGENTS.md](../../AGENTS.md) |
 | provider、operator、reference evidence 的强治理边界是什么？ | 先读英文 [../PROVIDER_ROUTING_POLICY.md](../PROVIDER_ROUTING_POLICY.md)、[../OPERATOR_RISK_POLICY.md](../OPERATOR_RISK_POLICY.md)、[../REFERENCE_EVIDENCE_POLICY.md](../REFERENCE_EVIDENCE_POLICY.md)、[../REFERENCE_BASIS.md](../REFERENCE_BASIS.md) |
 
@@ -43,7 +43,6 @@
 
 ## 当前仍以英文版为准的工程文档
 
-- [../ROADMAP.md](../ROADMAP.md): 长中短期车道、阶段定义和当前 baseline。
 - [../TASKS.md](../TASKS.md): 可执行任务清单与 deferred trigger。
 - [../ARCHITECTURE.md](../ARCHITECTURE.md): 分层架构、数据模型、provider 边界和质量门禁。
 - [../AI_CODING_WORKFLOW.md](../AI_CODING_WORKFLOW.md): repo-owned spec/plan/evidence 驱动的工程执行方式。

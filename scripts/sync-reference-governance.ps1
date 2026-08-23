@@ -1,5 +1,6 @@
 param(
     [switch]$Check,
+    [switch]$WithExternalShelf,
     [string]$ExternalShelfManifestPath,
     [string]$ExternalShelfSnapshotPath
 )
@@ -353,6 +354,12 @@ Set-ManagedBlock `
     -InsertionHeading "## Reference Areas" `
     -Check:$Check
 
+if (-not $WithExternalShelf) {
+    Write-Host "[OK] Reference governance files are in sync." -ForegroundColor Green
+    Write-Host "[SKIP] External reference shelf comparison not requested. Pass -WithExternalShelf to compare against $ExternalShelfManifestPath."
+    exit 0
+}
+
 if (-not (Test-Path -LiteralPath $ExternalShelfManifestPath)) {
     Write-Host "[SKIP] External reference shelf manifest not found: $ExternalShelfManifestPath"
     exit 0
@@ -363,12 +370,12 @@ $snapshotJson = Get-StableJson -Value $snapshotObject
 
 if ($Check) {
     if (-not (Test-Path -LiteralPath $ExternalShelfSnapshotPath)) {
-        throw "Missing external reference shelf snapshot: $ExternalShelfSnapshotPath. Run .\scripts\sync-reference-governance.ps1."
+        throw "Missing external reference shelf snapshot: $ExternalShelfSnapshotPath. Run .\scripts\sync-reference-governance.ps1 -WithExternalShelf."
     }
 
     $existingSnapshot = Get-Content -LiteralPath $ExternalShelfSnapshotPath -Raw
     if ((Normalize-Text -Text $existingSnapshot) -ne (Normalize-Text -Text $snapshotJson)) {
-        throw "External reference shelf snapshot is out of sync with $ExternalShelfManifestPath. Run .\scripts\sync-reference-governance.ps1."
+        throw "External reference shelf snapshot is out of sync with $ExternalShelfManifestPath. Run .\scripts\sync-reference-governance.ps1 -WithExternalShelf."
     }
 
     Write-Host "[OK] Reference governance files are in sync." -ForegroundColor Green

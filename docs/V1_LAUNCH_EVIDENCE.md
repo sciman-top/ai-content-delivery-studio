@@ -6,7 +6,7 @@ Chinese edition: [zh-CN/V1_LAUNCH_EVIDENCE.md](./zh-CN/V1_LAUNCH_EVIDENCE.md)
 
 This file tracks current evidence against the explicit V1 launch metrics in [PRD_V1.md](./PRD_V1.md).
 
-Within the core document set, this is the authoritative file for current V1 launch-verification status. `ROADMAP.md` and `TASKS.md` may describe sequencing or implementation progress, but they should defer to this file for current release-claim truth. See [DOCUMENTATION_GOVERNANCE.md](./DOCUMENTATION_GOVERNANCE.md).
+Within the core document set, this is the authoritative file for current V1 launch-verification status. `TASKS.md` may describe sequencing or implementation progress, but it should defer to this file for current release-claim truth. See [DOCUMENTATION_GOVERNANCE.md](./DOCUMENTATION_GOVERNANCE.md).
 
 It is intentionally strict about evidence type:
 
@@ -40,7 +40,7 @@ provider sample or changing this snapshot's live-evidence authority.
 
 | Launch metric | Current status | Evidence now | Remaining gap |
 | --- | --- | --- | --- |
-| Primary route completes three consecutive fake-first end-to-end runs with no paid APIs and no manual database edits. | Verified by automated repo evidence | `PrimaryLaunchRouteVerificationTests.PrimaryLaunchRoute_CompletesThreeConsecutiveFakeFirstRunsWithoutManualDatabaseEdits` proves three consecutive short-requirement -> brief -> blueprint -> series -> review -> delivery runs with fake providers and persisted local state checks. Supporting slice coverage remains in `FakeWorkflowTests`, `ProjectApplicationServiceTests`, and `BriefWorkflowApplicationServiceTests`. | A future user-facing script can still mirror this suite, but the launch metric now has automated proof. |
+| Primary route completes three consecutive fake-first end-to-end runs with no paid APIs and no manual database edits. | Verified by automated repo evidence | `PrimaryLaunchRouteVerificationTests.PrimaryLaunchRoute_CompletesThreeConsecutiveFakeFirstRunsWithoutManualDatabaseEdits` proves three consecutive short-requirement -> brief -> blueprint -> series -> review -> delivery runs with fake providers and persisted local state checks. Supporting slice coverage remains in `ProjectApplicationServiceTests` and `BriefWorkflowApplicationServiceTests`. | A future user-facing script can still mirror this suite, but the launch metric now has automated proof. |
 | A 2-item sample series completes through the opt-in OpenAI path with request provenance, review evidence, and secret redaction verified. | Verified by live provider evidence | `artifacts/live-openai-v1-sample/20260611-132947/live-v1-sample-summary.json` records the latest available opt-in OpenAI run for this release claim. That recorded sample passed launch preflight, completed real text planning, real image generation, real image review, final approval, delivery export, and diagnostics export for two items. `artifacts/live-openai-v1-sample/20260611-132947/outputs/delivery/manifest.json` shows both items as human-approved on their first approved attempts with prompt snapshots and metadata preserved, while `artifacts/live-openai-v1-sample/20260611-132947/diagnostics/diagnostics.json` and `openai-launch-preflight.json` keep secret values redacted. Current guardrails remain in the provider contract, configuration, preflight, diagnostics, official-SDK, and live-sample route tests. | Refresh this evidence only when provider behavior materially changes or a newer live-provider snapshot is needed. |
 | Article or plain-text planning can produce and promote approved illustration targets without requiring real providers by default. | Verified by automated repo evidence | `SupportingValidationRouteVerificationTests.SupportingValidationRoute_CompletesFakeFirstDocumentPlanningThroughDelivery` proves article/plain-text planning, approved-target promotion, fake-first generation, review, approval, and delivery export in one route. `DocumentIllustrationWorkflowTests` still cover the narrower planning and oversize-guard boundary. | Still worth adding a user-facing script later, but the launch metric already has automated proof. |
 | The educational poster proof path exports deterministic text-composition provenance and human approval evidence. | Verified by automated repo evidence | `EducationalPosterLaunchProofTests.EducationalPosterProofPath_ExportsCompositionProvenanceAndApprovalEvidence` proves deterministic composition, copied composition-report provenance, and final approval evidence in one delivery export. Supporting component coverage remains in `SkiaDeterministicTextComposerTests` and `DeliveryPackageTests`. | A future live sample export is still useful, but the launch metric now has automated proof. |
@@ -86,7 +86,6 @@ remain outside Git.
 
 ## Evidence Sources Used For This Snapshot
 
-- `tests/ContentDeliveryStudio.Tests/FakeWorkflowTests.cs`
 - `tests/ContentDeliveryStudio.Tests/PrimaryLaunchRouteVerificationTests.cs`
 - `tests/ContentDeliveryStudio.Tests/BriefWorkflowApplicationServiceTests.cs`
 - `tests/ContentDeliveryStudio.Tests/SupportingValidationRouteVerificationTests.cs`

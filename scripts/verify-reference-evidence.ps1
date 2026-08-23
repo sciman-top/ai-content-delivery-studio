@@ -4,7 +4,8 @@ param(
     [string]$HeadRef,
     [switch]$RequireDecision,
     [switch]$RequireReferenceBasisFile,
-    [switch]$ParityOnly
+    [switch]$ParityOnly,
+    [switch]$WithExternalShelf
 )
 
 Set-StrictMode -Version Latest
@@ -224,7 +225,9 @@ function Get-ReferenceDecisionErrors {
 function Invoke-ReferenceGovernanceSyncCheck {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$RepoRoot
+        [string]$RepoRoot,
+
+        [switch]$WithExternalShelf
     )
 
     $syncPath = Join-Path $RepoRoot "scripts/sync-reference-governance.ps1"
@@ -232,7 +235,7 @@ function Invoke-ReferenceGovernanceSyncCheck {
         throw "Missing reference governance sync script: $syncPath"
     }
 
-    & $syncPath -Check
+    & $syncPath -Check -WithExternalShelf:$WithExternalShelf
     if ($LASTEXITCODE -ne 0) {
         throw "Reference governance parity check failed."
     }
@@ -305,7 +308,7 @@ $changedPaths = if ($hasExplicitPaths) {
 }
 $changedPaths = @($changedPaths)
 
-Invoke-ReferenceGovernanceSyncCheck -RepoRoot $repoRoot
+Invoke-ReferenceGovernanceSyncCheck -RepoRoot $repoRoot -WithExternalShelf:$WithExternalShelf
 
 if ($ParityOnly) {
     Write-Host "[OK] Reference governance parity passed."

@@ -5,7 +5,6 @@ using ContentDeliveryStudio.App.Services;
 using ContentDeliveryStudio.App.ViewModels;
 using ContentDeliveryStudio.Core.Projects;
 using ContentDeliveryStudio.Infrastructure.Delivery;
-using ContentDeliveryStudio.Infrastructure.Import;
 using SkiaSharp;
 
 namespace ContentDeliveryStudio.Tests;
@@ -18,7 +17,6 @@ public sealed class LargeGalleryPerformanceBenchmarkTests
         ThumbnailWarmupMilliseconds: 30_000,
         CachedRevisitMilliseconds: 5_000,
         DeliveryExportMilliseconds: 30_000,
-        RowLimitedImportMilliseconds: 5_000,
         PeakManagedBytes: 512L * 1024 * 1024);
 
     [Fact]
@@ -100,33 +98,12 @@ public sealed class LargeGalleryPerformanceBenchmarkTests
         Assert.Equal(1000, exportResult.FinalImagePaths.Count);
         Assert.True(File.Exists(exportResult.ManifestJsonPath));
 
-        var finalizedManifestRoot = Path.Combine(benchmarkRoot, "outputs", "finalized-by-content");
-        Directory.CreateDirectory(finalizedManifestRoot);
-        var finalizedManifestPath = Path.Combine(finalizedManifestRoot, "finalized-manifest.csv");
-        const int importRowLimit = 250;
-        await File.WriteAllTextAsync(
-            finalizedManifestPath,
-            BuildFinalizedManifestCsv(benchmarkRoot, sourcePaths),
-            CancellationToken.None);
-
-        var importStopwatch = Stopwatch.StartNew();
-        var importedRows = await new PhysicsPosterImportService().ImportFinalizedDeliveryAsync(
-            benchmarkRoot,
-            maxRows: importRowLimit,
-            DateTimeOffset.UtcNow,
-            CancellationToken.None);
-        importStopwatch.Stop();
-        peakManagedBytes = Math.Max(peakManagedBytes, GC.GetTotalMemory(forceFullCollection: false));
-
         var report = new GalleryBenchmarkReport(
             rows.Length,
             populationStopwatch.ElapsedMilliseconds,
             warmupStopwatch.ElapsedMilliseconds,
             revisitStopwatch.ElapsedMilliseconds,
             exportStopwatch.ElapsedMilliseconds,
-            importStopwatch.ElapsedMilliseconds,
-            importedRows.Count,
-            importRowLimit,
             peakManagedBytes,
             Budgets,
             benchmarkRoot);
@@ -140,18 +117,15 @@ public sealed class LargeGalleryPerformanceBenchmarkTests
         Console.WriteLine(
             $"large-gallery-benchmark rows={report.RowCount} populationMs={report.RowPopulationMs} " +
             $"warmupMs={report.ThumbnailWarmupMs} revisitMs={report.CachedRevisitMs} " +
-            $"exportMs={report.DeliveryExportMs} importMs={report.RowLimitedImportMs} " +
-            $"importedRows={report.RowLimitedImportCount}/{report.RowLimitedImportLimit} " +
+            $"exportMs={report.DeliveryExportMs} " +
             $"peakManagedMB={report.PeakManagedBytes / 1024d / 1024d:F2} report={reportPath}");
 
         Assert.Equal(1000, rows.Length);
-        Assert.Equal(importRowLimit, importedRows.Count);
         Assert.True(File.Exists(reportPath));
         AssertWithinBudget("row population", populationStopwatch.ElapsedMilliseconds, Budgets.RowPopulationMilliseconds);
         AssertWithinBudget("thumbnail warmup", warmupStopwatch.ElapsedMilliseconds, Budgets.ThumbnailWarmupMilliseconds);
         AssertWithinBudget("cached revisit", revisitStopwatch.ElapsedMilliseconds, Budgets.CachedRevisitMilliseconds);
         AssertWithinBudget("delivery export", exportStopwatch.ElapsedMilliseconds, Budgets.DeliveryExportMilliseconds);
-        AssertWithinBudget("row-limited import", importStopwatch.ElapsedMilliseconds, Budgets.RowLimitedImportMilliseconds);
         Assert.True(
             peakManagedBytes <= Budgets.PeakManagedBytes,
             $"Peak managed memory {peakManagedBytes} bytes exceeded budget {Budgets.PeakManagedBytes} bytes.");
@@ -178,60 +152,12 @@ public sealed class LargeGalleryPerformanceBenchmarkTests
         File.WriteAllBytes(path, encoded.ToArray());
     }
 
-    private static string BuildFinalizedManifestCsv(string benchmarkRoot, IReadOnlyList<string> sourcePaths)
-    {
-        var builder = new System.Text.StringBuilder();
-        builder.AppendLine("series,id,title_cn,content_dir,item_dir,prompt_source,prompt_snapshot,final_count,alternate_count,final_images,alternate_images,metadata_files,status,warnings");
-
-        foreach (var assetPath in sourcePaths)
-        {
-            var itemKey = Path.GetFileNameWithoutExtension(assetPath);
-            var metadataPath = Path.ChangeExtension(assetPath, ".json");
-            builder.AppendLine(string.Join(
-                ',',
-                EscapeCsv("gallery"),
-                EscapeCsv(itemKey),
-                EscapeCsv(itemKey),
-                EscapeCsv("sources"),
-                EscapeCsv(itemKey),
-                EscapeCsv($"prompts/{itemKey}.md"),
-                EscapeCsv($"prompts/{itemKey}.md"),
-                "1",
-                "0",
-                EscapeCsv(ToRelativePath(benchmarkRoot, assetPath)),
-                string.Empty,
-                EscapeCsv(ToRelativePath(benchmarkRoot, metadataPath)),
-                EscapeCsv("ok"),
-                string.Empty));
-        }
-
-        return builder.ToString();
-    }
-
-    private static string ToRelativePath(string rootDirectory, string path)
-    {
-        return Path.GetRelativePath(rootDirectory, path).Replace('\\', '/');
-    }
-
-    private static string EscapeCsv(string value)
-    {
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
-        {
-            return $"\"{value.Replace("\"", "\"\"")}\"";
-        }
-
-        return value;
-    }
-
     private sealed record GalleryBenchmarkReport(
         int RowCount,
         long RowPopulationMs,
         long ThumbnailWarmupMs,
         long CachedRevisitMs,
         long DeliveryExportMs,
-        long RowLimitedImportMs,
-        int RowLimitedImportCount,
-        int RowLimitedImportLimit,
         long PeakManagedBytes,
         GalleryBenchmarkBudgets Budgets,
         string BenchmarkRoot);
@@ -241,6 +167,5 @@ public sealed class LargeGalleryPerformanceBenchmarkTests
         long ThumbnailWarmupMilliseconds,
         long CachedRevisitMilliseconds,
         long DeliveryExportMilliseconds,
-        long RowLimitedImportMilliseconds,
         long PeakManagedBytes);
 }

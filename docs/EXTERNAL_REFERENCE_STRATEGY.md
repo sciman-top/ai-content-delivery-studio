@@ -125,7 +125,7 @@ The shelf should reflect the currently active engineering slices rather than the
 - `core` references should support the repository's current verified paths, hard gates, or immediately active near-term slices.
 - `optional` references may stay in the shelf, but they should not appear as default implementation inputs in roadmap, task, or reference-basis guidance unless an active slice explicitly pulls them in.
 - new references should be added only when:
-  - the corresponding slice is in `ROADMAP.md -> Now` or `Next`
+  - the corresponding slice is an active production lane in `PRD_POST_V1_PRODUCT_FOCUS.md`
   - the slice has a repo-owned spec or plan
   - the repository would make a materially worse decision without the new reference
 

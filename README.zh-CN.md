@@ -37,7 +37,6 @@ Quick 只运行一次构建和指定测试；Full 只运行非发布、非 live 
 - [本地输出与最终交付目录](docs/zh-CN/LOCAL_OUTPUTS.md)
 - [docs/PRD_V1.md](docs/PRD_V1.md)
 - [docs/TASKS.md](docs/TASKS.md)
-- [docs/ROADMAP.md](docs/ROADMAP.md)
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - [docs/AI_CODING_WORKFLOW.md](docs/AI_CODING_WORKFLOW.md)
 - [docs/REFERENCE_BASIS.md](docs/REFERENCE_BASIS.md)

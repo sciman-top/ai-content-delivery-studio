@@ -5,7 +5,8 @@ param(
     [switch]$SkipReferenceEvidence,
     [switch]$NoRestore,
     [string]$ReferenceEvidenceBaseRef,
-    [string]$ReferenceEvidenceHeadRef
+    [string]$ReferenceEvidenceHeadRef,
+    [switch]$WithExternalShelf
 )
 
 Set-StrictMode -Version Latest
@@ -127,12 +128,17 @@ if ($Mode -eq "Quick") {
 }
 
 Invoke-Step -Label "Reference evidence and governance" -Action {
+    $referenceEvidenceArgs = @{}
+    if ($WithExternalShelf) {
+        $referenceEvidenceArgs["WithExternalShelf"] = $true
+    }
+
     if ($SkipReferenceEvidence) {
-        & ".\scripts\verify-reference-evidence.ps1" -ParityOnly
+        & ".\scripts\verify-reference-evidence.ps1" @referenceEvidenceArgs -ParityOnly
     } elseif (-not [string]::IsNullOrWhiteSpace($ReferenceEvidenceBaseRef) -or -not [string]::IsNullOrWhiteSpace($ReferenceEvidenceHeadRef)) {
-        & ".\scripts\verify-reference-evidence.ps1" -BaseRef $ReferenceEvidenceBaseRef -HeadRef $ReferenceEvidenceHeadRef
+        & ".\scripts\verify-reference-evidence.ps1" @referenceEvidenceArgs -BaseRef $ReferenceEvidenceBaseRef -HeadRef $ReferenceEvidenceHeadRef
     } else {
-        & ".\scripts\verify-reference-evidence.ps1"
+        & ".\scripts\verify-reference-evidence.ps1" @referenceEvidenceArgs
     }
 }
 

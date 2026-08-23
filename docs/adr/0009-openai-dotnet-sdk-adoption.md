@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted.
+Superseded by [ADR 0010](./0010-raw-http-canonical-openai-transports.md), which freezes the raw-HTTP adapters as the canonical production transports. The scientific-understanding SDK surface adopted under this ADR remains in force.
 
 ## Context
 

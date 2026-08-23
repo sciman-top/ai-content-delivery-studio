@@ -118,7 +118,7 @@ Expected output classes include:
 - review results
 - repair plans
 
-If the SDK surface is missing a needed capability, raw HTTP is acceptable only if the same schema validation, provenance capture, and redaction rules remain in place.
+Regardless of transport, raw payloads must keep the same schema validation, provenance capture, and redaction rules in place.
 
 ## Provenance Requirements
 
@@ -149,17 +149,16 @@ For the current implementation slice, stateful Responses image-generation metada
 - Avoid sending unnecessary document bodies, binary payloads, or approval notes when a narrower request would work.
 - Screenshots, uploaded files, and third-party content remain untrusted input even when processed through the Responses API.
 
-## SDK And Raw HTTP Policy
+## Transport Policy
 
-AI 推荐: adopt the official OpenAI .NET SDK where the surface is stable, and keep raw `HttpClient` only for lagging or unsupported gaps.
-
-The adoption boundary is recorded in [ADR 0009](./adr/0009-openai-dotnet-sdk-adoption.md). The policy decision is complete; runtime migration remains a separate parity-tested implementation slice.
+The transport boundary is recorded in [ADR 0010](./adr/0010-raw-http-canonical-openai-transports.md), which supersedes the SDK-first direction of ADR 0009.
 
 Rules:
 
-- New stable planning and review flows should prefer SDK support first.
-- Raw HTTP is acceptable for unsupported image or streaming gaps.
-- Routing policy must not diverge by transport choice. SDK and raw HTTP paths should produce the same contract-level records.
+- Text planning, image generation, image edit, and vision/scientific review use the raw `HttpClient` adapters registered through `OpenAiProviderFailoverFactory` as their only canonical implementations.
+- The official OpenAI .NET SDK remains in force only for the adopted `OpenAiScientificUnderstandingProvider` surface.
+- Routing policy must not diverge by transport choice; any future transport must produce the same contract-level records.
+- Reintroducing the SDK for a production role requires the ADR 0010 readmission criteria: a second real production consumer, compatible-endpoint/failover/telemetry contract coverage, and no-paid-call parity proof, recorded in a new ADR.
 
 ## Explicit Non-Goals
 
@@ -176,9 +175,7 @@ V1 does not require:
 
 - Keep role-scoped credential separation intact. The same-provider single-key fallback is allowed only through the documented provider-configuration path where no `IMAGE_PROVIDER_API_KEY*` is present; explicit image keys still take precedence.
 - Keep the fake-first gate as the default regression path.
-- Use the official OpenAI .NET SDK for the stable Images API path; keep raw `HttpClient` on Responses-backed planning and review until the SDK surface no longer requires the current `OPENAI001` evaluation fallback.
-- Allow one bounded retry for transient official SDK Images `502 upstream_error` failures before surfacing the error to the live route.
-- Reuse the same bounded transient `502 upstream_error` policy for official SDK Responses text-planning calls. This keeps future real-provider brief or blueprint planning from inventing a broader retry policy when those paths leave the fake-first boundary.
+- Keep the raw `HttpClient` adapters as the canonical production transports (ADR 0010); the env-gated live sample route must exercise these production routes, including the failover factory for image generation.
 - Treat Responses multi-turn image state as a hardening slice, not as a prerequisite for the primary launch route.
 - Prepare compact local review artifacts before remote vision review: thumbnail grids, candidate manifests, prompt or setting summaries, and selected evidence anchors.
 - Keep normal production review stateless and bounded by batch thresholds; if a review request grows too large, split the batch instead of chaining more remote state.
