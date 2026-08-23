@@ -24,6 +24,7 @@ public sealed record BackupOptions(
             "obj",
             "workspace",
             "outputs",
+            "secrets",
         },
         new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -35,6 +36,7 @@ public sealed record BackupOptions(
             ".db",
             ".sqlite",
             ".sqlite3",
+            ".dpapi",
         });
 }
 

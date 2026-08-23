@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
 using ContentDeliveryStudio.Application.Backups;
+using Microsoft.Data.Sqlite;
 
 namespace ContentDeliveryStudio.Infrastructure.Backups;
 
@@ -50,14 +51,20 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
 
         var options = request.Options ?? BackupOptions.SafeDefaults;
         var includedFiles = new List<BackupManifestFile>();
+        var databaseSnapshots = new List<BackupManifestDatabase>();
         var skippedFileCount = 0;
         long includedSizeBytes = 0;
+        var databaseFiles = new List<string>();
         var tempBackupPath = Path.Combine(
             backupDirectory,
             $".{Path.GetFileName(backupFilePath)}.{Guid.NewGuid():N}.tmp");
+        var tempSnapshotDirectory = Path.Combine(
+            backupDirectory,
+            $".{Path.GetFileName(backupFilePath)}.{Guid.NewGuid():N}.db-snapshots");
 
         try
         {
+            Directory.CreateDirectory(tempSnapshotDirectory);
             using (var archive = ZipFile.Open(tempBackupPath, ZipArchiveMode.Create))
             {
                 var enumerationOptions = new EnumerationOptions
@@ -72,6 +79,23 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
                              .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
                 {
                     cancellationToken.ThrowIfCancellationRequested();
+
+                    // Databases never go through the plain-copy lane regardless
+                    // of options: copying an active SQLite file (or its WAL
+                    // sidecar) is not a consistent snapshot. They are routed to
+                    // the VACUUM INTO snapshot lane after the file loop; the
+                    // snapshot already contains the committed WAL content.
+                    if (IsDatabaseFile(filePath))
+                    {
+                        databaseFiles.Add(filePath);
+                        continue;
+                    }
+
+                    if (IsDatabaseSidecarFile(filePath))
+                    {
+                        skippedFileCount++;
+                        continue;
+                    }
 
                     if (ShouldSkip(sourceRoot, filePath, options))
                     {
@@ -111,11 +135,23 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
                     includedFiles.Add(new BackupManifestFile(relativePath, sizeBytes, sha256));
                 }
 
+                includedSizeBytes = await SnapshotDatabasesIntoArchiveAsync(
+                    archive,
+                    sourceRoot,
+                    databaseFiles,
+                    tempSnapshotDirectory,
+                    includedFiles,
+                    databaseSnapshots,
+                    includedSizeBytes,
+                    _limits,
+                    cancellationToken);
+
                 var manifest = new BackupManifest(
                     ManifestSchemaVersion,
                     DateTimeOffset.UtcNow,
                     includedFiles,
-                    skippedFileCount);
+                    skippedFileCount,
+                    databaseSnapshots.Count > 0 ? databaseSnapshots : null);
 
                 var manifestEntry = archive.CreateEntry(ManifestEntryName, CompressionLevel.Optimal);
                 await using var stream = manifestEntry.Open();
@@ -129,6 +165,19 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
             if (File.Exists(tempBackupPath))
             {
                 File.Delete(tempBackupPath);
+            }
+
+            if (Directory.Exists(tempSnapshotDirectory))
+            {
+                try
+                {
+                    Directory.Delete(tempSnapshotDirectory, recursive: true);
+                }
+                catch (IOException)
+                {
+                    // Best-effort cleanup only; the backup outcome above is the
+                    // visible result and a leftover hidden temp dir is inert.
+                }
             }
         }
 
@@ -464,6 +513,145 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
         }
     }
 
+    private static readonly string[] DatabaseExtensions = [".db", ".sqlite", ".sqlite3"];
+
+    private static bool IsDatabaseFile(string filePath)
+    {
+        return DatabaseExtensions.Contains(
+            Path.GetExtension(filePath),
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool IsDatabaseSidecarFile(string filePath)
+    {
+        var fileName = Path.GetFileName(filePath);
+        return fileName.EndsWith("-wal", StringComparison.OrdinalIgnoreCase)
+            || fileName.EndsWith("-shm", StringComparison.OrdinalIgnoreCase)
+            || fileName.EndsWith("-journal", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Snapshots every database found under the source directory into the
+    /// archive with SQLite's VACUUM INTO, which produces a consistent point-in
+    /// -time copy even while writers are active. Any snapshot failure fails the
+    /// whole backup closed: a ZIP without the databases it was expected to
+    /// carry must never look like a successful disaster-recovery artifact.
+    /// </summary>
+    private static async Task<long> SnapshotDatabasesIntoArchiveAsync(
+        ZipArchive archive,
+        string sourceRoot,
+        IReadOnlyList<string> databaseFiles,
+        string tempSnapshotDirectory,
+        List<BackupManifestFile> includedFiles,
+        List<BackupManifestDatabase> databaseSnapshots,
+        long includedSizeBytes,
+        LocalBackupRestoreLimits limits,
+        CancellationToken cancellationToken)
+    {
+        foreach (var databasePath in databaseFiles
+                     .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var relativePath = NormalizeArchivePath(Path.GetRelativePath(sourceRoot, databasePath));
+            var snapshotPath = Path.Combine(
+                tempSnapshotDirectory,
+                $"{Guid.NewGuid():N}{Path.GetExtension(databasePath)}");
+            SnapshotDatabaseWithVacuumInto(databasePath, snapshotPath);
+            try
+            {
+                var snapshotInfo = new FileInfo(snapshotPath);
+                if (snapshotInfo.Length > limits.MaximumEntrySizeBytes)
+                {
+                    throw new InvalidOperationException(
+                        $"Database snapshot exceeds the supported size limit: {relativePath}");
+                }
+
+                var remainingTotalBytes = checked(limits.MaximumTotalSizeBytes - includedSizeBytes);
+                if (snapshotInfo.Length > remainingTotalBytes)
+                {
+                    throw new InvalidOperationException(
+                        $"Backup exceeds the supported total size limit of {limits.MaximumTotalSizeBytes} bytes.");
+                }
+
+                await using var source = File.OpenRead(snapshotPath);
+                var entry = archive.CreateEntry(relativePath, CompressionLevel.Optimal);
+                await using var destination = entry.Open();
+                var (sizeBytes, sha256) = await CopySnapshotAndHashAsync(
+                    source,
+                    destination,
+                    remainingTotalBytes,
+                    limits,
+                    cancellationToken);
+                includedSizeBytes = checked(includedSizeBytes + sizeBytes);
+                includedFiles.Add(new BackupManifestFile(relativePath, sizeBytes, sha256));
+                databaseSnapshots.Add(new BackupManifestDatabase(relativePath, sizeBytes, sha256));
+            }
+            finally
+            {
+                if (File.Exists(snapshotPath))
+                {
+                    File.Delete(snapshotPath);
+                }
+            }
+        }
+
+        return includedSizeBytes;
+    }
+
+    private static void SnapshotDatabaseWithVacuumInto(string databasePath, string snapshotPath)
+    {
+        // Read-write mode is required even though VACUUM INTO never modifies
+        // the source: when no other connection holds the database open, WAL
+        // recovery on open needs write access to the -shm sidecar, which a
+        // read-only connection cannot take. Pooling is disabled so the file
+        // handle is released as soon as the snapshot completes.
+        using var connection = new SqliteConnection(new SqliteConnectionStringBuilder
+        {
+            DataSource = databasePath,
+            Mode = SqliteOpenMode.ReadWrite,
+            Pooling = false,
+        }.ToString());
+        connection.Open();
+        using var command = connection.CreateCommand();
+        command.CommandTimeout = 30;
+        command.CommandText = "VACUUM INTO @snapshotPath";
+        command.Parameters.AddWithValue("@snapshotPath", snapshotPath);
+        command.ExecuteNonQuery();
+    }
+
+    private static async Task<(long SizeBytes, string Sha256)> CopySnapshotAndHashAsync(
+        Stream source,
+        Stream destination,
+        long maximumRemainingTotalBytes,
+        LocalBackupRestoreLimits limits,
+        CancellationToken cancellationToken)
+    {
+        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var buffer = new byte[81920];
+        long total = 0;
+        int read;
+        while ((read = await source.ReadAsync(buffer, cancellationToken)) > 0)
+        {
+            total = checked(total + read);
+            if (total > limits.MaximumEntrySizeBytes)
+            {
+                throw new InvalidOperationException("Database snapshot exceeds the supported size limit.");
+            }
+
+            if (total > maximumRemainingTotalBytes)
+            {
+                throw new InvalidOperationException(
+                    $"Backup exceeds the supported total size limit of {limits.MaximumTotalSizeBytes} bytes.");
+            }
+
+            hash.AppendData(buffer, 0, read);
+            await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+        }
+
+        return (total, Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant());
+    }
+
     private async Task<IReadOnlyList<ValidatedBackupFile>> ValidateArchiveAsync(
         ZipArchive archive,
         string targetRoot,
@@ -553,6 +741,21 @@ public sealed class LocalBackupRestoreService : IBackupRestoreService
             if (!IsSha256(file.Sha256))
             {
                 throw new InvalidDataException($"Backup entry has an invalid SHA-256: {normalizedPath}");
+            }
+        }
+
+        if (manifest.Databases is not null)
+        {
+            foreach (var database in manifest.Databases)
+            {
+                var normalizedPath = NormalizeArchivePath(database.Path);
+                if (!manifestFiles.TryGetValue(normalizedPath, out var file)
+                    || file.SizeBytes != database.SizeBytes
+                    || !string.Equals(file.Sha256, database.Sha256, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidDataException(
+                        $"Backup manifest database entry does not match its file entry: {normalizedPath}");
+                }
             }
         }
 
@@ -793,9 +996,19 @@ internal sealed record BackupManifest(
     int SchemaVersion,
     DateTimeOffset CreatedAt,
     IReadOnlyList<BackupManifestFile> Files,
-    int SkippedFileCount);
+    int SkippedFileCount,
+    IReadOnlyList<BackupManifestDatabase>? Databases = null);
 
 internal sealed record BackupManifestFile(
+    string Path,
+    long SizeBytes,
+    string Sha256);
+
+/// <summary>Labels the manifest entries that are consistent database
+/// snapshots (VACUUM INTO), so restores and tooling can tell them apart from
+/// plain copied files. Every database entry also appears in
+/// <see cref="BackupManifest.Files"/>.</summary>
+internal sealed record BackupManifestDatabase(
     string Path,
     long SizeBytes,
     string Sha256);

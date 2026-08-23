@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
 using ContentDeliveryStudio.Infrastructure.Backups;
+using Microsoft.Data.Sqlite;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -22,7 +23,18 @@ public sealed class LocalBackupRestoreServiceTests
             Directory.CreateDirectory(Path.Combine(source, "outputs"));
             await File.WriteAllTextAsync(Path.Combine(source, "project.json"), "project");
             await File.WriteAllTextAsync(Path.Combine(source, ".env"), "OPENAI_API_KEY=test-openai-key");
-            await File.WriteAllTextAsync(Path.Combine(source, "studio.sqlite"), "sqlite");
+            await using (var database = new SqliteConnection(
+                           $"Data Source={Path.Combine(source, "studio.sqlite")};Pooling=False"))
+            {
+                await database.OpenAsync();
+                var create = database.CreateCommand();
+                create.CommandText = "CREATE TABLE projects (id TEXT PRIMARY KEY);";
+                await create.ExecuteNonQueryAsync();
+                var insert = database.CreateCommand();
+                insert.CommandText = "INSERT INTO projects (id) VALUES ('p1');";
+                await insert.ExecuteNonQueryAsync();
+            }
+
             await File.WriteAllTextAsync(Path.Combine(source, "workspace", "local.txt"), "local");
             await File.WriteAllTextAsync(Path.Combine(source, "outputs", "image.png"), "image");
 
@@ -34,15 +46,25 @@ public sealed class LocalBackupRestoreServiceTests
                 new(backupPath, restored),
                 CancellationToken.None);
 
-            Assert.Equal(1, backup.IncludedFileCount);
-            Assert.Equal(4, backup.SkippedFileCount);
+            // project.json plus the consistent studio.sqlite snapshot are
+            // carried; .env, workspace, and outputs stay excluded.
+            Assert.Equal(2, backup.IncludedFileCount);
+            Assert.Equal(3, backup.SkippedFileCount);
             Assert.Equal("backup-manifest.json", backup.ManifestEntryName);
             Assert.True(File.Exists(Path.Combine(restored, "project.json")));
             Assert.False(File.Exists(Path.Combine(restored, ".env")));
-            Assert.False(File.Exists(Path.Combine(restored, "studio.sqlite")));
+            Assert.True(File.Exists(Path.Combine(restored, "studio.sqlite")));
             Assert.False(Directory.Exists(Path.Combine(restored, "workspace")));
             Assert.False(Directory.Exists(Path.Combine(restored, "outputs")));
-            Assert.Equal(1, restore.RestoredFileCount);
+            Assert.Equal(2, restore.RestoredFileCount);
+            await using (var verify = new SqliteConnection(
+                            $"Data Source={Path.Combine(restored, "studio.sqlite")};Pooling=False"))
+            {
+                await verify.OpenAsync();
+                var count = verify.CreateCommand();
+                count.CommandText = "SELECT COUNT(*) FROM projects;";
+                Assert.Equal(1L, Convert.ToInt64(await count.ExecuteScalarAsync()));
+            }
 
             using var archive = ZipFile.OpenRead(backupPath);
             var manifestEntry = Assert.Single(
@@ -51,11 +73,10 @@ public sealed class LocalBackupRestoreServiceTests
             using var manifestStream = manifestEntry.Open();
             using var manifest = await JsonDocument.ParseAsync(manifestStream);
             Assert.Equal(1, manifest.RootElement.GetProperty("schemaVersion").GetInt32());
-            var file = Assert.Single(manifest.RootElement.GetProperty("files").EnumerateArray());
-            Assert.Equal("project.json", file.GetProperty("path").GetString());
-            Assert.Equal(
-                Convert.ToHexString(SHA256.HashData("project"u8.ToArray())).ToLowerInvariant(),
-                file.GetProperty("sha256").GetString());
+            var databaseEntry = Assert.Single(
+                manifest.RootElement.GetProperty("databases").EnumerateArray());
+            Assert.Equal("studio.sqlite", databaseEntry.GetProperty("path").GetString());
+            Assert.Matches("^[0-9a-f]{64}$", databaseEntry.GetProperty("sha256").GetString()!);
         }
         finally
         {
@@ -372,6 +393,136 @@ public sealed class LocalBackupRestoreServiceTests
             Assert.Equal(1, recovery.CleanedUpTransactions);
             Assert.Equal("newer target content", File.ReadAllText(Path.Combine(target, "shared.txt")));
             Assert.False(Directory.Exists(transactionRoot));
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task BackupAndRestore_IncludesConsistentDatabaseSnapshotWhileDatabaseIsActive()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"content-delivery-backup-database-{Guid.NewGuid():N}");
+        var source = Path.Combine(tempRoot, "source");
+        var restored = Path.Combine(tempRoot, "restored");
+        var backupPath = Path.Combine(tempRoot, "backup.zip");
+
+        try
+        {
+            Directory.CreateDirectory(source);
+            var databasePath = Path.Combine(source, "studio.sqlite");
+            SqliteConnection connection;
+            await using (connection = new SqliteConnection($"Data Source={databasePath};Pooling=False"))
+            {
+                await connection.OpenAsync();
+                var pragma = connection.CreateCommand();
+                pragma.CommandText = "PRAGMA journal_mode=WAL;";
+                await pragma.ExecuteNonQueryAsync();
+                var create = connection.CreateCommand();
+                create.CommandText = "CREATE TABLE projects (id TEXT PRIMARY KEY, name TEXT NOT NULL);";
+                await create.ExecuteNonQueryAsync();
+                var insert = connection.CreateCommand();
+                insert.CommandText =
+                    "INSERT INTO projects (id, name) VALUES ('p1', 'First'), ('p2', 'Second');";
+                await insert.ExecuteNonQueryAsync();
+            }
+
+            // Reopen with WAL persistence and keep the connection alive across
+            // the backup, with committed rows living in the WAL sidecar.
+            var activeConnection = new SqliteConnection($"Data Source={databasePath};Pooling=False");
+            await activeConnection.OpenAsync();
+            try
+            {
+                var insert = activeConnection.CreateCommand();
+                insert.CommandText =
+                    "INSERT INTO projects (id, name) VALUES ('p3', 'Committed while active');";
+                await insert.ExecuteNonQueryAsync();
+
+                var service = new LocalBackupRestoreService();
+                await service.CreateBackupAsync(new(source, backupPath), CancellationToken.None);
+
+                await using var archive = ZipFile.OpenRead(backupPath);
+                var manifestEntry = archive.GetEntry("backup-manifest.json")!;
+                BackupManifest? manifest;
+                await using (var stream = manifestEntry.Open())
+                {
+                    manifest = await JsonSerializer.DeserializeAsync<BackupManifest>(
+                        stream,
+                        new JsonSerializerOptions(JsonSerializerDefaults.Web));
+                }
+
+                Assert.NotNull(manifest!.Databases);
+                var database = Assert.Single(manifest.Databases);
+                Assert.Equal("studio.sqlite", database.Path);
+                Assert.True(database.SizeBytes > 0);
+                Assert.Matches("^[0-9a-f]{64}$", database.Sha256);
+                Assert.NotNull(archive.GetEntry("studio.sqlite"));
+                // WAL sidecars must never be copied into the archive; the
+                // snapshot already contains their committed content.
+                Assert.Null(archive.GetEntry("studio.sqlite-wal"));
+                Assert.Null(archive.GetEntry("studio.sqlite-shm"));
+
+                await service.RestoreBackupAsync(
+                    new(backupPath, restored, Overwrite: false),
+                    CancellationToken.None);
+            }
+            finally
+            {
+                await activeConnection.DisposeAsync();
+            }
+
+            var restoredDatabasePath = Path.Combine(restored, "studio.sqlite");
+            Assert.True(File.Exists(restoredDatabasePath));
+            await using (var verify = new SqliteConnection($"Data Source={restoredDatabasePath};Pooling=False"))
+            {
+                await verify.OpenAsync();
+                var totalCount = verify.CreateCommand();
+                totalCount.CommandText = "SELECT COUNT(*) FROM projects;";
+                Assert.Equal(3L, Convert.ToInt64(await totalCount.ExecuteScalarAsync()));
+                var activeCommitCount = verify.CreateCommand();
+                activeCommitCount.CommandText =
+                    "SELECT COUNT(*) FROM projects WHERE name = 'Committed while active';";
+                // The row whose commit still lived only in the WAL at snapshot
+                // time is present in the restored snapshot.
+                Assert.Equal(1L, Convert.ToInt64(await activeCommitCount.ExecuteScalarAsync()));
+            }
+        }
+        finally
+        {
+            if (Directory.Exists(tempRoot))
+            {
+                Directory.Delete(tempRoot, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task CreateBackup_FailsClosedWhenDatabaseSnapshotFails()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"content-delivery-backup-database-{Guid.NewGuid():N}");
+        var source = Path.Combine(tempRoot, "source");
+        var backupPath = Path.Combine(tempRoot, "backup.zip");
+
+        try
+        {
+            Directory.CreateDirectory(source);
+            await File.WriteAllTextAsync(Path.Combine(source, "notes.txt"), "kept content");
+            // Not a real SQLite database: VACUUM INTO must fail, and the
+            // backup must not be produced looking successful.
+            await File.WriteAllTextAsync(Path.Combine(source, "broken.db"), "this is not a database");
+
+            var service = new LocalBackupRestoreService();
+            await Assert.ThrowsAsync<SqliteException>(() =>
+                service.CreateBackupAsync(new(source, backupPath), CancellationToken.None));
+
+            Assert.False(File.Exists(backupPath));
+            Assert.Empty(Directory.EnumerateFiles(
+                Path.GetDirectoryName(backupPath)!,
+                "*.tmp"));
         }
         finally
         {
