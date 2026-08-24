@@ -105,6 +105,15 @@ Choose a model and reasoning level per work item, not per project, folder, or so
 
 Model selection is not a substitute for the product contract: preserve fake-first behavior, deterministic validators, approval gates, and the distinction between repository verification and live acceptance. If a task is not independently splittable, keep a single executor even when a higher reasoning level is selected.
 
+The executable projection is `scripts/invoke-coding-model-route.ps1`. It takes exactly one `-WorkItemKind` and, by default, emits a redacted JSON dry-run containing the resolved `codex exec -m` and `-c model_reasoning_effort=...` invocation. It does not alter `~/.codex`, start an agent, or send a prompt until the caller explicitly supplies both `-Execute` and `-Prompt`.
+
+```powershell
+pwsh -NoProfile -File scripts/invoke-coding-model-route.ps1 -WorkItemKind bounded-implementation
+pwsh -NoProfile -File scripts/verify-coding-model-routing.ps1
+```
+
+`read-only-review` projects a `read-only` sandbox. The other three routes project `workspace-write`; `high-risk-adjudication` still requires the normal task-specific risk and verification contract. The projection supplies a model and effort per invocation, rather than changing the host's global default model.
+
 ## Safety Boundaries
 
 Keep these strict even when the workflow is lean:
