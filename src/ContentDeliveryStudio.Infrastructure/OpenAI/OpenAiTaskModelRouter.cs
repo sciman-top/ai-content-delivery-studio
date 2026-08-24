@@ -38,14 +38,19 @@ internal static class OpenAiTaskModelRouter
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(request);
+        var inputCharacters = TextPlanningExecutionPolicy.EstimateInputCharacters(request);
+        var isComplex = request.ItemCount >= ComplexSeriesItemCount
+            || inputCharacters >= ComplexSeriesInputCharacters;
         if (options.TextRoutingMode is OpenAiTextRoutingMode.Fixed)
         {
-            return Fixed(options.TextPlanningModel, options.ReasoningEffort);
+            return Fixed(
+                options.TextPlanningModel,
+                options.ReasoningEffort,
+                "complex-series-plan",
+                isComplex);
         }
 
-        var inputCharacters = TextPlanningExecutionPolicy.EstimateInputCharacters(request);
-        if (request.ItemCount >= ComplexSeriesItemCount
-            || inputCharacters >= ComplexSeriesInputCharacters)
+        if (isComplex)
         {
             return Preset(TextProviderModelPresets.SolXHigh, "complex-series-plan");
         }
@@ -65,23 +70,29 @@ internal static class OpenAiTaskModelRouter
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(request);
+        var isQualityFirst = request.DocumentFamily is DocumentFamily.ScholarlyDraft
+            || request.StrictnessLevel is IllustrationStrictnessLevel.ScholarlyDraft;
+        var evidenceRows = request.Sections.Count
+            + request.KeyClaims.Count
+            + request.KnownConstraints.Count;
+        var isComplexEducational = request.DocumentFamily is DocumentFamily.Educational
+            && (DocumentIllustrationExecutionPolicy.EstimateInputWeight(request) >= ComplexDocumentInputWeight
+                || evidenceRows >= ComplexDocumentEvidenceRows);
         if (options.TextRoutingMode is OpenAiTextRoutingMode.Fixed)
         {
-            return Fixed(options.TextPlanningModel, options.ReasoningEffort);
+            return Fixed(
+                options.TextPlanningModel,
+                options.ReasoningEffort,
+                "quality-first-document-plan",
+                isQualityFirst || isComplexEducational);
         }
 
-        if (request.DocumentFamily is DocumentFamily.ScholarlyDraft
-            || request.StrictnessLevel is IllustrationStrictnessLevel.ScholarlyDraft)
+        if (isQualityFirst)
         {
             return Preset(TextProviderModelPresets.SolXHigh, "scholarly-document-plan");
         }
 
-        var evidenceRows = request.Sections.Count
-            + request.KeyClaims.Count
-            + request.KnownConstraints.Count;
-        if (request.DocumentFamily is DocumentFamily.Educational
-            && (DocumentIllustrationExecutionPolicy.EstimateInputWeight(request) >= ComplexDocumentInputWeight
-                || evidenceRows >= ComplexDocumentEvidenceRows))
+        if (isComplexEducational)
         {
             return Preset(TextProviderModelPresets.SolXHigh, "complex-educational-document-plan");
         }
@@ -96,7 +107,11 @@ internal static class OpenAiTaskModelRouter
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(request);
         return options.TextRoutingMode is OpenAiTextRoutingMode.Fixed
-            ? Fixed(options.TextPlanningModel, options.ReasoningEffort)
+            ? Fixed(
+                options.TextPlanningModel,
+                options.ReasoningEffort,
+                "scientific-understanding",
+                qualityFirst: true)
             : Preset(TextProviderModelPresets.SolXHigh, "scientific-understanding-chunk");
     }
 
@@ -108,7 +123,11 @@ internal static class OpenAiTaskModelRouter
         ArgumentNullException.ThrowIfNull(request);
         if (options.TextRoutingMode is OpenAiTextRoutingMode.Fixed)
         {
-            return Fixed(options.VisionReviewModel, options.ReasoningEffort);
+            return Fixed(
+                options.VisionReviewModel,
+                options.ReasoningEffort,
+                "scientific-semantic-review",
+                qualityFirst: true);
         }
 
         return request.Specification.RiskLevel is ScientificFigureRiskLevel.High
@@ -123,7 +142,11 @@ internal static class OpenAiTaskModelRouter
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(request);
         return options.TextRoutingMode is OpenAiTextRoutingMode.Fixed
-            ? Fixed(options.VisionReviewModel, options.ReasoningEffort)
+            ? Fixed(
+                options.VisionReviewModel,
+                options.ReasoningEffort,
+                "scientific-visual-review",
+                qualityFirst: true)
             : Preset(TextProviderModelPresets.SolXHigh, "full-resolution-scientific-visual-review");
     }
 
@@ -133,13 +156,17 @@ internal static class OpenAiTaskModelRouter
     {
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(request);
-        if (options.TextRoutingMode is OpenAiTextRoutingMode.Fixed)
-        {
-            return Fixed(options.VisionReviewModel, options.ReasoningEffort);
-        }
-
         var signals = request.Rubric.Dimensions.Count
             + (request.ReviewPrep?.EvidenceSelections.Count ?? 0);
+        if (options.TextRoutingMode is OpenAiTextRoutingMode.Fixed)
+        {
+            return Fixed(
+                options.VisionReviewModel,
+                options.ReasoningEffort,
+                "complex-vision-review",
+                signals >= ComplexVisionSignals);
+        }
+
         if (signals >= ComplexVisionSignals)
         {
             return Preset(TextProviderModelPresets.SolXHigh, "complex-vision-review");
@@ -153,8 +180,19 @@ internal static class OpenAiTaskModelRouter
         return Preset(TextProviderModelPresets.TerraHigh, "routine-vision-review");
     }
 
-    private static OpenAiTaskModelRoute Fixed(string model, string reasoningEffort) =>
-        new("fixed", model, reasoningEffort, "fixed-provider-configuration");
+    private static OpenAiTaskModelRoute Fixed(
+        string model,
+        string reasoningEffort,
+        string workload,
+        bool qualityFirst = false)
+    {
+        var isSolXHigh = string.Equals(model, "gpt-5.6-sol", StringComparison.Ordinal)
+            && string.Equals(reasoningEffort, "xhigh", StringComparison.Ordinal);
+        var reason = qualityFirst && !isSolXHigh
+            ? $"fixed-operator-override-{workload}"
+            : "fixed-provider-configuration";
+        return new OpenAiTaskModelRoute("fixed", model, reasoningEffort, reason);
+    }
 
     private static OpenAiTaskModelRoute Preset(string preset, string reason)
     {

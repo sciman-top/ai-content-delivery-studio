@@ -92,6 +92,19 @@ Routine refactors, bug fixes, test updates, and documentation corrections do not
 
 Default to one executor. Use a subagent or worktree only when there are at least two independently verifiable slices with non-overlapping write sets and the isolation has clear net value. Parallelism does not add extra plans, evidence, or repeated gates.
 
+### Coding-Agent Model Routing
+
+Choose a model and reasoning level per work item, not per project, folder, or source file. This workflow guidance selects the coding executor or reviewer; it does not configure the product's live provider models, call a paid provider, or authorize a subagent by itself.
+
+| Work item | Default assignment | Stop / escalation rule |
+| --- | --- | --- |
+| Bounded implementation with a clear seam and focused proof | `gpt-5.6-sol / medium` | Default executor; keep one owner and the smallest sufficient test. |
+| Read-only code exploration, review, test analysis, documentation, or evidence collection | `gpt-5.6-terra / high` | Reviewer only; do not assign a write set unless the task is re-admitted as an implementation slice. |
+| Isolated, difficult multi-file implementation with an independent write set and its own proof | `gpt-5.6-terra / xhigh` | Use only when parallel isolation has a net benefit; otherwise retain the default executor. |
+| Architecture, provider/auth/secret, persistence/concurrency, scientific correctness, hard root cause, or final cross-seam adjudication | `gpt-5.6-sol / xhigh` | Require a concrete risk and deterministic verification; it is not the generic default. |
+
+Model selection is not a substitute for the product contract: preserve fake-first behavior, deterministic validators, approval gates, and the distinction between repository verification and live acceptance. If a task is not independently splittable, keep a single executor even when a higher reasoning level is selected.
+
 ## Safety Boundaries
 
 Keep these strict even when the workflow is lean:

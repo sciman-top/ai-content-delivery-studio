@@ -169,6 +169,68 @@ public sealed class OpenAiTaskModelRouterTests
         Assert.Equal(("custom-vision-model", "low"), (vision.Model, vision.ReasoningEffort));
     }
 
+    [Fact]
+    public void FixedMode_RecordsQualityFirstOperatorOverrideWithoutSilentlyEscalating()
+    {
+        var options = new OpenAiProviderOptions
+        {
+            TextRoutingMode = OpenAiTextRoutingMode.Fixed,
+            TextPlanningModel = "gpt-5.6-terra",
+            VisionReviewModel = "gpt-5.6-terra",
+            ReasoningEffort = "high",
+        };
+        var fixture = ScientificReviewTestFixture.Create();
+        var understandingExtraction = ScientificUnderstandingProviderTests.Extraction(("block", "Evidence."));
+
+        var routes = new[]
+        {
+            OpenAiTaskModelRouter.ForPlanning(
+                options,
+                new PlanningRequest("goal", "audience", OpenAiTaskModelRouter.ComplexSeriesItemCount)),
+            OpenAiTaskModelRouter.ForDocumentPlanning(
+                options,
+                Document(DocumentFamily.ScholarlyDraft, IllustrationStrictnessLevel.ScholarlyDraft)),
+            OpenAiTaskModelRouter.ForScientificUnderstanding(
+                options,
+                new ContentDeliveryStudio.Application.ScientificFigures.ScientificUnderstandingChunkRequest(
+                    understandingExtraction,
+                    "Understand evidence.",
+                    0,
+                    1,
+                    understandingExtraction.Blocks)),
+            OpenAiTaskModelRouter.ForScientificSemanticReview(options, fixture.SemanticRequest),
+            OpenAiTaskModelRouter.ForScientificVisualReview(options, fixture.VisualRequest),
+            OpenAiTaskModelRouter.ForVisionReview(
+                options,
+                VisionReview(OpenAiTaskModelRouter.ComplexVisionSignals)),
+        };
+
+        Assert.All(routes, route =>
+        {
+            Assert.Equal("fixed", route.Preset);
+            Assert.Equal("gpt-5.6-terra", route.Model);
+            Assert.Equal("high", route.ReasoningEffort);
+            Assert.StartsWith("fixed-operator-override-", route.Reason);
+        });
+    }
+
+    [Fact]
+    public void FixedMode_DoesNotRecordQualityFirstOverrideWhenConfiguredAsSolXHigh()
+    {
+        var options = new OpenAiProviderOptions
+        {
+            TextRoutingMode = OpenAiTextRoutingMode.Fixed,
+            TextPlanningModel = "gpt-5.6-sol",
+            VisionReviewModel = "gpt-5.6-sol",
+            ReasoningEffort = "xhigh",
+        };
+        var fixture = ScientificReviewTestFixture.Create();
+
+        var route = OpenAiTaskModelRouter.ForScientificSemanticReview(options, fixture.SemanticRequest);
+
+        Assert.Equal("fixed-provider-configuration", route.Reason);
+    }
+
     private static DocumentIllustrationPlanningRequest Document(
         DocumentFamily family,
         IllustrationStrictnessLevel strictness,
