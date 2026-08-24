@@ -440,6 +440,15 @@ public static class ArticleScientificFigureCommands
         ArticleScientificFigureCandidateKind.SuperconductingEnergy => "01-superconducting-energy",
         ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => "02-superconducting-persistent-current",
         ArticleScientificFigureCandidateKind.SuperconductingExcitation => "03-superconducting-excitation",
+        ArticleScientificFigureCandidateKind.MeterTransientResponse => "01-meter-transient-response",
+        ArticleScientificFigureCandidateKind.MeterTrialDecision => "02-meter-trial-decision",
+        ArticleScientificFigureCandidateKind.MeterProtectionLayers => "03-meter-protection-layers",
+        ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse => "01-boiling-pre-bubble-collapse",
+        ArticleScientificFigureCandidateKind.BoilingBubbleGrowth => "02-boiling-bubble-growth",
+        ArticleScientificFigureCandidateKind.BoilingPressureScale => "03-boiling-pressure-scale",
+        ArticleScientificFigureCandidateKind.GalileanAfocalPath => "01-galilean-afocal-path",
+        ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes => "02-galilean-virtual-object-regimes",
+        ArticleScientificFigureCandidateKind.GalileanAngularMagnification => "03-galilean-angular-magnification",
         _ => throw new ArgumentOutOfRangeException(nameof(candidate), candidate.Kind, null),
     };
 

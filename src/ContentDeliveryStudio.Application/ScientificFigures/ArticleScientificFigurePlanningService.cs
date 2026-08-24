@@ -25,6 +25,21 @@ public sealed class ArticleScientificFigurePlanningService
 
         var normalizedTitle = RequireText(articleTitle, nameof(articleTitle));
         var normalizedAudience = RequireText(audience, nameof(audience));
+        if (IsMeterTrialArticle(normalizedTitle, extraction))
+        {
+            return PlanMeterTrial(extraction, normalizedTitle, normalizedAudience);
+        }
+
+        if (IsBoilingBubbleArticle(normalizedTitle, extraction))
+        {
+            return PlanBoilingBubbles(extraction, normalizedTitle, normalizedAudience);
+        }
+
+        if (IsGalileanEyepieceArticle(normalizedTitle, extraction))
+        {
+            return PlanGalileanEyepiece(extraction, normalizedTitle, normalizedAudience);
+        }
+
         if (IsGravityArticle(normalizedTitle, extraction))
         {
             return PlanGravity(extraction, normalizedTitle, normalizedAudience);
@@ -435,6 +450,31 @@ public sealed class ArticleScientificFigurePlanningService
             block.OriginalText?.Contains("Gravitation", StringComparison.Ordinal) == true
             && block.OriginalText.Contains("Weight", StringComparison.Ordinal));
 
+    private static bool IsMeterTrialArticle(
+        string articleTitle,
+        ScientificDocumentExtraction extraction) =>
+        articleTitle.Contains("试触", StringComparison.Ordinal)
+        || extraction.Blocks.Any(block =>
+            block.OriginalText?.Contains("指针基本稳定", StringComparison.Ordinal) == true
+            && block.OriginalText.Contains("量程", StringComparison.Ordinal));
+
+    private static bool IsBoilingBubbleArticle(
+        string articleTitle,
+        ScientificDocumentExtraction extraction) =>
+        articleTitle.Contains("气泡大小", StringComparison.Ordinal)
+        || extraction.Blocks.Any(block =>
+            block.OriginalText?.Contains("气泡内水蒸气", StringComparison.Ordinal) == true
+            && block.OriginalText.Contains("遇冷液化", StringComparison.Ordinal));
+
+    private static bool IsGalileanEyepieceArticle(
+        string articleTitle,
+        ScientificDocumentExtraction extraction) =>
+        articleTitle.Contains("伽利略望远镜", StringComparison.Ordinal)
+        || extraction.Blocks.Any(block =>
+            block.OriginalText?.Contains("目镜", StringComparison.Ordinal) == true
+            && block.OriginalText.Contains("凹透镜", StringComparison.Ordinal)
+            && block.OriginalText.Contains("物镜", StringComparison.Ordinal));
+
     private static bool IsThermalArticle(
         string articleTitle,
         ScientificDocumentExtraction extraction) =>
@@ -484,7 +524,16 @@ public sealed class ArticleScientificFigurePlanningService
             AddIfEvidenceFound(candidates, s.seed, s.kind, s.heading, s.objective, s.message, ScientificFigureRiskLevel.High, s.keyword, extraction.Blocks, s.refs, ArticleScientificFigureDisposition.ReplaceExisting, "用确定性 SVG 重绘原文关系并保留来源证据。");
         var source = extraction.Blocks.Where(b => !string.IsNullOrWhiteSpace(b.OriginalText)).Take(3).Select(b => ArticleScientificFigureEvidence.Create(b, 240)).ToArray();
         if (source.Length > 0) candidates.Add(new ArticleScientificFigureCandidate("candidate-source", title, ArticleScientificFigureCandidateKind.SourceEvidenceBoard, "原文来源证据板", "保留原文证据", "仅作来源保真排版，不新增科学结论", audience, ScientificFigureRiskLevel.High, source, ["原文页面"], ArticleScientificFigureDisposition.ConsolidateSourceEvidence, "保留原文像素证据。", true, ArticleScientificFigureGateStatus.PendingHumanApproval, ArticleScientificFigureDeliveryStatus.NotCreated));
-        if (candidates.Count < 4) throw new InvalidOperationException($"The {profile} article did not expose enough located evidence for the complete figure set.");
+        if (candidates.Count < 4)
+        {
+            var admittedKinds = candidates.Select(candidate => candidate.Kind).ToHashSet();
+            var missing = specs
+                .Where(spec => !admittedKinds.Contains(spec.kind))
+                .Select(spec => $"{spec.seed} (keyword: {spec.keyword})");
+            throw new InvalidOperationException(
+                $"The {profile} article did not expose enough located evidence for the complete figure set. "
+                + $"Missing candidates: {string.Join(", ", missing)}.");
+        }
         return candidates.Select((c, i) => c with { CandidateId = $"article-{StableSlug(title)}-{i + 1:D2}-{c.Kind.ToString().ToLowerInvariant()}", ArticleTitle = title, Audience = audience }).ToArray();
     }
 
@@ -500,6 +549,79 @@ public sealed class ArticleScientificFigurePlanningService
         ("magnetic-energy", ArticleScientificFigureCandidateKind.SuperconductingEnergy, "励磁中的电能与磁能", "表示电流建立时能量进入磁场", "电流变化时磁场能建立；恒定电流不持续消耗电能来维持静磁场", "磁能", ["第1节", "第2节"]),
         ("persistent-current", ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent, "超导闭环持久电流", "区分撤去励磁电源与断开线圈回路", "撤去电源但线圈闭合，电流可持续；这不是把线圈断电", "闭合通路", ["第3节"]),
         ("mri-excitation", ArticleScientificFigureCandidateKind.SuperconductingExcitation, "MRI 超导磁体励磁过程", "重绘 heater、超导开关、励磁电源和线圈连接", "加热开关使其有电阻，励磁后冷却恢复超导，再切断励磁电源", "励磁电源", ["图1", "第4节"]));
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanMeterTrial(
+        ScientificDocumentExtraction e, string t, string a) => PlanProfile(e, t, a, "meter-trial",
+        ("meter-transient", ArticleScientificFigureCandidateKind.MeterTransientResponse,
+            "指针瞬态与稳定示值", "区分刚接通后的动态过冲和稳定示值",
+            "第一峰值可能受指针系统动态响应影响；量程判断应结合趋势和稳定示值，但接近限位或异常时立即断开。",
+            "惯性", ["第1页", "第3页"]),
+        ("meter-decision", ArticleScientificFigureCandidateKind.MeterTrialDecision,
+            "安全试触的观察与决策", "把预估、量程、极性、趋势和断开条件组织为操作链",
+            "低压教学实验中，手保持在开关上；反偏、快速逼近限位或异常立即断开，正常阻尼后再判断量程。",
+            "手不能立即", ["第1页", "第2页"]),
+        ("meter-protection", ArticleScientificFigureCandidateKind.MeterProtectionLayers,
+            "量程选择与安全保护不是同一层", "区分测量判断与保险、限流、断电重接等保护措施",
+            "试触用于核对连接和量程，不替代预估、限流、保险或额定值；重新接线前必须断电。",
+            "保护装置", ["第4页", "第6页"]));
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanBoilingBubbles(
+        ScientificDocumentExtraction e, string t, string a)
+    {
+        var references = new[]
+        {
+            new ArticleScientificFigureExternalReference(
+                "OpenStax",
+                "Chemistry 2e, 10.3 Phase Transitions",
+                "https://openstax.org/books/chemistry-2e/pages/10-3-phase-transitions",
+                "2026-08-24",
+                "Adopted for the equilibrium-vapor-pressure definition of boiling and its dependence on surrounding pressure."),
+        };
+        return PlanProfile(e, t, a, "boiling-bubbles",
+            ("boiling-pre", ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse,
+                "沸腾前：蒸气泡上升并凝结", "显示下热上冷时蒸气泡的质量交换和收缩",
+                "对以水蒸气为主的气泡，进入较冷水层后凝结可压倒汽化而使气泡缩小；析出的溶解气体泡需另行区分。",
+                "沸腾前气泡变小", ["题图甲", "第一部分"]),
+            ("boiling-growth", ArticleScientificFigureCandidateKind.BoilingBubbleGrowth,
+                "沸腾时：界面净汽化使气泡增长", "显示饱和液体中气泡界面的质量输入",
+                "沸腾时气泡内蒸气压支撑气泡，界面净汽化向泡内补充水蒸气；浅水中的静水压变化通常只是次要量级。",
+                "不断汽化", ["题图乙", "第二部分"]),
+            ("boiling-scale", ArticleScientificFigureCandidateKind.BoilingPressureScale,
+                "浅水压强效应的量级", "比较 10 cm 水深的静水压差与大气压",
+                "10 cm 水深对应约 0.98 kPa，仅约 1% 大气压；体积变化不能脱离温度、蒸气质量和表面张力单独由水深判定。",
+                "水柱压强", ["第二部分"]))
+            .Select(candidate => candidate with { ExternalScientificReferences = references })
+            .ToArray();
+    }
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanGalileanEyepiece(
+        ScientificDocumentExtraction e, string t, string a)
+    {
+        var references = new[]
+        {
+            new ArticleScientificFigureExternalReference(
+                "OpenStax",
+                "University Physics Volume 3, 2.8 Microscopes and Telescopes",
+                "https://openstax.org/books/university-physics-volume-3/pages/2-8-microscopes-and-telescopes",
+                "2026-08-24",
+                "Adopted for the convex-objective/concave-eyepiece Galilean layout, upright image, focal-plane relation, and angular magnification boundary."),
+        };
+        return PlanProfile(e, t, a, "galilean-eyepiece",
+            ("galilean-afocal", ArticleScientificFigureCandidateKind.GalileanAfocalPath,
+                "伽利略望远镜的无焦光路", "连接远物、物镜、凹目镜、近似平行出射光和人眼",
+                "凹目镜在会聚光束到达物镜焦平面前截获光束；正常调焦时出射近似平行，眼睛在视网膜成实像。",
+                "出射光线是基本平行", ["结构图", "第5种情况"]),
+            ("galilean-regimes", ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes,
+                "凹目镜面对会聚光束的三种区间", "用统一符号约定压缩原文五幅虚物成像图",
+                "令 s 为目镜到原会聚点的距离、F=|f目|：s<F 为右侧实像，s=F 为平行出射，s>F 为左侧虚像；放大率还随 s/F 改变。",
+                "一倍焦距", ["图1-图5"]),
+            ("galilean-magnification", ArticleScientificFigureCandidateKind.GalileanAngularMagnification,
+                "焦距匹配与角放大率", "区分无焦调焦条件和角放大率决定因素",
+                "无焦时镜筒长度约为 f物-|f目|，角放大率 M=+f物/|f目|；焦点重合带来舒适观察，不等于无条件的“放大倍数最大”。",
+                "放大倍数", ["第四页", "公式"] ))
+            .Select(candidate => candidate with { ExternalScientificReferences = references })
+            .ToArray();
+    }
 
     private static void AddIfEvidenceFound(
         ICollection<ArticleScientificFigureCandidate> candidates,
@@ -646,6 +768,9 @@ public enum ArticleScientificFigureCandidateKind
     BernoulliFanEnergy = 29, BernoulliFanZones = 30, BernoulliStreamlineBoundary = 31,
     PinholeGeometry = 32, PinholeFocusPlane = 33, PinholeObservation = 34,
     SuperconductingEnergy = 35, SuperconductingPersistentCurrent = 36, SuperconductingExcitation = 37,
+    MeterTransientResponse = 38, MeterTrialDecision = 39, MeterProtectionLayers = 40,
+    BoilingPreBubbleCollapse = 41, BoilingBubbleGrowth = 42, BoilingPressureScale = 43,
+    GalileanAfocalPath = 44, GalileanVirtualObjectRegimes = 45, GalileanAngularMagnification = 46,
 }
 
 public enum ArticleScientificFigureDisposition

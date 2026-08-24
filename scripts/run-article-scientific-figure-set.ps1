@@ -140,7 +140,7 @@ if ($missing.Count -gt 0) {
 
 if (-not $report.complete -or $report.resultCount -ne $report.requestedCandidateCount `
     -or $report.resultCount -lt 1 `
-    -or $report.deterministicReview -notin @("article-optics-v1", "article-thermal-v1", "article-gravity-v1", "article-thermistor-v1", "article-archimedes-v1", "article-bernoulli-v1", "article-pinhole-v1", "article-superconducting-v1") `
+    -or $report.deterministicReview -notin @("article-optics-v1", "article-thermal-v1", "article-gravity-v1", "article-thermistor-v1", "article-archimedes-v1", "article-bernoulli-v1", "article-pinhole-v1", "article-superconducting-v1", "article-meter-trial-v1", "article-boiling-bubbles-v1", "article-galilean-eyepiece-v1") `
     -or $report.gateOneStatus -ne "pending for every candidate") {
     throw "Article figure-set report is incomplete."
 }
@@ -157,7 +157,7 @@ foreach ($reviewFile in @($report.items | ForEach-Object { $_.files | Where-Obje
     }
 }
 
-$semanticUtilityProfiles = @("article-bernoulli-v1", "article-pinhole-v1", "article-superconducting-v1")
+$semanticUtilityProfiles = @("article-bernoulli-v1", "article-pinhole-v1", "article-superconducting-v1", "article-meter-trial-v1", "article-boiling-bubbles-v1", "article-galilean-eyepiece-v1")
 if ($report.deterministicReview -in $semanticUtilityProfiles) {
     function Test-SvgElementVisible {
         param([Parameter(Mandatory = $true)][System.Xml.XmlElement]$Element)
@@ -197,6 +197,15 @@ if ($report.deterministicReview -in $semanticUtilityProfiles) {
         "SuperconductingEnergy" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("circuit", "switch", "magnetic-field", "power-source", "coil", "electrical-work") }
         "SuperconductingPersistentCurrent" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("charging-loop", "charging-coil", "persistent-current", "power-source") }
         "SuperconductingExcitation" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("excitation-circuit", "persistent-switch-branch", "superconducting-switch", "heater-circuit", "heater-element", "thermal-coupling", "cryostat", "main-coil") }
+        "MeterTransientResponse" = @{ MinimumGraphicNodes = 15; RequiredRoles = @("time-axis", "reading-axis", "range-limit", "damped-response", "danger-response", "steady-window") }
+        "MeterTrialDecision" = @{ MinimumGraphicNodes = 15; RequiredRoles = @("decision-step", "workflow-link", "abort-branch", "stable-branch", "abort-decision", "stable-decision") }
+        "MeterProtectionLayers" = @{ MinimumGraphicNodes = 11; RequiredRoles = @("prevention-layer", "measurement-layer", "protection-layer", "layer-link") }
+        "BoilingPreBubbleCollapse" = @{ MinimumGraphicNodes = 18; RequiredRoles = @("vessel", "cool-water", "hot-water", "shrinking-bubble", "rise-path", "condensation-flux", "origin-caveat") }
+        "BoilingBubbleGrowth" = @{ MinimumGraphicNodes = 17; RequiredRoles = @("vessel", "growing-bubble", "rise-path", "vaporization-flux", "pressure-balance") }
+        "BoilingPressureScale" = @{ MinimumGraphicNodes = 15; RequiredRoles = @("pressure-column", "water-depth", "reference-bubble", "bubble-rise", "depth-bracket", "causal-balance", "causal-factor", "scale-link") }
+        "GalileanAfocalPath" = @{ MinimumGraphicNodes = 22; RequiredRoles = @("incoming-ray", "objective-convergence", "would-be-focus", "would-be-focus-point", "afocal-output", "common-focal-plane", "eye") }
+        "GalileanVirtualObjectRegimes" = @{ MinimumGraphicNodes = 30; RequiredRoles = @("regime-panel", "converging-input", "regime-output", "image-point") }
+        "GalileanAngularMagnification" = @{ MinimumGraphicNodes = 16; RequiredRoles = @("optical-axis", "angle-ray", "afocal-ray", "tube-length", "magnification-card") }
     }
     foreach ($item in @($report.items)) {
         $svgFiles = @($item.files | Where-Object { $_ -like "*.svg" })

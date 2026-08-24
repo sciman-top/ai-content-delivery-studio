@@ -154,6 +154,15 @@ public sealed class ArticleScientificFigureCandidateRenderer
             case ArticleScientificFigureCandidateKind.SuperconductingEnergy: RenderSuperconductingEnergy(group); break;
             case ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent: RenderSuperconductingPersistentCurrent(group); break;
             case ArticleScientificFigureCandidateKind.SuperconductingExcitation: RenderSuperconductingExcitation(group); break;
+            case ArticleScientificFigureCandidateKind.MeterTransientResponse: RenderMeterTransientResponse(group); break;
+            case ArticleScientificFigureCandidateKind.MeterTrialDecision: RenderMeterTrialDecision(group); break;
+            case ArticleScientificFigureCandidateKind.MeterProtectionLayers: RenderMeterProtectionLayers(group); break;
+            case ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse: RenderBoilingPreBubbleCollapse(group); break;
+            case ArticleScientificFigureCandidateKind.BoilingBubbleGrowth: RenderBoilingBubbleGrowth(group); break;
+            case ArticleScientificFigureCandidateKind.BoilingPressureScale: RenderBoilingPressureScale(group); break;
+            case ArticleScientificFigureCandidateKind.GalileanAfocalPath: RenderGalileanAfocalPath(group); break;
+            case ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes: RenderGalileanVirtualObjectRegimes(group); break;
+            case ArticleScientificFigureCandidateKind.GalileanAngularMagnification: RenderGalileanAngularMagnification(group); break;
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(candidate),
@@ -1115,6 +1124,246 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(Text("① 加热开关使其有电阻 → ② 励磁升流 → ③ 冷却闭合超导回路 → ④ 撤去电源", 600, 700, 19, Ink, "middle"));
     }
 
+    private static void RenderMeterTransientResponse(XElement g)
+    {
+        g.Add(ArticleLine(120, 610, 1080, 610, Ink, 4, "time-axis", true));
+        g.Add(ArticleLine(120, 610, 120, 155, Ink, 4, "reading-axis", true));
+        g.Add(Text("时间", 1080, 645, 18, Ink, "end"));
+        g.Add(Text("指针示值", 105, 145, 18, Ink));
+        g.Add(ArticleLine(120, 245, 1080, 245, Magenta, 3, "range-limit"));
+        g.Add(Text("量程上限／机械限位区", 1060, 225, 18, Magenta, "end"));
+        var points = new[] { (120d,610d), (205d,190d), (300d,350d), (400d,270d), (520d,310d), (680d,292d), (850d,298d), (1030d,296d) };
+        for (var i = 0; i < points.Length - 1; i++)
+            g.Add(ArticleLine(points[i].Item1, points[i].Item2, points[i + 1].Item1, points[i + 1].Item2, Blue, 5, "damped-response", i == points.Length - 2));
+        foreach (var (x, y) in points.Skip(1))
+            DrawArticleCircle(g, x, y, 7, Blue, 3, "damped-response");
+        g.Add(ArticleLine(120, 610, 260, 120, Amber, 5, "danger-response", true));
+        g.Add(Text("正常阻尼：首峰可能越过刻度线，随后回摆到稳定示值", 610, 690, 21, Blue, "middle"));
+        g.Add(Text("快速逼近限位、反向偏转或异常：立即断开", 650, 165, 20, Amber, "middle"));
+        g.Add(ArticleRect(820, 330, 240, 105, "#ECFDF5", Green, 3, "steady-window"));
+        g.Add(Text("稳定示值用于量程判断", 940, 377, 20, Green, "middle"));
+        g.Add(Text("动态峰值 ≠ 稳态测量值", 940, 410, 17, Green, "middle"));
+    }
+
+    private static void RenderMeterTrialDecision(XElement g)
+    {
+        var boxes = new[]
+        {
+            (70d, 180d, "① 先预估", "低压教学电路\n核对额定值"),
+            (330d, 180d, "② 选量程与极性", "不确定时先较大量程\n核对正负接线"),
+            (590d, 180d, "③ 手保持在开关", "闭合后持续观察\n看趋势和限位"),
+            (850d, 180d, "④ 判断并行动", "稳定后选量程\n或断开排查"),
+        };
+        foreach (var (x, y, title, body) in boxes)
+        {
+            g.Add(ArticleRect(x, y, 220, 165, "#F8FAFC", Blue, 3, "decision-step"));
+            g.Add(Text(title, x + 110, y + 48, 20, Blue, "middle"));
+            var lines = body.Split('\n');
+            g.Add(Text(lines[0], x + 110, y + 92, 17, Ink, "middle"));
+            g.Add(Text(lines[1], x + 110, y + 125, 17, Ink, "middle"));
+            DrawArticleCircle(g, x + 110, y + 145, 5, Green, 2, "decision-step");
+        }
+        for (var x = 290d; x <= 810d; x += 260d)
+            g.Add(ArticleLine(x, 262, x + 40, 262, Green, 4, "workflow-link", true));
+        g.Add(ArticleRect(110, 430, 445, 170, "#FEF2F2", Magenta, 3, "abort-branch"));
+        g.Add(Text("立即断开", 332, 477, 24, Magenta, "middle"));
+        g.Add(Text("反向偏转｜快速逼近限位｜异味、发热、异常", 332, 525, 18, Ink, "middle"));
+        g.Add(Text("断电后再检查接线", 332, 565, 18, Magenta, "middle"));
+        g.Add(ArticleRect(645, 430, 445, 170, "#ECFDF5", Green, 3, "stable-branch"));
+        g.Add(Text("继续观察到基本稳定", 868, 477, 23, Green, "middle"));
+        g.Add(Text("未超量程 → 记录趋势并选择合适量程", 868, 525, 18, Ink, "middle"));
+        g.Add(Text("不是机械性“一触即断”", 868, 565, 18, Green, "middle"));
+        g.Add(ArticleLine(960, 345, 960, 430, Green, 4, "stable-decision", true));
+        g.Add(ArticleLine(700, 345, 500, 430, Magenta, 4, "abort-decision", true));
+        g.Add(Text("本图只适用于已评估的低压课堂实验", 600, 700, 19, Amber, "middle"));
+    }
+
+    private static void RenderMeterProtectionLayers(XElement g)
+    {
+        var layers = new[]
+        {
+            (120d, "预防层", "预估电压/电流\n核对元件额定值", Blue, "prevention-layer"),
+            (455d, "测量层", "量程、极性、接法\n观察动态与稳态", Green, "measurement-layer"),
+            (790d, "保护层", "限流、保险、断路保护\n异常立即断电", Magenta, "protection-layer"),
+        };
+        foreach (var (x, title, body, color, role) in layers)
+        {
+            g.Add(ArticleRect(x, 190, 290, 310, "#FFFFFF", color, 4, role));
+            g.Add(ArticleRect(x + 35, 225, 220, 65, "#F8FAFC", color, 3, role));
+            g.Add(Text(title, x + 145, 267, 25, color, "middle"));
+            var lines = body.Split('\n');
+            g.Add(Text(lines[0], x + 145, 355, 19, Ink, "middle"));
+            g.Add(Text(lines[1], x + 145, 405, 19, Ink, "middle"));
+            g.Add(ArticleLine(x + 75, 450, x + 215, 450, color, 5, role, true));
+        }
+        g.Add(ArticleLine(410, 345, 455, 345, Amber, 4, "layer-link", true));
+        g.Add(ArticleLine(745, 345, 790, 345, Amber, 4, "layer-link", true));
+        g.Add(Text("试触服务于量程与连接核对，不能替代安全保护", 600, 575, 24, Ink, "middle"));
+        g.Add(Text("重新接线、换量程或排故前：先断电", 600, 645, 22, Magenta, "middle"));
+        g.Add(Text("超出仪表和电路额定环境时，整套装置必须重新评估", 600, 700, 18, Amber, "middle"));
+    }
+
+    private static void RenderBoilingPreBubbleCollapse(XElement g)
+    {
+        g.Add(ArticleRect(210, 160, 560, 500, "#EFF6FF", Blue, 5, "vessel"));
+        g.Add(ArticleRect(215, 165, 550, 225, "#DBEAFE", Blue, 0, "cool-water"));
+        g.Add(ArticleRect(215, 390, 550, 265, "#FEE2E2", Magenta, 0, "hot-water"));
+        g.Add(Text("上层较冷：局部蒸气压较低", 490, 205, 20, Blue, "middle"));
+        g.Add(Text("下层较热：可形成富含水蒸气的气泡", 490, 625, 19, Magenta, "middle"));
+        var bubbles = new[] { (490d,550d,58d), (490d,455d,45d), (490d,365d,32d), (490d,285d,18d) };
+        foreach (var (x,y,r) in bubbles) DrawArticleCircle(g, x, y, r, Green, 4, "shrinking-bubble");
+        for (var y = 505d; y >= 315d; y -= 65d)
+            g.Add(ArticleLine(570, y, 570, y - 45, Green, 4, "rise-path", true));
+        g.Add(ArticleLine(475, 350, 405, 325, Blue, 4, "condensation-flux", true));
+        g.Add(ArticleLine(505, 350, 575, 325, Blue, 4, "condensation-flux", true));
+        g.Add(Text("凝结通量离开泡内", 650, 330, 19, Blue));
+        g.Add(ArticleRect(820, 210, 300, 300, "#FFF7ED", Amber, 3, "origin-caveat"));
+        g.Add(Text("先辨别气泡来源", 970, 255, 22, Amber, "middle"));
+        g.Add(Text("水蒸气泡：遇冷可明显收缩", 970, 325, 18, Ink, "middle"));
+        g.Add(Text("溶解气体析出：机制不同", 970, 380, 18, Ink, "middle"));
+        g.Add(Text("不能把所有沸腾前小泡", 970, 438, 17, Magenta, "middle"));
+        g.Add(Text("都自动等同为水蒸气泡", 970, 470, 17, Magenta, "middle"));
+        g.Add(Text("净凝结 > 净汽化 → 泡内蒸气质量减少 → 半径缩小", 600, 715, 22, Ink, "middle"));
+    }
+
+    private static void RenderBoilingBubbleGrowth(XElement g)
+    {
+        g.Add(ArticleRect(150, 160, 620, 500, "#EFF6FF", Blue, 5, "vessel"));
+        // Keep the state label away from the largest bubble so it remains legible
+        // while the bubble-size progression is visible without explanatory prose.
+        g.Add(Text("接近均匀沸腾温度的水", 645, 205, 21, Blue, "middle"));
+        var bubbles = new[] { (460d,555d,25d), (460d,460d,38d), (460d,350d,54d), (460d,235d,68d) };
+        foreach (var (x,y,r) in bubbles) DrawArticleCircle(g, x, y, r, Green, 4, "growing-bubble");
+        for (var y = 520d; y >= 330d; y -= 75d)
+            g.Add(ArticleLine(550, y, 550, y - 52, Green, 4, "rise-path", true));
+        foreach (var (x1,y1,x2,y2) in new[] { (350d,350d,405d,350d), (570d,350d,515d,350d), (460d,270d,460d,310d), (460d,430d,460d,395d) })
+            g.Add(ArticleLine(x1,y1,x2,y2,Magenta,4,"vaporization-flux",true));
+        g.Add(Text("液体在气泡界面净汽化，向泡内补充水蒸气", 460, 620, 19, Magenta, "middle"));
+        g.Add(ArticleRect(820, 205, 300, 330, "#ECFDF5", Green, 3, "pressure-balance"));
+        g.Add(Text("气泡能存在的条件", 970, 252, 23, Green, "middle"));
+        g.Add(Text("泡内蒸气压", 970, 315, 20, Ink, "middle"));
+        g.Add(Text("≈ 外界压强 + 表面张力项", 970, 360, 18, Ink, "middle"));
+        g.Add(Text("上升时外压略降", 970, 430, 18, Blue, "middle"));
+        g.Add(Text("但浅水中量级通常很小", 970, 475, 18, Amber, "middle"));
+        g.Add(Text("沸腾判据：液体平衡蒸气压达到周围压强", 600, 710, 22, Ink, "middle"));
+    }
+
+    private static void RenderBoilingPressureScale(XElement g)
+    {
+        g.Add(ArticleRect(85, 180, 490, 390, "#EFF6FF", Blue, 3, "pressure-column"));
+        g.Add(Text("10 cm 浅水示例", 330, 225, 24, Blue, "middle"));
+        g.Add(ArticleRect(155, 280, 95, 235, "#DBEAFE", Blue, 3, "water-depth"));
+        // The pressure scale is an explanatory comparison, but it must still show
+        // the physical object whose behaviour is being discussed rather than
+        // collapsing into a label-only list of quantities.
+        DrawArticleCircle(g, 202, 455, 17, Green, 3, "reference-bubble");
+        DrawArticleCircle(g, 202, 350, 22, Green, 3, "reference-bubble");
+        g.Add(ArticleLine(202, 492, 202, 385, Green, 3, "bubble-rise", true));
+        g.Add(Text("气泡上升", 240, 435, 17, Green));
+        g.Add(ArticleLine(270, 280, 270, 515, Amber, 3, "depth-bracket"));
+        g.Add(Text("h = 0.10 m", 285, 405, 20, Amber));
+        g.Add(Text("ρgh ≈ 0.98 kPa", 420, 330, 21, Ink, "middle"));
+        g.Add(Text("大气压约 101 kPa", 420, 385, 21, Ink, "middle"));
+        g.Add(Text("底/面绝对压强比约 1.01", 420, 450, 20, Green, "middle"));
+        g.Add(ArticleLine(155, 280, 250, 280, Amber, 3, "pressure-column", true));
+        g.Add(ArticleLine(155, 515, 250, 515, Amber, 3, "pressure-column", true));
+        g.Add(ArticleRect(625, 180, 490, 390, "#FFF7ED", Amber, 3, "causal-balance"));
+        g.Add(Text("决定气泡大小的量", 870, 225, 24, Amber, "middle"));
+        var labels = new[] { "泡内蒸气质量", "局部温度与蒸气压", "静水压与大气压", "表面张力（小泡更重要）" };
+        for (var i = 0; i < labels.Length; i++)
+        {
+            g.Add(ArticleRect(675, 270 + i * 65, 390, 45, "#FFFFFF", i == 0 ? Magenta : Blue, 2, "causal-factor"));
+            g.Add(Text(labels[i], 870, 300 + i * 65, 18, Ink, "middle"));
+        }
+        g.Add(ArticleLine(575, 375, 625, 375, Green, 5, "scale-link", true));
+        g.Add(Text("浅水压强差可定量估算，但不能单独解释全部可见增长", 600, 635, 22, Ink, "middle"));
+        g.Add(Text("温度变化与相变质量交换必须同时进入因果图", 600, 690, 20, Magenta, "middle"));
+    }
+
+    private static void RenderGalileanAfocalPath(XElement g)
+    {
+        DrawLens(g, 300, 180, 610, "物镜（凸）", Blue);
+        DrawConcaveLens(g, 810, 255, 535, "目镜（凹）", Magenta);
+        g.Add(ArticleLine(100, 200, 300, 200, Blue, 3, "incoming-ray", true));
+        g.Add(ArticleLine(100, 400, 300, 400, Blue, 3, "incoming-ray", true));
+        g.Add(ArticleLine(100, 600, 300, 600, Blue, 3, "incoming-ray", true));
+        // Solid objective rays stop at the eyepiece.  The dashed continuation
+        // shows the focus that would occur without it, avoiding the false
+        // visual implication that the green rays pass through the eyepiece.
+        g.Add(ArticleLine(300, 200, 810, 350, Green, 4, "objective-convergence", true));
+        g.Add(ArticleLine(300, 400, 810, 400, Green, 4, "objective-convergence", true));
+        g.Add(ArticleLine(300, 600, 810, 450, Green, 4, "objective-convergence", true));
+        g.Add(DashedArticleLine(810, 350, 980, 400, Green, 3, "would-be-focus"));
+        g.Add(DashedArticleLine(810, 400, 980, 400, Green, 3, "would-be-focus"));
+        g.Add(DashedArticleLine(810, 450, 980, 400, Green, 3, "would-be-focus"));
+        g.Add(ArticleLine(810, 350, 1080, 350, Magenta, 4, "afocal-output", true));
+        g.Add(ArticleLine(810, 400, 1080, 400, Magenta, 4, "afocal-output", true));
+        g.Add(ArticleLine(810, 450, 1080, 450, Magenta, 4, "afocal-output", true));
+        g.Add(ArticleLine(980, 285, 980, 515, Amber, 2, "common-focal-plane"));
+        DrawArticleCircle(g, 980, 400, 8, Amber, 3, "would-be-focus-point");
+        g.Add(Text("物镜原本会聚的焦点（在该焦平面上）", 980, 610, 18, Amber, "middle"));
+        g.Add(ArticleRect(1080, 300, 55, 200, "#ECFDF5", Green, 3, "eye"));
+        g.Add(Text("眼", 1107, 540, 18, Green, "middle"));
+        g.Add(Text("远物近似平行光", 150, 155, 18, Blue));
+        g.Add(Text("目镜在原会聚点之前截获光束；虚线表示未放入目镜时的会聚延长", 680, 210, 18, Magenta, "middle"));
+        g.Add(Text("正常调焦：出射近似平行 → 眼在视网膜成实像；最终视野正立", 600, 700, 22, Ink, "middle"));
+    }
+
+    private static void RenderGalileanVirtualObjectRegimes(XElement g)
+    {
+        var panels = new[] { (55d, "s < F", "右侧实像", Blue), (425d, "s = F", "平行出射", Green), (795d, "s > F", "左侧虚像", Magenta) };
+        foreach (var (x, condition, result, color) in panels)
+        {
+            g.Add(ArticleRect(x, 160, 350, 470, "#F8FAFC", color, 3, "regime-panel"));
+            g.Add(Text(condition, x + 175, 205, 25, color, "middle"));
+            DrawConcaveLens(g, x + 175, 260, 520, "凹目镜", color);
+            g.Add(ArticleLine(x + 35, 300, x + 175, 355, Blue, 3, "converging-input", true));
+            g.Add(ArticleLine(x + 35, 480, x + 175, 425, Blue, 3, "converging-input", true));
+            if (condition == "s < F")
+            {
+                g.Add(ArticleLine(x + 175, 355, x + 315, 385, color, 3, "regime-output", true));
+                g.Add(ArticleLine(x + 175, 425, x + 315, 385, color, 3, "regime-output", true));
+                DrawArticleCircle(g, x + 315, 385, 8, color, 3, "image-point");
+            }
+            else if (condition == "s = F")
+            {
+                g.Add(ArticleLine(x + 175, 355, x + 320, 355, color, 3, "regime-output", true));
+                g.Add(ArticleLine(x + 175, 425, x + 320, 425, color, 3, "regime-output", true));
+            }
+            else
+            {
+                g.Add(ArticleLine(x + 175, 355, x + 320, 330, color, 3, "regime-output", true));
+                g.Add(ArticleLine(x + 175, 425, x + 320, 450, color, 3, "regime-output", true));
+                g.Add(ArticleLine(x + 175, 355, x + 70, 373, color, 2, "virtual-extension"));
+                g.Add(ArticleLine(x + 175, 425, x + 70, 407, color, 2, "virtual-extension"));
+                DrawArticleCircle(g, x + 70, 390, 8, color, 3, "image-point");
+            }
+            g.Add(Text(result, x + 175, 585, 21, color, "middle"));
+        }
+        g.Add(Text("s：目镜到原会聚点的距离；F：凹目镜焦距的绝对值", 600, 675, 20, Ink, "middle"));
+        g.Add(Text("望远镜正常无焦工作对应中间情形，不应把其他区间混作整机放大结论", 600, 720, 18, Amber, "middle"));
+    }
+
+    private static void RenderGalileanAngularMagnification(XElement g)
+    {
+        g.Add(ArticleLine(110, 400, 1080, 400, Ink, 3, "optical-axis"));
+        DrawLens(g, 260, 220, 580, "物镜", Blue);
+        DrawConcaveLens(g, 800, 275, 525, "目镜", Magenta);
+        g.Add(ArticleLine(260, 300, 930, 380, Blue, 3, "angle-ray", true));
+        g.Add(ArticleLine(260, 500, 930, 420, Blue, 3, "angle-ray", true));
+        g.Add(ArticleLine(800, 365, 1080, 365, Green, 4, "afocal-ray", true));
+        g.Add(ArticleLine(800, 435, 1080, 435, Green, 4, "afocal-ray", true));
+        g.Add(ArticleLine(260, 620, 800, 620, Amber, 4, "tube-length"));
+        g.Add(ArticleLine(260, 600, 260, 640, Amber, 4, "tube-length"));
+        g.Add(ArticleLine(800, 600, 800, 640, Amber, 4, "tube-length"));
+        g.Add(Text("镜筒长度约为：物镜焦距 − 目镜焦距绝对值", 530, 665, 20, Amber, "middle"));
+        g.Add(ArticleRect(830, 160, 300, 115, "#ECFDF5", Green, 3, "magnification-card"));
+        g.Add(Text("角放大率（正立）", 980, 205, 20, Green, "middle"));
+        g.Add(Text("物镜焦距 ÷ 目镜焦距绝对值", 980, 245, 18, Ink, "middle"));
+        g.Add(Text("焦面匹配 → 近似平行出射 → 眼睛放松观察", 600, 710, 21, Ink, "middle"));
+        g.Add(Text("“焦点重合”是无焦条件；放大率仍由焦距比决定", 600, 755, 18, Magenta, "middle"));
+    }
+
     private static void DrawLens(
         XElement group,
         double x,
@@ -1351,6 +1600,20 @@ public sealed class ArticleScientificFigureCandidateRenderer
     {
         var line = Line(x1, y1, x2, y2, color, width, arrow);
         line.SetAttributeValue("data-article-role", role);
+        return line;
+    }
+
+    private static XElement DashedArticleLine(
+        double x1,
+        double y1,
+        double x2,
+        double y2,
+        string color,
+        double width,
+        string role)
+    {
+        var line = ArticleLine(x1, y1, x2, y2, color, width, role);
+        line.SetAttributeValue("stroke-dasharray", "7 6");
         return line;
     }
 

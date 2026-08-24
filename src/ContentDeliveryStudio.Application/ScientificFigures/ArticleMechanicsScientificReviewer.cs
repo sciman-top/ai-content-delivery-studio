@@ -87,7 +87,19 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         var check = new ScientificExpectedVisualCheck($"expected-{label}", label, "The figure must be visually legible, scientifically grounded, and independently useful after explanatory prose is hidden.", string.Join("; ", Required(c.Kind)), null, ["SVG-first authoritative geometry", "visible apparatus/objects and causal relations", "clear visual focus on the article's key question"], ["unsupported scientific overclaim", "label-only artwork", "floating or disconnected apparatus labels"], ids, ScientificExpectedVisualAuthority.LocatedSourceEvidencePendingGateOne);
         return [new ArticleScientificVisualRegion(ScientificVisualRegionKind.Relation, new ScientificPixelRegion(40, 120, 1120, 580), check)];
     }
-    private static string Profile(ArticleScientificFigureCandidate c) => c.Kind switch { ArticleScientificFigureCandidateKind.BernoulliFanEnergy or ArticleScientificFigureCandidateKind.BernoulliFanZones or ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => "article-bernoulli-v1", ArticleScientificFigureCandidateKind.PinholeGeometry or ArticleScientificFigureCandidateKind.PinholeFocusPlane or ArticleScientificFigureCandidateKind.PinholeObservation => "article-pinhole-v1", ArticleScientificFigureCandidateKind.SuperconductingEnergy or ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent or ArticleScientificFigureCandidateKind.SuperconductingExcitation => "article-superconducting-v1", _ when c.ArticleTitle.Contains("伯努利", StringComparison.Ordinal) => "article-bernoulli-v1", _ when c.ArticleTitle.Contains("小孔成像", StringComparison.Ordinal) => "article-pinhole-v1", _ => "article-superconducting-v1" };
+    private static string Profile(ArticleScientificFigureCandidate c) => c.Kind switch
+    {
+        ArticleScientificFigureCandidateKind.BernoulliFanEnergy or ArticleScientificFigureCandidateKind.BernoulliFanZones or ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary => "article-bernoulli-v1",
+        ArticleScientificFigureCandidateKind.PinholeGeometry or ArticleScientificFigureCandidateKind.PinholeFocusPlane or ArticleScientificFigureCandidateKind.PinholeObservation => "article-pinhole-v1",
+        ArticleScientificFigureCandidateKind.SuperconductingEnergy or ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent or ArticleScientificFigureCandidateKind.SuperconductingExcitation => "article-superconducting-v1",
+        ArticleScientificFigureCandidateKind.MeterTransientResponse or ArticleScientificFigureCandidateKind.MeterTrialDecision or ArticleScientificFigureCandidateKind.MeterProtectionLayers => "article-meter-trial-v1",
+        ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse or ArticleScientificFigureCandidateKind.BoilingBubbleGrowth or ArticleScientificFigureCandidateKind.BoilingPressureScale => "article-boiling-bubbles-v1",
+        ArticleScientificFigureCandidateKind.GalileanAfocalPath or ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes or ArticleScientificFigureCandidateKind.GalileanAngularMagnification => "article-galilean-eyepiece-v1",
+        _ when c.ArticleTitle.Contains("试触", StringComparison.Ordinal) => "article-meter-trial-v1",
+        _ when c.ArticleTitle.Contains("沸腾", StringComparison.Ordinal) => "article-boiling-bubbles-v1",
+        _ when c.ArticleTitle.Contains("伽利略", StringComparison.Ordinal) => "article-galilean-eyepiece-v1",
+        _ => throw new ArgumentOutOfRangeException(nameof(c), c.Kind, "No deterministic profile matches the candidate kind."),
+    };
     private static string[] Required(ArticleScientificFigureCandidateKind k) => k switch
     {
         ArticleScientificFigureCandidateKind.BernoulliFanEnergy => ["风机做功", "电功", "总能"],
@@ -99,6 +111,15 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         ArticleScientificFigureCandidateKind.SuperconductingEnergy => ["电能", "磁能", "电流变化"],
         ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => ["闭合通路", "撤去励磁电源", "恒定电流"],
         ArticleScientificFigureCandidateKind.SuperconductingExcitation => ["heater", "超导开关", "励磁电源", "液氦"],
+        ArticleScientificFigureCandidateKind.MeterTransientResponse => ["指针示值", "量程上限", "立即断开", "稳定示值"],
+        ArticleScientificFigureCandidateKind.MeterTrialDecision => ["先预估", "立即断开", "基本稳定", "低压课堂实验"],
+        ArticleScientificFigureCandidateKind.MeterProtectionLayers => ["预防层", "测量层", "保护层", "先断电"],
+        ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse => ["上层较冷", "凝结", "溶解气体", "半径缩小"],
+        ArticleScientificFigureCandidateKind.BoilingBubbleGrowth => ["净汽化", "泡内蒸气压", "表面张力", "沸腾判据"],
+        ArticleScientificFigureCandidateKind.BoilingPressureScale => ["0.98 kPa", "101 kPa", "蒸气质量", "表面张力"],
+        ArticleScientificFigureCandidateKind.GalileanAfocalPath => ["物镜", "目镜", "焦平面", "视网膜"],
+        ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes => ["s < F", "s = F", "s > F", "平行出射"],
+        ArticleScientificFigureCandidateKind.GalileanAngularMagnification => ["角放大率", "焦距", "无焦条件", "放松观察"],
         _ => []
     };
 
@@ -113,6 +134,15 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         ArticleScientificFigureCandidateKind.SuperconductingEnergy => ["circuit", "switch", "magnetic-field", "power-source", "coil", "electrical-work"],
         ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent => ["charging-loop", "charging-coil", "persistent-current", "power-source"],
         ArticleScientificFigureCandidateKind.SuperconductingExcitation => ["excitation-circuit", "persistent-switch-branch", "superconducting-switch", "heater-circuit", "heater-element", "thermal-coupling", "cryostat", "main-coil"],
+        ArticleScientificFigureCandidateKind.MeterTransientResponse => ["time-axis", "reading-axis", "range-limit", "damped-response", "danger-response", "steady-window"],
+        ArticleScientificFigureCandidateKind.MeterTrialDecision => ["decision-step", "workflow-link", "abort-branch", "stable-branch", "abort-decision", "stable-decision"],
+        ArticleScientificFigureCandidateKind.MeterProtectionLayers => ["prevention-layer", "measurement-layer", "protection-layer", "layer-link"],
+        ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse => ["vessel", "cool-water", "hot-water", "shrinking-bubble", "rise-path", "condensation-flux", "origin-caveat"],
+        ArticleScientificFigureCandidateKind.BoilingBubbleGrowth => ["vessel", "growing-bubble", "rise-path", "vaporization-flux", "pressure-balance"],
+        ArticleScientificFigureCandidateKind.BoilingPressureScale => ["pressure-column", "water-depth", "reference-bubble", "bubble-rise", "depth-bracket", "causal-balance", "causal-factor", "scale-link"],
+        ArticleScientificFigureCandidateKind.GalileanAfocalPath => ["incoming-ray", "objective-convergence", "would-be-focus", "would-be-focus-point", "afocal-output", "common-focal-plane", "eye"],
+        ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes => ["regime-panel", "converging-input", "regime-output", "image-point"],
+        ArticleScientificFigureCandidateKind.GalileanAngularMagnification => ["optical-axis", "angle-ray", "afocal-ray", "tube-length", "magnification-card"],
         _ => [],
     };
 
@@ -199,8 +229,20 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
             ["cryostat"] = 1,
             ["main-coil"] = 6,
         },
+        ArticleScientificFigureCandidateKind.MeterTransientResponse => Counts(("damped-response", 7), ("range-limit", 1), ("danger-response", 1)),
+        ArticleScientificFigureCandidateKind.MeterTrialDecision => Counts(("decision-step", 4), ("workflow-link", 3), ("abort-branch", 1), ("stable-branch", 1)),
+        ArticleScientificFigureCandidateKind.MeterProtectionLayers => Counts(("prevention-layer", 3), ("measurement-layer", 3), ("protection-layer", 3), ("layer-link", 2)),
+        ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse => Counts(("shrinking-bubble", 4), ("rise-path", 3), ("condensation-flux", 2)),
+        ArticleScientificFigureCandidateKind.BoilingBubbleGrowth => Counts(("growing-bubble", 4), ("rise-path", 3), ("vaporization-flux", 4)),
+        ArticleScientificFigureCandidateKind.BoilingPressureScale => Counts(("reference-bubble", 2), ("bubble-rise", 1), ("causal-factor", 4), ("pressure-column", 1), ("scale-link", 1)),
+        ArticleScientificFigureCandidateKind.GalileanAfocalPath => Counts(("incoming-ray", 3), ("objective-convergence", 3), ("would-be-focus", 3), ("would-be-focus-point", 1), ("afocal-output", 3)),
+        ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes => Counts(("regime-panel", 3), ("converging-input", 6), ("regime-output", 6), ("image-point", 2)),
+        ArticleScientificFigureCandidateKind.GalileanAngularMagnification => Counts(("angle-ray", 2), ("afocal-ray", 2), ("tube-length", 3)),
         _ => new Dictionary<string, int>(StringComparer.Ordinal),
     };
+
+    private static IReadOnlyDictionary<string, int> Counts(params (string Role, int Count)[] values) =>
+        values.ToDictionary(value => value.Role, value => value.Count, StringComparer.Ordinal);
 
     private static IReadOnlyList<(string Code, string Evidence)> ValidateHighStandardGeometry(
         ArticleScientificFigureCandidateKind kind,
@@ -268,6 +310,20 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
              !HasEndpointNear(document, "thermal-coupling", 635, 235, 4, 1)))
             findings.Add(("article-superconducting-heater-topology-invalid", "The heater circuit must terminate at the heater and the thermal-coupling marker must reach the switch branch without becoming a main-loop wire."));
 
+        if (kind == ArticleScientificFigureCandidateKind.GalileanAfocalPath &&
+            (!HasEndpointNear(document, "objective-convergence", 810, 350, 4, 1) ||
+             !HasEndpointNear(document, "objective-convergence", 810, 400, 4, 1) ||
+             !HasEndpointNear(document, "objective-convergence", 810, 450, 4, 1) ||
+             !HasEndpointNear(document, "would-be-focus", 810, 350, 4, 1) ||
+             !HasEndpointNear(document, "would-be-focus", 810, 400, 4, 1) ||
+             !HasEndpointNear(document, "would-be-focus", 810, 450, 4, 1) ||
+             !HasSharedEndpoint(document, "would-be-focus", 980, 400, 4, 3) ||
+             !HasEndpointNear(document, "afocal-output", 810, 350, 4, 1) ||
+             !HasEndpointNear(document, "afocal-output", 810, 400, 4, 1) ||
+             !HasEndpointNear(document, "afocal-output", 810, 450, 4, 1) ||
+             !HasDashedPaths(document, "would-be-focus", 3)))
+            findings.Add(("article-galilean-afocal-topology-invalid", "Parallel objective rays must converge to the same original focus. Solid rays must terminate at the concave eyepiece; dashed would-be-focus rays then show that common focus without implying unchanged transmission through the eyepiece."));
+
         return findings;
     }
 
@@ -280,7 +336,16 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         ArticleScientificFigureCandidateKind.PinholeObservation or
         ArticleScientificFigureCandidateKind.SuperconductingEnergy or
         ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent or
-        ArticleScientificFigureCandidateKind.SuperconductingExcitation;
+        ArticleScientificFigureCandidateKind.SuperconductingExcitation or
+        ArticleScientificFigureCandidateKind.MeterTransientResponse or
+        ArticleScientificFigureCandidateKind.MeterTrialDecision or
+        ArticleScientificFigureCandidateKind.MeterProtectionLayers or
+        ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse or
+        ArticleScientificFigureCandidateKind.BoilingBubbleGrowth or
+        ArticleScientificFigureCandidateKind.BoilingPressureScale or
+        ArticleScientificFigureCandidateKind.GalileanAfocalPath or
+        ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes or
+        ArticleScientificFigureCandidateKind.GalileanAngularMagnification;
 
     private static int MinimumGraphicCount(ArticleScientificFigureCandidateKind kind) => kind switch
     {
@@ -288,6 +353,10 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
         ArticleScientificFigureCandidateKind.PinholeGeometry => 15,
         ArticleScientificFigureCandidateKind.PinholeFocusPlane => 20,
         ArticleScientificFigureCandidateKind.PinholeObservation => 28,
+        ArticleScientificFigureCandidateKind.MeterProtectionLayers => 11,
+        ArticleScientificFigureCandidateKind.BoilingPressureScale => 15,
+        ArticleScientificFigureCandidateKind.GalileanAngularMagnification => 16,
+        ArticleScientificFigureCandidateKind.MeterTrialDecision => 15,
         _ => 20,
     };
 
@@ -305,6 +374,12 @@ public sealed class ArticleMechanicsScientificReviewer : IArticleScientificFigur
             .Count(point => Math.Abs(point.X - x) <= tolerance && Math.Abs(point.Y - y) <= tolerance);
         return endpointCount >= minimum;
     }
+
+    private static bool HasDashedPaths(XDocument document, string role, int minimum) =>
+        document.Descendants(Svg + "path")
+            .Where(IsVisible)
+            .Where(path => string.Equals((string?)path.Attribute("data-article-role"), role, StringComparison.Ordinal))
+            .Count(path => !string.IsNullOrWhiteSpace((string?)path.Attribute("stroke-dasharray"))) >= minimum;
 
     private static IEnumerable<XElement> VisibleGraphicElements(XDocument document) => document.Descendants()
         .Where(element => element.Name.LocalName is "path" or "rect" or "circle" or "ellipse" or "line" or "polyline" or "polygon")

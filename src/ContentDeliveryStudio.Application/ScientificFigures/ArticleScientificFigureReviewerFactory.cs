@@ -54,6 +54,9 @@ public static class ArticleScientificFigureReviewerFactory
         ArticleScientificFigureCandidateKind.BernoulliFanEnergy, ArticleScientificFigureCandidateKind.BernoulliFanZones, ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary,
         ArticleScientificFigureCandidateKind.PinholeGeometry, ArticleScientificFigureCandidateKind.PinholeFocusPlane, ArticleScientificFigureCandidateKind.PinholeObservation,
         ArticleScientificFigureCandidateKind.SuperconductingEnergy, ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent, ArticleScientificFigureCandidateKind.SuperconductingExcitation,
+        ArticleScientificFigureCandidateKind.MeterTransientResponse, ArticleScientificFigureCandidateKind.MeterTrialDecision, ArticleScientificFigureCandidateKind.MeterProtectionLayers,
+        ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse, ArticleScientificFigureCandidateKind.BoilingBubbleGrowth, ArticleScientificFigureCandidateKind.BoilingPressureScale,
+        ArticleScientificFigureCandidateKind.GalileanAfocalPath, ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes, ArticleScientificFigureCandidateKind.GalileanAngularMagnification,
     ];
 
     public static IArticleScientificFigureReviewer CreateFor(
