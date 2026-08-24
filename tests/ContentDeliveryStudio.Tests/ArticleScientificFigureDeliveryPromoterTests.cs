@@ -156,6 +156,20 @@ public sealed class ArticleScientificFigureDeliveryPromoterTests
         Assert.Throws<InvalidOperationException>(() => promoter.Promote(fixture.Request));
     }
 
+    [Theory]
+    [InlineData("article-bernoulli-v1")]
+    [InlineData("article-meter-trial-v1")]
+    [InlineData("article-boiling-bubbles-v1")]
+    [InlineData("article-galilean-eyepiece-v1")]
+    public void Promote_AdmitsCatalogedHighStandardProfilesAfterBothGates(string deterministicReview)
+    {
+        using var fixture = PromotionFixture.Create(deterministicReview);
+
+        var result = new ArticleScientificFigureDeliveryPromoter().Promote(fixture.Request);
+
+        Assert.True(Directory.Exists(result.PackageDirectory));
+    }
+
     private static string Hash(byte[] bytes) =>
         $"sha256:{Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()}";
 
@@ -167,13 +181,14 @@ public sealed class ArticleScientificFigureDeliveryPromoterTests
             Converters = { new JsonStringEnumConverter() },
         };
 
-        private PromotionFixture(string root)
+        private PromotionFixture(string root, string deterministicReview)
         {
             Root = root;
             ReviewReadyDirectory = Path.Combine(root, "review-ready");
             DeliveryRoot = Path.Combine(root, "deliveries");
             Directory.CreateDirectory(ReviewReadyDirectory);
             Directory.CreateDirectory(Path.Combine(ReviewReadyDirectory, "source-assets"));
+            DeterministicReview = deterministicReview;
             Request = new ArticleScientificFigureDeliveryPromotionRequest(
                 ReviewReadyDirectory,
                 DeliveryRoot,
@@ -193,14 +208,15 @@ public sealed class ArticleScientificFigureDeliveryPromoterTests
         public string ReviewReadyDirectory { get; }
         public string DeliveryRoot { get; }
         public ArticleScientificFigureDeliveryPromotionRequest Request { get; }
+        public string DeterministicReview { get; }
         public string ExpectedPackageDirectory =>
             Path.Combine(DeliveryRoot, "sample-article", "20260820-v1");
 
-        public static PromotionFixture Create()
+        public static PromotionFixture Create(string deterministicReview = "article-optics-v1")
         {
             var fixture = new PromotionFixture(Path.Combine(
                 Path.GetTempPath(),
-                $"article-delivery-{Guid.NewGuid():N}"));
+                $"article-delivery-{Guid.NewGuid():N}"), deterministicReview);
             fixture.WriteCandidateFiles();
             return fixture;
         }
@@ -280,7 +296,7 @@ public sealed class ArticleScientificFigureDeliveryPromoterTests
                 resultCount = 2,
                 complete = true,
                 visualReviewProvider = "fake-scientific-visual",
-                deterministicReview = "article-optics-v1",
+                deterministicReview = DeterministicReview,
                 gateOneStatus = "pending for every candidate",
                 gateTwoStatus = "not-run",
                 deliveryStatus = "not-created",
@@ -322,7 +338,7 @@ public sealed class ArticleScientificFigureDeliveryPromoterTests
                 contractPassed = true,
                 contractFindings = Array.Empty<object>(),
                 deterministicScientificPassed = true,
-                deterministicScientificPackage = "article-optics-v1",
+                deterministicScientificPackage = DeterministicReview,
                 deterministicScientificFindings = Array.Empty<object>(),
                 expectedVisualChecks = new[] { new { CheckId = "check-1" } },
                 typedCrops = new[] { new { CropId = "crop-1" } },

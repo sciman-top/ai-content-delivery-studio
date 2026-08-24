@@ -1126,6 +1126,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
 
     private static void RenderMeterTransientResponse(XElement g)
     {
+        DrawMeterTrialApparatus(g, 820, 445, 0.72);
         g.Add(ArticleLine(120, 610, 1080, 610, Ink, 4, "time-axis", true));
         g.Add(ArticleLine(120, 610, 120, 155, Ink, 4, "reading-axis", true));
         g.Add(Text("时间", 1080, 645, 18, Ink, "end"));
@@ -1147,6 +1148,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
 
     private static void RenderMeterTrialDecision(XElement g)
     {
+        DrawMeterTrialApparatus(g, 720, 45, 0.75);
         var boxes = new[]
         {
             (70d, 180d, "① 先预估", "低压教学电路\n核对额定值"),
@@ -1180,6 +1182,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
 
     private static void RenderMeterProtectionLayers(XElement g)
     {
+        DrawMeterTrialApparatus(g, 850, 45, 0.75);
         var layers = new[]
         {
             (120d, "预防层", "预估电压/电流\n核对元件额定值", Blue, "prevention-layer"),
@@ -1208,6 +1211,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(ArticleRect(210, 160, 560, 500, "#EFF6FF", Blue, 5, "vessel"));
         g.Add(ArticleRect(215, 165, 550, 225, "#DBEAFE", Blue, 0, "cool-water"));
         g.Add(ArticleRect(215, 390, 550, 265, "#FEE2E2", Magenta, 0, "hot-water"));
+        DrawBoilingApparatusDetails(g, 210, 160, 560, 500, 165, 665);
         g.Add(Text("上层较冷：局部蒸气压较低", 490, 205, 20, Blue, "middle"));
         g.Add(Text("下层较热：可形成富含水蒸气的气泡", 490, 625, 19, Magenta, "middle"));
         var bubbles = new[] { (490d,550d,58d), (490d,455d,45d), (490d,365d,32d), (490d,285d,18d) };
@@ -1223,12 +1227,13 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(Text("溶解气体析出：机制不同", 970, 380, 18, Ink, "middle"));
         g.Add(Text("不能把所有沸腾前小泡", 970, 438, 17, Magenta, "middle"));
         g.Add(Text("都自动等同为水蒸气泡", 970, 470, 17, Magenta, "middle"));
-        g.Add(Text("净凝结 > 净汽化 → 泡内蒸气质量减少 → 半径缩小", 600, 715, 22, Ink, "middle"));
+        g.Add(Text("净凝结 > 净汽化 → 泡内蒸气质量减少 → 半径缩小", 600, 755, 22, Ink, "middle"));
     }
 
     private static void RenderBoilingBubbleGrowth(XElement g)
     {
         g.Add(ArticleRect(150, 160, 620, 500, "#EFF6FF", Blue, 5, "vessel"));
+        DrawBoilingApparatusDetails(g, 150, 160, 620, 500, 210, 665);
         // Keep the state label away from the largest bubble so it remains legible
         // while the bubble-size progression is visible without explanatory prose.
         g.Add(Text("接近均匀沸腾温度的水", 645, 205, 21, Blue, "middle"));
@@ -1245,7 +1250,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(Text("≈ 外界压强 + 表面张力项", 970, 360, 18, Ink, "middle"));
         g.Add(Text("上升时外压略降", 970, 430, 18, Blue, "middle"));
         g.Add(Text("但浅水中量级通常很小", 970, 475, 18, Amber, "middle"));
-        g.Add(Text("沸腾判据：液体平衡蒸气压达到周围压强", 600, 710, 22, Ink, "middle"));
+        g.Add(Text("沸腾判据：液体平衡蒸气压达到周围压强", 600, 755, 22, Ink, "middle"));
     }
 
     private static void RenderBoilingPressureScale(XElement g)
@@ -1253,6 +1258,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(ArticleRect(85, 180, 490, 390, "#EFF6FF", Blue, 3, "pressure-column"));
         g.Add(Text("10 cm 浅水示例", 330, 225, 24, Blue, "middle"));
         g.Add(ArticleRect(155, 280, 95, 235, "#DBEAFE", Blue, 3, "water-depth"));
+        DrawBoilingApparatusDetails(g, 155, 280, 95, 235, 280, 535);
         // The pressure scale is an explanatory comparison, but it must still show
         // the physical object whose behaviour is being discussed rather than
         // collapsing into a label-only list of quantities.
@@ -1282,6 +1288,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
 
     private static void RenderGalileanAfocalPath(XElement g)
     {
+        DrawGalileanTelescopeContext(g, 300, 810, 400, 55, 1107);
         DrawLens(g, 300, 180, 610, "物镜（凸）", Blue);
         DrawConcaveLens(g, 810, 255, 535, "目镜（凹）", Magenta);
         g.Add(ArticleLine(100, 200, 300, 200, Blue, 3, "incoming-ray", true));
@@ -1302,7 +1309,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(ArticleLine(980, 285, 980, 515, Amber, 2, "common-focal-plane"));
         DrawArticleCircle(g, 980, 400, 8, Amber, 3, "would-be-focus-point");
         g.Add(Text("物镜原本会聚的焦点（在该焦平面上）", 980, 610, 18, Amber, "middle"));
-        g.Add(ArticleRect(1080, 300, 55, 200, "#ECFDF5", Green, 3, "eye"));
+        g.Add(DrawObserverEye(1107, 400, "eye"));
         g.Add(Text("眼", 1107, 540, 18, Green, "middle"));
         g.Add(Text("远物近似平行光", 150, 155, 18, Blue));
         g.Add(Text("目镜在原会聚点之前截获光束；虚线表示未放入目镜时的会聚延长", 680, 210, 18, Magenta, "middle"));
@@ -1315,6 +1322,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
         foreach (var (x, condition, result, color) in panels)
         {
             g.Add(ArticleRect(x, 160, 350, 470, "#F8FAFC", color, 3, "regime-panel"));
+            DrawGalileanTelescopeContext(g, x + 85, x + 175, 400, x + 25, x + 320);
             g.Add(Text(condition, x + 175, 205, 25, color, "middle"));
             DrawConcaveLens(g, x + 175, 260, 520, "凹目镜", color);
             g.Add(ArticleLine(x + 35, 300, x + 175, 355, Blue, 3, "converging-input", true));
@@ -1346,6 +1354,7 @@ public sealed class ArticleScientificFigureCandidateRenderer
 
     private static void RenderGalileanAngularMagnification(XElement g)
     {
+        DrawGalileanTelescopeContext(g, 260, 800, 400, 55, 1105);
         g.Add(ArticleLine(110, 400, 1080, 400, Ink, 3, "optical-axis"));
         DrawLens(g, 260, 220, 580, "物镜", Blue);
         DrawConcaveLens(g, 800, 275, 525, "目镜", Magenta);
@@ -1362,6 +1371,142 @@ public sealed class ArticleScientificFigureCandidateRenderer
         g.Add(Text("物镜焦距 ÷ 目镜焦距绝对值", 980, 245, 18, Ink, "middle"));
         g.Add(Text("焦面匹配 → 近似平行出射 → 眼睛放松观察", 600, 710, 21, Ink, "middle"));
         g.Add(Text("“焦点重合”是无焦条件；放大率仍由焦距比决定", 600, 755, 18, Magenta, "middle"));
+    }
+
+    /// <summary>
+    /// A readable low-voltage apparatus anchor prevents the meter figures from
+    /// degrading into ungrounded process cards or a curve with no operation.
+    /// The two named connections are part of the semantic contract, not a
+    /// decorative circuit motif.
+    /// </summary>
+    private static void DrawMeterTrialApparatus(XElement group, double x, double y, double scale)
+    {
+        double X(double value) => x + (value * scale);
+        double Y(double value) => y + (value * scale);
+        double S(double value) => value * scale;
+        var apparatus = new XElement(Svg + "g");
+        apparatus.Add(ArticleRect(X(0), Y(40), S(100), S(72), "#FEF3C7", Amber, S(3), "low-voltage-board"));
+        apparatus.Add(Text("低压实验板", X(50), Y(68), (int)Math.Round(S(16)), Ink, "middle"));
+        apparatus.Add(DrawArticleCircleElement(X(18), Y(92), S(7), Magenta, S(3), "low-voltage-terminal"));
+        apparatus.Add(DrawArticleCircleElement(X(82), Y(92), S(7), Blue, S(3), "low-voltage-terminal"));
+        apparatus.Add(ArticleRect(X(155), Y(15), S(112), S(120), "#F8FAFC", Ink, S(4), "meter-body"));
+        apparatus.Add(DrawArticleCircleElement(X(211), Y(62), S(36), Blue, S(3), "meter-dial"));
+        apparatus.Add(ArticleLine(X(211), Y(62), X(232), Y(43), Magenta, S(3), "meter-pointer"));
+        apparatus.Add(DrawArticleCircleElement(X(178), Y(120), S(6), Magenta, S(3), "meter-terminal"));
+        apparatus.Add(DrawArticleCircleElement(X(244), Y(120), S(6), Blue, S(3), "meter-terminal"));
+        apparatus.Add(Text("电表", X(211), Y(155), (int)Math.Round(S(16)), Ink, "middle"));
+        apparatus.Add(ArticleLine(X(100), Y(74), X(125), Y(74), Ink, S(3), "meter-wire"));
+        var boardToSwitch = ArticleLine(X(125), Y(74), X(147), Y(86), Ink, S(3), "meter-wire");
+        boardToSwitch.SetAttributeValue("data-article-connection", "board-meter-loop");
+        apparatus.Add(boardToSwitch);
+        apparatus.Add(ArticleLine(X(147), Y(86), X(178), Y(120), Ink, S(3), "switch-control"));
+        var switchToMeter = ArticleLine(X(82), Y(92), X(130), Y(120), Ink, S(3), "meter-wire");
+        switchToMeter.SetAttributeValue("data-article-connection", "board-meter-loop");
+        apparatus.Add(switchToMeter);
+        var returnWire = ArticleLine(X(130), Y(120), X(244), Y(120), Ink, S(3), "meter-wire");
+        returnWire.SetAttributeValue("data-article-connection", "board-meter-loop");
+        apparatus.Add(returnWire);
+        apparatus.Add(ArticleLine(X(126), Y(90), X(147), Y(86), Amber, S(5), "switch-control"));
+        apparatus.Add(Text("手控开关", X(130), Y(50), (int)Math.Round(S(14)), Amber, "middle"));
+        apparatus.Add(ArticleLine(X(117), Y(128), X(130), Y(100), "#C084FC", S(7), "operator-hand"));
+        apparatus.Add(ArticleLine(X(106), Y(142), X(118), Y(124), "#C084FC", S(6), "operator-hand"));
+        var handToSwitch = ArticleLine(X(130), Y(100), X(145), Y(88), "#C084FC", S(5), "operator-hand");
+        handToSwitch.SetAttributeValue("data-article-connection", "hand-switch-control");
+        apparatus.Add(handToSwitch);
+        group.Add(apparatus);
+    }
+
+    private static void DrawBoilingApparatusDetails(
+        XElement group,
+        double left,
+        double top,
+        double width,
+        double height,
+        double waterSurfaceY,
+        double heaterY)
+    {
+        group.Add(ArticleRect(left, top, width, height, "none", Blue, 4, "beaker-glass"));
+        group.Add(ArticleLine(left + 5, waterSurfaceY, left + width - 5, waterSurfaceY, Blue, 3, "water-surface"));
+        var thermometerX = left + width - Math.Min(38, width * 0.28);
+        var thermometer = ArticleLine(thermometerX, top + 58, thermometerX, top + height - 72, Magenta, 5, "thermometer");
+        thermometer.SetAttributeValue("data-article-connection", "thermometer-in-water");
+        group.Add(thermometer);
+        group.Add(DrawArticleCircleElement(thermometerX, top + height - 72, 9, Magenta, 3, "thermometer"));
+        group.Add(ArticleRect(left + (width * 0.31), heaterY, width * 0.38, 34, "#FDE68A", Amber, 3, "heater"));
+        group.Add(ArticleLine(left + (width * 0.38), heaterY + 17, left + (width * 0.62), heaterY + 17, Magenta, 3, "heater"));
+        var heatToWater = ArticleLine(left + (width * 0.5), heaterY, left + (width * 0.5), top + height - 12, Amber, 4, "heat-flux", true);
+        heatToWater.SetAttributeValue("data-article-connection", "heat-to-water");
+        group.Add(heatToWater);
+    }
+
+    private static void DrawGalileanTelescopeContext(
+        XElement group,
+        double objectiveX,
+        double eyepieceX,
+        double axisY,
+        double distantObjectX,
+        double eyeX)
+    {
+        var tubeTop = axisY - 105;
+        group.Add(ArticleRect(objectiveX - 18, tubeTop, Math.Max(60, eyepieceX - objectiveX + 36), 210, "#F8FAFC", "#94A3B8", 3, "telescope-tube"));
+        group.Add(ArticleRect(objectiveX - 22, axisY - 120, 44, 240, "#EFF6FF", Blue, 3, "objective-mount"));
+        group.Add(ArticleRect(eyepieceX - 18, axisY - 95, 36, 190, "#FDF2F8", Magenta, 3, "eyepiece-mount"));
+        var tubeConnection = ArticleLine(objectiveX, axisY + 112, eyepieceX, axisY + 112, "#64748B", 4, "tube-link");
+        tubeConnection.SetAttributeValue("data-article-connection", "objective-eyepiece-tube");
+        group.Add(tubeConnection);
+        group.Add(ArticleLine(distantObjectX, axisY + 90, distantObjectX, axisY - 55, Green, 5, "distant-object"));
+        group.Add(ArticleLine(distantObjectX, axisY - 45, distantObjectX - 28, axisY - 5, Green, 4, "distant-object"));
+        group.Add(ArticleLine(distantObjectX, axisY - 45, distantObjectX + 28, axisY - 5, Green, 4, "distant-object"));
+        group.Add(DrawObserverEye(eyeX, axisY, "observer-eye"));
+        var eyePath = ArticleLine(eyepieceX, axisY, eyeX - 18, axisY, Green, 3, "viewing-axis", true);
+        eyePath.SetAttributeValue("data-article-connection", "eyepiece-eye-path");
+        group.Add(eyePath);
+    }
+
+    private static XElement DrawArticleCircleElement(double centerX, double centerY, double radius, string color, double width, string role)
+    {
+        var circle = new XElement(Svg + "g");
+        const int segments = 24;
+        for (var index = 0; index < segments; index++)
+        {
+            var start = 2 * Math.PI * index / segments;
+            var end = 2 * Math.PI * (index + 1) / segments;
+            circle.Add(ArticleLine(
+                centerX + radius * Math.Cos(start),
+                centerY + radius * Math.Sin(start),
+                centerX + radius * Math.Cos(end),
+                centerY + radius * Math.Sin(end),
+                color,
+                width,
+                role));
+        }
+        return circle;
+    }
+
+    private static XElement DrawObserverEye(double centerX, double centerY, string role)
+    {
+        var eye = new XElement(Svg + "g");
+        var outline = new[]
+        {
+            (centerX - 24, centerY), (centerX - 12, centerY - 11),
+            (centerX, centerY - 15), (centerX + 12, centerY - 11),
+            (centerX + 24, centerY), (centerX + 12, centerY + 11),
+            (centerX, centerY + 15), (centerX - 12, centerY + 11),
+            (centerX - 24, centerY),
+        };
+        for (var index = 0; index < outline.Length - 1; index++)
+        {
+            eye.Add(ArticleLine(
+                outline[index].Item1,
+                outline[index].Item2,
+                outline[index + 1].Item1,
+                outline[index + 1].Item2,
+                Green,
+                3,
+                role));
+        }
+        eye.Add(DrawArticleCircleElement(centerX, centerY, 5, Ink, 2, role));
+        return eye;
     }
 
     private static void DrawLens(

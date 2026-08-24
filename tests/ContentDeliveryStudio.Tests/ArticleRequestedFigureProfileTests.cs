@@ -130,6 +130,54 @@ public sealed class ArticleRequestedFigureProfileTests
         Assert.Equal("205", (string?)label.Attribute("y"));
     }
 
+    [Fact]
+    public void MeterFigure_RejectsAProcessCardWhenTheConcreteMeterIsRemoved()
+    {
+        var candidates = PlanRequested("电表使用中，正确的“试触”", ["指针摆动有惯性。", "手不能立即离开开关，待指针基本稳定。", "安全依靠预估和保护装置。"]);
+        var candidate = Assert.Single(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.MeterTrialDecision);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var incorrect = artifact with { Svg = artifact.Svg.Replace("data-article-role=\"meter-body\"", "data-article-role=\"removed-meter-body\"", StringComparison.Ordinal) };
+
+        var report = ArticleScientificFigureReviewerFactory.CreateFor(candidates).Review(
+            candidate, incorrect, new ArticleSourceFigureAudit("sha256:source", 3, []), null);
+
+        Assert.IsType<ArticleMeterScientificReviewer>(ArticleScientificFigureReviewerFactory.CreateFor(candidates));
+        Assert.Contains(report.Findings, finding => finding.Code == "article-required-concrete-object-missing" && finding.Evidence == "meter-body");
+    }
+
+    [Fact]
+    public void BoilingFigure_RejectsAnApparatusWithoutHeatTransferConnection()
+    {
+        var candidates = PlanRequested("沸腾前、后，气泡大小变化的真正原因", ["沸腾前气泡变小甚至会消失。", "气泡表面的水不断汽化。", "底部水柱压强略大于水面。"]);
+        var candidate = Assert.Single(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.BoilingBubbleGrowth);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var incorrect = artifact with { Svg = artifact.Svg.Replace("data-article-connection=\"heat-to-water\"", "data-article-connection=\"removed-heat-to-water\"", StringComparison.Ordinal) };
+
+        var report = ArticleScientificFigureReviewerFactory.CreateFor(candidates).Review(
+            candidate, incorrect, new ArticleSourceFigureAudit("sha256:source", 3, []), null);
+
+        Assert.IsType<ArticleBoilingScientificReviewer>(ArticleScientificFigureReviewerFactory.CreateFor(candidates));
+        Assert.Contains(report.Findings, finding => finding.Code == "article-required-causal-connection-missing" && finding.Evidence == "heat-to-water");
+    }
+
+    [Fact]
+    public void GalileanFigure_RejectsAFreeFloatingRayDiagramWithoutTelescopeContext()
+    {
+        var candidates = PlanRequested("伽利略望远镜中目镜的成像原理", ["物镜和目镜组合后出射光线是基本平行的。", "讨论一倍焦距和二倍焦距。", "文章比较放大倍数并给出目镜为凹透镜。"]);
+        var candidate = Assert.Single(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.GalileanAngularMagnification);
+        var artifact = new ArticleScientificFigureCandidateRenderer().Render(candidate, 1);
+        var incorrect = artifact with { Svg = artifact.Svg.Replace("data-article-role=\"telescope-tube\"", "data-article-role=\"removed-telescope-tube\"", StringComparison.Ordinal) };
+
+        var report = ArticleScientificFigureReviewerFactory.CreateFor(candidates).Review(
+            candidate, incorrect, new ArticleSourceFigureAudit("sha256:source", 3, []), null);
+
+        Assert.IsType<ArticleGalileanScientificReviewer>(ArticleScientificFigureReviewerFactory.CreateFor(candidates));
+        Assert.Contains(report.Findings, finding => finding.Code == "article-required-concrete-object-missing" && finding.Evidence == "telescope-tube");
+    }
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanRequested(string title, string[] paragraphs) =>
+        new ArticleScientificFigurePlanningService().Plan(CreateExtraction(paragraphs), title, "初中物理教师与学生");
+
     private static ScientificDocumentExtraction CreateExtraction(IReadOnlyList<string> paragraphs)
     {
         var blocks = paragraphs.Select((text, index) => ScientificSourceBlock.Create(

@@ -275,6 +275,7 @@ public static class ArticleScientificFigureCommands
         var evidenceBoardPrefix = EvidenceBoardPrefix(run.Items.Select(item => item.Candidate).ToArray());
         foreach (var item in run.Items)
         {
+            var highStandardContract = ArticleHighStandardFigureProfileCatalog.TryGetEffectiveContract(item.Candidate);
             var prefix = Prefix(item.Candidate, evidenceBoardPrefix);
             var files = new List<string>();
             if (item.Svg is not null)
@@ -319,6 +320,7 @@ public static class ArticleScientificFigureCommands
                     deterministicScientificAuthority = item.DeterministicScientificReview.AuthorityBoundary,
                     deterministicScientificFindings = item.DeterministicScientificReview.Findings,
                     expectedVisualChecks = item.DeterministicScientificReview.ExpectedVisualChecks,
+                    highStandardContract,
                     visualReviewRequested = item.VisualReviewRequest is not null,
                     typedCrops = item.VisualReviewRequest is null
                         ? []
@@ -371,6 +373,9 @@ public static class ArticleScientificFigureCommands
                 visualReviewBoundary = "fake-first contract path; not a live multimodal-model or scientific-expert verdict",
                 deterministicReview = run.Items.Select(item => item.DeterministicScientificReview.PackageId).Distinct().Single(),
                 deterministicReviewBoundary = "machine-checkable domain invariants; not human Gate 1",
+                highStandardProfile = run.Items
+                    .Select(item => ArticleHighStandardFigureProfileCatalog.TryGetEffectiveContract(item.Candidate))
+                    .FirstOrDefault(contract => contract is not null)?.PackageId,
                 machinePreflightComplete = run.Complete,
                 independentVisualReviewPassed = run.HumanReviewRecommendation.IndependentVisualReviewPassed,
                 humanReviewMode = run.HumanReviewRecommendation.Mode,

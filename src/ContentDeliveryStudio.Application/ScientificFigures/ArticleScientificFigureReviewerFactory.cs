@@ -49,13 +49,22 @@ public static class ArticleScientificFigureReviewerFactory
         ArticleScientificFigureCandidateKind.ArchimedesPier,
         ArticleScientificFigureCandidateKind.ArchimedesPressureCaveat,
     ];
-    private static readonly HashSet<ArticleScientificFigureCandidateKind> ExtendedKinds =
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> ExtendedMechanicsKinds =
     [
         ArticleScientificFigureCandidateKind.BernoulliFanEnergy, ArticleScientificFigureCandidateKind.BernoulliFanZones, ArticleScientificFigureCandidateKind.BernoulliStreamlineBoundary,
         ArticleScientificFigureCandidateKind.PinholeGeometry, ArticleScientificFigureCandidateKind.PinholeFocusPlane, ArticleScientificFigureCandidateKind.PinholeObservation,
         ArticleScientificFigureCandidateKind.SuperconductingEnergy, ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent, ArticleScientificFigureCandidateKind.SuperconductingExcitation,
+    ];
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> MeterKinds =
+    [
         ArticleScientificFigureCandidateKind.MeterTransientResponse, ArticleScientificFigureCandidateKind.MeterTrialDecision, ArticleScientificFigureCandidateKind.MeterProtectionLayers,
+    ];
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> BoilingKinds =
+    [
         ArticleScientificFigureCandidateKind.BoilingPreBubbleCollapse, ArticleScientificFigureCandidateKind.BoilingBubbleGrowth, ArticleScientificFigureCandidateKind.BoilingPressureScale,
+    ];
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> GalileanKinds =
+    [
         ArticleScientificFigureCandidateKind.GalileanAfocalPath, ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes, ArticleScientificFigureCandidateKind.GalileanAngularMagnification,
     ];
 
@@ -77,8 +86,11 @@ public static class ArticleScientificFigureReviewerFactory
         var hasGravity = domainKinds.Any(GravityKinds.Contains);
         var hasThermistor = domainKinds.Any(ThermistorKinds.Contains);
         var hasArchimedes = domainKinds.Any(ArchimedesKinds.Contains);
-        var hasExtended = domainKinds.Any(ExtendedKinds.Contains);
-        if (new[] { hasThermal, hasGravity, hasThermistor, hasArchimedes, hasExtended }.Count(value => value) > 1)
+        var hasExtendedMechanics = domainKinds.Any(ExtendedMechanicsKinds.Contains);
+        var hasMeter = domainKinds.Any(MeterKinds.Contains);
+        var hasBoiling = domainKinds.Any(BoilingKinds.Contains);
+        var hasGalilean = domainKinds.Any(GalileanKinds.Contains);
+        if (new[] { hasThermal, hasGravity, hasThermistor, hasArchimedes, hasExtendedMechanics, hasMeter, hasBoiling, hasGalilean }.Count(value => value) > 1)
         {
             throw new InvalidOperationException("An article figure set cannot mix scientific review profiles.");
         }
@@ -106,10 +118,28 @@ public static class ArticleScientificFigureReviewerFactory
             EnsureAllKindsBelongTo(domainKinds, ArchimedesKinds, "archimedes");
             return new ArticleArchimedesScientificReviewer();
         }
-        if (hasExtended)
+        if (hasExtendedMechanics)
         {
-            EnsureAllKindsBelongTo(domainKinds, ExtendedKinds, "extended article");
+            EnsureAllKindsBelongTo(domainKinds, ExtendedMechanicsKinds, "extended article");
             return new ArticleMechanicsScientificReviewer();
+        }
+
+        if (hasMeter)
+        {
+            EnsureAllKindsBelongTo(domainKinds, MeterKinds, "meter trial");
+            return new ArticleMeterScientificReviewer();
+        }
+
+        if (hasBoiling)
+        {
+            EnsureAllKindsBelongTo(domainKinds, BoilingKinds, "boiling bubbles");
+            return new ArticleBoilingScientificReviewer();
+        }
+
+        if (hasGalilean)
+        {
+            EnsureAllKindsBelongTo(domainKinds, GalileanKinds, "galilean eyepiece");
+            return new ArticleGalileanScientificReviewer();
         }
 
         if (domainKinds.Length > 0 && domainKinds.All(OpticalKinds.Contains))

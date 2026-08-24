@@ -145,6 +145,7 @@ if (-not $report.complete -or $report.resultCount -ne $report.requestedCandidate
     throw "Article figure-set report is incomplete."
 }
 
+$reviewsByPath = @{}
 foreach ($reviewFile in @($report.items | ForEach-Object { $_.files | Where-Object { $_ -like "*.visual-review.json" } })) {
     $review = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory $reviewFile) |
         ConvertFrom-Json
@@ -155,10 +156,10 @@ foreach ($reviewFile in @($report.items | ForEach-Object { $_.files | Where-Obje
         -or @($review.typedCrops).Count -eq 0) {
         throw "Article review evidence is incomplete: $reviewFile"
     }
+    $reviewsByPath[$reviewFile] = $review
 }
 
-$semanticUtilityProfiles = @("article-bernoulli-v1", "article-pinhole-v1", "article-superconducting-v1", "article-meter-trial-v1", "article-boiling-bubbles-v1", "article-galilean-eyepiece-v1")
-if ($report.deterministicReview -in $semanticUtilityProfiles) {
+if (-not [string]::IsNullOrWhiteSpace($report.highStandardProfile)) {
     function Test-SvgElementVisible {
         param([Parameter(Mandatory = $true)][System.Xml.XmlElement]$Element)
 
@@ -187,32 +188,19 @@ if ($report.deterministicReview -in $semanticUtilityProfiles) {
     }
 
     $graphicElementNames = @("path", "rect", "circle", "ellipse", "line", "polyline", "polygon")
-    $highStandardByKind = @{
-        "BernoulliFanEnergy" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("intake-flow", "fan-blade", "electrical-work", "outlet-flow", "fan-body", "outlet-channel") }
-        "BernoulliFanZones" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("duct-wall", "suction-flow", "compression-flow", "fan-body", "fan-blade") }
-        "BernoulliStreamlineBoundary" = @{ MinimumGraphicNodes = 16; RequiredRoles = @("same-streamline", "free-jet", "comparison-boundary", "duct-wall", "throat-section") }
-        "PinholeGeometry" = @{ MinimumGraphicNodes = 15; RequiredRoles = @("object", "barrier", "principal-ray", "image-plane", "inverted-image") }
-        "PinholeFocusPlane" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("focus-plane", "ray", "camera-body", "camera-input-ray", "camera-focused-ray", "sensor") }
-        "PinholeObservation" = @{ MinimumGraphicNodes = 28; RequiredRoles = @("barrier", "near-aperture", "far-aperture", "near-field", "far-field", "near-object", "far-object", "near-camera", "far-camera") }
-        "SuperconductingEnergy" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("circuit", "switch", "magnetic-field", "power-source", "coil", "electrical-work") }
-        "SuperconductingPersistentCurrent" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("charging-loop", "charging-coil", "persistent-current", "power-source") }
-        "SuperconductingExcitation" = @{ MinimumGraphicNodes = 20; RequiredRoles = @("excitation-circuit", "persistent-switch-branch", "superconducting-switch", "heater-circuit", "heater-element", "thermal-coupling", "cryostat", "main-coil") }
-        "MeterTransientResponse" = @{ MinimumGraphicNodes = 15; RequiredRoles = @("time-axis", "reading-axis", "range-limit", "damped-response", "danger-response", "steady-window") }
-        "MeterTrialDecision" = @{ MinimumGraphicNodes = 15; RequiredRoles = @("decision-step", "workflow-link", "abort-branch", "stable-branch", "abort-decision", "stable-decision") }
-        "MeterProtectionLayers" = @{ MinimumGraphicNodes = 11; RequiredRoles = @("prevention-layer", "measurement-layer", "protection-layer", "layer-link") }
-        "BoilingPreBubbleCollapse" = @{ MinimumGraphicNodes = 18; RequiredRoles = @("vessel", "cool-water", "hot-water", "shrinking-bubble", "rise-path", "condensation-flux", "origin-caveat") }
-        "BoilingBubbleGrowth" = @{ MinimumGraphicNodes = 17; RequiredRoles = @("vessel", "growing-bubble", "rise-path", "vaporization-flux", "pressure-balance") }
-        "BoilingPressureScale" = @{ MinimumGraphicNodes = 15; RequiredRoles = @("pressure-column", "water-depth", "reference-bubble", "bubble-rise", "depth-bracket", "causal-balance", "causal-factor", "scale-link") }
-        "GalileanAfocalPath" = @{ MinimumGraphicNodes = 22; RequiredRoles = @("incoming-ray", "objective-convergence", "would-be-focus", "would-be-focus-point", "afocal-output", "common-focal-plane", "eye") }
-        "GalileanVirtualObjectRegimes" = @{ MinimumGraphicNodes = 30; RequiredRoles = @("regime-panel", "converging-input", "regime-output", "image-point") }
-        "GalileanAngularMagnification" = @{ MinimumGraphicNodes = 16; RequiredRoles = @("optical-axis", "angle-ray", "afocal-ray", "tube-length", "magnification-card") }
-    }
     foreach ($item in @($report.items)) {
         $svgFiles = @($item.files | Where-Object { $_ -like "*.svg" })
         if ($svgFiles.Count -eq 0) { continue }
-        $expectation = $highStandardByKind[$item.kind]
+        $reviewFiles = @($item.files | Where-Object { $_ -like "*.visual-review.json" })
+        if ($reviewFiles.Count -ne 1) {
+            throw "Article high-standard semantic gate requires exactly one visual-review sidecar for '$($item.kind)'."
+        }
+        $expectation = $reviewsByPath[$reviewFiles[0]].highStandardContract
         if ($null -eq $expectation) {
-            throw "Article high-standard semantic gate has no contract for candidate kind '$($item.kind)'."
+            throw "Article high-standard semantic gate has no effective contract for candidate kind '$($item.kind)'."
+        }
+        if ($expectation.packageId -ne $report.deterministicReview -or $expectation.candidateKind -ne $item.kind) {
+            throw "Article high-standard contract identity drifted for '$($item.kind)'."
         }
         foreach ($svgFile in $svgFiles) {
         [xml]$svg = Get-Content -Raw -LiteralPath (Join-Path $resolvedOutputDirectory $svgFile)
@@ -224,9 +212,16 @@ if ($report.deterministicReview -in $semanticUtilityProfiles) {
             if (Test-SvgElementVisible $_) { $_.GetAttribute("data-article-role") }
         } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
         $missingRoles = @($expectation.RequiredRoles | Where-Object { $_ -notin $articleRoles })
-        if ($graphicNodes.Count -lt $expectation.MinimumGraphicNodes -or $articleRoles.Count -lt 3 -or $missingRoles.Count -gt 0) {
+        $concreteRoles = @($expectation.RequiredConcreteObjectRoles | Where-Object { $_ -notin $articleRoles })
+        $connectionIds = @($svg.SelectNodes("//*[@data-article-connection]") | ForEach-Object {
+            if (Test-SvgElementVisible $_) { $_.GetAttribute("data-article-connection") }
+        } | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Sort-Object -Unique)
+        $missingConnections = @($expectation.RequiredConnectionIds | Where-Object { $_ -notin $connectionIds })
+        if ($graphicNodes.Count -lt $expectation.MinimumGraphicCount -or $articleRoles.Count -lt 3 -or $missingRoles.Count -gt 0 -or $concreteRoles.Count -gt 0 -or $missingConnections.Count -gt 0) {
             $missing = if ($missingRoles.Count -gt 0) { $missingRoles -join ", " } else { "none" }
-            throw "Article high-standard semantic gate failed for ${svgFile} ($($item.kind)): graphicNodes=$($graphicNodes.Count), articleRoles=$($articleRoles.Count), missingRoles=$missing. The figure must contain visible apparatus/objects, causal relations, and a clear visual focus; label-only or structurally empty artwork is not an illustration."
+            $concrete = if ($concreteRoles.Count -gt 0) { $concreteRoles -join ", " } else { "none" }
+            $connections = if ($missingConnections.Count -gt 0) { $missingConnections -join ", " } else { "none" }
+            throw "Article high-standard semantic gate failed for ${svgFile} ($($item.kind)): graphicNodes=$($graphicNodes.Count), articleRoles=$($articleRoles.Count), missingRoles=$missing, missingConcreteObjects=$concrete, missingConnections=$connections. The figure must contain visible apparatus/objects, causal relations, and a clear visual focus; label-only or structurally empty artwork is not an illustration."
         }
         }
     }
