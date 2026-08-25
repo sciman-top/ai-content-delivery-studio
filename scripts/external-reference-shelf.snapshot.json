@@ -2,7 +2,7 @@
   "version": 1,
   "snapshotKind": "external-reference-shelf",
   "sourceManifestPath": "D:\\CODE\\external\\ai-content-delivery-studio-references\\references.manifest.json",
-  "sourceManifestUpdatedAt": "2026-07-26T12:10:59+08:00",
+  "sourceManifestUpdatedAt": "2026-08-22T19:17:05+08:00",
   "entryCount": 26,
   "entries": [
     {
@@ -25,9 +25,10 @@
       "upstream": "https://github.com/openai/openai-dotnet.git",
       "branch": "main",
       "updateStrategy": "reclone_shallow",
-      "storageMode": "direct",
-      "isSharedBacked": false,
-      "lastVerifiedCommit": "d4e7e29"
+      "storageMode": "shared-junction",
+      "isSharedBacked": true,
+      "lastVerifiedCommit": "d4e7e29",
+      "sharedTargetPath": "D:\\CODE\\external\\_shared\\repos\\openai-dotnet"
     },
     {
       "relativePath": "02-dotnet-wpf/CommunityToolkit-dotnet",
@@ -160,9 +161,10 @@
       "upstream": "https://github.com/dotnet/Open-XML-SDK.git",
       "branch": "main",
       "updateStrategy": "reclone_shallow",
-      "storageMode": "direct",
-      "isSharedBacked": false,
-      "lastVerifiedCommit": "00967dc"
+      "storageMode": "shared-junction",
+      "isSharedBacked": true,
+      "lastVerifiedCommit": "00967dc",
+      "sharedTargetPath": "D:\\CODE\\external\\_shared\\repos\\open-xml-sdk"
     },
     {
       "relativePath": "05-document-rendering/PdfPig",
