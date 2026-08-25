@@ -102,4 +102,87 @@ public sealed class ProviderRuntimeServiceCollectionTests
         Assert.Contains("live provider mode", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(".env", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public void ResolveSecretStore_DefaultsToDotEnvStore()
+    {
+        var envPath = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", ".env");
+
+        var store = ProviderRuntimeServiceCollectionExtensions.ResolveSecretStore(
+            new ProviderRuntimeRegistrationOptions(),
+            envPath);
+
+        var dotEnvStore = Assert.IsType<DotEnvSecretStore>(store);
+        Assert.Equal(envPath, dotEnvStore.EnvPath);
+    }
+
+    [Fact]
+    public void ResolveSecretStore_DpapiOptInChecksDpapiBeforeDotEnvFallback()
+    {
+        var envPath = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", ".env");
+
+        var store = ProviderRuntimeServiceCollectionExtensions.ResolveSecretStore(
+            new ProviderRuntimeRegistrationOptions(SecretStore: "dpapi"),
+            envPath);
+
+        var composite = Assert.IsType<CompositeOpenAiSecretStore>(store);
+        Assert.Equal(2, composite.Stores.Count);
+        Assert.IsType<DpapiOpenAiSecretStore>(composite.Stores[0]);
+        var fallback = Assert.IsType<DotEnvSecretStore>(composite.Stores[1]);
+        Assert.Equal(envPath, fallback.EnvPath);
+    }
+
+    [Fact]
+    public void ResolveSecretStore_FailsClosedForUnknownStoreName()
+    {
+        var exception = Assert.Throws<InvalidOperationException>(() =>
+            ProviderRuntimeServiceCollectionExtensions.ResolveSecretStore(
+                new ProviderRuntimeRegistrationOptions(SecretStore: "keychain"),
+                envPath: "unused.env"));
+
+        Assert.Contains("PROVIDER_SECRET_STORE", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("dotenv", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("dpapi", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AddContentDeliveryStudioProviderRuntime_DpapiSecretStoreOptInRegistersCompositeStore()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "ContentDeliveryStudio.Tests", Guid.NewGuid().ToString("N"));
+        var envPath = Path.Combine(directory, ".env");
+        Directory.CreateDirectory(directory);
+
+        try
+        {
+            File.WriteAllLines(
+                envPath,
+                [
+                    "TEXT_PROVIDER_BASE_URL=https://input.example/v1",
+                    "TEXT_PROVIDER_API_KEY=sk-input",
+                    "TEXT_PROVIDER_MODEL=gpt-5.5",
+                    "IMAGE_PROVIDER_BASE_URL=https://input.example/v1",
+                    "IMAGE_PROVIDER_MODEL=gpt-image-2",
+                    "IMAGE_PROVIDER_API_KEY_1=sk-input",
+                ]);
+            var services = new ServiceCollection();
+
+            services.AddContentDeliveryStudioProviderRuntime(
+                new ProviderRuntimeRegistrationOptions("live", envPath, SecretStore: "dpapi"));
+
+            using var provider = services.BuildServiceProvider();
+            var composite = Assert.IsType<CompositeOpenAiSecretStore>(
+                provider.GetRequiredService<IOpenAiSecretStore>());
+            Assert.IsType<DpapiOpenAiSecretStore>(composite.Stores[0]);
+            // Single-endpoint profile resolves without the failover wrapper; the
+            // assertion proves the dpapi store feeds the live provider pipeline.
+            Assert.IsType<OpenAiTextPlanningProvider>(provider.GetRequiredService<ITextPlanningProvider>());
+        }
+        finally
+        {
+            if (Directory.Exists(directory))
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+    }
 }

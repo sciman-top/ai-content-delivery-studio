@@ -12,11 +12,14 @@ namespace ContentDeliveryStudio.App.Services;
 
 public sealed record ProviderRuntimeRegistrationOptions(
     string? ProviderMode = null,
-    string? EnvPath = null);
+    string? EnvPath = null,
+    string? SecretStore = null);
 
 public static class ProviderRuntimeServiceCollectionExtensions
 {
     private const string LiveProviderMode = "live";
+    private const string DotEnvSecretStoreName = "dotenv";
+    private const string DpapiSecretStoreName = "dpapi";
 
     public static IServiceCollection AddContentDeliveryStudioProviderRuntime(
         this IServiceCollection services,
@@ -26,7 +29,7 @@ public static class ProviderRuntimeServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(options);
 
         return IsLiveMode(options)
-            ? AddLiveProviders(services, ResolveEnvPath(options))
+            ? AddLiveProviders(services, options, ResolveEnvPath(options))
             : AddFakeProviders(services);
     }
 
@@ -46,7 +49,10 @@ public static class ProviderRuntimeServiceCollectionExtensions
         return services;
     }
 
-    private static IServiceCollection AddLiveProviders(IServiceCollection services, string envPath)
+    private static IServiceCollection AddLiveProviders(
+        IServiceCollection services,
+        ProviderRuntimeRegistrationOptions options,
+        string envPath)
     {
         if (!File.Exists(envPath))
         {
@@ -65,7 +71,7 @@ public static class ProviderRuntimeServiceCollectionExtensions
                 "live provider mode configuration is invalid: " + string.Join(" ", validationErrors));
         }
 
-        var secretStore = new DotEnvSecretStore(envPath);
+        var secretStore = ResolveSecretStore(options, envPath);
         services.TryAddSingleton<IOpenAiScientificReviewCheckpointStore, JsonOpenAiScientificReviewCheckpointStore>();
         services.AddSingleton(configuration);
         services.AddSingleton<IOpenAiSecretStore>(secretStore);
@@ -148,5 +154,31 @@ public static class ProviderRuntimeServiceCollectionExtensions
             : Path.Combine(Environment.CurrentDirectory, ".env");
 
         return Path.GetFullPath(envPath);
+    }
+
+    internal static IOpenAiSecretStore ResolveSecretStore(
+        ProviderRuntimeRegistrationOptions options,
+        string envPath)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+
+        var name = !string.IsNullOrWhiteSpace(options.SecretStore)
+            ? options.SecretStore
+            : Environment.GetEnvironmentVariable("PROVIDER_SECRET_STORE");
+
+        return name?.Trim().ToLowerInvariant() switch
+        {
+            null or "" or DotEnvSecretStoreName => new DotEnvSecretStore(envPath),
+            // DPAPI wins over .env so operators can migrate real keys out of the
+            // plaintext file one secret at a time; the .env values keep defining
+            // endpoint topology and remain the fallback while both channels exist.
+            DpapiSecretStoreName => new CompositeOpenAiSecretStore(
+            [
+                new DpapiOpenAiSecretStore(),
+                new DotEnvSecretStore(envPath),
+            ]),
+            var other => throw new InvalidOperationException(
+                $"PROVIDER_SECRET_STORE '{other}' is invalid. Allowed values: {DotEnvSecretStoreName}, {DpapiSecretStoreName}."),
+        };
     }
 }

@@ -11,6 +11,8 @@ public sealed class DotEnvSecretStore : IOpenAiSecretStore
             : envPath;
     }
 
+    public string EnvPath => _envPath;
+
     public async Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

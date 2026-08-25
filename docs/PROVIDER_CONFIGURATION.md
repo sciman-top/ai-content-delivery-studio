@@ -114,6 +114,15 @@ PROVIDER_MODE=live
 
 When live mode is enabled, startup reads the local `.env`, validates the text and image profiles, and registers live providers for text planning, image generation, image editing, vision review, and scientific understanding. Scientific understanding uses the primary text profile through bounded, strict, stateless Responses requests; generic text/image/vision retain their existing failover policies. Missing or invalid `.env` configuration fails closed at registration time instead of silently falling back to fake providers. Image editing uses the primary image profile through `POST /images/edits`; it is not covered by generation failover because the approval receipt binds one provider identity and model.
 
+### Secret Store Selection
+
+Live registration resolves API keys through a secret store selected by `PROVIDER_SECRET_STORE` (or the `SecretStore` registration option), failing closed for unknown values:
+
+- `dotenv` (default): keys are read from the same `.env` file that defines the endpoint profiles.
+- `dpapi`: a composite store that checks the DPAPI-protected per-user secret files first and falls back to `.env`. Real keys can then be written with `DpapiOpenAiSecretStore` (files under `%LOCALAPPDATA%\ContentDeliveryStudio\secrets\openai`) while the `.env` entry keeps a non-empty placeholder, because key-name presence still defines endpoint topology and validation.
+
+DPAPI wins over `.env` when both hold a value, so migration is per-secret: write the real key into DPAPI (immediately effective) and then replace the plaintext `.env` entry with a placeholder so the file no longer carries a real secret while endpoint topology stays valid.
+
 ### Reference-Guided Image Edit Boundary
 
 The current production edit contract is intentionally narrow:

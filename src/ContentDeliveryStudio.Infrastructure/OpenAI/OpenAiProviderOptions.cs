@@ -298,6 +298,8 @@ public sealed class CompositeOpenAiSecretStore : IOpenAiSecretStore
         _stores = stores;
     }
 
+    public IReadOnlyList<IOpenAiSecretStore> Stores => _stores;
+
     public async Task<string?> GetSecretAsync(string secretName, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
