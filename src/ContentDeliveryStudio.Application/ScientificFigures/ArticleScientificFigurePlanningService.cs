@@ -11,6 +11,27 @@ namespace ContentDeliveryStudio.Application.ScientificFigures;
 /// </summary>
 public sealed class ArticleScientificFigurePlanningService
 {
+    private sealed record ArticleProfile(
+        Func<string, ScientificDocumentExtraction, bool> Matches,
+        Func<ScientificDocumentExtraction, string, string, IReadOnlyList<ArticleScientificFigureCandidate>> Plan);
+
+    private static readonly ArticleProfile[] ArticleProfiles =
+    [
+        new(IsMeterTrialArticle, PlanMeterTrial),
+        new(IsBoilingBubbleArticle, PlanBoilingBubbles),
+        new(IsGalileanEyepieceArticle, PlanGalileanEyepiece),
+        new(IsDryIceArticle, PlanDryIce),
+        new(IsLeverForceArticle, PlanLeverForces),
+        new(IsRestDefinitionArticle, PlanRestDefinition),
+        new(IsGravityArticle, PlanGravity),
+        new(IsThermalArticle, PlanThermal),
+        new(IsThermistorArticle, PlanThermistor),
+        new(IsArchimedesArticle, PlanArchimedes),
+        new(IsBernoulliArticle, PlanBernoulli),
+        new(IsPinholeArticle, PlanPinhole),
+        new(IsSuperconductingArticle, PlanSuperconducting),
+    ];
+
     public IReadOnlyList<ArticleScientificFigureCandidate> Plan(
         ScientificDocumentExtraction extraction,
         string articleTitle,
@@ -25,62 +46,15 @@ public sealed class ArticleScientificFigurePlanningService
 
         var normalizedTitle = RequireText(articleTitle, nameof(articleTitle));
         var normalizedAudience = RequireText(audience, nameof(audience));
-        if (IsMeterTrialArticle(normalizedTitle, extraction))
+        // Whole-article profiles match in registry order; append new domains at
+        // the end so existing article routing never shifts.
+        foreach (var profile in ArticleProfiles)
         {
-            return PlanMeterTrial(extraction, normalizedTitle, normalizedAudience);
+            if (profile.Matches(normalizedTitle, extraction))
+            {
+                return profile.Plan(extraction, normalizedTitle, normalizedAudience);
+            }
         }
-
-        if (IsBoilingBubbleArticle(normalizedTitle, extraction))
-        {
-            return PlanBoilingBubbles(extraction, normalizedTitle, normalizedAudience);
-        }
-
-        if (IsGalileanEyepieceArticle(normalizedTitle, extraction))
-        {
-            return PlanGalileanEyepiece(extraction, normalizedTitle, normalizedAudience);
-        }
-
-        if (IsDryIceArticle(normalizedTitle, extraction))
-        {
-            return PlanDryIce(extraction, normalizedTitle, normalizedAudience);
-        }
-
-        if (IsLeverForceArticle(normalizedTitle, extraction))
-        {
-            return PlanLeverForces(extraction, normalizedTitle, normalizedAudience);
-        }
-
-        if (IsRestDefinitionArticle(normalizedTitle, extraction))
-        {
-            return PlanRestDefinition(extraction, normalizedTitle, normalizedAudience);
-        }
-
-        if (IsGravityArticle(normalizedTitle, extraction))
-        {
-            return PlanGravity(extraction, normalizedTitle, normalizedAudience);
-        }
-
-        if (IsThermalArticle(normalizedTitle, extraction))
-        {
-            return PlanThermal(extraction, normalizedTitle, normalizedAudience);
-        }
-
-        if (IsThermistorArticle(normalizedTitle, extraction))
-        {
-            return PlanThermistor(extraction, normalizedTitle, normalizedAudience);
-        }
-
-        if (IsArchimedesArticle(normalizedTitle, extraction))
-        {
-            return PlanArchimedes(extraction, normalizedTitle, normalizedAudience);
-        }
-
-        if (IsBernoulliArticle(normalizedTitle, extraction))
-            return PlanBernoulli(extraction, normalizedTitle, normalizedAudience);
-        if (IsPinholeArticle(normalizedTitle, extraction))
-            return PlanPinhole(extraction, normalizedTitle, normalizedAudience);
-        if (IsSuperconductingArticle(normalizedTitle, extraction))
-            return PlanSuperconducting(extraction, normalizedTitle, normalizedAudience);
 
         if (!IsOpticalArticle(normalizedTitle, extraction))
         {
