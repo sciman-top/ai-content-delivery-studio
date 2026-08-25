@@ -67,6 +67,24 @@ public static class ArticleScientificFigureReviewerFactory
     [
         ArticleScientificFigureCandidateKind.GalileanAfocalPath, ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes, ArticleScientificFigureCandidateKind.GalileanAngularMagnification,
     ];
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> DryIceKinds =
+    [
+        ArticleScientificFigureCandidateKind.DryIceWaterMechanism,
+        ArticleScientificFigureCandidateKind.DryIceHeatTransferComparison,
+        ArticleScientificFigureCandidateKind.DryIceIsolationVerification,
+    ];
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> LeverKinds =
+    [
+        ArticleScientificFigureCandidateKind.LeverRockContact,
+        ArticleScientificFigureCandidateKind.LeverSeesawFriction,
+        ArticleScientificFigureCandidateKind.LeverTwoForceMember,
+    ];
+    private static readonly HashSet<ArticleScientificFigureCandidateKind> RestKinds =
+    [
+        ArticleScientificFigureCandidateKind.RestIntervalDefinition,
+        ArticleScientificFigureCandidateKind.RestZeroVelocityTurningPoint,
+        ArticleScientificFigureCandidateKind.RestStateComparison,
+    ];
 
     public static IArticleScientificFigureReviewer CreateFor(
         IReadOnlyCollection<ArticleScientificFigureCandidate> candidates)
@@ -90,7 +108,10 @@ public static class ArticleScientificFigureReviewerFactory
         var hasMeter = domainKinds.Any(MeterKinds.Contains);
         var hasBoiling = domainKinds.Any(BoilingKinds.Contains);
         var hasGalilean = domainKinds.Any(GalileanKinds.Contains);
-        if (new[] { hasThermal, hasGravity, hasThermistor, hasArchimedes, hasExtendedMechanics, hasMeter, hasBoiling, hasGalilean }.Count(value => value) > 1)
+        var hasDryIce = domainKinds.Any(DryIceKinds.Contains);
+        var hasLever = domainKinds.Any(LeverKinds.Contains);
+        var hasRest = domainKinds.Any(RestKinds.Contains);
+        if (new[] { hasThermal, hasGravity, hasThermistor, hasArchimedes, hasExtendedMechanics, hasMeter, hasBoiling, hasGalilean, hasDryIce, hasLever, hasRest }.Count(value => value) > 1)
         {
             throw new InvalidOperationException("An article figure set cannot mix scientific review profiles.");
         }
@@ -140,6 +161,24 @@ public static class ArticleScientificFigureReviewerFactory
         {
             EnsureAllKindsBelongTo(domainKinds, GalileanKinds, "galilean eyepiece");
             return new ArticleGalileanScientificReviewer();
+        }
+
+        if (hasDryIce)
+        {
+            EnsureAllKindsBelongTo(domainKinds, DryIceKinds, "dry ice");
+            return new ArticleDryIceScientificReviewer();
+        }
+
+        if (hasLever)
+        {
+            EnsureAllKindsBelongTo(domainKinds, LeverKinds, "lever forces");
+            return new ArticleLeverScientificReviewer();
+        }
+
+        if (hasRest)
+        {
+            EnsureAllKindsBelongTo(domainKinds, RestKinds, "rest definition");
+            return new ArticleRestScientificReviewer();
         }
 
         if (domainKinds.Length > 0 && domainKinds.All(OpticalKinds.Contains))

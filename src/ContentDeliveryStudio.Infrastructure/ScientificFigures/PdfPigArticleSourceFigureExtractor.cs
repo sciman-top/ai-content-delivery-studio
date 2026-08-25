@@ -77,11 +77,10 @@ public sealed class PdfPigArticleSourceFigureExtractor : IArticleSourceFigureExt
             }
         }
 
-        if (assets.Count == 0)
-        {
-            throw new InvalidOperationException("Article PDF contains no extractable source figures.");
-        }
-
+        // A text/formula-only article is still a valid source for deterministic
+        // replacement figures. Keep the audit empty and let the planner omit a
+        // source-evidence board; fabricating a board would falsely claim source
+        // pixels that do not exist.
         return new ArticleSourceFigureAudit(
             HashFile(sourcePdfPath),
             document.NumberOfPages,

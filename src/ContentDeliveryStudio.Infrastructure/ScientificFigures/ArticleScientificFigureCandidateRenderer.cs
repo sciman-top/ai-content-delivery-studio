@@ -163,6 +163,15 @@ public sealed class ArticleScientificFigureCandidateRenderer
             case ArticleScientificFigureCandidateKind.GalileanAfocalPath: RenderGalileanAfocalPath(group); break;
             case ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes: RenderGalileanVirtualObjectRegimes(group); break;
             case ArticleScientificFigureCandidateKind.GalileanAngularMagnification: RenderGalileanAngularMagnification(group); break;
+            case ArticleScientificFigureCandidateKind.DryIceWaterMechanism: RenderDryIceWaterMechanism(group); break;
+            case ArticleScientificFigureCandidateKind.DryIceHeatTransferComparison: RenderDryIceHeatTransferComparison(group); break;
+            case ArticleScientificFigureCandidateKind.DryIceIsolationVerification: RenderDryIceIsolationVerification(group); break;
+            case ArticleScientificFigureCandidateKind.LeverRockContact: RenderLeverRockContact(group); break;
+            case ArticleScientificFigureCandidateKind.LeverSeesawFriction: RenderLeverSeesawFriction(group); break;
+            case ArticleScientificFigureCandidateKind.LeverTwoForceMember: RenderLeverTwoForceMember(group); break;
+            case ArticleScientificFigureCandidateKind.RestIntervalDefinition: RenderRestIntervalDefinition(group); break;
+            case ArticleScientificFigureCandidateKind.RestZeroVelocityTurningPoint: RenderRestZeroVelocityTurningPoint(group); break;
+            case ArticleScientificFigureCandidateKind.RestStateComparison: RenderRestStateComparison(group); break;
             default:
                 throw new ArgumentOutOfRangeException(
                     nameof(candidate),
@@ -1461,6 +1470,285 @@ public sealed class ArticleScientificFigureCandidateRenderer
         var eyePath = ArticleLine(eyepieceX, axisY, eyeX - 18, axisY, Green, 3, "viewing-axis", true);
         eyePath.SetAttributeValue("data-article-connection", "eyepiece-eye-path");
         group.Add(eyePath);
+    }
+
+    private static void RenderDryIceWaterMechanism(XElement group)
+    {
+        group.Add(Text("水中相变与气体逸出", 600, 132, 22, Green, "middle"));
+        group.Add(ArticleRect(150, 190, 390, 430, "none", Blue, 4, "beaker"));
+        group.Add(ArticleRect(158, 350, 374, 262, "#BAE6FD", Blue, 1, "water"));
+        group.Add(Text("水", 195, 390, 21, Blue));
+        group.Add(ArticleRect(270, 468, 150, 108, "#E0F2FE", "#0EA5E9", 4, "ice-shell"));
+        group.Add(ArticleRect(292, 490, 106, 72, "#CBD5E1", Ink, 3, "dry-ice"));
+        group.Add(Text("干冰", 345, 533, 20, Ink, "middle"));
+        var contact = ArticleLine(345, 468, 345, 440, Amber, 4, "dry-ice-water-contact", true);
+        contact.SetAttributeValue("data-article-connection", "dry-ice-water-contact");
+        group.Add(contact);
+        group.Add(Text("接触处先凝固成薄冰", 345, 425, 16, Amber, "middle"));
+
+        foreach (var (x, y, r) in new[] { (235d, 470d, 16d), (465d, 480d, 14d), (250d, 405d, 12d), (435d, 385d, 18d) })
+            group.Add(DrawArticleCircleElement(x, y, r, Green, 3, "co2-bubble"));
+        foreach (var (x, y) in new[] { (330d, 430d), (370d, 410d), (305d, 385d), (395d, 360d), (350d, 335d) })
+            group.Add(ArticleRect(x, y, 14, 14, "#FFFFFF", Blue, 2, "ice-crystal"));
+        foreach (var (x1, y1, x2, y2) in new[] { (345d, 450d, 330d, 330d), (360d, 450d, 370d, 300d), (380d, 450d, 410d, 345d) })
+        {
+            var path = ArticleLine(x1, y1, x2, y2, Green, 3, "crystal-egress", true);
+            path.SetAttributeValue("data-article-connection", "gas-carries-crystals");
+            group.Add(path);
+        }
+        group.Add(Text("二氧化碳气泡（CO2）把冰晶带出水面", 355, 270, 20, Green, "middle"));
+        group.Add(Text("白烟≠液态水雾", 760, 270, 28, Magenta, "middle"));
+        group.Add(Text("可见颗粒主要是小冰晶；气泡本身是二氧化碳", 760, 330, 18, Ink, "middle"));
+        group.Add(ArticleRect(600, 390, 330, 150, "#FDF2F8", "#F0ABFC", 2, "phase-change-summary"));
+        group.Add(Text("水 → 冰晶 / 冰壳", 765, 440, 24, Blue, "middle"));
+        group.Add(Text("干冰 → CO₂(g)", 765, 490, 23, Green, "middle"));
+        group.Add(Text("两条物质路径不可混为一谈", 765, 585, 18, Amber, "middle"));
+    }
+
+    private static void RenderDryIceHeatTransferComparison(XElement group)
+    {
+        group.Add(Text("同一干冰，不同介质的供热与现象", 600, 132, 22, Ink, "middle"));
+        var panels = new[] { (Left: 55d, Title: "空气", Fill: "#EFF6FF", Role: "air-vessel"), (Left: 415d, Title: "水", Fill: "#E0F2FE", Role: "water-vessel"), (Left: 775d, Title: "油/酒精", Fill: "#FEF3C7", Role: "oil-vessel") };
+        foreach (var panel in panels)
+        {
+            group.Add(ArticleRect(panel.Left, 175, 320, 420, "#FFFFFF", "#CBD5E1", 2, "comparison-panel"));
+            group.Add(Text(panel.Title, panel.Left + 160, 215, 24, Ink, "middle"));
+            group.Add(ArticleRect(panel.Left + 50, 280, 220, 220, panel.Fill, Blue, 3, panel.Role));
+            group.Add(ArticleRect(panel.Left + 125, 395, 70, 60, "#CBD5E1", Ink, 3, "dry-ice"));
+        }
+        foreach (var (x1, x2, role, connection) in new[] { (100d, 175d, "heat-arrow", "air-heat"), (460d, 590d, "heat-arrow", "water-heat"), (820d, 900d, "heat-arrow", "oil-heat") })
+        {
+            for (var offset = 0; offset < 2; offset++)
+            {
+                var arrow = ArticleLine(x1 + offset * 35, 330 + offset * 70, x2 + offset * 35, 360 + offset * 70, Amber, 4, role, true);
+                arrow.SetAttributeValue("data-article-connection", connection);
+                group.Add(arrow);
+            }
+        }
+        foreach (var (x, y) in new[] { (560d, 320d), (610d, 350d), (600d, 390d), (650d, 365d) })
+            group.Add(ArticleRect(x, y, 12, 12, "#FFFFFF", Blue, 2, "smoke-crystal"));
+        foreach (var (x, y) in new[] { (875d, 330d), (930d, 390d), (1000d, 350d), (955d, 430d) })
+            group.Add(DrawArticleCircleElement(x, y, 10, Green, 3, "clear-bubble"));
+        group.Add(Text("白烟较少", 215, 545, 18, Blue, "middle"));
+        group.Add(Text("白烟明显：水供热强且可凝固放热", 575, 545, 17, Green, "middle"));
+        group.Add(Text("多为清澈气泡；介质条件不同", 935, 545, 17, Amber, "middle"));
+        group.Add(Text("传热速率取决于 h、A、ΔT 与介质热容，不是单一颜色标签", 600, 670, 19, Ink, "middle"));
+    }
+
+    private static void RenderDryIceIsolationVerification(XElement group)
+    {
+        group.Add(Text("隔离接触，定位白烟来源", 600, 132, 22, Green, "middle"));
+        group.Add(ArticleRect(90, 205, 650, 400, "#E0F2FE", Blue, 3, "water-bath"));
+        group.Add(Text("水浴", 125, 245, 21, Blue));
+        var barrier = ArticleRect(270, 275, 260, 250, "#FFFFFF", Magenta, 4, "plastic-bag");
+        barrier.SetAttributeValue("data-article-connection", "bag-isolates-contact");
+        group.Add(barrier);
+        group.Add(ArticleLine(270, 275, 270, 525, Magenta, 3, "isolation-barrier"));
+        group.Add(ArticleRect(335, 355, 130, 100, "#CBD5E1", Ink, 3, "dry-ice"));
+        group.Add(Text("干冰", 400, 415, 22, Ink, "middle"));
+        group.Add(ArticleRect(392, 266, 16, 16, "#FFFFFF", Magenta, 2, "vent-hole"));
+        group.Add(Text("小孔", 430, 270, 17, Magenta));
+        var exit = ArticleLine(400, 275, 400, 210, Green, 4, "clear-bubble", true);
+        exit.SetAttributeValue("data-article-connection", "gas-escapes-hole");
+        group.Add(exit);
+        foreach (var (x, y) in new[] { (400d, 190d), (420d, 155d), (380d, 135d), (440d, 105d) })
+            group.Add(DrawArticleCircleElement(x, y, 10, Green, 3, "clear-bubble"));
+        foreach (var x in new[] { 285d, 330d, 475d })
+            group.Add(ArticleRect(x, 515, 36, 12, "#DBEAFE", Blue, 2, "ice-on-bag"));
+        group.Add(Text("袋外结冰", 400, 555, 20, Blue, "middle"));
+        group.Add(Text("薄塑料袋隔离接触", 400, 585, 18, Magenta, "middle"));
+        group.Add(ArticleRect(800, 230, 300, 280, "#F8FAFC", "#CBD5E1", 2, "isolation-summary"));
+        group.Add(Text("观察结果", 950, 275, 24, Ink, "middle"));
+        group.Add(Text("袋外：结冰", 950, 340, 20, Blue, "middle"));
+        group.Add(Text("清澈二氧化碳气泡", 950, 395, 20, Green, "middle"));
+        group.Add(Text("没有白烟", 950, 450, 22, Magenta, "middle"));
+        group.Add(Text("结论：冰晶需要干冰与水直接接触才能大量形成", 600, 670, 19, Amber, "middle"));
+    }
+
+    private static void RenderLeverRockContact(XElement group)
+    {
+        group.Add(Text("翻转石块时，阻力是接触力的合力", 600, 132, 22, Ink, "middle"));
+        group.Add(ArticleRect(90, 515, 980, 55, "#CBD5E1", "#64748B", 2, "ground"));
+        group.Add(ArticleLine(220, 480, 760, 335, Amber, 14, "lever", false));
+        group.Add(DrawArticleCircleElement(390, 435, 22, Ink, 4, "pivot"));
+        group.Add(ArticleRect(590, 275, 245, 165, "#A8A29E", Ink, 4, "rock"));
+        group.Add(Text("石块", 712, 365, 24, Ink, "middle"));
+        group.Add(Text("支点 O", 390, 475, 19, Ink, "middle"));
+        group.Add(Text("地面摩擦使石块翻转", 735, 470, 18, Muted, "middle"));
+        var normal = ArticleLine(650, 430, 650, 510, Blue, 4, "normal-force", true);
+        normal.SetAttributeValue("data-article-connection", "lever-rock-contact");
+        group.Add(normal);
+        group.Add(Text("压力 F压", 675, 500, 19, Blue));
+        var friction = ArticleLine(650, 430, 555, 480, Magenta, 4, "friction-force", true);
+        friction.SetAttributeValue("data-article-connection", "ground-rock-contact");
+        group.Add(friction);
+        group.Add(Text("f", 545, 485, 19, Magenta));
+        var resultant = ArticleLine(650, 430, 530, 535, Green, 6, "resultant-force", true);
+        resultant.SetAttributeValue("data-article-connection", "lever-rock-contact");
+        group.Add(resultant);
+        group.Add(Text("阻力合力 F阻：向左下", 470, 565, 20, Green));
+        group.Add(DashedArticleLine(835, 350, 900, 285, Amber, 3, "rock-slide"));
+        group.Add(DashedArticleLine(600, 285, 540, 235, Amber, 3, "rock-slide"));
+        group.Add(Text("相对滑动 → 合力方向不固定为竖直向下", 600, 680, 19, Amber, "middle"));
+    }
+
+    private static void RenderLeverSeesawFriction(XElement group)
+    {
+        group.Add(Text("人体与杠杆是否滑动，会改变接触合力", 600, 132, 22, Ink, "middle"));
+        group.Add(ArticleRect(60, 175, 520, 430, "#EFF6FF", "#93C5FD", 2, "sliding-state"));
+        group.Add(ArticleRect(620, 175, 520, 430, "#FFF7ED", "#FDBA74", 2, "sliding-state"));
+        group.Add(Text("不滑动：静摩擦", 320, 220, 24, Blue, "middle"));
+        group.Add(Text("滑动：动摩擦", 880, 220, 24, Amber, "middle"));
+        for (var left = 125d; left <= 685d; left += 560d)
+        {
+            group.Add(ArticleLine(left, 470, left + 380, 385, Ink, 13, "seesaw"));
+            group.Add(DrawArticleCircleElement(left + 190, 428, 20, Ink, 4, "pivot"));
+            group.Add(ArticleRect(left + 245, 300, 70, 90, "#FDE68A", Ink, 3, "person"));
+            group.Add(Text("人体", left + 280, 340, 18, Ink, "middle"));
+        }
+        var gravity1 = ArticleLine(405, 300, 405, 410, Blue, 4, "gravity-component", true);
+        gravity1.SetAttributeValue("data-article-connection", "friction-balances-component");
+        group.Add(gravity1);
+        group.Add(Text("重力分量 G2", 485, 345, 18, Blue, "middle"));
+        var staticFriction = ArticleLine(405, 390, 405, 300, Green, 5, "static-friction", true);
+        staticFriction.SetAttributeValue("data-article-connection", "friction-balances-component");
+        group.Add(staticFriction);
+        group.Add(Text("静摩擦 f1 = G2", 350, 270, 19, Green));
+        group.Add(ArticleLine(945, 300, 945, 410, Blue, 4, "gravity-component", true));
+        group.Add(Text("重力分量 G2", 1035, 430, 18, Blue, "middle"));
+        group.Add(ArticleLine(945, 390, 905, 340, Amber, 4, "kinetic-friction", true));
+        group.Add(Text("滑动摩擦 f2 < G2", 805, 270, 19, Amber, "middle"));
+        group.Add(ArticleLine(905, 340, 1010, 280, Green, 5, "force-resultant", true));
+        group.Add(ArticleLine(405, 390, 405, 285, Green, 5, "force-resultant", true));
+        group.Add(Text("合力方向与大小随摩擦改变", 600, 675, 20, Magenta, "middle"));
+        var contact = ArticleLine(390, 390, 420, 390, Ink, 4, "contact-line");
+        contact.SetAttributeValue("data-article-connection", "person-seesaw-contact");
+        group.Add(contact);
+    }
+
+    private static void RenderLeverTwoForceMember(XElement group)
+    {
+        group.Add(Text("杆的形状与约束决定动力方向", 600, 132, 22, Ink, "middle"));
+        group.Add(ArticleRect(65, 175, 520, 430, "#EFF6FF", "#93C5FD", 2, "straight-member"));
+        group.Add(ArticleRect(615, 175, 520, 430, "#FFF7ED", "#FDBA74", 2, "bent-member"));
+        group.Add(Text("直杆 AC：二力平衡", 325, 220, 24, Blue, "middle"));
+        group.Add(Text("弯曲撑杆：多约束合力", 875, 220, 24, Amber, "middle"));
+        group.Add(ArticleLine(170, 490, 470, 300, Ink, 15, "straight-member"));
+        group.Add(ArticleRect(135, 465, 50, 50, "#CBD5E1", Ink, 2, "support"));
+        group.Add(ArticleRect(450, 275, 50, 50, "#CBD5E1", Ink, 2, "support"));
+        group.Add(DrawArticleCircleElement(170, 490, 12, Ink, 3, "support"));
+        group.Add(DrawArticleCircleElement(470, 300, 12, Ink, 3, "support"));
+        var collinear = ArticleLine(125, 520, 510, 270, Green, 4, "two-force-line", true);
+        collinear.SetAttributeValue("data-article-connection", "two-force-collinear");
+        group.Add(collinear);
+        group.Add(Text("FA、FC 共线等大反向", 325, 555, 18, Green, "middle"));
+        group.Add(Text("沿杆方向", 325, 250, 18, Green, "middle"));
+        var forceA = ArticleLine(170, 490, 120, 525, Magenta, 4, "force-along-member", true);
+        forceA.SetAttributeValue("data-article-connection", "two-force-collinear");
+        group.Add(forceA);
+        var forceC = ArticleLine(470, 300, 520, 265, Magenta, 4, "force-along-member", true);
+        forceC.SetAttributeValue("data-article-connection", "two-force-collinear");
+        group.Add(forceC);
+        group.Add(ArticleLine(710, 500, 820, 420, Ink, 15, "bent-member"));
+        group.Add(ArticleLine(820, 420, 980, 470, Ink, 15, "bent-member"));
+        group.Add(ArticleRect(680, 475, 50, 50, "#CBD5E1", Ink, 2, "support"));
+        group.Add(ArticleRect(955, 445, 50, 50, "#CBD5E1", Ink, 2, "crane-arm"));
+        group.Add(DrawArticleCircleElement(820, 420, 12, Ink, 3, "support"));
+        var bentForce = ArticleLine(820, 420, 925, 350, Amber, 5, "constraint-force", true);
+        bentForce.SetAttributeValue("data-article-connection", "bent-member-to-arm");
+        group.Add(bentForce);
+        group.Add(ArticleLine(820, 420, 760, 350, Amber, 5, "constraint-force", true));
+        group.Add(Text("约束力合力", 1000, 365, 18, Amber, "middle"));
+        group.Add(Text("不能仅凭杆身方向猜合力", 875, 560, 19, Amber, "middle"));
+        group.Add(Text("二力杆结论不能直接推广到弯杆或多点约束", 600, 675, 19, Ink, "middle"));
+    }
+
+    private static void RenderRestIntervalDefinition(XElement group)
+    {
+        group.Add(Text("静止判断的是一段时间内的位置关系", 600, 132, 22, Ink, "middle"));
+        group.Add(ArticleRect(70, 180, 500, 420, "#EFF6FF", "#93C5FD", 2, "reference-frame"));
+        group.Add(ArticleRect(630, 180, 500, 420, "#FFF7ED", "#FDBA74", 2, "reference-frame"));
+        group.Add(Text("同一参考系：静止", 320, 225, 24, Blue, "middle"));
+        group.Add(Text("同一参考系：运动", 880, 225, 24, Amber, "middle"));
+        group.Add(ArticleLine(115, 500, 520, 500, Ink, 3, "time-axis", true));
+        group.Add(ArticleLine(675, 500, 1080, 500, Ink, 3, "time-axis", true));
+        foreach (var x in new[] { 160d, 250d, 340d, 430d })
+            group.Add(ArticleLine(x, 492, x, 508, Muted, 2, "time-axis"));
+        foreach (var x in new[] { 720d, 810d, 900d, 990d })
+            group.Add(ArticleLine(x, 492, x, 508, Muted, 2, "time-axis"));
+        foreach (var x in new[] { 160d, 250d, 340d, 430d })
+            group.Add(ArticleRect(x, 380, 34, 60, "#2563EB", Blue, 2, "rest-positions"));
+        foreach (var (x, y) in new[] { (720d, 410d), (810d, 370d), (900d, 330d), (990d, 290d) })
+            group.Add(ArticleRect(x, y, 34, 60, "#F59E0B", Amber, 2, "motion-positions"));
+        foreach (var (x1, x2, role, connection) in new[] { (160d, 464d, "interval-bracket", "rest-zero-displacement"), (720d, 1024d, "interval-bracket", "motion-position-change") })
+        {
+            var bracket = ArticleLine(x1, 545, x2, 545, role == "interval-bracket" && x1 < 500 ? Blue : Amber, 4, role, true);
+            bracket.SetAttributeValue("data-article-connection", connection);
+            group.Add(bracket);
+        }
+        group.Add(Text("位置不变，x(t)=x0，Δx=0", 320, 330, 20, Blue, "middle"));
+        group.Add(Text("位置随时间变化，Δx≠0", 880, 330, 20, Amber, "middle"));
+        group.Add(Text("时间区间", 600, 650, 18, Muted, "middle"));
+        group.Add(Text("静止不是某一个瞬时点的标签", 600, 690, 19, Magenta, "middle"));
+    }
+
+    private static void RenderRestZeroVelocityTurningPoint(XElement group)
+    {
+        group.Add(Text("上抛顶点：v=0，但运动过程没有中断", 600, 132, 22, Ink, "middle"));
+        group.Add(ArticleLine(135, 560, 1080, 560, Muted, 2, "time-sequence", true));
+        group.Add(ArticleLine(170, 475, 360, 330, Blue, 4, "trajectory"));
+        group.Add(ArticleLine(360, 330, 550, 260, Blue, 4, "trajectory"));
+        group.Add(ArticleLine(550, 260, 740, 330, Blue, 4, "trajectory"));
+        group.Add(ArticleLine(740, 330, 930, 475, Blue, 4, "trajectory"));
+        group.Add(ArticleRect(330, 395, 34, 50, "#60A5FA", Blue, 2, "object-before"));
+        group.Add(ArticleRect(533, 235, 34, 50, "#F0ABFC", Magenta, 2, "object-apex"));
+        group.Add(ArticleRect(913, 395, 34, 50, "#60A5FA", Blue, 2, "object-after"));
+        group.Add(Text("上抛物体", 550, 180, 20, Blue, "middle"));
+        group.Add(Text("前", 347, 470, 18, Blue, "middle"));
+        group.Add(Text("最高点", 550, 220, 18, Magenta, "middle"));
+        group.Add(Text("后", 930, 470, 18, Blue, "middle"));
+        group.Add(ArticleLine(347, 395, 347, 320, Blue, 4, "velocity-arrow", true));
+        group.Add(ArticleLine(930, 445, 930, 520, Blue, 4, "velocity-arrow", true));
+        group.Add(Text("v≠0", 370, 340, 18, Blue));
+        group.Add(Text("v=0", 580, 300, 20, Magenta));
+        var gravity = ArticleLine(550, 285, 550, 385, Amber, 5, "acceleration-arrow", true);
+        gravity.SetAttributeValue("data-article-connection", "gravity-downward");
+        group.Add(gravity);
+        group.Add(Text("a向下", 570, 380, 19, Amber));
+        var positions = ArticleLine(347, 600, 930, 600, Green, 4, "time-sequence", true);
+        positions.SetAttributeValue("data-article-connection", "positions-change");
+        group.Add(positions);
+        group.Add(Text("前后位置不同：Δx≠0", 600, 665, 20, Green, "middle"));
+        var zero = ArticleLine(535, 300, 565, 300, Magenta, 4, "velocity-arrow");
+        zero.SetAttributeValue("data-article-connection", "apex-velocity-zero");
+        group.Add(zero);
+    }
+
+    private static void RenderRestStateComparison(XElement group)
+    {
+        group.Add(Text("三种状态的边界：静止是匀速的特例", 600, 132, 22, Ink, "middle"));
+        var lanes = new[] { (Y: 210d, Title: "静止", Role: "rest-lane", Color: Blue), (Y: 350d, Title: "匀速直线运动", Role: "uniform-lane", Color: Green), (Y: 490d, Title: "变速运动", Role: "accelerated-lane", Color: Magenta) };
+        foreach (var lane in lanes)
+        {
+            group.Add(ArticleRect(70, lane.Y, 1060, 105, "#FFFFFF", "#CBD5E1", 2, "state-lane"));
+            group.Add(ArticleLine(250, lane.Y + 10, 1030, lane.Y + 10, lane.Color, 2, lane.Role));
+            group.Add(Text(lane.Title, 120, lane.Y + 42, 21, lane.Color));
+            group.Add(ArticleLine(250, lane.Y + 68, 1030, lane.Y + 68, lane.Color, 3, "position-trace", true));
+            group.Add(ArticleRect(310, lane.Y + 49, 28, 38, lane.Color, lane.Color, 1, "position-trace"));
+            group.Add(ArticleRect(lane.Role == "accelerated-lane" ? 860 : 710, lane.Y + 49, 28, 38, lane.Color, lane.Color, 1, "position-trace"));
+            group.Add(ArticleRect(250, lane.Y + 92, 780, 1, "none", lane.Color, 1, "derivative-note"));
+        }
+        group.Add(Text("x(t)=x0；v=0；所有阶导数为零", 700, 246, 18, Blue, "middle"));
+        group.Add(Text("x(t)=x0+vt；a及以上为零", 700, 386, 18, Green, "middle"));
+        group.Add(Text("即使某时刻 v=0，位置仍会继续变化", 700, 526, 18, Magenta, "middle"));
+        group.Add(Text("高阶导数决定是否持续变速", 650, 608, 17, Magenta, "middle"));
+        var special = ArticleLine(338, 535, 860, 535, Magenta, 4, "state-link", true);
+        special.SetAttributeValue("data-article-connection", "zero-velocity-not-rest");
+        group.Add(special);
+        var caseLink = ArticleLine(250, 300, 250, 350, Blue, 4, "state-link", true);
+        caseLink.SetAttributeValue("data-article-connection", "rest-special-case");
+        group.Add(caseLink);
+        group.Add(Text("静止 = v=0 的匀速直线运动特例（按时间过程定义）", 600, 690, 19, Ink, "middle"));
     }
 
     private static XElement DrawArticleCircleElement(double centerX, double centerY, double radius, string color, double width, string role)

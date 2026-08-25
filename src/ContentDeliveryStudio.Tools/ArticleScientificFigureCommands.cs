@@ -454,6 +454,15 @@ public static class ArticleScientificFigureCommands
         ArticleScientificFigureCandidateKind.GalileanAfocalPath => "01-galilean-afocal-path",
         ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes => "02-galilean-virtual-object-regimes",
         ArticleScientificFigureCandidateKind.GalileanAngularMagnification => "03-galilean-angular-magnification",
+        ArticleScientificFigureCandidateKind.DryIceWaterMechanism => "01-dry-ice-water-mechanism",
+        ArticleScientificFigureCandidateKind.DryIceHeatTransferComparison => "02-dry-ice-heat-transfer",
+        ArticleScientificFigureCandidateKind.DryIceIsolationVerification => "03-dry-ice-isolation",
+        ArticleScientificFigureCandidateKind.LeverRockContact => "01-lever-rock-contact",
+        ArticleScientificFigureCandidateKind.LeverSeesawFriction => "02-lever-seesaw-friction",
+        ArticleScientificFigureCandidateKind.LeverTwoForceMember => "03-lever-two-force-member",
+        ArticleScientificFigureCandidateKind.RestIntervalDefinition => "01-rest-interval-definition",
+        ArticleScientificFigureCandidateKind.RestZeroVelocityTurningPoint => "02-rest-zero-velocity",
+        ArticleScientificFigureCandidateKind.RestStateComparison => "03-rest-state-comparison",
         _ => throw new ArgumentOutOfRangeException(nameof(candidate), candidate.Kind, null),
     };
 

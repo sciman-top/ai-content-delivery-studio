@@ -27,6 +27,24 @@ public sealed class ArticleRequestedFigureProfileTests
             "article-galilean-eyepiece-v1",
             [ArticleScientificFigureCandidateKind.GalileanAfocalPath, ArticleScientificFigureCandidateKind.GalileanVirtualObjectRegimes, ArticleScientificFigureCandidateKind.GalileanAngularMagnification]
         },
+        {
+            "干冰周围的不是液态的“雾”",
+            ["白烟是在水中形成，不是液态水雾。", "传热速率取决于介质。", "薄塑料袋包着干冰，水中气泡清澈。"],
+            "article-dry-ice-v1",
+            [ArticleScientificFigureCandidateKind.DryIceWaterMechanism, ArticleScientificFigureCandidateKind.DryIceHeatTransferComparison, ArticleScientificFigureCandidateKind.DryIceIsolationVerification]
+        },
+        {
+            "杠杆动力、阻力的常见问题及其分析",
+            ["撬石头时压力和摩擦力的合力不是竖直向下。", "静摩擦力和滑动摩擦力不同。", "二力平衡时两力共线。"],
+            "article-lever-forces-v1",
+            [ArticleScientificFigureCandidateKind.LeverRockContact, ArticleScientificFigureCandidateKind.LeverSeesawFriction, ArticleScientificFigureCandidateKind.LeverTwoForceMember]
+        },
+        {
+            "何为“静止”？",
+            ["位置不随时间而变化。", "速度为零不等于静止。", "所有阶的导数全为零。"],
+            "article-rest-definition-v1",
+            [ArticleScientificFigureCandidateKind.RestIntervalDefinition, ArticleScientificFigureCandidateKind.RestZeroVelocityTurningPoint, ArticleScientificFigureCandidateKind.RestStateComparison]
+        },
     };
 
     [Theory]
@@ -44,7 +62,14 @@ public sealed class ArticleRequestedFigureProfileTests
             "初中物理教师与学生");
 
         Assert.Equal(expectedKinds, candidates.Where(item => item.Kind != ArticleScientificFigureCandidateKind.SourceEvidenceBoard).Select(item => item.Kind));
-        Assert.Contains(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard);
+        if (expectedPackage != "article-rest-definition-v1")
+        {
+            Assert.Contains(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard);
+        }
+        else
+        {
+            Assert.DoesNotContain(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard);
+        }
 
         var reviewer = ArticleScientificFigureReviewerFactory.CreateFor(candidates);
         var renderer = new ArticleScientificFigureCandidateRenderer();
@@ -58,14 +83,17 @@ public sealed class ArticleRequestedFigureProfileTests
             Assert.Contains("data-article-role", artifact.Svg, StringComparison.Ordinal);
         }
 
-        var boardCandidate = Assert.Single(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard);
-        var boardReport = reviewer.Review(
-            boardCandidate,
-            artifact: null,
-            audit,
-            new ArticleSourceEvidenceBoard([1], "sha256:board", 1, 1, []));
-        Assert.True(boardReport.Passed, string.Join("; ", boardReport.Findings.Select(item => item.Code)));
-        Assert.Equal(expectedPackage, boardReport.PackageId);
+        var boardCandidate = candidates.SingleOrDefault(item => item.Kind == ArticleScientificFigureCandidateKind.SourceEvidenceBoard);
+        if (boardCandidate is not null)
+        {
+            var boardReport = reviewer.Review(
+                boardCandidate,
+                artifact: null,
+                audit,
+                new ArticleSourceEvidenceBoard([1], "sha256:board", 1, 1, []));
+            Assert.True(boardReport.Passed, string.Join("; ", boardReport.Findings.Select(item => item.Code)));
+            Assert.Equal(expectedPackage, boardReport.PackageId);
+        }
     }
 
     [Fact]
@@ -158,6 +186,27 @@ public sealed class ArticleRequestedFigureProfileTests
 
         Assert.IsType<ArticleBoilingScientificReviewer>(ArticleScientificFigureReviewerFactory.CreateFor(candidates));
         Assert.Contains(report.Findings, finding => finding.Code == "article-required-causal-connection-missing" && finding.Evidence == "heat-to-water");
+    }
+
+    [Fact]
+    public void RestStateComparison_SeparatesFormulaAnnotationsFromPositionTraces()
+    {
+        var candidates = PlanRequested("何为“静止”？", ["位置不随时间而变化。", "速度为零不等于静止。", "所有阶的导数全为零。"]);
+        var candidate = Assert.Single(candidates, item => item.Kind == ArticleScientificFigureCandidateKind.RestStateComparison);
+        var document = XDocument.Parse(new ArticleScientificFigureCandidateRenderer().Render(candidate, 1).Svg);
+        var svg = (XNamespace)"http://www.w3.org/2000/svg";
+        var formulas = document.Descendants(svg + "text")
+            .Where(element => element.Value.StartsWith("x(t)=", StringComparison.Ordinal))
+            .Select(element => (Text: element.Value, Y: double.Parse((string)element.Attribute("y")!)))
+            .ToArray();
+        var traces = document.Descendants(svg + "path")
+            .Where(element => (string?)element.Attribute("data-article-role") == "position-trace")
+            .Select(element => (string)element.Attribute("d")!)
+            .ToArray();
+
+        Assert.Equal(["x(t)=x0；v=0；所有阶导数为零", "x(t)=x0+vt；a及以上为零"], formulas.Select(item => item.Text));
+        Assert.Equal([246d, 386d], formulas.Select(item => item.Y));
+        Assert.Equal(["M 250 278 L 1030 278", "M 250 418 L 1030 418", "M 250 558 L 1030 558"], traces);
     }
 
     [Fact]

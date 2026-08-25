@@ -40,6 +40,21 @@ public sealed class ArticleScientificFigurePlanningService
             return PlanGalileanEyepiece(extraction, normalizedTitle, normalizedAudience);
         }
 
+        if (IsDryIceArticle(normalizedTitle, extraction))
+        {
+            return PlanDryIce(extraction, normalizedTitle, normalizedAudience);
+        }
+
+        if (IsLeverForceArticle(normalizedTitle, extraction))
+        {
+            return PlanLeverForces(extraction, normalizedTitle, normalizedAudience);
+        }
+
+        if (IsRestDefinitionArticle(normalizedTitle, extraction))
+        {
+            return PlanRestDefinition(extraction, normalizedTitle, normalizedAudience);
+        }
+
         if (IsGravityArticle(normalizedTitle, extraction))
         {
             return PlanGravity(extraction, normalizedTitle, normalizedAudience);
@@ -515,6 +530,19 @@ public sealed class ArticleScientificFigurePlanningService
     private static bool IsSuperconductingArticle(string title, ScientificDocumentExtraction extraction) =>
         title.Contains("超导磁体", StringComparison.Ordinal) || extraction.Blocks.Any(b => b.OriginalText?.Contains("超导线圈", StringComparison.Ordinal) == true);
 
+    private static bool IsDryIceArticle(string title, ScientificDocumentExtraction extraction) =>
+        title.Contains("干冰", StringComparison.Ordinal)
+        || extraction.Blocks.Any(b => b.OriginalText?.Contains("二氧化碳气体", StringComparison.Ordinal) == true
+            && b.OriginalText.Contains("小冰晶", StringComparison.Ordinal));
+
+    private static bool IsLeverForceArticle(string title, ScientificDocumentExtraction extraction) =>
+        title.Contains("杠杆动力", StringComparison.Ordinal)
+        || extraction.Blocks.Any(b => b.OriginalText?.Contains("压力和摩擦力的合力", StringComparison.Ordinal) == true);
+
+    private static bool IsRestDefinitionArticle(string title, ScientificDocumentExtraction extraction) =>
+        title.Contains("静止", StringComparison.Ordinal)
+        || extraction.Blocks.Any(b => b.OriginalText?.Contains("位置不随时间而变化", StringComparison.Ordinal) == true);
+
     private static IReadOnlyList<ArticleScientificFigureCandidate> PlanProfile(
         ScientificDocumentExtraction extraction, string title, string audience, string profile,
         params (string seed, ArticleScientificFigureCandidateKind kind, string heading, string objective, string message, string keyword, string[] refs)[] specs)
@@ -549,6 +577,53 @@ public sealed class ArticleScientificFigurePlanningService
         ("magnetic-energy", ArticleScientificFigureCandidateKind.SuperconductingEnergy, "励磁中的电能与磁能", "表示电流建立时能量进入磁场", "电流变化时磁场能建立；恒定电流不持续消耗电能来维持静磁场", "磁能", ["第1节", "第2节"]),
         ("persistent-current", ArticleScientificFigureCandidateKind.SuperconductingPersistentCurrent, "超导闭环持久电流", "区分撤去励磁电源与断开线圈回路", "撤去电源但线圈闭合，电流可持续；这不是把线圈断电", "闭合通路", ["第3节"]),
         ("mri-excitation", ArticleScientificFigureCandidateKind.SuperconductingExcitation, "MRI 超导磁体励磁过程", "重绘 heater、超导开关、励磁电源和线圈连接", "加热开关使其有电阻，励磁后冷却恢复超导，再切断励磁电源", "励磁电源", ["图1", "第4节"]));
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanDryIce(
+        ScientificDocumentExtraction e, string t, string a) => PlanProfile(e, t, a, "dry-ice",
+        ("dry-ice-water-mechanism", ArticleScientificFigureCandidateKind.DryIceWaterMechanism,
+            "干冰入水：冰晶、气泡与冰壳", "把接触水后的相变与二氧化碳逸出画成可追踪的实验机制",
+            "水在干冰附近凝固成薄冰片并被气泡带出；白烟的主要可见颗粒是冰晶，不是液态水雾。",
+            "白烟是在水中形成", ["第一阶段", "第二阶段"]),
+        ("dry-ice-heat-transfer-comparison", ArticleScientificFigureCandidateKind.DryIceHeatTransferComparison,
+            "空气、水、油/酒精中的干冰对照", "比较介质传热与可见现象，避免把所有白烟归因于水蒸气液化",
+            "水的供热和相变放热能支持明显白烟；油/酒精的传热或相变条件不同，现象也随之改变。",
+            "传热速率", ["油中的干冰", "酒精中的干冰"]),
+        ("dry-ice-isolation-verification", ArticleScientificFigureCandidateKind.DryIceIsolationVerification,
+            "塑料袋隔离实验：气泡清澈", "显示隔离干冰与水的接触后，气泡仍是二氧化碳但不携带冰晶",
+            "薄袋紧贴干冰并从小孔放气；袋外结冰，而水中逸出的气泡清澈，这个对照定位了冰晶来源。",
+            "薄塑料袋包着干冰", ["三、验证实验"]));
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanLeverForces(
+        ScientificDocumentExtraction e, string t, string a) => PlanProfile(e, t, a, "lever-forces",
+        ("lever-rock-contact", ArticleScientificFigureCandidateKind.LeverRockContact,
+            "撬石头时的阻力方向", "展示地面、石块、支点和杠杆接触力的合力方向",
+            "翻转过程中石块与杠杆发生相对滑动；压力与摩擦力合成的阻力可指向左下，而不是默认竖直向下。",
+            "撬石头", ["图8", "图9"]),
+        ("lever-seesaw-friction", ArticleScientificFigureCandidateKind.LeverSeesawFriction,
+            "跷跷板上的压力与摩擦", "对照静摩擦和滑动摩擦如何改变杠杆所受合力",
+            "人体与杠杆不滑动时摩擦力可平衡重力分量；发生滑动后摩擦力变小，合力大小和方向随之改变。",
+            "静摩擦力", ["图5", "图6", "图7"]),
+        ("lever-two-force-member", ArticleScientificFigureCandidateKind.LeverTwoForceMember,
+            "撑杆动力：二力杆与弯曲杆", "区分二力平衡杆沿杆方向的作用力与有约束/弯曲构件的合力",
+            "理想二力杆的两端力共线，杆对吊臂的力沿杆；弯曲撑杆或多点约束则必须按具体受力分析。",
+            "二力平衡", ["图14", "图16", "图17"]));
+
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanRestDefinition(
+        ScientificDocumentExtraction e, string t, string a) => PlanProfile(e, t, a, "rest-definition",
+        ("rest-interval-definition", ArticleScientificFigureCandidateKind.RestIntervalDefinition,
+            "静止是时间区间内位置不变", "用同一参考系的时间序列对照静止与运动",
+            "静止判断的是一段时间内位置是否变化；瞬时速度为零只说明切线斜率为零，不等于这段时间位移为零。",
+            "位置不随时间而变化", ["一、位移随时间变化"]),
+        ("rest-zero-velocity-turning-point", ArticleScientificFigureCandidateKind.RestZeroVelocityTurningPoint,
+            "上抛顶点：v=0 仍处于运动过程", "把顶点前后位置、速度方向和加速度同时画出",
+            "顶点瞬间 v=0，但前后时间位置不同且加速度仍向下；不能把瞬时 v=0 当作静止。",
+            "速度为零", ["上抛运动的顶点处"]),
+        ("rest-state-comparison", ArticleScientificFigureCandidateKind.RestStateComparison,
+            "静止、匀速与变速的状态边界", "并列比较位置函数、速度和高阶导数的物理含义",
+            "静止是匀速直线运动的 v=0 特例；变速运动即使在某一时刻 v=0，也会继续改变位置。",
+            "所有阶的导数全为零", ["小结：运动与静止"]))
+        .Where(candidate => candidate.Kind != ArticleScientificFigureCandidateKind.SourceEvidenceBoard)
+        .ToArray();
 
     private static IReadOnlyList<ArticleScientificFigureCandidate> PlanMeterTrial(
         ScientificDocumentExtraction e, string t, string a) => PlanProfile(e, t, a, "meter-trial",
@@ -771,6 +846,9 @@ public enum ArticleScientificFigureCandidateKind
     MeterTransientResponse = 38, MeterTrialDecision = 39, MeterProtectionLayers = 40,
     BoilingPreBubbleCollapse = 41, BoilingBubbleGrowth = 42, BoilingPressureScale = 43,
     GalileanAfocalPath = 44, GalileanVirtualObjectRegimes = 45, GalileanAngularMagnification = 46,
+    DryIceWaterMechanism = 47, DryIceHeatTransferComparison = 48, DryIceIsolationVerification = 49,
+    LeverRockContact = 50, LeverSeesawFriction = 51, LeverTwoForceMember = 52,
+    RestIntervalDefinition = 53, RestZeroVelocityTurningPoint = 54, RestStateComparison = 55,
 }
 
 public enum ArticleScientificFigureDisposition
