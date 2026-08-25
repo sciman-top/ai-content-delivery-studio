@@ -1,3 +1,4 @@
+using ContentDeliveryStudio.App.Services;
 using ContentDeliveryStudio.Application.Localization;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.Documents;
@@ -8,14 +9,15 @@ namespace ContentDeliveryStudio.App.ViewModels;
 public sealed class MainWindowLocalizationCoordinator
 {
     private readonly LocalizationService _localizationService;
-    private readonly Action<byte[]>? _scientificPackageExportRequested;
+    private readonly ScientificFigureWorkspaceFactory _scientificFigureWorkspaceFactory;
 
     public MainWindowLocalizationCoordinator(
         LocalizationService localizationService,
-        Action<byte[]>? scientificPackageExportRequested = null)
+        ScientificFigureWorkspaceFactory? scientificFigureWorkspaceFactory = null)
     {
         _localizationService = localizationService;
-        _scientificPackageExportRequested = scientificPackageExportRequested;
+        _scientificFigureWorkspaceFactory = scientificFigureWorkspaceFactory
+            ?? new ScientificFigureWorkspaceFactory(localizationService);
     }
 
     public MainWindowLocalizationPayload BuildPayload()
@@ -266,11 +268,7 @@ public sealed class MainWindowLocalizationCoordinator
         ];
 
         return ScientificFigureModule.IsUserVisible
-            ? standardTabs.Concat(
-                [new ScientificFigureWorkspaceFactory(
-                    _localizationService,
-                    _scientificPackageExportRequested).Create()])
-                .ToArray()
+            ? standardTabs.Concat([_scientificFigureWorkspaceFactory.Create()]).ToArray()
             : standardTabs;
     }
 

@@ -65,6 +65,11 @@ public partial class App : System.Windows.Application
         builder.Services.AddSingleton<IBackupRestoreService, LocalBackupRestoreService>();
         builder.Services.AddTransient<IDesktopDiagnosticsSnapshotFactory, DesktopDiagnosticsSnapshotFactory>();
         builder.Services.AddSingleton<IScientificDeliveryPackageSaveService, ScientificDeliveryPackageSaveService>();
+        builder.Services.AddSingleton(serviceProvider => new ScientificFigureWorkspaceFactory(
+            serviceProvider.GetRequiredService<LocalizationService>(),
+            serviceProvider.GetService<IScientificDeliveryPackageSaveService>() is { } saveService
+                ? bytes => saveService.SavePackage(bytes)
+                : null));
         builder.Services.AddContentDeliveryStudioProviderRuntime(new ProviderRuntimeRegistrationOptions());
         builder.Services.AddSingleton<IDocumentExtractionProvider, LocalBinaryDocumentExtractionProvider>();
         builder.Services.AddSingleton<ISourceIngestionProvider>(serviceProvider =>

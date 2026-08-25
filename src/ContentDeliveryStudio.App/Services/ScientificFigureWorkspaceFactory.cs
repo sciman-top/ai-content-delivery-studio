@@ -1,9 +1,10 @@
+using ContentDeliveryStudio.App.ViewModels;
 using ContentDeliveryStudio.Application.Localization;
 using ContentDeliveryStudio.Application.ScientificFigures;
 using ContentDeliveryStudio.Core.ScientificFigures;
 using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 
-namespace ContentDeliveryStudio.App.ViewModels;
+namespace ContentDeliveryStudio.App.Services;
 
 public sealed class ScientificFigureWorkspaceFactory
 {

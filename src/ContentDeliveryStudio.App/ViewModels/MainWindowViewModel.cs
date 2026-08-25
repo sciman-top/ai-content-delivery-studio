@@ -90,6 +90,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IDocumentSourceFilePickerService? documentSourceFilePickerService = null,
         IFinalDeliveryRootPickerService? finalDeliveryRootPickerService = null,
         IScientificDeliveryPackageSaveService? scientificDeliveryPackageSaveService = null,
+        ScientificFigureWorkspaceFactory? scientificFigureWorkspaceFactory = null,
         DiagnosticsPanelViewModel? diagnostics = null,
         BackupRestorePanelViewModel? backupRestore = null,
         IImageEditProvider? imageEditProvider = null)
@@ -112,9 +113,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _projectWorkbenchProjectionCoordinator);
         _mainWindowLocalizationCoordinator = new MainWindowLocalizationCoordinator(
             localizationService,
-            scientificDeliveryPackageSaveService is null
-                ? null
-                : bytes => scientificDeliveryPackageSaveService.SavePackage(bytes));
+            scientificFigureWorkspaceFactory ?? new ScientificFigureWorkspaceFactory(
+                localizationService,
+                scientificDeliveryPackageSaveService is null
+                    ? null
+                    : bytes => scientificDeliveryPackageSaveService.SavePackage(bytes)));
         var generationSettingsWorkspace = new ImageSeriesGenerationSettingsWorkspaceViewModel(
             BuildStyleRecipeSummary);
         var planningWorkspace = new ImageSeriesPlanningWorkspaceViewModel(

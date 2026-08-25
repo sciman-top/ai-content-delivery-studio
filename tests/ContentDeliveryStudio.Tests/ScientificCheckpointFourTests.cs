@@ -1,4 +1,5 @@
 using System.Globalization;
+using ContentDeliveryStudio.App.Services;
 using ContentDeliveryStudio.App.ViewModels;
 using ContentDeliveryStudio.Application.Localization;
 using ContentDeliveryStudio.Application.ScientificFigures;
