@@ -5,21 +5,97 @@ namespace ContentDeliveryStudio.Infrastructure.Persistence;
 
 public static class AppDatabaseInitializer
 {
+    // Additive-DDL schema level, tracked in SQLite PRAGMA user_version. A
+    // database stamped at the current version skips the compatibility DDL on
+    // later startups; an unstamped (pre-versioning) database reconciles the
+    // full idempotent DDL once and is then stamped. Bump this constant and
+    // append the matching upgrade steps when the schema changes again.
+    public const int CurrentSchemaVersion = 1;
+
     public static async Task InitializeAsync(
         AppDbContext dbContext,
         CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
-        await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+        var createdNewDatabase = await dbContext.Database.EnsureCreatedAsync(cancellationToken);
 
-        await EnsureImageProjectCompatibilityColumnsAsync(dbContext, cancellationToken);
-        await EnsureGenerationTaskCompatibilityColumnsAsync(dbContext, cancellationToken);
-        await EnsureCandidateImageCompatibilityColumnsAsync(dbContext, cancellationToken);
+        var connection = dbContext.Database.GetDbConnection();
+        var shouldClose = connection.State is not ConnectionState.Open;
+        if (shouldClose)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
 
-        // EnsureCreated does not update an existing database. This additive DDL is
-        // intentionally idempotent so pre-scientific-workflow databases gain only
-        // the new project-owned table and indexes.
-        await dbContext.Database.ExecuteSqlRawAsync(
+        try
+        {
+            var schemaVersion = await GetSchemaVersionAsync(connection, cancellationToken);
+            if (schemaVersion > CurrentSchemaVersion)
+            {
+                throw new InvalidOperationException(
+                    $"Local database schema version {schemaVersion} is newer than this build supports ({CurrentSchemaVersion}). "
+                    + "Open the database with a matching or newer application version.");
+            }
+
+            if (schemaVersion == CurrentSchemaVersion)
+            {
+                return;
+            }
+
+            // EnsureCreated does not update an existing database, so a database
+            // that existed before this run reconciles the idempotent
+            // compatibility DDL; a database EnsureCreated just built already
+            // matches the current model and only needs the version stamp.
+            if (!createdNewDatabase)
+            {
+                await EnsureImageProjectCompatibilityColumnsAsync(dbContext, cancellationToken);
+                await EnsureGenerationTaskCompatibilityColumnsAsync(dbContext, cancellationToken);
+                await EnsureCandidateImageCompatibilityColumnsAsync(dbContext, cancellationToken);
+                await EnsureScientificFigureWorkflowTableAsync(connection, cancellationToken);
+            }
+
+            await SetSchemaVersionAsync(connection, CurrentSchemaVersion, cancellationToken);
+        }
+        finally
+        {
+            if (shouldClose)
+            {
+                await connection.CloseAsync();
+            }
+        }
+    }
+
+    public static async Task<int> GetSchemaVersionAsync(
+        AppDbContext dbContext,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(dbContext);
+
+        var connection = dbContext.Database.GetDbConnection();
+        var shouldClose = connection.State is not ConnectionState.Open;
+        if (shouldClose)
+        {
+            await connection.OpenAsync(cancellationToken);
+        }
+
+        try
+        {
+            return await GetSchemaVersionAsync(connection, cancellationToken);
+        }
+        finally
+        {
+            if (shouldClose)
+            {
+                await connection.CloseAsync();
+            }
+        }
+    }
+
+    private static async Task EnsureScientificFigureWorkflowTableAsync(
+        System.Data.Common.DbConnection connection,
+        CancellationToken cancellationToken)
+    {
+        await ExecuteConnectionCommandAsync(
+            connection,
             """
             CREATE TABLE IF NOT EXISTS "ScientificFigureWorkflows" (
                 "Id" TEXT NOT NULL CONSTRAINT "PK_ScientificFigureWorkflows" PRIMARY KEY,
@@ -41,13 +117,15 @@ public static class AppDatabaseInitializer
             );
             """,
             cancellationToken);
-        await dbContext.Database.ExecuteSqlRawAsync(
+        await ExecuteConnectionCommandAsync(
+            connection,
             """
             CREATE INDEX IF NOT EXISTS "IX_ScientificFigureWorkflows_ProjectId"
             ON "ScientificFigureWorkflows" ("ProjectId");
             """,
             cancellationToken);
-        await dbContext.Database.ExecuteSqlRawAsync(
+        await ExecuteConnectionCommandAsync(
+            connection,
             """
             CREATE UNIQUE INDEX IF NOT EXISTS
                 "IX_ScientificFigureWorkflows_ProjectId_SpecificationId_SpecificationVersion"
@@ -55,6 +133,26 @@ public static class AppDatabaseInitializer
                 ("ProjectId", "SpecificationId", "SpecificationVersion");
             """,
             cancellationToken);
+    }
+
+    private static async Task<int> GetSchemaVersionAsync(
+        System.Data.Common.DbConnection connection,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = "PRAGMA user_version;";
+        var result = await command.ExecuteScalarAsync(cancellationToken);
+        return result is long value ? (int)value : 0;
+    }
+
+    private static async Task SetSchemaVersionAsync(
+        System.Data.Common.DbConnection connection,
+        int schemaVersion,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"PRAGMA user_version = {schemaVersion};";
+        await command.ExecuteNonQueryAsync(cancellationToken);
     }
 
     private static async Task EnsureImageProjectCompatibilityColumnsAsync(

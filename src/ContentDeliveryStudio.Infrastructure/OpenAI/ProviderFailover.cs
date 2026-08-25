@@ -47,7 +47,7 @@ public sealed class FailoverTextPlanningProvider : ITextPlanningProvider
             provider => provider.CreateDocumentIllustrationPlanAsync(request, cancellationToken),
             cancellationToken);
 
-    private async Task<T> ExecuteWithFailoverAsync<T>(
+    private Task<T> ExecuteWithFailoverAsync<T>(
         Func<ITextPlanningProvider, Task<T>> operation,
         CancellationToken cancellationToken)
         => ProviderFailoverPolicy.ExecuteWithFailoverAsync(_providers, operation, cancellationToken);
