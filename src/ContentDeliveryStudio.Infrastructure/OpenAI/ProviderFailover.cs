@@ -50,26 +50,7 @@ public sealed class FailoverTextPlanningProvider : ITextPlanningProvider
     private async Task<T> ExecuteWithFailoverAsync<T>(
         Func<ITextPlanningProvider, Task<T>> operation,
         CancellationToken cancellationToken)
-    {
-        for (var index = 0; index < _providers.Count; index++)
-        {
-            try
-            {
-                return await operation(_providers[index]);
-            }
-            catch (Exception exception) when (ShouldTryNextProvider(exception, cancellationToken, index))
-            {
-            }
-        }
-
-        throw new InvalidOperationException("Failover provider list was exhausted unexpectedly.");
-    }
-
-    private bool ShouldTryNextProvider(Exception exception, CancellationToken cancellationToken, int index)
-    {
-        return index < _providers.Count - 1
-            && ProviderFailoverPolicy.IsFailoverEligible(exception, cancellationToken);
-    }
+        => ProviderFailoverPolicy.ExecuteWithFailoverAsync(_providers, operation, cancellationToken);
 }
 
 public sealed class FailoverImageGenerationProvider : IImageGenerationProvider
@@ -93,26 +74,10 @@ public sealed class FailoverImageGenerationProvider : IImageGenerationProvider
     public async Task<ImageGenerationResult> GenerateImageAsync(
         ImageGenerationRequest request,
         CancellationToken cancellationToken)
-    {
-        for (var index = 0; index < _providers.Count; index++)
-        {
-            try
-            {
-                return await _providers[index].GenerateImageAsync(request, cancellationToken);
-            }
-            catch (Exception exception) when (ShouldTryNextProvider(exception, cancellationToken, index))
-            {
-            }
-        }
-
-        throw new InvalidOperationException("Failover provider list was exhausted unexpectedly.");
-    }
-
-    private bool ShouldTryNextProvider(Exception exception, CancellationToken cancellationToken, int index)
-    {
-        return index < _providers.Count - 1
-            && ProviderFailoverPolicy.IsFailoverEligible(exception, cancellationToken);
-    }
+        => await ProviderFailoverPolicy.ExecuteWithFailoverAsync(
+            _providers,
+            provider => provider.GenerateImageAsync(request, cancellationToken),
+            cancellationToken);
 }
 
 public sealed class FailoverVisionReviewProvider : IVisionReviewProvider
@@ -133,29 +98,13 @@ public sealed class FailoverVisionReviewProvider : IVisionReviewProvider
 
     public IProviderCapabilities Capabilities { get; }
 
-    public async Task<VisionReviewResult> ReviewAsync(
+    public Task<VisionReviewResult> ReviewAsync(
         VisionReviewRequest request,
         CancellationToken cancellationToken)
-    {
-        for (var index = 0; index < _providers.Count; index++)
-        {
-            try
-            {
-                return await _providers[index].ReviewAsync(request, cancellationToken);
-            }
-            catch (Exception exception) when (ShouldTryNextProvider(exception, cancellationToken, index))
-            {
-            }
-        }
-
-        throw new InvalidOperationException("Failover provider list was exhausted unexpectedly.");
-    }
-
-    private bool ShouldTryNextProvider(Exception exception, CancellationToken cancellationToken, int index)
-    {
-        return index < _providers.Count - 1
-            && ProviderFailoverPolicy.IsFailoverEligible(exception, cancellationToken);
-    }
+        => ProviderFailoverPolicy.ExecuteWithFailoverAsync(
+            _providers,
+            provider => provider.ReviewAsync(request, cancellationToken),
+            cancellationToken);
 }
 
 public static class ProviderFailoverPolicy
@@ -221,6 +170,35 @@ public static class ProviderFailoverPolicy
         }
 
         return providers;
+    }
+
+    internal static async Task<TResult> ExecuteWithFailoverAsync<TProvider, TResult>(
+        IReadOnlyList<TProvider> providers,
+        Func<TProvider, Task<TResult>> operation,
+        CancellationToken cancellationToken)
+    {
+        for (var index = 0; index < providers.Count; index++)
+        {
+            try
+            {
+                return await operation(providers[index]);
+            }
+            catch (Exception exception) when (ShouldTryNextProvider(exception, cancellationToken, index, providers.Count))
+            {
+            }
+        }
+
+        throw new InvalidOperationException("Failover provider list was exhausted unexpectedly.");
+    }
+
+    private static bool ShouldTryNextProvider(
+        Exception exception,
+        CancellationToken cancellationToken,
+        int index,
+        int providerCount)
+    {
+        return index < providerCount - 1
+            && IsFailoverEligible(exception, cancellationToken);
     }
 
     internal static ProviderCapabilities CreateCapabilities(
