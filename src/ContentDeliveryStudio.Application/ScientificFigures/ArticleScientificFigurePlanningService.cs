@@ -30,6 +30,7 @@ public sealed class ArticleScientificFigurePlanningService
         new(IsBernoulliArticle, PlanBernoulli),
         new(IsPinholeArticle, PlanPinhole),
         new(IsSuperconductingArticle, PlanSuperconducting),
+        new(IsOpticalArticle, PlanOptical),
     ];
 
     public IReadOnlyList<ArticleScientificFigureCandidate> Plan(
@@ -56,12 +57,15 @@ public sealed class ArticleScientificFigurePlanningService
             }
         }
 
-        if (!IsOpticalArticle(normalizedTitle, extraction))
-        {
-            throw new InvalidOperationException(
-                "The scientific article domain is unsupported; no figure profile was selected.");
-        }
+        throw new InvalidOperationException(
+            "The scientific article domain is unsupported; no figure profile was selected.");
+    }
 
+    private static IReadOnlyList<ArticleScientificFigureCandidate> PlanOptical(
+        ScientificDocumentExtraction extraction,
+        string articleTitle,
+        string audience)
+    {
         var candidates = new List<ArticleScientificFigureCandidate>();
         AddIfEvidenceFound(
             candidates,
@@ -150,9 +154,9 @@ public sealed class ArticleScientificFigurePlanningService
 
         return candidates.Select((candidate, index) => candidate with
         {
-            CandidateId = $"article-{StableSlug(normalizedTitle)}-{index + 1:D2}-{candidate.Kind.ToString().ToLowerInvariant()}",
-            ArticleTitle = normalizedTitle,
-            Audience = normalizedAudience,
+            CandidateId = $"article-{StableSlug(articleTitle)}-{index + 1:D2}-{candidate.Kind.ToString().ToLowerInvariant()}",
+            ArticleTitle = articleTitle,
+            Audience = audience,
         }).ToArray();
     }
 
