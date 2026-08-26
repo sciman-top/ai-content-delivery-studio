@@ -310,8 +310,8 @@ public sealed class EfProjectRepository : IProjectRepository
                 $"Candidate image {reviewResult.CandidateImageId} does not belong to project {projectId}.");
         }
 
-        // A candidate should own at most one review result, but legacy rows
-        // may violate that; pick deterministically instead of failing the save.
+        // One current review per candidate, enforced by the schema unique
+        // index; the deterministic OrderBy(Id) pick stays as defense in depth.
         var existing = await _dbContext.ReviewResults
             .OrderBy(review => review.Id)
             .FirstOrDefaultAsync(

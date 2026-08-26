@@ -10,7 +10,9 @@ public static class AppDatabaseInitializer
     // later startups; an unstamped (pre-versioning) database reconciles the
     // full idempotent DDL once and is then stamped. Bump this constant and
     // append the matching upgrade steps when the schema changes again.
-    public const int CurrentSchemaVersion = 1;
+    // Version 2 added the unique ReviewResults.CandidateImageId index
+    // enforcing the one-current-review-per-candidate invariant.
+    public const int CurrentSchemaVersion = 2;
 
     public static async Task InitializeAsync(
         AppDbContext dbContext,
@@ -51,6 +53,10 @@ public static class AppDatabaseInitializer
                 await EnsureGenerationTaskCompatibilityColumnsAsync(dbContext, cancellationToken);
                 await EnsureCandidateImageCompatibilityColumnsAsync(dbContext, cancellationToken);
                 await EnsureScientificFigureWorkflowTableAsync(connection, cancellationToken);
+                if (schemaVersion < 2)
+                {
+                    await EnsureReviewResultUniquenessAsync(connection, cancellationToken);
+                }
             }
 
             await SetSchemaVersionAsync(connection, CurrentSchemaVersion, cancellationToken);
@@ -364,6 +370,44 @@ public static class AppDatabaseInitializer
         {
             await ExecuteConnectionCommandAsync(connection, "PRAGMA legacy_alter_table=OFF;", CancellationToken.None);
             await ExecuteConnectionCommandAsync(connection, "PRAGMA foreign_keys=ON;", CancellationToken.None);
+        }
+    }
+
+    private static async Task EnsureReviewResultUniquenessAsync(
+        System.Data.Common.DbConnection connection,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            // Legacy databases may hold duplicate review rows per candidate
+            // from pre-constraint writes; keep the lowest Id to match the
+            // repository's deterministic OrderBy(Id) pick, then enforce the
+            // one-current-review invariant with the same unique index the
+            // current EF model generates for fresh databases.
+            await ExecuteConnectionCommandAsync(
+                connection,
+                """
+                DELETE FROM "ReviewResults"
+                WHERE "Id" NOT IN (
+                    SELECT MIN("Id") FROM "ReviewResults" GROUP BY "CandidateImageId");
+                """,
+                cancellationToken,
+                transaction);
+            await ExecuteConnectionCommandAsync(
+                connection,
+                """
+                CREATE UNIQUE INDEX IF NOT EXISTS "IX_ReviewResults_CandidateImageId"
+                ON "ReviewResults" ("CandidateImageId");
+                """,
+                cancellationToken,
+                transaction);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch
+        {
+            await transaction.RollbackAsync(CancellationToken.None);
+            throw;
         }
     }
 

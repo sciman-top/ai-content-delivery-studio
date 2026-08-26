@@ -12,6 +12,10 @@ internal sealed class ReviewResultConfiguration : IEntityTypeConfiguration<Revie
     public void Configure(EntityTypeBuilder<ReviewResult> entity)
     {
         entity.HasKey(review => review.Id);
+        // One current, updatable review result per candidate image; legacy
+        // databases are deduplicated to this invariant by the schema
+        // version-2 upgrade step in AppDatabaseInitializer.
+        entity.HasIndex(review => review.CandidateImageId).IsUnique();
         entity.Property(review => review.Scores)
             .HasConversion(
                 scores => SerializeScores(scores),

@@ -18,6 +18,48 @@ public sealed class AppDatabaseInitializerSchemaVersionTests
         Assert.Contains("ApprovalReceipt", await database.GetColumnsAsync("GenerationTasks"));
         Assert.Contains("EditProvenance", await database.GetColumnsAsync("CandidateImages"));
         Assert.True(await database.TableExistsAsync("ScientificFigureWorkflows"));
+        Assert.True(await database.IndexExistsAsync("IX_ReviewResults_CandidateImageId"));
+    }
+
+    [Fact]
+    public async Task VersionOneDatabase_WithDuplicateReviewResults_DedupesToLowestIdAndEnforcesUniqueIndex()
+    {
+        await using var database = await TestDatabase.CreateAsync();
+        await database.InitializeAsync();
+
+        // Simulate a version-1 database written before the one-review
+        // invariant existed: no unique index, duplicate rows per candidate.
+        await database.ExecuteRawAsync("DROP INDEX \"IX_ReviewResults_CandidateImageId\";");
+        var candidateId = Guid.NewGuid();
+        var keptId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+        var removedId = Guid.Parse("00000000-0000-0000-0000-000000000002");
+        string InsertLegacyReview(Guid id, string comments) =>
+            "INSERT INTO \"ReviewResults\" (\"Id\",\"CandidateImageId\",\"Decision\",\"Scores\",\"HardFailures\",\"Comments\",\"HumanApproved\",\"CreatedAt\") VALUES ('"
+            + id + "', '" + candidateId + "', 0, '{}', '[]', '" + comments
+            + "', 0, '2026-01-01 00:00:00+00:00');";
+        await database.ExecuteRawAsync(
+            "PRAGMA foreign_keys=OFF;\n"
+            + InsertLegacyReview(keptId, "legacy-duplicate") + "\n"
+            + InsertLegacyReview(removedId, "legacy-duplicate") + "\n"
+            + "PRAGMA user_version = 1;");
+        Assert.Equal(1, await database.GetSchemaVersionAsync());
+
+        await database.InitializeAsync();
+
+        Assert.Equal(AppDatabaseInitializer.CurrentSchemaVersion, await database.GetSchemaVersionAsync());
+        Assert.Equal(
+            keptId,
+            Guid.Parse(await database.ExecuteScalarAsync<string>("SELECT \"Id\" FROM \"ReviewResults\";")));
+        Assert.True(await database.IndexExistsAsync("IX_ReviewResults_CandidateImageId"));
+
+        await Assert.ThrowsAsync<Microsoft.Data.Sqlite.SqliteException>(
+            () => database.ExecuteRawAsync(
+                "PRAGMA foreign_keys=OFF;\n"
+                + InsertLegacyReview(Guid.NewGuid(), "post-migration")));
+
+        Assert.Equal(
+            1L,
+            await database.ExecuteScalarAsync<long>("SELECT COUNT(*) FROM \"ReviewResults\";"));
     }
 
     [Fact]
@@ -124,23 +166,58 @@ public sealed class AppDatabaseInitializerSchemaVersionTests
             return columns;
         }
 
-        public async Task<bool> TableExistsAsync(string tableName)
+    public async Task<bool> TableExistsAsync(string tableName)
+    {
+        var exists = false;
+        await ExecuteAsync(async connection =>
         {
-            var exists = false;
-            await ExecuteAsync(async connection =>
-            {
-                await using var command = connection.CreateCommand();
-                command.CommandText =
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = $name;";
-                var parameter = command.CreateParameter();
-                parameter.ParameterName = "$name";
-                parameter.Value = tableName;
-                command.Parameters.Add(parameter);
-                exists = Convert.ToInt64(await command.ExecuteScalarAsync()) == 1;
-            });
+            await using var command = connection.CreateCommand();
+            command.CommandText =
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = $name;";
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = "$name";
+            parameter.Value = tableName;
+            command.Parameters.Add(parameter);
+            exists = Convert.ToInt64(await command.ExecuteScalarAsync()) == 1;
+        });
 
-            return exists;
-        }
+        return exists;
+    }
+
+    public async Task<bool> IndexExistsAsync(string indexName)
+    {
+        var exists = false;
+        await ExecuteAsync(async connection =>
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText =
+                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' AND name = $name;";
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = "$name";
+            parameter.Value = indexName;
+            command.Parameters.Add(parameter);
+            exists = Convert.ToInt64(await command.ExecuteScalarAsync()) == 1;
+        });
+
+        return exists;
+    }
+
+    public async Task<T> ExecuteScalarAsync<T>(string commandText)
+    {
+        T result = default!;
+        await ExecuteAsync(async connection =>
+        {
+            await using var command = connection.CreateCommand();
+            command.CommandText = commandText;
+            var scalar = await command.ExecuteScalarAsync();
+            if (scalar is not null)
+            {
+                result = (T)Convert.ChangeType(scalar, typeof(T));
+            }
+        });
+
+        return result;
+    }
 
         public Task DropColumnAsync(string tableName, string columnName)
             => ExecuteRawAsync($"ALTER TABLE \"{tableName}\" DROP COLUMN \"{columnName}\";");
