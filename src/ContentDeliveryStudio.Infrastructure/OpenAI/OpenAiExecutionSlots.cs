@@ -183,16 +183,27 @@ public interface IOpenAiActivePresetSetState
     string? GetActivePresetSet(OpenAiProviderOptions options);
 
     void MarkActivePresetSet(OpenAiProviderOptions options, string presetSet);
+
+    OpenAiActivePresetSetSnapshot GetSnapshot(OpenAiProviderOptions options);
+
+    bool TrySwitchActivePresetSet(
+        OpenAiProviderOptions options,
+        long expectedVersion,
+        string presetSet);
 }
+
+public sealed record OpenAiActivePresetSetSnapshot(string? PresetSet, long Version);
 
 public sealed class OpenAiActivePresetSetState : IOpenAiActivePresetSetState
 {
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _activePresetSets = new(StringComparer.Ordinal);
+    private sealed record Entry(string PresetSet, long Version);
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, Entry> _activePresetSets = new(StringComparer.Ordinal);
 
     public string? GetActivePresetSet(OpenAiProviderOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        return _activePresetSets.TryGetValue(CreateKey(options), out var presetSet) ? presetSet : null;
+        return GetSnapshot(options).PresetSet;
     }
 
     public void MarkActivePresetSet(OpenAiProviderOptions options, string presetSet)
@@ -200,7 +211,53 @@ public sealed class OpenAiActivePresetSetState : IOpenAiActivePresetSetState
         ArgumentNullException.ThrowIfNull(options);
         if (TextProviderModelPresetSets.Names.Contains(presetSet, StringComparer.Ordinal))
         {
-            _activePresetSets[CreateKey(options)] = presetSet;
+            var key = CreateKey(options);
+            _activePresetSets.AddOrUpdate(
+                key,
+                _ => new Entry(presetSet, Version: 1),
+                (_, current) => new Entry(presetSet, checked(current.Version + 1)));
+        }
+    }
+
+    public OpenAiActivePresetSetSnapshot GetSnapshot(OpenAiProviderOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        return _activePresetSets.TryGetValue(CreateKey(options), out var entry)
+            ? new OpenAiActivePresetSetSnapshot(entry.PresetSet, entry.Version)
+            : new OpenAiActivePresetSetSnapshot(null, Version: 0);
+    }
+
+    public bool TrySwitchActivePresetSet(
+        OpenAiProviderOptions options,
+        long expectedVersion,
+        string presetSet)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (!TextProviderModelPresetSets.Names.Contains(presetSet, StringComparer.Ordinal)
+            || expectedVersion < 0)
+        {
+            return false;
+        }
+
+        var key = CreateKey(options);
+        while (true)
+        {
+            if (!_activePresetSets.TryGetValue(key, out var current))
+            {
+                return expectedVersion == 0
+                    && _activePresetSets.TryAdd(key, new Entry(presetSet, Version: 1));
+            }
+
+            if (current.Version != expectedVersion)
+            {
+                return false;
+            }
+
+            var next = new Entry(presetSet, checked(current.Version + 1));
+            if (_activePresetSets.TryUpdate(key, next, current))
+            {
+                return true;
+            }
         }
     }
 

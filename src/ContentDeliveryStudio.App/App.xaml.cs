@@ -52,7 +52,6 @@ public partial class App : System.Windows.Application
         builder.Services.AddTransient<ProjectApplicationService>();
         builder.Services.AddSingleton<IProviderCenterConfigurationService, DotEnvProviderCenterConfigurationService>();
         builder.Services.AddSingleton<IDiagnosticsEventJournal, JsonlDiagnosticsEventJournal>();
-        builder.Services.AddOpenAiProviderHttpClient(new OpenAiProviderOptions());
         builder.AddContentDeliveryStudioOpenTelemetry();
         builder.Services.AddTransient(serviceProvider => new ProviderHealthCheckService(
             serviceProvider.GetRequiredService<IHttpClientFactory>().CreateClient(OpenAiHttpClientNames.Provider),

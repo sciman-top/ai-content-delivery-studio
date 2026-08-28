@@ -105,6 +105,81 @@ public sealed class OpenAiModelFailoverTests
         Assert.Equal(TextProviderModelPresetSets.SolOnly, state.GetActivePresetSet(options));
     }
 
+    [Fact]
+    public async Task Execute_DoesNotLetAnOlderSuccessfulRequestOverwriteAFallbackSwitch()
+    {
+        var state = new OpenAiActivePresetSetState();
+        var options = new OpenAiProviderOptions { BaseUri = new Uri("http://127.0.0.1:45335/v1/") };
+        var route = new OpenAiTaskModelRoute(
+            TextProviderModelPresets.SolMedium,
+            "gpt-5.6-sol",
+            "medium",
+            "test",
+            OpenAiExecutionQualityTier.Balanced,
+            TextProviderModelPresetSets.SolOnly);
+        var solRequestStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var releaseSolRequest = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var probe = new RecordingAvailabilityProbe(("gpt-5.6-terra", true));
+
+        var olderSolRequest = OpenAiModelFailoverPolicy.ExecuteAsync(
+            options,
+            route,
+            probe,
+            async candidateRoute =>
+            {
+                Assert.Equal("gpt-5.6-sol", candidateRoute.Model);
+                solRequestStarted.TrySetResult();
+                await releaseSolRequest.Task;
+                return "late-sol-success";
+            },
+            CancellationToken.None,
+            activePresetSetState: state);
+
+        await solRequestStarted.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        var fallbackResult = await OpenAiModelFailoverPolicy.ExecuteAsync(
+            options,
+            route,
+            probe,
+            candidateRoute => candidateRoute.Model == "gpt-5.6-sol"
+                ? Task.FromException<string>(new HttpRequestException("status 503"))
+                : Task.FromResult("terra-success"),
+            CancellationToken.None,
+            activePresetSetState: state);
+
+        releaseSolRequest.TrySetResult();
+
+        Assert.Equal("terra-success", fallbackResult);
+        Assert.Equal("late-sol-success", await olderSolRequest);
+        Assert.Equal(TextProviderModelPresetSets.TerraOnly, state.GetActivePresetSet(options));
+    }
+
+    [Fact]
+    public async Task Execute_UsesConfiguredInitialPresetSetBeforeTheDefaultSolSet()
+    {
+        var options = new OpenAiProviderOptions
+        {
+            BaseUri = new Uri("http://127.0.0.1:45335/v1/"),
+            InitialPresetSet = TextProviderModelPresetSets.TerraOnly,
+        };
+        var route = new OpenAiTaskModelRoute(
+            TextProviderModelPresets.SolLow,
+            "gpt-5.6-sol",
+            "low",
+            "test",
+            OpenAiExecutionQualityTier.Fast,
+            TextProviderModelPresetSets.SolOnly);
+
+        var model = await OpenAiModelFailoverPolicy.ExecuteAsync(
+            options,
+            route,
+            availabilityProbe: null,
+            operation: candidateRoute => Task.FromResult(candidateRoute.Model),
+            CancellationToken.None,
+            activePresetSetState: new OpenAiActivePresetSetState());
+
+        Assert.Equal("gpt-5.6-terra", model);
+    }
+
     [Theory]
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-sol", "xhigh")]
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Balanced, "gpt-5.6-sol", "medium")]

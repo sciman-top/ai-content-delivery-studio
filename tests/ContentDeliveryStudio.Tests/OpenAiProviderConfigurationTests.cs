@@ -182,6 +182,9 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Equal(TextProviderModelPresetSets.TerraOnly, configuration.Text.ModelPresetSet);
         Assert.Equal("balanced", configuration.Text.QualityTier);
         Assert.Equal(TextProviderModelPresets.TerraHigh, configuration.Text.ModelPreset);
+        Assert.Equal(
+            TextProviderModelPresetSets.TerraOnly,
+            OpenAiProviderOptions.FromTextProviderEnvironment(configuration).InitialPresetSet);
         Assert.Equal("gpt-5.6-terra", configuration.Text.Model);
         Assert.Equal("high", configuration.Text.ReasoningEffort);
     }
@@ -857,7 +860,6 @@ public sealed class OpenAiProviderConfigurationTests
                 ]);
 
             var services = new ServiceCollection();
-            services.AddOpenAiProviderHttpClient(new OpenAiProviderOptions());
             services.AddContentDeliveryStudioProviderRuntime(
                 new ProviderRuntimeRegistrationOptions(ProviderMode: "live", EnvPath: envPath));
 
@@ -872,6 +874,7 @@ public sealed class OpenAiProviderConfigurationTests
                 provider.GetRequiredService<IScientificSemanticReviewProvider>());
             var namedClient = provider.GetRequiredService<IHttpClientFactory>()
                 .CreateClient(OpenAiHttpClientNames.Provider);
+            Assert.Equal("https://text.example/v1/", namedClient.BaseAddress!.ToString());
             Assert.Equal(Timeout.InfiniteTimeSpan, namedClient.Timeout);
         }
         finally

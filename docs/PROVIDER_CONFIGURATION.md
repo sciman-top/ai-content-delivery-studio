@@ -38,7 +38,7 @@ IMAGE_PROVIDER_CONCURRENCY_PER_KEY=10
 IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 ```
 
-`TEXT_PROVIDER_ROUTING_MODE` accepts `auto` or `fixed` and fails closed for any other value. The backward-compatible default is `fixed`. `TEXT_PROVIDER_PRESET_SET` selects one complete family-only set and `TEXT_PROVIDER_QUALITY_TIER` selects its configured fallback tier. They must be supplied together. The only accepted sets are `sol-only`, `terra-only`, and `luna-only`; a set cannot contain a model from another family.
+`TEXT_PROVIDER_ROUTING_MODE` accepts `auto` or `fixed` and fails closed for any other value. The backward-compatible default is `fixed`. `TEXT_PROVIDER_PRESET_SET` selects one complete family-only set and `TEXT_PROVIDER_QUALITY_TIER` selects its configured fallback tier. They must be supplied together. In `auto` mode the configured set is also the process-start active set; when it is omitted, auto routing starts with the preferred `sol-only` set. The only accepted sets are `sol-only`, `terra-only`, and `luna-only`; a set cannot contain a model from another family.
 
 | Preset set | Quality tier | Model | Reasoning effort |
 | --- | --- | --- | --- |
@@ -54,7 +54,7 @@ IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 
 The runtime selects one active preset set per gateway and credential scope. A numbered endpoint fallback may select its own `TEXT_PROVIDER_FALLBACK_N_PRESET_SET` and `TEXT_PROVIDER_FALLBACK_N_QUALITY_TIER`, but a single endpoint configuration cannot combine Sol, Terra, and Luna in one set. Existing configurations without a set continue to use explicit model and reasoning fields.
 
-In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity. It starts with the Sol-only set. If a request fails with a retryable reachability or upstream failure, it probes the next preset set through `GET /v1/models` before dispatching the same tier in that set. After a successful fallback, the whole set is active for subsequent requests until another failure causes a health-ordered switch.
+In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity. It starts from the configured complete set (the recommended default is Sol-only). If a request fails with a retryable reachability or upstream failure, it probes the next preset set through `GET /v1/models` before dispatching the same tier in that set. After a successful fallback, the whole set is active for subsequent requests until another failure causes a health-ordered switch. Concurrent requests use a versioned transition, so an earlier in-flight success cannot overwrite a newer failover result.
 
 | Workload | Selected preset |
 | --- | --- |
@@ -68,7 +68,7 @@ In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structure
 | Full-resolution scientific visual review | `sol-xhigh` |
 | General vision review | `sol-low`; 5 signals uses `sol-medium`; 8 signals uses `sol-xhigh` |
 
-The selected set, model, and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. Provider-call telemetry and the local redacted diagnostics journal also record the bounded `modelPreset`, `reasoningEffort`, and `routeReason` fields so route quality can be evaluated without retaining prompts or secrets. `TEXT_PROVIDER_PRESET_SET=sol-only` with `TEXT_PROVIDER_QUALITY_TIER=deep` remains the operator rollback/default configuration when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
+The selected set, model, and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. Provider-call telemetry and the local redacted diagnostics journal also record the bounded `presetSet`, `modelPreset`, `reasoningEffort`, and `routeReason` fields so route quality can be evaluated without retaining prompts or secrets. `TEXT_PROVIDER_PRESET_SET=sol-only` with `TEXT_PROVIDER_QUALITY_TIER=deep` remains the operator rollback/default configuration when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
 
 Quality-first invariant: workload classification selects `deep`, `balanced`, or `fast`; family failover never changes that tier. Complex, scholarly, scientific understanding/review, high-risk, and full-resolution scientific visual work select `deep`; large but non-complex work selects `balanced`; routine work selects `fast`. This does not replace schema validation, deterministic checks, or final approval.
 
@@ -114,7 +114,7 @@ IMAGE_PROVIDER_FALLBACK_1_API_KEY_1=sk-backup
 
 The active local fixed rollback set is Sol-only/deep in the recommended `.env` shape above. Explicit legacy model/effort fields remain supported, but they cannot be used to contradict a configured preset set. Image-only `/images/generations` requests do not receive a reasoning field. Automatic text routing does not alter `gpt-image-2`, `IMAGE_PROVIDER_IMAGE_SURFACE=images`, or `POST /images/generations`. Fake providers remain the desktop default until `PROVIDER_MODE=live` is explicitly selected.
 
-Failover should be used only for transient or reachability failures: network failure, timeout, `408`, `429`, or `5xx`. Do not fail over on `400`, `401`, or `403`; those indicate request, credential, or authorization problems that should fail closed.
+Failover should be used only for transient or reachability failures: network failure, timeout, `408`, `429`, or `5xx`. Scientific-review `429` retries honor a gateway `Retry-After` header before the bounded same-model retry budget is exhausted; the final structured `429` can then trigger family failover. Do not fail over on `400`, `401`, or `403`; those indicate request, credential, or authorization problems that should fail closed.
 
 ## Desktop Runtime Opt-In
 

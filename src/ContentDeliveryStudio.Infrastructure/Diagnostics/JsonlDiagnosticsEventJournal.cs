@@ -47,6 +47,7 @@ public sealed class JsonlDiagnosticsEventJournal : IDiagnosticsEventJournal
         "modelPreset",
         "reasoningEffort",
         "routeReason",
+        "presetSet",
     ];
     private static readonly HashSet<string> QueueEventNames =
     [
@@ -172,7 +173,8 @@ public sealed class JsonlDiagnosticsEventJournal : IDiagnosticsEventJournal
                 EstimatedCostUsd: value.EstimatedCostUsd,
                 ModelPreset: SanitizeString(value.ModelPreset),
                 ReasoningEffort: SanitizeString(value.ReasoningEffort),
-                RouteReason: SanitizeString(value.RouteReason)));
+                RouteReason: SanitizeString(value.RouteReason),
+                PresetSet: SanitizeString(value.PresetSet)));
 
         TryAppend(entry);
     }

@@ -99,7 +99,8 @@ public sealed class DiagnosticProviderCallTelemetrySink : IProviderCallTelemetry
                 activity?.TraceId.ToString() ?? Activity.Current?.TraceId.ToString(),
                 telemetry.ModelPreset,
                 telemetry.ReasoningEffort,
-                telemetry.RouteReason));
+                telemetry.RouteReason,
+                telemetry.PresetSet));
         }
         catch (Exception exception) when (exception is not StackOverflowException)
         {
@@ -120,6 +121,7 @@ public sealed class DiagnosticProviderCallTelemetrySink : IProviderCallTelemetry
         activity.SetTag("provider.model_preset", telemetry.ModelPreset);
         activity.SetTag("provider.reasoning_effort", telemetry.ReasoningEffort);
         activity.SetTag("provider.route_reason", telemetry.RouteReason);
+        activity.SetTag("provider.preset_set", telemetry.PresetSet);
         activity.SetTag("otel.status_code", telemetry.Succeeded ? "OK" : "ERROR");
 
         if (Uri.TryCreate(telemetry.Endpoint, UriKind.Absolute, out var endpoint))
@@ -161,6 +163,7 @@ public sealed class DiagnosticProviderCallTelemetrySink : IProviderCallTelemetry
             { "provider.model_preset", telemetry.ModelPreset },
             { "provider.reasoning_effort", telemetry.ReasoningEffort },
             { "provider.route_reason", telemetry.RouteReason },
+            { "provider.preset_set", telemetry.PresetSet },
         };
 
         if (Uri.TryCreate(telemetry.Endpoint, UriKind.Absolute, out var endpoint))
@@ -189,7 +192,8 @@ public sealed record ProviderCallTelemetry(
     DateTimeOffset RecordedAt,
     string? ModelPreset = null,
     string? ReasoningEffort = null,
-    string? RouteReason = null);
+    string? RouteReason = null,
+    string? PresetSet = null);
 
 public sealed record ProviderTokenUsage(
     int? InputTokens,
@@ -269,7 +273,8 @@ internal static class OpenAiProviderTelemetry
             DateTimeOffset.UtcNow,
             route?.Preset,
             route?.ReasoningEffort,
-            route?.Reason);
+            route?.Reason,
+            route?.PresetSet);
     }
 
     public static ProviderTokenUsage? ExtractUsage(JsonElement root)

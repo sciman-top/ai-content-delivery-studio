@@ -69,7 +69,8 @@ public sealed record ProviderCallDiagnosticsEvent(
     string? CorrelationId = null,
     string? ModelPreset = null,
     string? ReasoningEffort = null,
-    string? RouteReason = null);
+    string? RouteReason = null,
+    string? PresetSet = null);
 
 public sealed record DiagnosticsLogReadResult(
     IReadOnlyList<DiagnosticsLogEntry> Entries,
@@ -103,4 +104,5 @@ public sealed record DiagnosticsLogProperties(
     decimal? EstimatedCostUsd = null,
     string? ModelPreset = null,
     string? ReasoningEffort = null,
-    string? RouteReason = null);
+    string? RouteReason = null,
+    string? PresetSet = null);

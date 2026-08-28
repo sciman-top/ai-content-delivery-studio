@@ -33,6 +33,7 @@ public sealed class ProviderCallTelemetryInstrumentationTests
         Assert.Equal(true, activity.GetTagItem("provider.succeeded"));
         Assert.Equal("req_123", activity.GetTagItem("provider.request_id"));
         Assert.Equal("resp_123", activity.GetTagItem("provider.trace_id"));
+        Assert.Equal("terra-only", activity.GetTagItem("provider.preset_set"));
         Assert.Equal("api.openai.com", activity.GetTagItem("server.address"));
         Assert.Equal("/v1/responses", activity.GetTagItem("url.path"));
         Assert.Equal(20, activity.GetTagItem("provider.tokens.total"));
@@ -43,6 +44,7 @@ public sealed class ProviderCallTelemetryInstrumentationTests
         Assert.Equal("text-planning", journalEvent.Operation);
         Assert.Equal("gpt-5", journalEvent.Model);
         Assert.Equal(20, journalEvent.TotalTokens);
+        Assert.Equal("terra-only", journalEvent.PresetSet);
     }
 
     [Fact]
@@ -73,6 +75,7 @@ public sealed class ProviderCallTelemetryInstrumentationTests
         Assert.Equal("text-planning", call.Tags["provider.operation"]);
         Assert.Equal("gpt-5", call.Tags["provider.model"]);
         Assert.Equal(200, call.Tags["http.response.status_code"]);
+        Assert.Equal("terra-only", call.Tags["provider.preset_set"]);
         Assert.False(call.Tags.ContainsKey("provider.request_id"));
         Assert.False(call.Tags.ContainsKey("provider.trace_id"));
 
@@ -115,7 +118,8 @@ public sealed class ProviderCallTelemetryInstrumentationTests
             Latency: TimeSpan.FromMilliseconds(123.4),
             EstimatedCostUsd: 0.03m,
             RateCardName: "test-card",
-            RecordedAt: DateTimeOffset.Parse("2026-06-04T10:00:00Z"));
+            RecordedAt: DateTimeOffset.Parse("2026-06-04T10:00:00Z"),
+            PresetSet: "terra-only");
     }
 
     private static Dictionary<string, object?> ToDictionary(ReadOnlySpan<KeyValuePair<string, object?>> tags)

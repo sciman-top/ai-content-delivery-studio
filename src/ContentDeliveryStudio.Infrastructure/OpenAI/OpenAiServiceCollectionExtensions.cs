@@ -28,7 +28,7 @@ public static class OpenAiServiceCollectionExtensions
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(providerOptions);
 
-        services.AddSingleton(providerOptions);
+        services.TryAddSingleton(providerOptions);
         services.TryAddSingleton(_ => OpenAiSecretStores.CreateDefault());
         services.TryAddSingleton<IProviderCallTelemetrySink, DiagnosticProviderCallTelemetrySink>();
         services.TryAddSingleton<IOpenAiExecutionSlotScheduler, OpenAiExecutionSlotScheduler>();

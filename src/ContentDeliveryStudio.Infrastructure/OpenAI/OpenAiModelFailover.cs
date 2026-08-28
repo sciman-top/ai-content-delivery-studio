@@ -255,12 +255,12 @@ internal static class OpenAiModelFailoverPolicy
 
         async Task<TResult> ExecuteCoreAsync()
         {
-            var initialRoute = ResolveInitialRoute(options, preferredRoute, activePresetSetState);
+            var activePresetSetSnapshot = activePresetSetState?.GetSnapshot(options)
+                ?? new OpenAiActivePresetSetSnapshot(null, Version: 0);
+            var initialRoute = ResolveInitialRoute(options, preferredRoute, activePresetSetSnapshot);
             if (availabilityProbe is null)
             {
-                var result = await operation(initialRoute);
-                MarkSuccess(options, initialRoute, activePresetSetState);
-                return result;
+                return await operation(initialRoute);
             }
 
             var routes = new[] { initialRoute }
@@ -285,7 +285,12 @@ internal static class OpenAiModelFailoverPolicy
                 try
                 {
                     var result = await operation(route);
-                    MarkSuccess(options, route, activePresetSetState);
+                    SwitchAfterSuccessfulFallback(
+                        options,
+                        initialRoute,
+                        route,
+                        activePresetSetSnapshot,
+                        activePresetSetState);
                     return result;
                 }
                 catch (Exception exception) when (
@@ -312,15 +317,14 @@ internal static class OpenAiModelFailoverPolicy
     private static OpenAiTaskModelRoute ResolveInitialRoute(
         OpenAiProviderOptions options,
         OpenAiTaskModelRoute preferredRoute,
-        IOpenAiActivePresetSetState? activePresetSetState)
+        OpenAiActivePresetSetSnapshot activePresetSetSnapshot)
     {
-        if (activePresetSetState is null
-            || string.IsNullOrWhiteSpace(preferredRoute.PresetSet))
+        if (string.IsNullOrWhiteSpace(preferredRoute.PresetSet))
         {
             return preferredRoute;
         }
 
-        var activePresetSet = activePresetSetState.GetActivePresetSet(options);
+        var activePresetSet = activePresetSetSnapshot.PresetSet ?? options.InitialPresetSet;
         return activePresetSet is not null
             && TextProviderModelPresets.TryResolveForPresetSet(
                 activePresetSet,
@@ -338,15 +342,21 @@ internal static class OpenAiModelFailoverPolicy
             : preferredRoute;
     }
 
-    private static void MarkSuccess(
+    private static void SwitchAfterSuccessfulFallback(
         OpenAiProviderOptions options,
+        OpenAiTaskModelRoute initialRoute,
         OpenAiTaskModelRoute route,
+        OpenAiActivePresetSetSnapshot activePresetSetSnapshot,
         IOpenAiActivePresetSetState? activePresetSetState)
     {
         if (activePresetSetState is not null
+            && !string.Equals(route.PresetSet, initialRoute.PresetSet, StringComparison.Ordinal)
             && !string.IsNullOrWhiteSpace(route.PresetSet))
         {
-            activePresetSetState.MarkActivePresetSet(options, route.PresetSet);
+            _ = activePresetSetState.TrySwitchActivePresetSet(
+                options,
+                activePresetSetSnapshot.Version,
+                route.PresetSet);
         }
     }
 

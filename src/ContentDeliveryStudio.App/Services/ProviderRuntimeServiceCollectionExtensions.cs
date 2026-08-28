@@ -35,6 +35,7 @@ public static class ProviderRuntimeServiceCollectionExtensions
 
     private static IServiceCollection AddFakeProviders(IServiceCollection services)
     {
+        services.AddOpenAiProviderHttpClient(new OpenAiProviderOptions());
         services.AddSingleton<ITextPlanningProvider, FakeTextPlanningProvider>();
         services.AddSingleton<FakeImageGenerationProvider>();
         services.AddSingleton<IImageGenerationProvider>(serviceProvider =>
@@ -72,6 +73,8 @@ public static class ProviderRuntimeServiceCollectionExtensions
         }
 
         var secretStore = ResolveSecretStore(options, envPath);
+        services.AddOpenAiProviderHttpClient(
+            OpenAiProviderOptions.FromTextProviderEnvironment(configuration, realApiEnabled: true));
         services.TryAddSingleton<IOpenAiExecutionSlotScheduler, OpenAiExecutionSlotScheduler>();
         services.TryAddSingleton<IOpenAiActivePresetSetState, OpenAiActivePresetSetState>();
         services.AddSingleton<IOpenAiModelAvailabilityProbe>(serviceProvider =>

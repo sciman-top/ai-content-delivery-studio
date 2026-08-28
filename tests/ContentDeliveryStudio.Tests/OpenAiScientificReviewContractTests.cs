@@ -157,6 +157,32 @@ public sealed class OpenAiScientificReviewContractTests
     }
 
     [Fact]
+    public void RetryDelay_PrefersTheGatewayRetryAfterHeader()
+    {
+        using var response = new HttpResponseMessage(HttpStatusCode.TooManyRequests);
+        response.Headers.RetryAfter = new System.Net.Http.Headers.RetryConditionHeaderValue(TimeSpan.FromSeconds(12));
+
+        Assert.Equal(TimeSpan.FromSeconds(12), OpenAiScientificReviewProvider.GetRetryDelay(response, attempt: 1));
+    }
+
+    [Fact]
+    public async Task Provider_PreservesTheFinalTransientStatusForCrossPresetFailover()
+    {
+        var fixture = ScientificReviewTestFixture.Create();
+        var handler = new SequenceHandler(
+            new HttpResponseMessage(HttpStatusCode.TooManyRequests),
+            new HttpResponseMessage(HttpStatusCode.TooManyRequests),
+            new HttpResponseMessage(HttpStatusCode.TooManyRequests));
+
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(() => Provider(handler).ReviewAsync(
+            fixture.SemanticRequest,
+            CancellationToken.None));
+
+        Assert.Equal(HttpStatusCode.TooManyRequests, exception.StatusCode);
+        Assert.Equal(3, handler.InvocationCount);
+    }
+
+    [Fact]
     public async Task Provider_DoesNotRetryNonTransientStatus()
     {
         var fixture = ScientificReviewTestFixture.Create();

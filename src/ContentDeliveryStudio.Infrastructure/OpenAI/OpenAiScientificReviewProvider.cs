@@ -160,12 +160,14 @@ public sealed class OpenAiScientificReviewProvider
                     RecordTelemetry(operation, endpoint, response, null, null, stopwatch.Elapsed, route);
                     if (IsTransient(response.StatusCode) && attempt < MaximumTransientAttempts)
                     {
-                        await DelayForRetryAsync(attempt, cancellationToken);
+                        await DelayForRetryAsync(response, attempt, cancellationToken);
                         continue;
                     }
 
                     throw new HttpRequestException(
-                        await OpenAiHttpError.ReadAndDescribeAsync($"OpenAI {operation} request", response, cancellationToken));
+                        await OpenAiHttpError.ReadAndDescribeAsync($"OpenAI {operation} request", response, cancellationToken),
+                        inner: null,
+                        statusCode: response.StatusCode);
                 }
 
                 await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
@@ -190,7 +192,42 @@ public sealed class OpenAiScientificReviewProvider
         || (int)statusCode >= 500;
 
     private static Task DelayForRetryAsync(int attempt, CancellationToken cancellationToken) =>
-        Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), cancellationToken);
+        Task.Delay(GetRetryDelay(attempt), cancellationToken);
+
+    private static Task DelayForRetryAsync(
+        HttpResponseMessage response,
+        int attempt,
+        CancellationToken cancellationToken) =>
+        Task.Delay(GetRetryDelay(response, attempt), cancellationToken);
+
+    internal static TimeSpan GetRetryDelay(
+        HttpResponseMessage response,
+        int attempt,
+        TimeProvider? timeProvider = null)
+    {
+        ArgumentNullException.ThrowIfNull(response);
+        var retryAfter = response.Headers.RetryAfter;
+        if (retryAfter?.Delta is { } delta && delta > TimeSpan.Zero)
+        {
+            return delta;
+        }
+
+        if (retryAfter?.Date is { } date)
+        {
+            var delay = date - (timeProvider ?? TimeProvider.System).GetUtcNow();
+            return delay > TimeSpan.Zero ? delay : TimeSpan.Zero;
+        }
+
+        return GetRetryDelay(attempt);
+    }
+
+    internal static TimeSpan GetRetryDelay(int attempt)
+    {
+        var boundedAttempt = Math.Clamp(attempt, 1, 5);
+        var baseDelay = TimeSpan.FromMilliseconds(100 * (1 << (boundedAttempt - 1)));
+        var jitter = TimeSpan.FromMilliseconds(Random.Shared.Next(0, 51));
+        return baseDelay + jitter;
+    }
 
     private static void ValidateResumedResult(
         ScientificProviderReviewResult result,

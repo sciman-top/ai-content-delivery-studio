@@ -43,6 +43,13 @@ public sealed record OpenAiProviderOptions
 
     public OpenAiTextRoutingMode TextRoutingMode { get; init; } = OpenAiTextRoutingMode.Fixed;
 
+    /// <summary>
+    /// Optional operator-selected active preset set at process start. Auto
+    /// routing still selects the workload tier; this selects its model family.
+    /// When omitted, auto routing starts with the preferred Sol-only family.
+    /// </summary>
+    public string? InitialPresetSet { get; init; }
+
     public string ImageGenerationModel { get; init; } = "gpt-image-2";
 
     // Stateful Responses image generation is opt-in and fail-closed until a slice explicitly enables it.
@@ -92,6 +99,7 @@ public sealed record OpenAiProviderOptions
             TextPlanningModel = RequireModel(endpoint, "Text provider"),
             ReasoningEffort = endpoint.ReasoningEffort,
             TextRoutingMode = ParseTextRoutingMode(endpoint.RoutingMode),
+            InitialPresetSet = endpoint.ModelPresetSet,
             ImageGenerationModel = string.Empty,
             VisionReviewModel = RequireModel(endpoint, "Text provider"),
             AllowedOperations = OpenAiProviderOperation.TextPlanning | OpenAiProviderOperation.VisionReview,
