@@ -16,13 +16,38 @@ public static class TextProviderRoutingModes
 
 public static class TextProviderModelPresets
 {
+    public const string SolFamily = "sol";
+    public const string TerraFamily = "terra";
+    public const string LunaFamily = "luna";
+
     public const string SolXHigh = "sol-xhigh";
     public const string SolMedium = "sol-medium";
+    public const string SolLow = "sol-low";
     public const string TerraXHigh = "terra-xhigh";
     public const string TerraHigh = "terra-high";
+    public const string TerraMedium = "terra-medium";
+    public const string LunaXHigh = "luna-xhigh";
+    public const string LunaHigh = "luna-high";
+    public const string LunaMedium = "luna-medium";
+
+    public static IReadOnlyList<string> SetNames { get; } =
+        [TextProviderModelPresetSets.SolOnly, TextProviderModelPresetSets.TerraOnly, TextProviderModelPresetSets.LunaOnly];
+
+    public static IReadOnlyList<string> PreferredModelFamilies { get; } =
+        [SolFamily, TerraFamily, LunaFamily];
 
     public static IReadOnlyList<string> Names { get; } =
-        [SolXHigh, SolMedium, TerraXHigh, TerraHigh];
+        [
+            SolXHigh,
+            SolMedium,
+            SolLow,
+            TerraXHigh,
+            TerraHigh,
+            TerraMedium,
+            LunaXHigh,
+            LunaHigh,
+            LunaMedium,
+        ];
 
     public static bool TryResolve(string? name, out string model, out string reasoningEffort)
     {
@@ -36,6 +61,10 @@ public static class TextProviderModelPresets
                 model = "gpt-5.6-sol";
                 reasoningEffort = "medium";
                 return true;
+            case SolLow:
+                model = "gpt-5.6-sol";
+                reasoningEffort = "low";
+                return true;
             case TerraXHigh:
                 model = "gpt-5.6-terra";
                 reasoningEffort = "xhigh";
@@ -44,12 +73,230 @@ public static class TextProviderModelPresets
                 model = "gpt-5.6-terra";
                 reasoningEffort = "high";
                 return true;
+            case TerraMedium:
+                model = "gpt-5.6-terra";
+                reasoningEffort = "medium";
+                return true;
+            case LunaXHigh:
+                model = "gpt-5.6-luna";
+                reasoningEffort = "xhigh";
+                return true;
+            case LunaHigh:
+                model = "gpt-5.6-luna";
+                reasoningEffort = "high";
+                return true;
+            case LunaMedium:
+                model = "gpt-5.6-luna";
+                reasoningEffort = "medium";
+                return true;
             default:
                 model = string.Empty;
                 reasoningEffort = string.Empty;
                 return false;
         }
     }
+
+    public static bool TryResolveForPresetSet(
+        string presetSet,
+        OpenAiExecutionQualityTier qualityTier,
+        out string preset,
+        out string model,
+        out string reasoningEffort)
+    {
+        preset = string.Empty;
+        model = string.Empty;
+        reasoningEffort = string.Empty;
+        return TextProviderModelPresetSets.TryGetFamily(presetSet, out var family)
+            && TryResolveForFamily(family, qualityTier, out preset, out model, out reasoningEffort);
+    }
+
+    public static bool TryGetPresetSet(string? preset, out string presetSet)
+    {
+        presetSet = preset?.Trim().ToLowerInvariant() switch
+        {
+            SolXHigh or SolMedium or SolLow => TextProviderModelPresetSets.SolOnly,
+            TerraXHigh or TerraHigh or TerraMedium => TextProviderModelPresetSets.TerraOnly,
+            LunaXHigh or LunaHigh or LunaMedium => TextProviderModelPresetSets.LunaOnly,
+            _ => string.Empty,
+        };
+
+        return presetSet.Length > 0;
+    }
+
+    public static bool TryGetFamily(string model, out string family)
+    {
+        family = model?.Trim().ToLowerInvariant() switch
+        {
+            "gpt-5.6-sol" => SolFamily,
+            "gpt-5.6-terra" => TerraFamily,
+            "gpt-5.6-luna" => LunaFamily,
+            _ => string.Empty,
+        };
+
+        return family.Length > 0;
+    }
+
+    public static bool TryResolveForFamily(
+        string family,
+        OpenAiExecutionQualityTier qualityTier,
+        out string preset,
+        out string model,
+        out string resolvedReasoningEffort)
+    {
+        var normalizedFamily = family?.Trim().ToLowerInvariant();
+        preset = normalizedFamily switch
+        {
+            SolFamily => qualityTier switch
+            {
+                OpenAiExecutionQualityTier.Deep => SolXHigh,
+                OpenAiExecutionQualityTier.Balanced => SolMedium,
+                OpenAiExecutionQualityTier.Fast => SolLow,
+                _ => string.Empty,
+            },
+            TerraFamily => qualityTier switch
+            {
+                OpenAiExecutionQualityTier.Deep => TerraXHigh,
+                OpenAiExecutionQualityTier.Balanced => TerraHigh,
+                OpenAiExecutionQualityTier.Fast => TerraMedium,
+                _ => string.Empty,
+            },
+            LunaFamily => qualityTier switch
+            {
+                OpenAiExecutionQualityTier.Deep => LunaXHigh,
+                OpenAiExecutionQualityTier.Balanced => LunaHigh,
+                OpenAiExecutionQualityTier.Fast => LunaMedium,
+                _ => string.Empty,
+            },
+            _ => string.Empty,
+        };
+
+        if (preset.Length == 0 || !TryResolve(preset, out model, out resolvedReasoningEffort))
+        {
+            model = string.Empty;
+            resolvedReasoningEffort = string.Empty;
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool TryResolveForFamily(
+        string family,
+        string reasoningEffort,
+        out string preset,
+        out string model,
+        out string resolvedReasoningEffort)
+    {
+        if (!TryGetQualityTierForModel(family, reasoningEffort, out var qualityTier))
+        {
+            preset = string.Empty;
+            model = string.Empty;
+            resolvedReasoningEffort = string.Empty;
+            return false;
+        }
+
+        return TryResolveForFamily(family, qualityTier, out preset, out model, out resolvedReasoningEffort);
+    }
+
+    public static bool TryGetQualityTier(string preset, out OpenAiExecutionQualityTier qualityTier)
+    {
+        qualityTier = preset?.Trim().ToLowerInvariant() switch
+        {
+            SolXHigh or TerraXHigh or LunaXHigh => OpenAiExecutionQualityTier.Deep,
+            SolMedium or TerraHigh or LunaHigh => OpenAiExecutionQualityTier.Balanced,
+            SolLow or TerraMedium or LunaMedium => OpenAiExecutionQualityTier.Fast,
+            _ => default,
+        };
+
+        return Names.Contains(preset?.Trim().ToLowerInvariant() ?? string.Empty, StringComparer.Ordinal);
+    }
+
+    public static bool TryGetQualityTierForModel(
+        string model,
+        string reasoningEffort,
+        out OpenAiExecutionQualityTier qualityTier)
+    {
+        qualityTier = default;
+        if (!TryGetFamily(model, out var family))
+        {
+            return false;
+        }
+
+        var normalizedEffort = reasoningEffort?.Trim().ToLowerInvariant();
+        qualityTier = family switch
+        {
+            SolFamily when normalizedEffort is "xhigh" => OpenAiExecutionQualityTier.Deep,
+            SolFamily when normalizedEffort is "medium" => OpenAiExecutionQualityTier.Balanced,
+            SolFamily when normalizedEffort is "low" => OpenAiExecutionQualityTier.Fast,
+            TerraFamily or LunaFamily when normalizedEffort is "xhigh" => OpenAiExecutionQualityTier.Deep,
+            TerraFamily or LunaFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Balanced,
+            TerraFamily or LunaFamily when normalizedEffort is "medium" => OpenAiExecutionQualityTier.Fast,
+            _ => default,
+        };
+
+        return family switch
+        {
+            SolFamily => normalizedEffort is "xhigh" or "medium" or "low",
+            TerraFamily or LunaFamily => normalizedEffort is "xhigh" or "high" or "medium",
+            _ => false,
+        };
+    }
+}
+
+public static class TextProviderModelPresetSets
+{
+    public const string SolOnly = "sol-only";
+    public const string TerraOnly = "terra-only";
+    public const string LunaOnly = "luna-only";
+
+    public static IReadOnlyList<string> Names { get; } = [SolOnly, TerraOnly, LunaOnly];
+
+    public static bool TryGetFamily(string? presetSet, out string family)
+    {
+        family = presetSet?.Trim().ToLowerInvariant() switch
+        {
+            SolOnly => TextProviderModelPresets.SolFamily,
+            TerraOnly => TextProviderModelPresets.TerraFamily,
+            LunaOnly => TextProviderModelPresets.LunaFamily,
+            _ => string.Empty,
+        };
+
+        return family.Length > 0;
+    }
+
+    public static bool TryGetPresetSetForFamily(string? family, out string presetSet)
+    {
+        presetSet = family?.Trim().ToLowerInvariant() switch
+        {
+            TextProviderModelPresets.SolFamily => SolOnly,
+            TextProviderModelPresets.TerraFamily => TerraOnly,
+            TextProviderModelPresets.LunaFamily => LunaOnly,
+            _ => string.Empty,
+        };
+
+        return presetSet.Length > 0;
+    }
+
+    public static bool TryParseQualityTier(string? value, out OpenAiExecutionQualityTier qualityTier)
+    {
+        qualityTier = value?.Trim().ToLowerInvariant() switch
+        {
+            "deep" => OpenAiExecutionQualityTier.Deep,
+            "balanced" => OpenAiExecutionQualityTier.Balanced,
+            "fast" => OpenAiExecutionQualityTier.Fast,
+            _ => default,
+        };
+
+        return value?.Trim().ToLowerInvariant() is "deep" or "balanced" or "fast";
+    }
+
+    public static string GetQualityTierName(OpenAiExecutionQualityTier qualityTier) => qualityTier switch
+    {
+        OpenAiExecutionQualityTier.Deep => "deep",
+        OpenAiExecutionQualityTier.Balanced => "balanced",
+        OpenAiExecutionQualityTier.Fast => "fast",
+        _ => throw new ArgumentOutOfRangeException(nameof(qualityTier), qualityTier, "Unknown quality tier."),
+    };
 }
 
 public sealed record ProviderEnvironmentConfiguration(
@@ -155,7 +402,11 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
     ProviderImageGenerationSurface ImageGenerationSurface,
     string ReasoningEffort = "medium",
     string? ModelPreset = null,
-    string RoutingMode = TextProviderRoutingModes.Fixed)
+    string RoutingMode = TextProviderRoutingModes.Fixed,
+    string? ModelPresetSet = null,
+    string? QualityTier = null,
+    string? ConfiguredModel = null,
+    string? ConfiguredReasoningEffort = null)
 {
     public static ProviderEndpointEnvironmentConfiguration CreateText(IReadOnlyDictionary<string, string?> values)
         => CreateText(values, "TEXT_PROVIDER");
@@ -173,19 +424,58 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
         string prefix)
     {
         var keyNames = GetPresentSecretNames(values, $"{prefix}_API_KEY");
-        var modelPreset = GetPresentValue(values, $"{prefix}_PRESET");
+        var configuredPreset = GetPresentValue(values, $"{prefix}_PRESET");
+        var configuredPresetSet = GetPresentValue(values, $"{prefix}_PRESET_SET");
+        var qualityTier = GetPresentValue(values, $"{prefix}_QUALITY_TIER");
+        if (configuredPresetSet is null
+            && TextProviderModelPresetSets.TryGetFamily(configuredPreset, out _))
+        {
+            configuredPresetSet = configuredPreset;
+            configuredPreset = null;
+        }
+
+        var hasResolvedPair = TextProviderModelPresets.TryResolve(
+            configuredPreset,
+            out var pairModel,
+            out var pairReasoningEffort);
+        var presetFamily = string.Empty;
+        var parsedQualityTier = default(OpenAiExecutionQualityTier);
+        var setPreset = string.Empty;
+        var setModel = string.Empty;
+        var setReasoningEffort = string.Empty;
+        var hasResolvedSet = TextProviderModelPresetSets.TryGetFamily(configuredPresetSet, out presetFamily)
+            && TextProviderModelPresetSets.TryParseQualityTier(qualityTier, out parsedQualityTier)
+            && TextProviderModelPresets.TryResolveForPresetSet(
+                configuredPresetSet!,
+                parsedQualityTier,
+                out setPreset,
+                out setModel,
+                out setReasoningEffort);
+        // Keep an unknown legacy value visible to Validate() so startup fails
+        // closed instead of silently accepting a typo as an unpinned model.
+        var effectivePreset = hasResolvedPair
+            ? configuredPreset
+            : hasResolvedSet
+                ? setPreset
+                : configuredPreset;
+        var effectiveModel = hasResolvedPair
+            ? pairModel
+            : hasResolvedSet
+                ? setModel
+                : GetValue(values, $"{prefix}_MODEL", string.Empty);
+        var effectiveReasoningEffort = hasResolvedPair
+            ? pairReasoningEffort
+            : hasResolvedSet
+                ? setReasoningEffort
+                : GetValue(values, $"{prefix}_REASONING_EFFORT", "medium");
         var routingMode = GetValue(values, $"{prefix}_ROUTING_MODE", TextProviderRoutingModes.Fixed)
             .Trim()
             .ToLowerInvariant();
-        var hasResolvedPreset = TextProviderModelPresets.TryResolve(
-            modelPreset,
-            out var presetModel,
-            out var presetReasoningEffort);
         return new ProviderEndpointEnvironmentConfiguration(
             prefix,
             GetValue(values, $"{prefix}_KIND", "openai_compatible"),
             GetUri(values, $"{prefix}_BASE_URL"),
-            hasResolvedPreset ? presetModel : GetValue(values, $"{prefix}_MODEL", string.Empty),
+            effectiveModel,
             ResponsesModel: null,
             keyNames.FirstOrDefault(),
             keyNames,
@@ -195,11 +485,13 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             GetPositiveInt(values, $"{prefix}_CONCURRENCY_PER_KEY", 1),
             GetPositiveInt(values, $"{prefix}_TOTAL_CONCURRENCY", Math.Max(1, keyNames.Count)),
             ProviderImageGenerationSurface.Images,
-            hasResolvedPreset
-                ? presetReasoningEffort
-                : GetValue(values, $"{prefix}_REASONING_EFFORT", "medium"),
-            modelPreset,
-            routingMode);
+            effectiveReasoningEffort,
+            effectivePreset,
+            routingMode,
+            configuredPresetSet,
+            qualityTier,
+            GetPresentValue(values, $"{prefix}_MODEL"),
+            GetPresentValue(values, $"{prefix}_REASONING_EFFORT"));
     }
 
     public static ProviderEndpointEnvironmentConfiguration CreateImage(IReadOnlyDictionary<string, string?> values)
@@ -312,6 +604,63 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
         {
             errors.Add(
                 $"{displayName} preset '{ModelPreset}' is invalid. Allowed presets: {string.Join(", ", TextProviderModelPresets.Names)}.");
+        }
+
+        if (Prefix.StartsWith("TEXT_PROVIDER", StringComparison.Ordinal)
+            && ModelPresetSet is not null)
+        {
+            if (!TextProviderModelPresetSets.TryGetFamily(ModelPresetSet, out var presetFamily))
+            {
+                errors.Add(
+                    $"{displayName} preset set '{ModelPresetSet}' is invalid. Allowed preset sets: {string.Join(", ", TextProviderModelPresetSets.Names)}.");
+            }
+            else if (string.IsNullOrWhiteSpace(QualityTier)
+                || !TextProviderModelPresetSets.TryParseQualityTier(QualityTier, out var qualityTier)
+                || !TextProviderModelPresets.TryResolveForPresetSet(
+                    ModelPresetSet,
+                    qualityTier,
+                    out _,
+                    out var expectedModel,
+                    out var expectedReasoningEffort))
+            {
+                errors.Add(
+                    $"{displayName} preset set '{ModelPresetSet}' requires QUALITY_TIER=deep, balanced, or fast.");
+            }
+            else
+            {
+                if (ConfiguredModel is not null
+                    && TextProviderModelPresets.TryGetFamily(ConfiguredModel, out var configuredFamily)
+                    && !string.Equals(configuredFamily, presetFamily, StringComparison.Ordinal))
+                {
+                    errors.Add(
+                        $"{displayName} mixes preset set '{ModelPresetSet}' with model '{ConfiguredModel}'. A preset set must be {presetFamily}-only.");
+                }
+
+                if (ConfiguredReasoningEffort is not null
+                    && !string.Equals(
+                        ConfiguredReasoningEffort.Trim(),
+                        expectedReasoningEffort,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add(
+                        $"{displayName} quality tier '{QualityTier}' requires reasoning effort '{expectedReasoningEffort}'.");
+                }
+
+                if (ModelPreset is not null
+                    && !string.Equals(ModelPreset, TextProviderModelPresets.TryResolveForPresetSet(
+                        ModelPresetSet,
+                        qualityTier,
+                        out var expectedPreset,
+                        out expectedModel,
+                        out expectedReasoningEffort)
+                        ? expectedPreset
+                        : ModelPreset,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add(
+                        $"{displayName} preset '{ModelPreset}' does not match preset set '{ModelPresetSet}' and quality tier '{QualityTier}'.");
+                }
+            }
         }
 
         if (Prefix.StartsWith("TEXT_PROVIDER", StringComparison.Ordinal)

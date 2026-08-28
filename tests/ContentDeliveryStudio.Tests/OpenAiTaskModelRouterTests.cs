@@ -13,7 +13,7 @@ public sealed class OpenAiTaskModelRouterTests
     };
 
     [Theory]
-    [InlineData(2, 100, TextProviderModelPresets.TerraHigh)]
+    [InlineData(2, 100, TextProviderModelPresets.SolLow)]
     [InlineData(OpenAiTaskModelRouter.LargeSeriesItemCount, 100, TextProviderModelPresets.SolMedium)]
     [InlineData(OpenAiTaskModelRouter.ComplexSeriesItemCount, 100, TextProviderModelPresets.SolXHigh)]
     [InlineData(2, OpenAiTaskModelRouter.LargeSeriesInputCharacters, TextProviderModelPresets.SolMedium)]
@@ -29,6 +29,14 @@ public sealed class OpenAiTaskModelRouterTests
             itemCount);
 
         Assert.Equal(expectedPreset, OpenAiTaskModelRouter.ForPlanning(Auto, request).Preset);
+        var route = OpenAiTaskModelRouter.ForPlanning(Auto, request);
+        Assert.Equal(
+            expectedPreset is TextProviderModelPresets.SolXHigh
+                ? OpenAiExecutionQualityTier.Deep
+                : expectedPreset is TextProviderModelPresets.SolMedium
+                    ? OpenAiExecutionQualityTier.Balanced
+                    : OpenAiExecutionQualityTier.Fast,
+            route.QualityTier);
     }
 
     [Fact]
@@ -48,7 +56,7 @@ public sealed class OpenAiTaskModelRouterTests
             TextProviderModelPresets.SolXHigh,
             OpenAiTaskModelRouter.ForDocumentPlanning(Auto, complexEducational).Preset);
         Assert.Equal(
-            TextProviderModelPresets.TerraHigh,
+            TextProviderModelPresets.SolLow,
             OpenAiTaskModelRouter.ForDocumentPlanning(Auto, editorial).Preset);
     }
 
@@ -115,8 +123,8 @@ public sealed class OpenAiTaskModelRouterTests
     }
 
     [Theory]
-    [InlineData(1, 0, TextProviderModelPresets.TerraHigh)]
-    [InlineData(3, 2, TextProviderModelPresets.TerraXHigh)]
+    [InlineData(1, 0, TextProviderModelPresets.SolLow)]
+    [InlineData(3, 2, TextProviderModelPresets.SolMedium)]
     [InlineData(5, 3, TextProviderModelPresets.SolXHigh)]
     public void VisionReview_UsesRubricAndEvidenceSignalCount(
         int dimensions,

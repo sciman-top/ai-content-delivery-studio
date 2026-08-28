@@ -72,6 +72,13 @@ public static class ProviderRuntimeServiceCollectionExtensions
         }
 
         var secretStore = ResolveSecretStore(options, envPath);
+        services.TryAddSingleton<IOpenAiExecutionSlotScheduler, OpenAiExecutionSlotScheduler>();
+        services.TryAddSingleton<IOpenAiActivePresetSetState, OpenAiActivePresetSetState>();
+        services.AddSingleton<IOpenAiModelAvailabilityProbe>(serviceProvider =>
+            new OpenAiModelAvailabilityProbe(
+                serviceProvider.GetRequiredService<IHttpClientFactory>()
+                    .CreateClient(OpenAiHttpClientNames.Provider),
+                secretStore));
         services.TryAddSingleton<IOpenAiScientificReviewCheckpointStore, JsonOpenAiScientificReviewCheckpointStore>();
         services.AddSingleton(configuration);
         services.AddSingleton<IOpenAiSecretStore>(secretStore);
@@ -90,7 +97,10 @@ public static class ProviderRuntimeServiceCollectionExtensions
                 configuration,
                 secretStore,
                 serviceProvider.GetService<IProviderCallTelemetrySink>(),
-                realApiEnabled: true));
+                realApiEnabled: true,
+                executionSlotScheduler: serviceProvider.GetRequiredService<IOpenAiExecutionSlotScheduler>(),
+                activePresetSetState: serviceProvider.GetRequiredService<IOpenAiActivePresetSetState>(),
+                modelAvailabilityProbe: serviceProvider.GetRequiredService<IOpenAiModelAvailabilityProbe>()));
         services.AddSingleton<IImageGenerationProvider>(serviceProvider =>
             OpenAiProviderFailoverFactory.CreateImageGenerationProvider(
                 configuration,
@@ -108,7 +118,10 @@ public static class ProviderRuntimeServiceCollectionExtensions
                 configuration,
                 secretStore,
                 serviceProvider.GetService<IProviderCallTelemetrySink>(),
-                realApiEnabled: true));
+                realApiEnabled: true,
+                executionSlotScheduler: serviceProvider.GetRequiredService<IOpenAiExecutionSlotScheduler>(),
+                activePresetSetState: serviceProvider.GetRequiredService<IOpenAiActivePresetSetState>(),
+                modelAvailabilityProbe: serviceProvider.GetRequiredService<IOpenAiModelAvailabilityProbe>()));
         services.AddSingleton<IScientificUnderstandingProvider>(serviceProvider =>
             new OpenAiScientificUnderstandingProvider(
                 OpenAiProviderOptions.FromTextProviderEnvironment(
@@ -116,7 +129,10 @@ public static class ProviderRuntimeServiceCollectionExtensions
                     realApiEnabled: true),
                 serviceProvider.GetRequiredService<OpenAiSdkClientFactory>(),
                 secretStore,
-                serviceProvider.GetService<IProviderCallTelemetrySink>()));
+                serviceProvider.GetService<IProviderCallTelemetrySink>(),
+                serviceProvider.GetRequiredService<IOpenAiModelAvailabilityProbe>(),
+                serviceProvider.GetRequiredService<IOpenAiExecutionSlotScheduler>(),
+                serviceProvider.GetRequiredService<IOpenAiActivePresetSetState>()));
         services.AddSingleton<OpenAiScientificReviewProvider>(serviceProvider =>
             new OpenAiScientificReviewProvider(
                 // Live scientific review must consume the same named client the
@@ -129,7 +145,10 @@ public static class ProviderRuntimeServiceCollectionExtensions
                     realApiEnabled: true),
                 secretStore,
                 serviceProvider.GetService<IProviderCallTelemetrySink>(),
-                serviceProvider.GetRequiredService<IOpenAiScientificReviewCheckpointStore>()));
+                serviceProvider.GetRequiredService<IOpenAiScientificReviewCheckpointStore>(),
+                serviceProvider.GetRequiredService<IOpenAiModelAvailabilityProbe>(),
+                serviceProvider.GetRequiredService<IOpenAiExecutionSlotScheduler>(),
+                serviceProvider.GetRequiredService<IOpenAiActivePresetSetState>()));
         services.AddSingleton<IScientificSemanticReviewProvider>(serviceProvider =>
             serviceProvider.GetRequiredService<OpenAiScientificReviewProvider>());
         services.AddSingleton<IScientificVisualReviewProvider>(serviceProvider =>

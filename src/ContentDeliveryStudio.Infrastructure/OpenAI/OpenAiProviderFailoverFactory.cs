@@ -17,20 +17,29 @@ public static class OpenAiProviderFailoverFactory
         IOpenAiSecretStore secretStore,
         IProviderCallTelemetrySink? telemetrySink = null,
         bool realApiEnabled = true,
-        Func<OpenAiProviderOptions, HttpClient>? httpClientFactory = null)
+        Func<OpenAiProviderOptions, HttpClient>? httpClientFactory = null,
+        IOpenAiExecutionSlotScheduler? executionSlotScheduler = null,
+        IOpenAiActivePresetSetState? activePresetSetState = null,
+        IOpenAiModelAvailabilityProbe? modelAvailabilityProbe = null)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(secretStore);
 
+        var scheduler = executionSlotScheduler ?? new OpenAiExecutionSlotScheduler();
+        var state = activePresetSetState ?? new OpenAiActivePresetSetState();
         var providers = GetTextEndpoints(configuration)
             .Select(endpoint =>
             {
                 var options = OpenAiProviderOptions.FromTextEndpointEnvironment(endpoint, realApiEnabled);
+                var httpClient = CreateHttpClient(options, httpClientFactory, TextPlanningTimeout);
                 return new OpenAiTextPlanningProvider(
-                    CreateHttpClient(options, httpClientFactory, TextPlanningTimeout),
+                    httpClient,
                     options,
                     secretStore,
-                    telemetrySink);
+                    telemetrySink,
+                    modelAvailabilityProbe: modelAvailabilityProbe ?? new OpenAiModelAvailabilityProbe(httpClient, secretStore),
+                    executionSlotScheduler: scheduler,
+                    activePresetSetState: state);
             })
             .Cast<ITextPlanningProvider>()
             .ToArray();
@@ -45,20 +54,29 @@ public static class OpenAiProviderFailoverFactory
         IOpenAiSecretStore secretStore,
         IProviderCallTelemetrySink? telemetrySink = null,
         bool realApiEnabled = true,
-        Func<OpenAiProviderOptions, HttpClient>? httpClientFactory = null)
+        Func<OpenAiProviderOptions, HttpClient>? httpClientFactory = null,
+        IOpenAiExecutionSlotScheduler? executionSlotScheduler = null,
+        IOpenAiActivePresetSetState? activePresetSetState = null,
+        IOpenAiModelAvailabilityProbe? modelAvailabilityProbe = null)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(secretStore);
 
+        var scheduler = executionSlotScheduler ?? new OpenAiExecutionSlotScheduler();
+        var state = activePresetSetState ?? new OpenAiActivePresetSetState();
         var providers = GetTextEndpoints(configuration)
             .Select(endpoint =>
             {
                 var options = OpenAiProviderOptions.FromTextEndpointEnvironment(endpoint, realApiEnabled);
+                var httpClient = CreateHttpClient(options, httpClientFactory, VisionReviewTimeout);
                 return new OpenAiVisionReviewProvider(
-                    CreateHttpClient(options, httpClientFactory, VisionReviewTimeout),
+                    httpClient,
                     options,
                     secretStore,
-                    telemetrySink);
+                    telemetrySink,
+                    modelAvailabilityProbe: modelAvailabilityProbe ?? new OpenAiModelAvailabilityProbe(httpClient, secretStore),
+                    executionSlotScheduler: scheduler,
+                    activePresetSetState: state);
             })
             .Cast<IVisionReviewProvider>()
             .ToArray();

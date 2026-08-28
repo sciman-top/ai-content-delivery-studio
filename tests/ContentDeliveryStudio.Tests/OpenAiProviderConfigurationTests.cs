@@ -92,8 +92,13 @@ public sealed class OpenAiProviderConfigurationTests
     [Theory]
     [InlineData(TextProviderModelPresets.SolXHigh, "gpt-5.6-sol", "xhigh")]
     [InlineData(TextProviderModelPresets.SolMedium, "gpt-5.6-sol", "medium")]
+    [InlineData(TextProviderModelPresets.SolLow, "gpt-5.6-sol", "low")]
     [InlineData(TextProviderModelPresets.TerraXHigh, "gpt-5.6-terra", "xhigh")]
     [InlineData(TextProviderModelPresets.TerraHigh, "gpt-5.6-terra", "high")]
+    [InlineData(TextProviderModelPresets.TerraMedium, "gpt-5.6-terra", "medium")]
+    [InlineData(TextProviderModelPresets.LunaXHigh, "gpt-5.6-luna", "xhigh")]
+    [InlineData(TextProviderModelPresets.LunaHigh, "gpt-5.6-luna", "high")]
+    [InlineData(TextProviderModelPresets.LunaMedium, "gpt-5.6-luna", "medium")]
     public void ProviderEnvironmentConfiguration_ResolvesSupportedTextProviderPreset(
         string preset,
         string expectedModel,
@@ -133,9 +138,9 @@ public sealed class OpenAiProviderConfigurationTests
             });
 
         Assert.Contains(
-            configuration.Validate(),
+                configuration.Validate(),
             error => error.Contains("unknown-tier", StringComparison.Ordinal)
-                && error.Contains(TextProviderModelPresets.TerraHigh, StringComparison.Ordinal));
+                && error.Contains(TextProviderModelPresets.LunaMedium, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -157,6 +162,48 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Empty(configuration.Validate());
         Assert.Equal(TextProviderRoutingModes.Auto, configuration.Text.RoutingMode);
         Assert.Equal(OpenAiTextRoutingMode.Auto, options.TextRoutingMode);
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_ResolvesOneFamilyOnlyPresetSetAndQualityTier()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_PRESET_SET"] = TextProviderModelPresetSets.TerraOnly,
+                ["TEXT_PROVIDER_QUALITY_TIER"] = "balanced",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Empty(configuration.Validate());
+        Assert.Equal(TextProviderModelPresetSets.TerraOnly, configuration.Text.ModelPresetSet);
+        Assert.Equal("balanced", configuration.Text.QualityTier);
+        Assert.Equal(TextProviderModelPresets.TerraHigh, configuration.Text.ModelPreset);
+        Assert.Equal("gpt-5.6-terra", configuration.Text.Model);
+        Assert.Equal("high", configuration.Text.ReasoningEffort);
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_RejectsModelThatMixesAOneFamilyOnlyPresetSet()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_PRESET_SET"] = TextProviderModelPresetSets.SolOnly,
+                ["TEXT_PROVIDER_QUALITY_TIER"] = "deep",
+                ["TEXT_PROVIDER_MODEL"] = "gpt-5.6-terra",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Contains(
+            configuration.Validate(),
+            error => error.Contains("mixes preset set", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -561,7 +608,7 @@ public sealed class OpenAiProviderConfigurationTests
         var options = new OpenAiProviderOptions();
 
         Assert.False(options.RealApiEnabled);
-        Assert.Equal("https", options.BaseUri.Scheme);
+        Assert.Equal(OpenAiGatewayDefaults.CockpitLocalApiBaseUri, options.BaseUri);
         Assert.Equal("OPENAI_API_KEY", options.ApiKeySecretName);
         Assert.Empty(options.Validate());
     }

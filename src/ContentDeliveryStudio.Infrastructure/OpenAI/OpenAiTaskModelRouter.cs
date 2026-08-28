@@ -9,7 +9,9 @@ internal sealed record OpenAiTaskModelRoute(
     string Preset,
     string Model,
     string ReasoningEffort,
-    string Reason);
+    string Reason,
+    OpenAiExecutionQualityTier QualityTier = OpenAiExecutionQualityTier.Balanced,
+    string PresetSet = "");
 
 internal static class OpenAiTaskModelRouter
 {
@@ -23,7 +25,7 @@ internal static class OpenAiTaskModelRouter
     internal const int ModerateVisionSignals = 5;
 
     public static IReadOnlyList<string> AutoModels { get; } =
-        ["gpt-5.6-sol", "gpt-5.6-terra"];
+        ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"];
 
     public static IReadOnlyList<string> ModelsForCapabilities(
         OpenAiProviderOptions options,
@@ -61,7 +63,7 @@ internal static class OpenAiTaskModelRouter
             return Preset(TextProviderModelPresets.SolMedium, "large-series-plan");
         }
 
-        return Preset(TextProviderModelPresets.TerraHigh, "routine-series-plan");
+        return Preset(TextProviderModelPresets.SolLow, "routine-series-plan");
     }
 
     public static OpenAiTaskModelRoute ForDocumentPlanning(
@@ -97,7 +99,7 @@ internal static class OpenAiTaskModelRouter
             return Preset(TextProviderModelPresets.SolXHigh, "complex-educational-document-plan");
         }
 
-        return Preset(TextProviderModelPresets.TerraHigh, "routine-document-plan");
+        return Preset(TextProviderModelPresets.SolLow, "routine-document-plan");
     }
 
     public static OpenAiTaskModelRoute ForScientificUnderstanding(
@@ -174,10 +176,10 @@ internal static class OpenAiTaskModelRouter
 
         if (signals >= ModerateVisionSignals)
         {
-            return Preset(TextProviderModelPresets.TerraXHigh, "moderate-vision-review");
+            return Preset(TextProviderModelPresets.SolMedium, "moderate-vision-review");
         }
 
-        return Preset(TextProviderModelPresets.TerraHigh, "routine-vision-review");
+        return Preset(TextProviderModelPresets.SolLow, "routine-vision-review");
     }
 
     private static OpenAiTaskModelRoute Fixed(
@@ -191,7 +193,14 @@ internal static class OpenAiTaskModelRouter
         var reason = qualityFirst && !isSolXHigh
             ? $"fixed-operator-override-{workload}"
             : "fixed-provider-configuration";
-        return new OpenAiTaskModelRoute("fixed", model, reasoningEffort, reason);
+        var qualityTier = TextProviderModelPresets.TryGetQualityTierForModel(model, reasoningEffort, out var resolvedTier)
+            ? resolvedTier
+            : OpenAiExecutionQualityTier.Balanced;
+        var presetSet = TextProviderModelPresets.TryGetFamily(model, out var family)
+            && TextProviderModelPresetSets.TryGetPresetSetForFamily(family, out var resolvedPresetSet)
+            ? resolvedPresetSet
+            : string.Empty;
+        return new OpenAiTaskModelRoute("fixed", model, reasoningEffort, reason, qualityTier, presetSet);
     }
 
     private static OpenAiTaskModelRoute Preset(string preset, string reason)
@@ -201,6 +210,12 @@ internal static class OpenAiTaskModelRouter
             throw new InvalidOperationException($"Text provider preset '{preset}' is not registered.");
         }
 
-        return new OpenAiTaskModelRoute(preset, model, reasoningEffort, reason);
+        var qualityTier = TextProviderModelPresets.TryGetQualityTier(preset, out var resolvedTier)
+            ? resolvedTier
+            : OpenAiExecutionQualityTier.Balanced;
+        var presetSet = TextProviderModelPresets.TryGetPresetSet(preset, out var resolvedPresetSet)
+            ? resolvedPresetSet
+            : string.Empty;
+        return new OpenAiTaskModelRoute(preset, model, reasoningEffort, reason, qualityTier, presetSet);
     }
 }

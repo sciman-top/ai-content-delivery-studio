@@ -111,7 +111,11 @@ public sealed class OpenAiProviderContractTests
         using var httpClient = new HttpClient(handler);
         var provider = new OpenAiTextPlanningProvider(
             httpClient,
-            new OpenAiProviderOptions { RealApiEnabled = true },
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                BaseUri = new Uri("https://api.openai.com/v1/"),
+            },
             new StaticSecretStore("test-openai-key"),
             telemetrySink,
             new OpenAiCostRateCard("test-card", 0.03m, 0.20m, 0.01m));
@@ -156,6 +160,7 @@ public sealed class OpenAiProviderContractTests
             {
                 RealApiEnabled = true,
                 TextRoutingMode = OpenAiTextRoutingMode.Auto,
+                BaseUri = new Uri("https://api.openai.com/v1/"),
             },
             new StaticSecretStore("test-openai-key"),
             telemetrySink);
@@ -165,12 +170,12 @@ public sealed class OpenAiProviderContractTests
             CancellationToken.None);
 
         using var payload = JsonDocument.Parse(handler.LastRequestBody!);
-        Assert.Equal("gpt-5.6-terra", payload.RootElement.GetProperty("model").GetString());
-        Assert.Equal("high", payload.RootElement.GetProperty("reasoning").GetProperty("effort").GetString());
+        Assert.Equal("gpt-5.6-sol", payload.RootElement.GetProperty("model").GetString());
+        Assert.Equal("low", payload.RootElement.GetProperty("reasoning").GetProperty("effort").GetString());
         var telemetry = Assert.Single(telemetrySink.Events);
-        Assert.Equal("gpt-5.6-terra", telemetry.Model);
-        Assert.Equal(TextProviderModelPresets.TerraHigh, telemetry.ModelPreset);
-        Assert.Equal("high", telemetry.ReasoningEffort);
+        Assert.Equal("gpt-5.6-sol", telemetry.Model);
+        Assert.Equal(TextProviderModelPresets.SolLow, telemetry.ModelPreset);
+        Assert.Equal("low", telemetry.ReasoningEffort);
         Assert.Equal("routine-series-plan", telemetry.RouteReason);
     }
 
@@ -961,6 +966,7 @@ public sealed class OpenAiProviderContractTests
                 RealApiEnabled = true,
                 ImageGenerationResponsesModel = "gpt-5.5",
                 ImageGenerationAllowsResponsesState = true,
+                BaseUri = new Uri("https://api.openai.com/v1/"),
             },
             new StaticSecretStore("test-openai-key"));
 
@@ -1040,6 +1046,7 @@ public sealed class OpenAiProviderContractTests
                 ImageGenerationResponsesModel = "gpt-5.5",
                 ImageGenerationAllowsResponsesState = true,
                 ImageGenerationUsesResponsesByDefault = true,
+                BaseUri = new Uri("https://api.openai.com/v1/"),
             },
             new StaticSecretStore("test-openai-key"));
 
@@ -1226,7 +1233,11 @@ public sealed class OpenAiProviderContractTests
     {
         return new OpenAiTextPlanningProvider(
             httpClient,
-            new OpenAiProviderOptions { RealApiEnabled = true },
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                BaseUri = new Uri("https://api.openai.com/v1/"),
+            },
             new StaticSecretStore("test-openai-key"));
     }
 
@@ -1234,7 +1245,11 @@ public sealed class OpenAiProviderContractTests
     {
         return new OpenAiImageGenerationProvider(
             httpClient,
-            new OpenAiProviderOptions { RealApiEnabled = true },
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                BaseUri = new Uri("https://api.openai.com/v1/"),
+            },
             new StaticSecretStore("test-openai-key"));
     }
 
@@ -1242,7 +1257,11 @@ public sealed class OpenAiProviderContractTests
     {
         return new OpenAiVisionReviewProvider(
             httpClient,
-            new OpenAiProviderOptions { RealApiEnabled = true },
+            new OpenAiProviderOptions
+            {
+                RealApiEnabled = true,
+                BaseUri = new Uri("https://api.openai.com/v1/"),
+            },
             new StaticSecretStore("test-openai-key"));
     }
 

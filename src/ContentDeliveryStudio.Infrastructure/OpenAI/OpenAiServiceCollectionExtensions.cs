@@ -31,6 +31,13 @@ public static class OpenAiServiceCollectionExtensions
         services.AddSingleton(providerOptions);
         services.TryAddSingleton(_ => OpenAiSecretStores.CreateDefault());
         services.TryAddSingleton<IProviderCallTelemetrySink, DiagnosticProviderCallTelemetrySink>();
+        services.TryAddSingleton<IOpenAiExecutionSlotScheduler, OpenAiExecutionSlotScheduler>();
+        services.TryAddSingleton<IOpenAiActivePresetSetState, OpenAiActivePresetSetState>();
+        services.TryAddSingleton<IOpenAiModelAvailabilityProbe>(serviceProvider =>
+            new OpenAiModelAvailabilityProbe(
+                serviceProvider.GetRequiredService<IHttpClientFactory>()
+                    .CreateClient(OpenAiHttpClientNames.Provider),
+                serviceProvider.GetRequiredService<IOpenAiSecretStore>()));
         services.TryAddSingleton<IOpenAiScientificReviewCheckpointStore, JsonOpenAiScientificReviewCheckpointStore>();
         services.TryAddSingleton<OpenAiSdkClientFactory>();
         services.TryAddTransient<OpenAiScientificUnderstandingProvider>();
@@ -41,7 +48,10 @@ public static class OpenAiServiceCollectionExtensions
                 providerOptions,
                 serviceProvider.GetRequiredService<IOpenAiSecretStore>(),
                 serviceProvider.GetService<IProviderCallTelemetrySink>(),
-                serviceProvider.GetRequiredService<IOpenAiScientificReviewCheckpointStore>()));
+                serviceProvider.GetRequiredService<IOpenAiScientificReviewCheckpointStore>(),
+                serviceProvider.GetService<IOpenAiModelAvailabilityProbe>(),
+                serviceProvider.GetRequiredService<IOpenAiExecutionSlotScheduler>(),
+                serviceProvider.GetRequiredService<IOpenAiActivePresetSetState>()));
 
         var builder = services.AddHttpClient(
             OpenAiHttpClientNames.Provider,

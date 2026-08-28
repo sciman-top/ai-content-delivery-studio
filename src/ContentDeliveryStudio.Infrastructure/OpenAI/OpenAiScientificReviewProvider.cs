@@ -15,19 +15,28 @@ public sealed class OpenAiScientificReviewProvider
     private readonly IOpenAiSecretStore _secretStore;
     private readonly IProviderCallTelemetrySink _telemetrySink;
     private readonly IOpenAiScientificReviewCheckpointStore _checkpointStore;
+    private readonly IOpenAiModelAvailabilityProbe? _modelAvailabilityProbe;
+    private readonly IOpenAiExecutionSlotScheduler? _executionSlotScheduler;
+    private readonly IOpenAiActivePresetSetState? _activePresetSetState;
 
     public OpenAiScientificReviewProvider(
         HttpClient httpClient,
         OpenAiProviderOptions options,
         IOpenAiSecretStore secretStore,
         IProviderCallTelemetrySink? telemetrySink = null,
-        IOpenAiScientificReviewCheckpointStore? checkpointStore = null)
+        IOpenAiScientificReviewCheckpointStore? checkpointStore = null,
+        IOpenAiModelAvailabilityProbe? modelAvailabilityProbe = null,
+        IOpenAiExecutionSlotScheduler? executionSlotScheduler = null,
+        IOpenAiActivePresetSetState? activePresetSetState = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _secretStore = secretStore ?? throw new ArgumentNullException(nameof(secretStore));
         _telemetrySink = telemetrySink ?? NullProviderCallTelemetrySink.Instance;
         _checkpointStore = checkpointStore ?? NullOpenAiScientificReviewCheckpointStore.Instance;
+        _modelAvailabilityProbe = modelAvailabilityProbe;
+        _executionSlotScheduler = executionSlotScheduler;
+        _activePresetSetState = activePresetSetState;
         OpenAiProviderGuard.EnsureAllowsOperation(options, OpenAiProviderOperation.VisionReview);
     }
 
@@ -39,16 +48,23 @@ public sealed class OpenAiScientificReviewProvider
             .Concat(request.Specification.Relations.Select(item => item.RelationId))
             .ToHashSet(StringComparer.Ordinal);
         var route = OpenAiTaskModelRouter.ForScientificSemanticReview(_options, request);
-        return ReviewAsync(
-            "scientific-semantic-review",
-            OpenAiScientificReviewMapper.CreateSemanticPayload(
-                request,
-                route.Model,
-                route.ReasoningEffort),
-            allowedIds,
-            ScientificReviewLayer.Semantic.ToString(),
+        return OpenAiModelFailoverPolicy.ExecuteAsync(
+            _options,
             route,
-            cancellationToken);
+            _modelAvailabilityProbe,
+            candidateRoute => ReviewAsync(
+                "scientific-semantic-review",
+                OpenAiScientificReviewMapper.CreateSemanticPayload(
+                    request,
+                    candidateRoute.Model,
+                    candidateRoute.ReasoningEffort),
+                allowedIds,
+                ScientificReviewLayer.Semantic.ToString(),
+                candidateRoute,
+                cancellationToken),
+            cancellationToken,
+            _executionSlotScheduler,
+            _activePresetSetState);
     }
 
     public Task<ScientificProviderReviewResult> ReviewAsync(
@@ -58,16 +74,23 @@ public sealed class OpenAiScientificReviewProvider
         var allowedIds = request.RegionCrops.Select(item => item.ResponsibleItemId)
             .ToHashSet(StringComparer.Ordinal);
         var route = OpenAiTaskModelRouter.ForScientificVisualReview(_options, request);
-        return ReviewAsync(
-            "scientific-visual-review",
-            OpenAiScientificReviewMapper.CreateVisualPayload(
-                request,
-                route.Model,
-                route.ReasoningEffort),
-            allowedIds,
-            ScientificReviewLayer.Visual.ToString(),
+        return OpenAiModelFailoverPolicy.ExecuteAsync(
+            _options,
             route,
-            cancellationToken);
+            _modelAvailabilityProbe,
+            candidateRoute => ReviewAsync(
+                "scientific-visual-review",
+                OpenAiScientificReviewMapper.CreateVisualPayload(
+                    request,
+                    candidateRoute.Model,
+                    candidateRoute.ReasoningEffort),
+                allowedIds,
+                ScientificReviewLayer.Visual.ToString(),
+                candidateRoute,
+                cancellationToken),
+            cancellationToken,
+            _executionSlotScheduler,
+            _activePresetSetState);
     }
 
     private async Task<ScientificProviderReviewResult> ReviewAsync(

@@ -18,19 +18,28 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
     private readonly IOpenAiSecretStore _secretStore;
     private readonly IProviderCallTelemetrySink _telemetrySink;
     private readonly OpenAiCostRateCard _rateCard;
+    private readonly IOpenAiModelAvailabilityProbe? _modelAvailabilityProbe;
+    private readonly IOpenAiExecutionSlotScheduler? _executionSlotScheduler;
+    private readonly IOpenAiActivePresetSetState? _activePresetSetState;
 
     public OpenAiVisionReviewProvider(
         HttpClient httpClient,
         OpenAiProviderOptions options,
         IOpenAiSecretStore secretStore,
         IProviderCallTelemetrySink? telemetrySink = null,
-        OpenAiCostRateCard? rateCard = null)
+        OpenAiCostRateCard? rateCard = null,
+        IOpenAiModelAvailabilityProbe? modelAvailabilityProbe = null,
+        IOpenAiExecutionSlotScheduler? executionSlotScheduler = null,
+        IOpenAiActivePresetSetState? activePresetSetState = null)
     {
         _httpClient = httpClient;
         _options = options;
         _secretStore = secretStore;
         _telemetrySink = telemetrySink ?? NullProviderCallTelemetrySink.Instance;
         _rateCard = rateCard ?? OpenAiCostRateCard.Unpriced;
+        _modelAvailabilityProbe = modelAvailabilityProbe;
+        _executionSlotScheduler = executionSlotScheduler;
+        _activePresetSetState = activePresetSetState;
         OpenAiProviderGuard.EnsureAllowsOperation(_options, OpenAiProviderOperation.VisionReview);
 
         Capabilities = new ProviderCapabilities(
@@ -67,6 +76,30 @@ public sealed class OpenAiVisionReviewProvider : IVisionReviewProvider
         var routing = BaseRouting with { Store = _options.VisionReviewUsesStoredResponses };
         var route = OpenAiTaskModelRouter.ForVisionReview(_options, request);
 
+        return await OpenAiModelFailoverPolicy.ExecuteAsync(
+            _options,
+            route,
+            _modelAvailabilityProbe,
+            candidateRoute => ExecuteReviewRequestAsync(
+                request,
+                imageDataUrl,
+                routing,
+                credentials,
+                candidateRoute,
+                cancellationToken),
+            cancellationToken,
+            _executionSlotScheduler,
+            _activePresetSetState);
+    }
+
+    private async Task<VisionReviewResult> ExecuteReviewRequestAsync(
+        VisionReviewRequest request,
+        string imageDataUrl,
+        OpenAiRoutingDecision routing,
+        ProviderRequestCredentials credentials,
+        OpenAiTaskModelRoute route,
+        CancellationToken cancellationToken)
+    {
         var endpoint = new Uri(_options.BaseUri, routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         ProviderRequestAuthentication.Apply(httpRequest, credentials);

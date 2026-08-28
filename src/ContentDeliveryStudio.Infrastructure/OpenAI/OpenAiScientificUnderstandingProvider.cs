@@ -9,17 +9,26 @@ public sealed class OpenAiScientificUnderstandingProvider : IScientificUnderstan
     private readonly IOpenAiSecretStore _secretStore;
     private readonly Func<CancellationToken, Task<IOpenAiResponsesClient>> _clientFactory;
     private readonly IProviderCallTelemetrySink _telemetrySink;
+    private readonly IOpenAiModelAvailabilityProbe? _modelAvailabilityProbe;
+    private readonly IOpenAiExecutionSlotScheduler? _executionSlotScheduler;
+    private readonly IOpenAiActivePresetSetState? _activePresetSetState;
 
     public OpenAiScientificUnderstandingProvider(
         OpenAiProviderOptions options,
         OpenAiSdkClientFactory clientFactory,
         IOpenAiSecretStore secretStore,
-        IProviderCallTelemetrySink? telemetrySink = null)
+        IProviderCallTelemetrySink? telemetrySink = null,
+        IOpenAiModelAvailabilityProbe? modelAvailabilityProbe = null,
+        IOpenAiExecutionSlotScheduler? executionSlotScheduler = null,
+        IOpenAiActivePresetSetState? activePresetSetState = null)
         : this(
             options,
             token => CreateClientAsync(options, clientFactory, token),
             secretStore,
-            telemetrySink)
+            telemetrySink,
+            modelAvailabilityProbe,
+            executionSlotScheduler,
+            activePresetSetState)
     {
     }
 
@@ -27,8 +36,11 @@ public sealed class OpenAiScientificUnderstandingProvider : IScientificUnderstan
         OpenAiProviderOptions options,
         IOpenAiResponsesClient responsesClient,
         IOpenAiSecretStore secretStore,
-        IProviderCallTelemetrySink? telemetrySink = null)
-        : this(options, _ => Task.FromResult(responsesClient), secretStore, telemetrySink)
+        IProviderCallTelemetrySink? telemetrySink = null,
+        IOpenAiModelAvailabilityProbe? modelAvailabilityProbe = null,
+        IOpenAiExecutionSlotScheduler? executionSlotScheduler = null,
+        IOpenAiActivePresetSetState? activePresetSetState = null)
+        : this(options, _ => Task.FromResult(responsesClient), secretStore, telemetrySink, modelAvailabilityProbe, executionSlotScheduler, activePresetSetState)
     {
     }
 
@@ -36,12 +48,18 @@ public sealed class OpenAiScientificUnderstandingProvider : IScientificUnderstan
         OpenAiProviderOptions options,
         Func<CancellationToken, Task<IOpenAiResponsesClient>> clientFactory,
         IOpenAiSecretStore secretStore,
-        IProviderCallTelemetrySink? telemetrySink)
+        IProviderCallTelemetrySink? telemetrySink,
+        IOpenAiModelAvailabilityProbe? modelAvailabilityProbe,
+        IOpenAiExecutionSlotScheduler? executionSlotScheduler,
+        IOpenAiActivePresetSetState? activePresetSetState)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _clientFactory = clientFactory ?? throw new ArgumentNullException(nameof(clientFactory));
         _secretStore = secretStore ?? throw new ArgumentNullException(nameof(secretStore));
         _telemetrySink = telemetrySink ?? NullProviderCallTelemetrySink.Instance;
+        _modelAvailabilityProbe = modelAvailabilityProbe;
+        _executionSlotScheduler = executionSlotScheduler;
+        _activePresetSetState = activePresetSetState;
         OpenAiProviderGuard.EnsureAllowsOperation(options, OpenAiProviderOperation.TextPlanning);
     }
 
@@ -50,16 +68,33 @@ public sealed class OpenAiScientificUnderstandingProvider : IScientificUnderstan
         CancellationToken cancellationToken)
     {
         var route = OpenAiTaskModelRouter.ForScientificUnderstanding(_options, request);
-        var sdkOptions = OpenAiSdkResponseOptionsFactory.CreateScientificUnderstandingOptions(
-            _options,
-            request);
         await OpenAiProviderGuard.EnsureCanCallRealApiAsync(
             _options,
             _secretStore,
             OpenAiProviderOperation.TextPlanning,
             cancellationToken);
-        var client = await _clientFactory(cancellationToken);
         var endpoint = new Uri(_options.BaseUri, OpenAiRoutingDefaults.PlanningEndpointPath);
+        return await OpenAiModelFailoverPolicy.ExecuteAsync(
+            _options,
+            route,
+            _modelAvailabilityProbe,
+            candidateRoute => ExecuteAsync(request, candidateRoute, endpoint, cancellationToken),
+            cancellationToken,
+            _executionSlotScheduler,
+            _activePresetSetState);
+    }
+
+    private async Task<ScientificUnderstandingChunkResult> ExecuteAsync(
+        ScientificUnderstandingChunkRequest request,
+        OpenAiTaskModelRoute route,
+        Uri endpoint,
+        CancellationToken cancellationToken)
+    {
+        var sdkOptions = OpenAiSdkResponseOptionsFactory.CreateScientificUnderstandingOptions(
+            _options,
+            request,
+            route);
+        var client = await _clientFactory(cancellationToken);
         var stopwatch = Stopwatch.StartNew();
         try
         {

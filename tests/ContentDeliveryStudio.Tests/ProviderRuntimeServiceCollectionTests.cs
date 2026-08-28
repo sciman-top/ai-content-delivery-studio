@@ -79,6 +79,11 @@ public sealed class ProviderRuntimeServiceCollectionTests
                 provider.GetRequiredService<IScientificVisualReviewProvider>());
             Assert.IsType<JsonOpenAiScientificReviewCheckpointStore>(
                 provider.GetRequiredService<IOpenAiScientificReviewCheckpointStore>());
+            var scheduler = Assert.IsType<OpenAiExecutionSlotScheduler>(
+                provider.GetRequiredService<IOpenAiExecutionSlotScheduler>());
+            Assert.Equal(5, scheduler.TotalConcurrency);
+            Assert.IsType<OpenAiActivePresetSetState>(provider.GetRequiredService<IOpenAiActivePresetSetState>());
+            Assert.IsType<OpenAiModelAvailabilityProbe>(provider.GetRequiredService<IOpenAiModelAvailabilityProbe>());
         }
         finally
         {

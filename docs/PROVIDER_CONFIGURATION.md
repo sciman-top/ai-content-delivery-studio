@@ -2,22 +2,30 @@
 
 This file defines credential naming and role boundaries. Request routing, statefulness defaults, and surface-selection rules live in [PROVIDER_ROUTING_POLICY.md](./PROVIDER_ROUTING_POLICY.md).
 
-This project treats provider credentials as role-scoped, not just vendor-scoped. A key that is licensed only for image generation must never be used for text planning or vision review.
-The default configuration path is now single-key friendly: if no image-specific API key is configured, image generation falls back to `TEXT_PROVIDER_API_KEY`. Explicit image keys still override that fallback.
+This project treats provider credentials as role-scoped, not just vendor-scoped. A key that is licensed only for image generation must never be used for text planning or vision review. The local development shape uses the Cockpit gateway at `http://127.0.0.1:45335/v1`; real key material is resolved from the Windows DPAPI store when `PROVIDER_SECRET_STORE=dpapi` is selected.
+
+The text and vision path has exactly three mutually exclusive preset sets: `sol-only`, `terra-only`, and `luna-only`. At any moment the five shared execution slots use one active set only. A tier is the unit preserved when the runtime switches the whole active set; a raw reasoning string is not reused across families because Terra and Luna use a different three-level mapping:
+
+| Quality tier | Sol | Terra | Luna | Shared slots |
+| --- | --- | --- | --- | --- |
+| `deep` | `gpt-5.6-sol` / `xhigh` | `gpt-5.6-terra` / `xhigh` | `gpt-5.6-luna` / `xhigh` | 1 |
+| `balanced` | `gpt-5.6-sol` / `medium` | `gpt-5.6-terra` / `high` | `gpt-5.6-luna` / `high` | 2 |
+| `fast` | `gpt-5.6-sol` / `low` | `gpt-5.6-terra` / `medium` | `gpt-5.6-luna` / `medium` | 2 |
+
+The five shared text/vision execution slots are allocated as `deep=1`, `balanced=2`, and `fast=2`. Thus Sol-only uses one `sol/xhigh`, two `sol/medium`, and two `sol/low` slots; Terra-only uses one `terra/xhigh`, two `terra/high`, and two `terra/medium` slots; Luna-only uses one `luna/xhigh`, two `luna/high`, and two `luna/medium` slots. Repetition within a tier is intentional. The image-generation queue is separate and remains at one concurrent request.
 
 ## Role-Scoped `.env` Format
 
 ```env
 TEXT_PROVIDER_KIND=openai_compatible
-TEXT_PROVIDER_BASE_URL=https://text.example/v1
+TEXT_PROVIDER_BASE_URL=http://127.0.0.1:45335/v1
 TEXT_PROVIDER_API_KEY=sk-text-provider-key
 TEXT_PROVIDER_ROUTING_MODE=auto
-TEXT_PROVIDER_PRESET=sol-xhigh
-TEXT_PROVIDER_MODEL=gpt-5.6-sol
-TEXT_PROVIDER_REASONING_EFFORT=xhigh
+TEXT_PROVIDER_PRESET_SET=sol-only
+TEXT_PROVIDER_QUALITY_TIER=deep
 
 IMAGE_PROVIDER_KIND=openai_compatible_image_only
-IMAGE_PROVIDER_BASE_URL=https://image.example/v1
+IMAGE_PROVIDER_BASE_URL=http://127.0.0.1:45335/v1
 IMAGE_PROVIDER_MODEL=image-model
 IMAGE_PROVIDER_IMAGE_SURFACE=images
 IMAGE_PROVIDER_API_KEY_1=sk-image-provider-key-1
@@ -30,22 +38,27 @@ IMAGE_PROVIDER_CONCURRENCY_PER_KEY=10
 IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 ```
 
-`TEXT_PROVIDER_ROUTING_MODE` accepts `auto` or `fixed` and fails closed for any other value. The backward-compatible default is `fixed`. In `fixed` mode, `TEXT_PROVIDER_PRESET` is an optional selector for the active text-planning and vision-review tier; when present, it takes precedence over `TEXT_PROVIDER_MODEL` and `TEXT_PROVIDER_REASONING_EFFORT`:
+`TEXT_PROVIDER_ROUTING_MODE` accepts `auto` or `fixed` and fails closed for any other value. The backward-compatible default is `fixed`. `TEXT_PROVIDER_PRESET_SET` selects one complete family-only set and `TEXT_PROVIDER_QUALITY_TIER` selects its configured fallback tier. They must be supplied together. The only accepted sets are `sol-only`, `terra-only`, and `luna-only`; a set cannot contain a model from another family.
 
-| Preset | Model | Reasoning effort |
-| --- | --- | --- |
-| `sol-xhigh` | `gpt-5.6-sol` | `xhigh` |
-| `sol-medium` | `gpt-5.6-sol` | `medium` |
-| `terra-xhigh` | `gpt-5.6-terra` | `xhigh` |
-| `terra-high` | `gpt-5.6-terra` | `high` |
+| Preset set | Quality tier | Model | Reasoning effort |
+| --- | --- | --- | --- |
+| `sol-only` | `deep` | `gpt-5.6-sol` | `xhigh` |
+| `sol-only` | `balanced` | `gpt-5.6-sol` | `medium` |
+| `sol-only` | `fast` | `gpt-5.6-sol` | `low` |
+| `terra-only` | `deep` | `gpt-5.6-terra` | `xhigh` |
+| `terra-only` | `balanced` | `gpt-5.6-terra` | `high` |
+| `terra-only` | `fast` | `gpt-5.6-terra` | `medium` |
+| `luna-only` | `deep` | `gpt-5.6-luna` | `xhigh` |
+| `luna-only` | `balanced` | `gpt-5.6-luna` | `high` |
+| `luna-only` | `fast` | `gpt-5.6-luna` | `medium` |
 
-Use only one active preset per text endpoint. Numbered failover endpoints may set their own `TEXT_PROVIDER_FALLBACK_N_PRESET`; failover remains reserved for transient gateway failures and is not a model-tier selector. Existing configurations without a preset continue to use the explicit model and reasoning fields.
+The runtime selects one active preset set per gateway and credential scope. A numbered endpoint fallback may select its own `TEXT_PROVIDER_FALLBACK_N_PRESET_SET` and `TEXT_PROVIDER_FALLBACK_N_QUALITY_TIER`, but a single endpoint configuration cannot combine Sol, Terra, and Luna in one set. Existing configurations without a set continue to use explicit model and reasoning fields.
 
-In `auto` mode, the runtime chooses only among those four registered pairs from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity:
+In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity. It starts with the Sol-only set. If a request fails with a retryable reachability or upstream failure, it probes the next preset set through `GET /v1/models` before dispatching the same tier in that set. After a successful fallback, the whole set is active for subsequent requests until another failure causes a health-ordered switch.
 
 | Workload | Selected preset |
 | --- | --- |
-| Routine series or document plan | `terra-high` |
+| Routine series or document plan | `sol-low` |
 | Series with at least 6 items or 2,400 estimated input characters | `sol-medium` |
 | Series with at least 12 items or 3,600 estimated input characters | `sol-xhigh` |
 | Complex educational document with at least 4,500 input weight or 8 evidence rows | `sol-xhigh` |
@@ -53,33 +66,32 @@ In `auto` mode, the runtime chooses only among those four registered pairs from 
 | Scientific understanding chunk | `sol-xhigh` |
 | Scientific semantic review | `sol-xhigh` |
 | Full-resolution scientific visual review | `sol-xhigh` |
-| General vision review | `terra-high`; 5 signals uses `terra-xhigh`; 8 signals uses `sol-xhigh` |
+| General vision review | `sol-low`; 5 signals uses `sol-medium`; 8 signals uses `sol-xhigh` |
 
-The selected model and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. Provider-call telemetry and the local redacted diagnostics journal also record the bounded `modelPreset`, `reasoningEffort`, and `routeReason` fields so route quality can be evaluated without retaining prompts or secrets. `TEXT_PROVIDER_PRESET=sol-xhigh` remains the operator rollback/default tier when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
+The selected set, model, and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. Provider-call telemetry and the local redacted diagnostics journal also record the bounded `modelPreset`, `reasoningEffort`, and `routeReason` fields so route quality can be evaluated without retaining prompts or secrets. `TEXT_PROVIDER_PRESET_SET=sol-only` with `TEXT_PROVIDER_QUALITY_TIER=deep` remains the operator rollback/default configuration when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
 
-Quality-first invariant: in `auto` mode, every workload explicitly classified as complex, scholarly, scientific understanding/review, high risk, or full-resolution scientific visual review routes to `gpt-5.6-sol` with `xhigh` reasoning. `terra-high` and `terra-xhigh` remain limited to routine and moderate-complexity work; input size alone enters `sol-medium` before the complex threshold. This invariant prioritizes correctness probability over latency and cost, but does not replace schema validation, deterministic checks, or final approval.
+Quality-first invariant: workload classification selects `deep`, `balanced`, or `fast`; family failover never changes that tier. Complex, scholarly, scientific understanding/review, high-risk, and full-resolution scientific visual work select `deep`; large but non-complex work selects `balanced`; routine work selects `fast`. This does not replace schema validation, deterministic checks, or final approval.
 
 `fixed` is an explicit operator override, not a second adaptive router. It preserves the configured model and effort even for a quality-first workload; a non-`sol-xhigh` selection is recorded as `fixed-operator-override-<workload>` in provider telemetry and the redacted diagnostics journal. Operators must treat that record as an intentional downgrade to investigate, not as approval to weaken deterministic checks, human review, or live-provider authorization. A fixed `sol-xhigh` profile records the normal `fixed-provider-configuration` reason.
 
-The preset pairs follow [OpenAI's GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model) and the [GPT-5.6 Terra model contract](https://developers.openai.com/api/docs/models/gpt-5.6-terra). Gateway-specific availability must still be confirmed through that gateway's model catalog.
+The preset pairs follow [OpenAI's GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model) and the [GPT-5.6 model contracts](https://developers.openai.com/api/docs/models). The official guidance treats model choice and reasoning effort as separate workload decisions, so this repository records the chosen pair and uses representative evaluation to revise tier boundaries. Gateway-specific availability must still be confirmed through that gateway's model catalog.
 
 ## Optional Gateway Failover
 
-Provider failover is profile-scoped. Use the primary provider keys above for the preferred gateway, then append numbered fallback profiles when another gateway is allowed to serve the same role.
+Provider failover has two independent scopes. The normal text/vision path switches the entire active preset set within the same gateway while preserving the quality tier and its matching slot category. Numbered endpoint fallbacks are a separate, explicitly configured gateway boundary and are not used by the local Cockpit `.env`.
 
 For text planning and vision review:
 
 ```env
 TEXT_PROVIDER_BASE_URL=https://primary-gateway.example/v1
 TEXT_PROVIDER_API_KEY=sk-primary
-TEXT_PROVIDER_MODEL=gpt-5.6-sol
-TEXT_PROVIDER_REASONING_EFFORT=medium
+TEXT_PROVIDER_PRESET_SET=sol-only
+TEXT_PROVIDER_QUALITY_TIER=balanced
 
 TEXT_PROVIDER_FALLBACK_1_BASE_URL=https://backup-gateway.example/v1
 TEXT_PROVIDER_FALLBACK_1_API_KEY=sk-backup
-TEXT_PROVIDER_FALLBACK_1_PRESET=sol-medium
-TEXT_PROVIDER_FALLBACK_1_MODEL=gpt-5.6-sol
-TEXT_PROVIDER_FALLBACK_1_REASONING_EFFORT=medium
+TEXT_PROVIDER_FALLBACK_1_PRESET_SET=terra-only
+TEXT_PROVIDER_FALLBACK_1_QUALITY_TIER=balanced
 ```
 
 For image generation:
@@ -100,7 +112,7 @@ IMAGE_PROVIDER_FALLBACK_1_API_KEY_1=sk-backup
 
 `IMAGE_PROVIDER_IMAGE_SURFACE=responses` means ordinary image-generation requests default to `POST /responses` with the configured `IMAGE_PROVIDER_RESPONSES_MODEL` and an `image_generation` tool. `IMAGE_PROVIDER_IMAGE_SURFACE=images` means ordinary image-generation requests use `POST /images/generations` with `IMAGE_PROVIDER_MODEL`.
 
-The active local fixed preset defaults to `sol-xhigh` in the recommended `.env` shape above. Without `*_PRESET`, the legacy OpenAI Responses defaults remain `gpt-5.6-sol` with explicit `reasoning.effort=medium`. Each profile may override `*_REASONING_EFFORT` with `none`, `low`, `medium`, `high`, `xhigh`, or `max`; image-only `/images/generations` requests do not receive a reasoning field. Automatic text routing does not alter `gpt-image-2`, `IMAGE_PROVIDER_IMAGE_SURFACE=images`, or `POST /images/generations`. Fake providers remain the desktop default until `PROVIDER_MODE=live` is explicitly selected.
+The active local fixed rollback set is Sol-only/deep in the recommended `.env` shape above. Explicit legacy model/effort fields remain supported, but they cannot be used to contradict a configured preset set. Image-only `/images/generations` requests do not receive a reasoning field. Automatic text routing does not alter `gpt-image-2`, `IMAGE_PROVIDER_IMAGE_SURFACE=images`, or `POST /images/generations`. Fake providers remain the desktop default until `PROVIDER_MODE=live` is explicitly selected.
 
 Failover should be used only for transient or reachability failures: network failure, timeout, `408`, `429`, or `5xx`. Do not fail over on `400`, `401`, or `403`; those indicate request, credential, or authorization problems that should fail closed.
 

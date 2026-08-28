@@ -55,8 +55,16 @@ public static class OpenAiSdkResponseOptionsFactory
     public static CreateResponseOptions CreateScientificUnderstandingOptions(
         OpenAiProviderOptions options,
         ScientificUnderstandingChunkRequest request)
+        => CreateScientificUnderstandingOptions(
+            options,
+            request,
+            OpenAiTaskModelRouter.ForScientificUnderstanding(options, request));
+
+    internal static CreateResponseOptions CreateScientificUnderstandingOptions(
+        OpenAiProviderOptions options,
+        ScientificUnderstandingChunkRequest request,
+        OpenAiTaskModelRoute route)
     {
-        var route = OpenAiTaskModelRouter.ForScientificUnderstanding(options, request);
         return new CreateResponseOptions(
             route.Model,
             [ResponseItem.CreateUserMessageItem(OpenAiScientificUnderstandingMapper.BuildInput(request))])

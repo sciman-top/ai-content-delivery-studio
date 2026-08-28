@@ -17,19 +17,28 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
     private readonly IOpenAiSecretStore _secretStore;
     private readonly IProviderCallTelemetrySink _telemetrySink;
     private readonly OpenAiCostRateCard _rateCard;
+    private readonly IOpenAiModelAvailabilityProbe? _modelAvailabilityProbe;
+    private readonly IOpenAiExecutionSlotScheduler? _executionSlotScheduler;
+    private readonly IOpenAiActivePresetSetState? _activePresetSetState;
 
     public OpenAiTextPlanningProvider(
         HttpClient httpClient,
         OpenAiProviderOptions options,
         IOpenAiSecretStore secretStore,
         IProviderCallTelemetrySink? telemetrySink = null,
-        OpenAiCostRateCard? rateCard = null)
+        OpenAiCostRateCard? rateCard = null,
+        IOpenAiModelAvailabilityProbe? modelAvailabilityProbe = null,
+        IOpenAiExecutionSlotScheduler? executionSlotScheduler = null,
+        IOpenAiActivePresetSetState? activePresetSetState = null)
     {
         _httpClient = httpClient;
         _options = options;
         _secretStore = secretStore;
         _telemetrySink = telemetrySink ?? NullProviderCallTelemetrySink.Instance;
         _rateCard = rateCard ?? OpenAiCostRateCard.Unpriced;
+        _modelAvailabilityProbe = modelAvailabilityProbe;
+        _executionSlotScheduler = executionSlotScheduler;
+        _activePresetSetState = activePresetSetState;
         OpenAiProviderGuard.EnsureAllowsOperation(_options, OpenAiProviderOperation.TextPlanning);
 
         Capabilities = new ProviderCapabilities(
@@ -63,30 +72,15 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             _options.AppSecretSecretName,
             cancellationToken);
 
-        var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
-        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
-        ProviderRequestAuthentication.Apply(httpRequest, credentials);
         var route = OpenAiTaskModelRouter.ForPlanning(_options, request);
-        httpRequest.Content = JsonContent.Create(CreatePayload(request, route), options: JsonOptions);
-
-        var stopwatch = Stopwatch.StartNew();
-        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
-        stopwatch.Stop();
-        if (!response.IsSuccessStatusCode)
-        {
-            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed, route);
-            throw new HttpRequestException(
-                await OpenAiHttpError.ReadAndDescribeAsync("OpenAI text planning request", response, cancellationToken));
-        }
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        using var document = await ParseJsonOrThrowAsync(
-            stream,
+        return await OpenAiModelFailoverPolicy.ExecuteAsync(
+            _options,
+            route,
+            _modelAvailabilityProbe,
+            candidateRoute => ExecutePlanRequestAsync(request, credentials, candidateRoute, cancellationToken),
             cancellationToken,
-            "OpenAI text planning response contained invalid JSON.");
-        var providerTraceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
-        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed, route);
-        return OpenAiTextPlanningResponseMapper.ParseSeriesPlan(document.RootElement);
+            _executionSlotScheduler,
+            _activePresetSetState);
     }
 
     private static void ValidateRequest(PlanningRequest request)
@@ -158,10 +152,61 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
             _options.AppSecretSecretName,
             cancellationToken);
 
+        var route = OpenAiTaskModelRouter.ForDocumentPlanning(_options, request);
+        return await OpenAiModelFailoverPolicy.ExecuteAsync(
+            _options,
+            route,
+            _modelAvailabilityProbe,
+            candidateRoute => ExecuteDocumentPlanRequestAsync(
+                request,
+                credentials,
+                candidateRoute,
+                cancellationToken),
+            cancellationToken,
+            _executionSlotScheduler,
+            _activePresetSetState);
+    }
+
+    private async Task<SeriesPlanResult> ExecutePlanRequestAsync(
+        PlanningRequest request,
+        ProviderRequestCredentials credentials,
+        OpenAiTaskModelRoute route,
+        CancellationToken cancellationToken)
+    {
         var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
         ProviderRequestAuthentication.Apply(httpRequest, credentials);
-        var route = OpenAiTaskModelRouter.ForDocumentPlanning(_options, request);
+        httpRequest.Content = JsonContent.Create(CreatePayload(request, route), options: JsonOptions);
+
+        var stopwatch = Stopwatch.StartNew();
+        using var response = await _httpClient.SendAsync(httpRequest, cancellationToken);
+        stopwatch.Stop();
+        if (!response.IsSuccessStatusCode)
+        {
+            RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed, route);
+            throw new HttpRequestException(
+                await OpenAiHttpError.ReadAndDescribeAsync("OpenAI text planning request", response, cancellationToken));
+        }
+
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var document = await ParseJsonOrThrowAsync(
+            stream,
+            cancellationToken,
+            "OpenAI text planning response contained invalid JSON.");
+        var providerTraceId = OpenAiTextPlanningResponseMapper.ExtractTraceId(document.RootElement);
+        RecordTelemetry(endpoint, response, document.RootElement, providerTraceId, stopwatch.Elapsed, route);
+        return OpenAiTextPlanningResponseMapper.ParseSeriesPlan(document.RootElement);
+    }
+
+    private async Task<DocumentIllustrationPlanningResult> ExecuteDocumentPlanRequestAsync(
+        DocumentIllustrationPlanningRequest request,
+        ProviderRequestCredentials credentials,
+        OpenAiTaskModelRoute route,
+        CancellationToken cancellationToken)
+    {
+        var endpoint = new Uri(_options.BaseUri, Routing.RelativePath);
+        using var httpRequest = new HttpRequestMessage(HttpMethod.Post, endpoint);
+        ProviderRequestAuthentication.Apply(httpRequest, credentials);
         httpRequest.Content = JsonContent.Create(
             OpenAiTextPlanningRequestMapper.CreateDocumentIllustrationResponsesPayload(_options, request, route),
             options: JsonOptions);
@@ -173,7 +218,10 @@ public sealed class OpenAiTextPlanningProvider : ITextPlanningProvider
         {
             RecordTelemetry(endpoint, response, body: null, providerTraceId: null, stopwatch.Elapsed, route);
             throw new HttpRequestException(
-                await OpenAiHttpError.ReadAndDescribeAsync("OpenAI document illustration planning request", response, cancellationToken));
+                await OpenAiHttpError.ReadAndDescribeAsync(
+                    "OpenAI document illustration planning request",
+                    response,
+                    cancellationToken));
         }
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);

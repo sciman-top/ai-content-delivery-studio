@@ -2,6 +2,11 @@ using ContentDeliveryStudio.Core.Providers;
 
 namespace ContentDeliveryStudio.Infrastructure.OpenAI;
 
+public static class OpenAiGatewayDefaults
+{
+    public static Uri CockpitLocalApiBaseUri { get; } = new("http://127.0.0.1:45335/v1/");
+}
+
 [Flags]
 public enum OpenAiProviderOperation
 {
@@ -20,7 +25,7 @@ public enum OpenAiTextRoutingMode
 
 public sealed record OpenAiProviderOptions
 {
-    public Uri BaseUri { get; init; } = new("https://api.openai.com/v1/");
+    public Uri BaseUri { get; init; } = OpenAiGatewayDefaults.CockpitLocalApiBaseUri;
 
     public string ApiKeySecretName { get; init; } = "OPENAI_API_KEY";
 
@@ -137,9 +142,10 @@ public sealed record OpenAiProviderOptions
         {
             errors.Add("OpenAI base URI is required.");
         }
-        else if (BaseUri.Scheme != Uri.UriSchemeHttps)
+        else if (BaseUri.Scheme != Uri.UriSchemeHttps
+            && !(BaseUri.Scheme == Uri.UriSchemeHttp && BaseUri.IsLoopback))
         {
-            errors.Add("OpenAI base URI must use HTTPS.");
+            errors.Add("OpenAI base URI must use HTTPS unless it is a loopback Cockpit gateway.");
         }
 
         if (RealApiEnabled && string.IsNullOrWhiteSpace(ApiKeySecretName))
