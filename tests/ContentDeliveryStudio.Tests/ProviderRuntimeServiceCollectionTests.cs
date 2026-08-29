@@ -5,6 +5,7 @@ using ContentDeliveryStudio.Infrastructure.Fakes;
 using ContentDeliveryStudio.Infrastructure.OpenAI;
 using ContentDeliveryStudio.Infrastructure.ScientificFigures;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace ContentDeliveryStudio.Tests;
 
@@ -84,6 +85,9 @@ public sealed class ProviderRuntimeServiceCollectionTests
             Assert.Equal(5, scheduler.TotalConcurrency);
             Assert.IsType<OpenAiActivePresetSetState>(provider.GetRequiredService<IOpenAiActivePresetSetState>());
             Assert.IsType<OpenAiModelAvailabilityProbe>(provider.GetRequiredService<IOpenAiModelAvailabilityProbe>());
+            Assert.Contains(
+                provider.GetServices<IHostedService>(),
+                service => service is OpenAiPresetRecoveryHostedService);
         }
         finally
         {

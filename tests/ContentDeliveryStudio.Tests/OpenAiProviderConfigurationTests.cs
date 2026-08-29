@@ -165,6 +165,47 @@ public sealed class OpenAiProviderConfigurationTests
     }
 
     [Fact]
+    public void ProviderEnvironmentConfiguration_ProjectsOptInPreferredSolRecoveryForAutoRouting()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_ROUTING_MODE"] = TextProviderRoutingModes.Auto,
+                ["TEXT_PROVIDER_PRESET_SET"] = TextProviderModelPresetSets.TerraOnly,
+                ["TEXT_PROVIDER_QUALITY_TIER"] = "deep",
+                ["TEXT_PROVIDER_RECOVERY_MODE"] = TextProviderRecoveryModes.PreferSol,
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        var options = OpenAiProviderOptions.FromTextProviderEnvironment(configuration);
+
+        Assert.Empty(configuration.Validate());
+        Assert.Equal(OpenAiPresetRecoveryMode.PreferSol, options.PresetRecoveryMode);
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_RejectsPreferredSolRecoveryForFixedRouting()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_ROUTING_MODE"] = TextProviderRoutingModes.Fixed,
+                ["TEXT_PROVIDER_RECOVERY_MODE"] = TextProviderRecoveryModes.PreferSol,
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Contains(
+            configuration.Validate(),
+            error => error.Contains("requires routing mode 'auto'", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void ProviderEnvironmentConfiguration_ResolvesOneFamilyOnlyPresetSetAndQualityTier()
     {
         var configuration = ProviderEnvironmentConfiguration.FromValues(

@@ -14,6 +14,14 @@ public static class TextProviderRoutingModes
     public static IReadOnlyList<string> Names { get; } = [Fixed, Auto];
 }
 
+public static class TextProviderRecoveryModes
+{
+    public const string Disabled = "disabled";
+    public const string PreferSol = "prefer-sol";
+
+    public static IReadOnlyList<string> Names { get; } = [Disabled, PreferSol];
+}
+
 public static class TextProviderModelPresets
 {
     public const string SolFamily = "sol";
@@ -406,7 +414,8 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
     string? ModelPresetSet = null,
     string? QualityTier = null,
     string? ConfiguredModel = null,
-    string? ConfiguredReasoningEffort = null)
+    string? ConfiguredReasoningEffort = null,
+    string RecoveryMode = TextProviderRecoveryModes.Disabled)
 {
     public static ProviderEndpointEnvironmentConfiguration CreateText(IReadOnlyDictionary<string, string?> values)
         => CreateText(values, "TEXT_PROVIDER");
@@ -471,6 +480,9 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
         var routingMode = GetValue(values, $"{prefix}_ROUTING_MODE", TextProviderRoutingModes.Fixed)
             .Trim()
             .ToLowerInvariant();
+        var recoveryMode = GetValue(values, $"{prefix}_RECOVERY_MODE", TextProviderRecoveryModes.Disabled)
+            .Trim()
+            .ToLowerInvariant();
         return new ProviderEndpointEnvironmentConfiguration(
             prefix,
             GetValue(values, $"{prefix}_KIND", "openai_compatible"),
@@ -491,7 +503,8 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
             configuredPresetSet,
             qualityTier,
             GetPresentValue(values, $"{prefix}_MODEL"),
-            GetPresentValue(values, $"{prefix}_REASONING_EFFORT"));
+            GetPresentValue(values, $"{prefix}_REASONING_EFFORT"),
+            recoveryMode);
     }
 
     public static ProviderEndpointEnvironmentConfiguration CreateImage(IReadOnlyDictionary<string, string?> values)
@@ -668,6 +681,20 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
         {
             errors.Add(
                 $"{displayName} routing mode '{RoutingMode}' is invalid. Allowed modes: {string.Join(", ", TextProviderRoutingModes.Names)}.");
+        }
+
+        if (Prefix.StartsWith("TEXT_PROVIDER", StringComparison.Ordinal)
+            && !TextProviderRecoveryModes.Names.Contains(RecoveryMode, StringComparer.Ordinal))
+        {
+            errors.Add(
+                $"{displayName} recovery mode '{RecoveryMode}' is invalid. Allowed modes: {string.Join(", ", TextProviderRecoveryModes.Names)}.");
+        }
+        else if (Prefix.StartsWith("TEXT_PROVIDER", StringComparison.Ordinal)
+            && string.Equals(RecoveryMode, TextProviderRecoveryModes.PreferSol, StringComparison.Ordinal)
+            && !string.Equals(RoutingMode, TextProviderRoutingModes.Auto, StringComparison.Ordinal))
+        {
+            errors.Add(
+                $"{displayName} recovery mode '{TextProviderRecoveryModes.PreferSol}' requires routing mode '{TextProviderRoutingModes.Auto}'.");
         }
 
         return errors;

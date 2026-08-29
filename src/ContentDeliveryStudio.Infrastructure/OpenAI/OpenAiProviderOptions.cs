@@ -23,6 +23,12 @@ public enum OpenAiTextRoutingMode
     Auto = 1,
 }
 
+public enum OpenAiPresetRecoveryMode
+{
+    Disabled = 0,
+    PreferSol = 1,
+}
+
 public sealed record OpenAiProviderOptions
 {
     public Uri BaseUri { get; init; } = OpenAiGatewayDefaults.CockpitLocalApiBaseUri;
@@ -42,6 +48,8 @@ public sealed record OpenAiProviderOptions
     public string ReasoningEffort { get; init; } = "medium";
 
     public OpenAiTextRoutingMode TextRoutingMode { get; init; } = OpenAiTextRoutingMode.Fixed;
+
+    public OpenAiPresetRecoveryMode PresetRecoveryMode { get; init; } = OpenAiPresetRecoveryMode.Disabled;
 
     /// <summary>
     /// Optional operator-selected active preset set at process start. Auto
@@ -99,6 +107,7 @@ public sealed record OpenAiProviderOptions
             TextPlanningModel = RequireModel(endpoint, "Text provider"),
             ReasoningEffort = endpoint.ReasoningEffort,
             TextRoutingMode = ParseTextRoutingMode(endpoint.RoutingMode),
+            PresetRecoveryMode = ParsePresetRecoveryMode(endpoint.RecoveryMode),
             InitialPresetSet = endpoint.ModelPresetSet,
             ImageGenerationModel = string.Empty,
             VisionReviewModel = RequireModel(endpoint, "Text provider"),
@@ -204,6 +213,16 @@ public sealed record OpenAiProviderOptions
             errors.Add("OpenAI text routing mode is invalid.");
         }
 
+        if (!Enum.IsDefined(PresetRecoveryMode))
+        {
+            errors.Add("OpenAI preset recovery mode is invalid.");
+        }
+        else if (PresetRecoveryMode is not OpenAiPresetRecoveryMode.Disabled
+            && TextRoutingMode is not OpenAiTextRoutingMode.Auto)
+        {
+            errors.Add("OpenAI preset recovery requires automatic text routing.");
+        }
+
         if (VisionReviewBatchItemLimit <= 0)
         {
             errors.Add("Vision review batch item limit must be greater than zero.");
@@ -261,6 +280,17 @@ public sealed record OpenAiProviderOptions
             TextProviderRoutingModes.Auto => OpenAiTextRoutingMode.Auto,
             _ => throw new InvalidOperationException(
                 $"Text provider routing mode '{value}' is invalid. Validate provider configuration before creating runtime options."),
+        };
+    }
+
+    private static OpenAiPresetRecoveryMode ParsePresetRecoveryMode(string value)
+    {
+        return value switch
+        {
+            TextProviderRecoveryModes.Disabled => OpenAiPresetRecoveryMode.Disabled,
+            TextProviderRecoveryModes.PreferSol => OpenAiPresetRecoveryMode.PreferSol,
+            _ => throw new InvalidOperationException(
+                $"Text provider recovery mode '{value}' is invalid. Validate provider configuration before creating runtime options."),
         };
     }
 

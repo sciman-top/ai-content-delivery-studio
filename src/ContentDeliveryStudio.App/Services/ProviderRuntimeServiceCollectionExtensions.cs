@@ -82,6 +82,19 @@ public static class ProviderRuntimeServiceCollectionExtensions
                 serviceProvider.GetRequiredService<IHttpClientFactory>()
                     .CreateClient(OpenAiHttpClientNames.Provider),
                 secretStore));
+        services.TryAddSingleton<IOpenAiPresetRecoveryCanary>(serviceProvider =>
+            new OpenAiResponsesRecoveryCanary(
+                serviceProvider.GetRequiredService<IHttpClientFactory>()
+                    .CreateClient(OpenAiHttpClientNames.Provider),
+                secretStore));
+        services.TryAddSingleton<IOpenAiPresetRecoveryController>(serviceProvider =>
+            new OpenAiPresetRecoveryController(
+                serviceProvider.GetRequiredService<OpenAiProviderOptions>(),
+                serviceProvider.GetRequiredService<IOpenAiActivePresetSetState>(),
+                serviceProvider.GetRequiredService<IOpenAiModelAvailabilityProbe>(),
+                serviceProvider.GetRequiredService<IOpenAiPresetRecoveryCanary>(),
+                serviceProvider.GetRequiredService<IOpenAiExecutionSlotScheduler>()));
+        services.AddHostedService<OpenAiPresetRecoveryHostedService>();
         services.TryAddSingleton<IOpenAiScientificReviewCheckpointStore, JsonOpenAiScientificReviewCheckpointStore>();
         services.AddSingleton(configuration);
         services.AddSingleton<IOpenAiSecretStore>(secretStore);

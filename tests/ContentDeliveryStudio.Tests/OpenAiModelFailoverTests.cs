@@ -62,7 +62,11 @@ public sealed class OpenAiModelFailoverTests
             "test",
             OpenAiExecutionQualityTier.Balanced,
             TextProviderModelPresetSets.SolOnly);
-        var options = new OpenAiProviderOptions { BaseUri = new Uri("http://127.0.0.1:45335/v1/") };
+        var options = new OpenAiProviderOptions
+        {
+            BaseUri = new Uri("http://127.0.0.1:45335/v1/"),
+            TextRoutingMode = OpenAiTextRoutingMode.Auto,
+        };
         var dispatchedRoutes = new List<OpenAiTaskModelRoute>();
 
         var firstResult = await OpenAiModelFailoverPolicy.ExecuteAsync(
@@ -109,7 +113,11 @@ public sealed class OpenAiModelFailoverTests
     public async Task Execute_DoesNotLetAnOlderSuccessfulRequestOverwriteAFallbackSwitch()
     {
         var state = new OpenAiActivePresetSetState();
-        var options = new OpenAiProviderOptions { BaseUri = new Uri("http://127.0.0.1:45335/v1/") };
+        var options = new OpenAiProviderOptions
+        {
+            BaseUri = new Uri("http://127.0.0.1:45335/v1/"),
+            TextRoutingMode = OpenAiTextRoutingMode.Auto,
+        };
         var route = new OpenAiTaskModelRoute(
             TextProviderModelPresets.SolMedium,
             "gpt-5.6-sol",
@@ -213,7 +221,11 @@ public sealed class OpenAiModelFailoverTests
     public async Task Execute_UsesTheEntireActivePresetSetAcrossAllThreeTiers()
     {
         var state = new OpenAiActivePresetSetState();
-        var options = new OpenAiProviderOptions { BaseUri = new Uri("http://127.0.0.1:45335/v1/") };
+        var options = new OpenAiProviderOptions
+        {
+            BaseUri = new Uri("http://127.0.0.1:45335/v1/"),
+            TextRoutingMode = OpenAiTextRoutingMode.Auto,
+        };
         state.MarkActivePresetSet(options, TextProviderModelPresetSets.TerraOnly);
         var dispatchedRoutes = new List<OpenAiTaskModelRoute>();
 
@@ -372,7 +384,7 @@ public sealed class OpenAiModelFailoverTests
         var dispatchedModels = new List<string>();
 
         var result = await OpenAiModelFailoverPolicy.ExecuteAsync(
-            new OpenAiProviderOptions { RealApiEnabled = false },
+            new OpenAiProviderOptions { RealApiEnabled = false, TextRoutingMode = OpenAiTextRoutingMode.Auto },
             route,
             probe,
             candidateRoute =>
@@ -403,7 +415,7 @@ public sealed class OpenAiModelFailoverTests
         var dispatchedModels = new List<string>();
 
         var result = await OpenAiModelFailoverPolicy.ExecuteAsync(
-            new OpenAiProviderOptions { RealApiEnabled = false },
+            new OpenAiProviderOptions { RealApiEnabled = false, TextRoutingMode = OpenAiTextRoutingMode.Auto },
             route,
             probe,
             candidateRoute =>
@@ -418,6 +430,32 @@ public sealed class OpenAiModelFailoverTests
         Assert.Equal("gpt-5.6-luna", result);
         Assert.Equal(new[] { "gpt-5.6-terra", "gpt-5.6-luna" }, dispatchedModels);
         Assert.Equal(new[] { "gpt-5.6-sol", "gpt-5.6-luna" }, probe.ProbedModels);
+    }
+
+    [Fact]
+    public async Task Execute_FixedModeDoesNotCrossModelFamilies()
+    {
+        var probe = new RecordingAvailabilityProbe(("gpt-5.6-terra", true));
+        var route = new OpenAiTaskModelRoute(
+            TextProviderModelPresets.SolXHigh,
+            "gpt-5.6-sol",
+            "xhigh",
+            "test");
+        var dispatchedModels = new List<string>();
+
+        await Assert.ThrowsAsync<HttpRequestException>(() => OpenAiModelFailoverPolicy.ExecuteAsync(
+            new OpenAiProviderOptions { TextRoutingMode = OpenAiTextRoutingMode.Fixed },
+            route,
+            probe,
+            candidateRoute =>
+            {
+                dispatchedModels.Add(candidateRoute.Model);
+                return Task.FromException<string>(new HttpRequestException("status 503"));
+            },
+            CancellationToken.None));
+
+        Assert.Equal(["gpt-5.6-sol"], dispatchedModels);
+        Assert.Empty(probe.ProbedModels);
     }
 
     private sealed class RecordingAvailabilityProbe(

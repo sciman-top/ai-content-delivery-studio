@@ -23,6 +23,7 @@ TEXT_PROVIDER_API_KEY=sk-text-provider-key
 TEXT_PROVIDER_ROUTING_MODE=auto
 TEXT_PROVIDER_PRESET_SET=sol-only
 TEXT_PROVIDER_QUALITY_TIER=deep
+TEXT_PROVIDER_RECOVERY_MODE=prefer-sol
 
 IMAGE_PROVIDER_KIND=openai_compatible_image_only
 IMAGE_PROVIDER_BASE_URL=http://127.0.0.1:45335/v1
@@ -54,7 +55,9 @@ IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 
 The runtime selects one active preset set per gateway and credential scope. A numbered endpoint fallback may select its own `TEXT_PROVIDER_FALLBACK_N_PRESET_SET` and `TEXT_PROVIDER_FALLBACK_N_QUALITY_TIER`, but a single endpoint configuration cannot combine Sol, Terra, and Luna in one set. Existing configurations without a set continue to use explicit model and reasoning fields.
 
-In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity. It starts from the configured complete set (the recommended default is Sol-only). If a request fails with a retryable reachability or upstream failure, it probes the next preset set through `GET /v1/models` before dispatching the same tier in that set. After a successful fallback, the whole set is active for subsequent requests until another failure causes a health-ordered switch. Concurrent requests use a versioned transition, so an earlier in-flight success cannot overwrite a newer failover result.
+In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity. It starts from the configured complete set (the recommended default is Sol-only). If a request fails with a retryable reachability or upstream failure, it probes the next preset set through `GET /v1/models` before dispatching the same tier in that set. After a successful fallback, the whole set is active for subsequent requests until another failure causes a health-ordered switch. Concurrent requests use a versioned transition, so an earlier in-flight success cannot overwrite a newer failover result. `fixed` is an operator lock: it sends only the configured family and never performs a cross-family fallback.
+
+`TEXT_PROVIDER_RECOVERY_MODE` accepts `disabled` (the default) or `prefer-sol`. `prefer-sol` requires `TEXT_PROVIDER_ROUTING_MODE=auto`; it never rewrites `.env` and only runs while a live desktop host is running. When the active set is Terra-only or Luna-only, the recovery controller waits ten minutes between checks, first uses the non-generating model catalog probe, then validates all three Sol tiers with bounded `POST /v1/responses` canaries. Two consecutive complete successful rounds promote the process-local active set back to Sol-only. A failed canary resets the success count and backs off `10 -> 20 -> 40 -> 60` minutes; every canary is capped at 45 seconds and shares the corresponding execution slot. Model catalog visibility alone never promotes a set.
 
 | Workload | Selected preset |
 | --- | --- |
@@ -72,7 +75,7 @@ The selected set, model, and effort travel together through HTTP or SDK payloads
 
 Quality-first invariant: workload classification selects `deep`, `balanced`, or `fast`; family failover never changes that tier. Complex, scholarly, scientific understanding/review, high-risk, and full-resolution scientific visual work select `deep`; large but non-complex work selects `balanced`; routine work selects `fast`. This does not replace schema validation, deterministic checks, or final approval.
 
-`fixed` is an explicit operator override, not a second adaptive router. It preserves the configured model and effort even for a quality-first workload; a non-`sol-xhigh` selection is recorded as `fixed-operator-override-<workload>` in provider telemetry and the redacted diagnostics journal. Operators must treat that record as an intentional downgrade to investigate, not as approval to weaken deterministic checks, human review, or live-provider authorization. A fixed `sol-xhigh` profile records the normal `fixed-provider-configuration` reason.
+`fixed` is an explicit operator override, not a second adaptive router. It preserves the configured model and effort even for a quality-first workload; a non-`sol-xhigh` selection is recorded as `fixed-operator-override-<workload>` in provider telemetry and the redacted diagnostics journal. Operators must treat that record as an intentional downgrade to investigate, not as approval to weaken deterministic checks, human review, or live-provider authorization. A fixed `sol-xhigh` profile records the normal `fixed-provider-configuration` reason. It also disables both cross-family failover and proactive preferred-family recovery.
 
 The preset pairs follow [OpenAI's GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model) and the [GPT-5.6 model contracts](https://developers.openai.com/api/docs/models). The official guidance treats model choice and reasoning effort as separate workload decisions, so this repository records the chosen pair and uses representative evaluation to revise tier boundaries. Gateway-specific availability must still be confirmed through that gateway's model catalog.
 

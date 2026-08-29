@@ -258,7 +258,8 @@ internal static class OpenAiModelFailoverPolicy
             var activePresetSetSnapshot = activePresetSetState?.GetSnapshot(options)
                 ?? new OpenAiActivePresetSetSnapshot(null, Version: 0);
             var initialRoute = ResolveInitialRoute(options, preferredRoute, activePresetSetSnapshot);
-            if (availabilityProbe is null)
+            if (options.TextRoutingMode is OpenAiTextRoutingMode.Fixed
+                || availabilityProbe is null)
             {
                 return await operation(initialRoute);
             }
