@@ -54,7 +54,7 @@ internal static class OpenAiTaskModelRouter
 
         if (isComplex)
         {
-            return Preset(TextProviderModelPresets.SolXHigh, "complex-series-plan");
+            return Preset(TextProviderModelPresets.SolHigh, "complex-series-plan");
         }
 
         if (request.ItemCount >= LargeSeriesItemCount
@@ -91,12 +91,12 @@ internal static class OpenAiTaskModelRouter
 
         if (isQualityFirst)
         {
-            return Preset(TextProviderModelPresets.SolXHigh, "scholarly-document-plan");
+            return Preset(TextProviderModelPresets.SolHigh, "scholarly-document-plan");
         }
 
         if (isComplexEducational)
         {
-            return Preset(TextProviderModelPresets.SolXHigh, "complex-educational-document-plan");
+            return Preset(TextProviderModelPresets.SolHigh, "complex-educational-document-plan");
         }
 
         return Preset(TextProviderModelPresets.SolLow, "routine-document-plan");
@@ -114,7 +114,7 @@ internal static class OpenAiTaskModelRouter
                 options.ReasoningEffort,
                 "scientific-understanding",
                 qualityFirst: true)
-            : Preset(TextProviderModelPresets.SolXHigh, "scientific-understanding-chunk");
+            : Preset(TextProviderModelPresets.SolHigh, "scientific-understanding-chunk");
     }
 
     public static OpenAiTaskModelRoute ForScientificSemanticReview(
@@ -133,8 +133,8 @@ internal static class OpenAiTaskModelRouter
         }
 
         return request.Specification.RiskLevel is ScientificFigureRiskLevel.High
-            ? Preset(TextProviderModelPresets.SolXHigh, "high-risk-scientific-semantic-review")
-            : Preset(TextProviderModelPresets.SolXHigh, "scientific-semantic-review");
+            ? Preset(TextProviderModelPresets.SolHigh, "high-risk-scientific-semantic-review")
+            : Preset(TextProviderModelPresets.SolHigh, "scientific-semantic-review");
     }
 
     public static OpenAiTaskModelRoute ForScientificVisualReview(
@@ -149,7 +149,7 @@ internal static class OpenAiTaskModelRouter
                 options.ReasoningEffort,
                 "scientific-visual-review",
                 qualityFirst: true)
-            : Preset(TextProviderModelPresets.SolXHigh, "full-resolution-scientific-visual-review");
+            : Preset(TextProviderModelPresets.SolHigh, "full-resolution-scientific-visual-review");
     }
 
     public static OpenAiTaskModelRoute ForVisionReview(
@@ -171,7 +171,7 @@ internal static class OpenAiTaskModelRouter
 
         if (signals >= ComplexVisionSignals)
         {
-            return Preset(TextProviderModelPresets.SolXHigh, "complex-vision-review");
+            return Preset(TextProviderModelPresets.SolHigh, "complex-vision-review");
         }
 
         if (signals >= ModerateVisionSignals)
@@ -188,9 +188,9 @@ internal static class OpenAiTaskModelRouter
         string workload,
         bool qualityFirst = false)
     {
-        var isSolXHigh = string.Equals(model, "gpt-5.6-sol", StringComparison.Ordinal)
-            && string.Equals(reasoningEffort, "xhigh", StringComparison.Ordinal);
-        var reason = qualityFirst && !isSolXHigh
+        var isSolHigh = string.Equals(model, "gpt-5.6-sol", StringComparison.Ordinal)
+            && string.Equals(reasoningEffort, "high", StringComparison.Ordinal);
+        var reason = qualityFirst && !isSolHigh
             ? $"fixed-operator-override-{workload}"
             : "fixed-provider-configuration";
         var qualityTier = TextProviderModelPresets.TryGetQualityTierForModel(model, reasoningEffort, out var resolvedTier)

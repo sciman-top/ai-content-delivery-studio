@@ -48,7 +48,7 @@ public sealed class OpenAiPresetRecoveryTests
         Assert.Equal(OpenAiPresetRecoveryDecisionKind.Promoted, second.Kind);
         Assert.Equal(TextProviderModelPresetSets.SolOnly, state.GetActivePresetSet(options));
         Assert.Equal(
-            ["gpt-5.6-sol/xhigh", "gpt-5.6-sol/medium", "gpt-5.6-sol/low", "gpt-5.6-sol/xhigh", "gpt-5.6-sol/medium", "gpt-5.6-sol/low"],
+            ["gpt-5.6-sol/high", "gpt-5.6-sol/medium", "gpt-5.6-sol/low", "gpt-5.6-sol/high", "gpt-5.6-sol/medium", "gpt-5.6-sol/low"],
             canary.Routes.Select(route => $"{route.Model}/{route.ReasoningEffort}"));
     }
 

@@ -15,9 +15,9 @@ public sealed class OpenAiTaskModelRouterTests
     [Theory]
     [InlineData(2, 100, TextProviderModelPresets.SolLow)]
     [InlineData(OpenAiTaskModelRouter.LargeSeriesItemCount, 100, TextProviderModelPresets.SolMedium)]
-    [InlineData(OpenAiTaskModelRouter.ComplexSeriesItemCount, 100, TextProviderModelPresets.SolXHigh)]
+    [InlineData(OpenAiTaskModelRouter.ComplexSeriesItemCount, 100, TextProviderModelPresets.SolHigh)]
     [InlineData(2, OpenAiTaskModelRouter.LargeSeriesInputCharacters, TextProviderModelPresets.SolMedium)]
-    [InlineData(2, OpenAiTaskModelRouter.ComplexSeriesInputCharacters, TextProviderModelPresets.SolXHigh)]
+    [InlineData(2, OpenAiTaskModelRouter.ComplexSeriesInputCharacters, TextProviderModelPresets.SolHigh)]
     public void Planning_UsesDeterministicScaleThresholds(
         int itemCount,
         int inputCharacters,
@@ -31,7 +31,7 @@ public sealed class OpenAiTaskModelRouterTests
         Assert.Equal(expectedPreset, OpenAiTaskModelRouter.ForPlanning(Auto, request).Preset);
         var route = OpenAiTaskModelRouter.ForPlanning(Auto, request);
         Assert.Equal(
-            expectedPreset is TextProviderModelPresets.SolXHigh
+            expectedPreset is TextProviderModelPresets.SolHigh
                 ? OpenAiExecutionQualityTier.Deep
                 : expectedPreset is TextProviderModelPresets.SolMedium
                     ? OpenAiExecutionQualityTier.Balanced
@@ -50,10 +50,10 @@ public sealed class OpenAiTaskModelRouterTests
         var editorial = Document(DocumentFamily.Editorial, IllustrationStrictnessLevel.Editorial);
 
         Assert.Equal(
-            TextProviderModelPresets.SolXHigh,
+            TextProviderModelPresets.SolHigh,
             OpenAiTaskModelRouter.ForDocumentPlanning(Auto, scholarly).Preset);
         Assert.Equal(
-            TextProviderModelPresets.SolXHigh,
+            TextProviderModelPresets.SolHigh,
             OpenAiTaskModelRouter.ForDocumentPlanning(Auto, complexEducational).Preset);
         Assert.Equal(
             TextProviderModelPresets.SolLow,
@@ -72,18 +72,18 @@ public sealed class OpenAiTaskModelRouterTests
             ScientificUnderstandingProviderTests.Extraction(("block", "Evidence.")).Blocks);
 
         Assert.Equal(
-            TextProviderModelPresets.SolXHigh,
+            TextProviderModelPresets.SolHigh,
             OpenAiTaskModelRouter.ForScientificUnderstanding(Auto, understanding).Preset);
         Assert.Equal(
-            TextProviderModelPresets.SolXHigh,
+            TextProviderModelPresets.SolHigh,
             OpenAiTaskModelRouter.ForScientificSemanticReview(Auto, fixture.SemanticRequest).Preset);
         Assert.Equal(
-            TextProviderModelPresets.SolXHigh,
+            TextProviderModelPresets.SolHigh,
             OpenAiTaskModelRouter.ForScientificVisualReview(Auto, fixture.VisualRequest).Preset);
     }
 
     [Fact]
-    public void ComplexAndScientificRoutes_AlwaysUseSolXHigh()
+    public void ComplexAndScientificRoutes_AlwaysUseSolHigh()
     {
         var fixture = ScientificReviewTestFixture.Create();
         var understandingExtraction = ScientificUnderstandingProviderTests.Extraction(("block", "Evidence."));
@@ -116,16 +116,16 @@ public sealed class OpenAiTaskModelRouterTests
 
         Assert.All(routes, route =>
         {
-            Assert.Equal(TextProviderModelPresets.SolXHigh, route.Preset);
+            Assert.Equal(TextProviderModelPresets.SolHigh, route.Preset);
             Assert.Equal("gpt-5.6-sol", route.Model);
-            Assert.Equal("xhigh", route.ReasoningEffort);
+            Assert.Equal("high", route.ReasoningEffort);
         });
     }
 
     [Theory]
     [InlineData(1, 0, TextProviderModelPresets.SolLow)]
     [InlineData(3, 2, TextProviderModelPresets.SolMedium)]
-    [InlineData(5, 3, TextProviderModelPresets.SolXHigh)]
+    [InlineData(5, 3, TextProviderModelPresets.SolHigh)]
     public void VisionReview_UsesRubricAndEvidenceSignalCount(
         int dimensions,
         int evidenceSelections,
@@ -223,14 +223,14 @@ public sealed class OpenAiTaskModelRouterTests
     }
 
     [Fact]
-    public void FixedMode_DoesNotRecordQualityFirstOverrideWhenConfiguredAsSolXHigh()
+    public void FixedMode_DoesNotRecordQualityFirstOverrideWhenConfiguredAsSolHigh()
     {
         var options = new OpenAiProviderOptions
         {
             TextRoutingMode = OpenAiTextRoutingMode.Fixed,
             TextPlanningModel = "gpt-5.6-sol",
             VisionReviewModel = "gpt-5.6-sol",
-            ReasoningEffort = "xhigh",
+            ReasoningEffort = "high",
         };
         var fixture = ScientificReviewTestFixture.Create();
 

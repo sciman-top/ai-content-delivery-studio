@@ -6,7 +6,7 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class OpenAiModelFailoverTests
 {
     [Theory]
-    [InlineData("sol", OpenAiExecutionQualityTier.Deep, "gpt-5.6-sol", "xhigh", "sol-xhigh")]
+    [InlineData("sol", OpenAiExecutionQualityTier.Deep, "gpt-5.6-sol", "high", "sol-high")]
     [InlineData("sol", OpenAiExecutionQualityTier.Balanced, "gpt-5.6-sol", "medium", "sol-medium")]
     [InlineData("sol", OpenAiExecutionQualityTier.Fast, "gpt-5.6-sol", "low", "sol-low")]
     [InlineData("terra", OpenAiExecutionQualityTier.Deep, "gpt-5.6-terra", "xhigh", "terra-xhigh")]
@@ -189,7 +189,7 @@ public sealed class OpenAiModelFailoverTests
     }
 
     [Theory]
-    [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-sol", "xhigh")]
+    [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-sol", "high")]
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Balanced, "gpt-5.6-sol", "medium")]
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Fast, "gpt-5.6-sol", "low")]
     [InlineData(TextProviderModelPresetSets.TerraOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-terra", "xhigh")]
@@ -231,7 +231,7 @@ public sealed class OpenAiModelFailoverTests
 
         foreach (var (preset, model, effort, tier) in new[]
                  {
-                     (TextProviderModelPresets.SolXHigh, "gpt-5.6-sol", "xhigh", OpenAiExecutionQualityTier.Deep),
+                     (TextProviderModelPresets.SolHigh, "gpt-5.6-sol", "high", OpenAiExecutionQualityTier.Deep),
                      (TextProviderModelPresets.SolMedium, "gpt-5.6-sol", "medium", OpenAiExecutionQualityTier.Balanced),
                      (TextProviderModelPresets.SolLow, "gpt-5.6-sol", "low", OpenAiExecutionQualityTier.Fast),
                  })
@@ -377,7 +377,7 @@ public sealed class OpenAiModelFailoverTests
             ("gpt-5.6-terra", false),
             ("gpt-5.6-luna", true));
         var route = new OpenAiTaskModelRoute(
-            TextProviderModelPresets.SolXHigh,
+            TextProviderModelPresets.SolHigh,
             "gpt-5.6-sol",
             "xhigh",
             "test");
@@ -437,7 +437,7 @@ public sealed class OpenAiModelFailoverTests
     {
         var probe = new RecordingAvailabilityProbe(("gpt-5.6-terra", true));
         var route = new OpenAiTaskModelRoute(
-            TextProviderModelPresets.SolXHigh,
+            TextProviderModelPresets.SolHigh,
             "gpt-5.6-sol",
             "xhigh",
             "test");

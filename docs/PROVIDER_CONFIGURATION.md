@@ -8,11 +8,11 @@ The text and vision path has exactly three mutually exclusive preset sets: `sol-
 
 | Quality tier | Sol | Terra | Luna | Shared slots |
 | --- | --- | --- | --- | --- |
-| `deep` | `gpt-5.6-sol` / `xhigh` | `gpt-5.6-terra` / `xhigh` | `gpt-5.6-luna` / `xhigh` | 1 |
+| `deep` | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `xhigh` | `gpt-5.6-luna` / `xhigh` | 1 |
 | `balanced` | `gpt-5.6-sol` / `medium` | `gpt-5.6-terra` / `high` | `gpt-5.6-luna` / `high` | 2 |
 | `fast` | `gpt-5.6-sol` / `low` | `gpt-5.6-terra` / `medium` | `gpt-5.6-luna` / `medium` | 2 |
 
-The five shared text/vision execution slots are allocated as `deep=1`, `balanced=2`, and `fast=2`. Thus Sol-only uses one `sol/xhigh`, two `sol/medium`, and two `sol/low` slots; Terra-only uses one `terra/xhigh`, two `terra/high`, and two `terra/medium` slots; Luna-only uses one `luna/xhigh`, two `luna/high`, and two `luna/medium` slots. Repetition within a tier is intentional. The image-generation queue is separate and remains at one concurrent request.
+The five shared text/vision execution slots are allocated as `deep=1`, `balanced=2`, and `fast=2`. Thus Sol-only uses one `sol/high`, two `sol/medium`, and two `sol/low` slots; Terra-only uses one `terra/xhigh`, two `terra/high`, and two `terra/medium` slots; Luna-only uses one `luna/xhigh`, two `luna/high`, and two `luna/medium` slots. Repetition within a tier is intentional. The image-generation queue is separate and remains at one concurrent request.
 
 ## Role-Scoped `.env` Format
 
@@ -43,7 +43,7 @@ IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 
 | Preset set | Quality tier | Model | Reasoning effort |
 | --- | --- | --- | --- |
-| `sol-only` | `deep` | `gpt-5.6-sol` | `xhigh` |
+| `sol-only` | `deep` | `gpt-5.6-sol` | `high` |
 | `sol-only` | `balanced` | `gpt-5.6-sol` | `medium` |
 | `sol-only` | `fast` | `gpt-5.6-sol` | `low` |
 | `terra-only` | `deep` | `gpt-5.6-terra` | `xhigh` |
@@ -63,19 +63,19 @@ In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structure
 | --- | --- |
 | Routine series or document plan | `sol-low` |
 | Series with at least 6 items or 2,400 estimated input characters | `sol-medium` |
-| Series with at least 12 items or 3,600 estimated input characters | `sol-xhigh` |
-| Complex educational document with at least 4,500 input weight or 8 evidence rows | `sol-xhigh` |
-| Scholarly draft planning | `sol-xhigh` |
-| Scientific understanding chunk | `sol-xhigh` |
-| Scientific semantic review | `sol-xhigh` |
-| Full-resolution scientific visual review | `sol-xhigh` |
-| General vision review | `sol-low`; 5 signals uses `sol-medium`; 8 signals uses `sol-xhigh` |
+| Series with at least 12 items or 3,600 estimated input characters | `sol-high` |
+| Complex educational document with at least 4,500 input weight or 8 evidence rows | `sol-high` |
+| Scholarly draft planning | `sol-high` |
+| Scientific understanding chunk | `sol-high` |
+| Scientific semantic review | `sol-high` |
+| Full-resolution scientific visual review | `sol-high` |
+| General vision review | `sol-low`; 5 signals uses `sol-medium`; 8 signals uses `sol-high` |
 
 The selected set, model, and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. Provider-call telemetry and the local redacted diagnostics journal also record the bounded `presetSet`, `modelPreset`, `reasoningEffort`, and `routeReason` fields so route quality can be evaluated without retaining prompts or secrets. `TEXT_PROVIDER_PRESET_SET=sol-only` with `TEXT_PROVIDER_QUALITY_TIER=deep` remains the operator rollback/default configuration when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
 
 Quality-first invariant: workload classification selects `deep`, `balanced`, or `fast`; family failover never changes that tier. Complex, scholarly, scientific understanding/review, high-risk, and full-resolution scientific visual work select `deep`; large but non-complex work selects `balanced`; routine work selects `fast`. This does not replace schema validation, deterministic checks, or final approval.
 
-`fixed` is an explicit operator override, not a second adaptive router. It preserves the configured model and effort even for a quality-first workload; a non-`sol-xhigh` selection is recorded as `fixed-operator-override-<workload>` in provider telemetry and the redacted diagnostics journal. Operators must treat that record as an intentional downgrade to investigate, not as approval to weaken deterministic checks, human review, or live-provider authorization. A fixed `sol-xhigh` profile records the normal `fixed-provider-configuration` reason. It also disables both cross-family failover and proactive preferred-family recovery.
+`fixed` is an explicit operator override, not a second adaptive router. It preserves the configured model and effort even for a quality-first workload; a non-`sol-high` selection is recorded as `fixed-operator-override-<workload>` in provider telemetry and the redacted diagnostics journal. Operators must treat that record as an intentional downgrade to investigate, not as approval to weaken deterministic checks, human review, or live-provider authorization. A fixed `sol-high` profile records the normal `fixed-provider-configuration` reason. It also disables both cross-family failover and proactive preferred-family recovery.
 
 The preset pairs follow [OpenAI's GPT-5.6 model guidance](https://developers.openai.com/api/docs/guides/latest-model) and the [GPT-5.6 model contracts](https://developers.openai.com/api/docs/models). The official guidance treats model choice and reasoning effort as separate workload decisions, so this repository records the chosen pair and uses representative evaluation to revise tier boundaries. Gateway-specific availability must still be confirmed through that gateway's model catalog.
 

@@ -90,7 +90,7 @@ public sealed class OpenAiProviderConfigurationTests
     }
 
     [Theory]
-    [InlineData(TextProviderModelPresets.SolXHigh, "gpt-5.6-sol", "xhigh")]
+    [InlineData(TextProviderModelPresets.SolHigh, "gpt-5.6-sol", "high")]
     [InlineData(TextProviderModelPresets.SolMedium, "gpt-5.6-sol", "medium")]
     [InlineData(TextProviderModelPresets.SolLow, "gpt-5.6-sol", "low")]
     [InlineData(TextProviderModelPresets.TerraXHigh, "gpt-5.6-terra", "xhigh")]
@@ -152,7 +152,7 @@ public sealed class OpenAiProviderConfigurationTests
                 ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
                 ["TEXT_PROVIDER_API_KEY"] = "sk-text",
                 ["TEXT_PROVIDER_ROUTING_MODE"] = TextProviderRoutingModes.Auto,
-                ["TEXT_PROVIDER_PRESET"] = TextProviderModelPresets.SolXHigh,
+                ["TEXT_PROVIDER_PRESET"] = TextProviderModelPresets.SolHigh,
                 ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
                 ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
             });

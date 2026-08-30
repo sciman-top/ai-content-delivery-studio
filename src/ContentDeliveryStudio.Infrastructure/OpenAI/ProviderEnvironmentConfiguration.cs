@@ -28,7 +28,7 @@ public static class TextProviderModelPresets
     public const string TerraFamily = "terra";
     public const string LunaFamily = "luna";
 
-    public const string SolXHigh = "sol-xhigh";
+    public const string SolHigh = "sol-high";
     public const string SolMedium = "sol-medium";
     public const string SolLow = "sol-low";
     public const string TerraXHigh = "terra-xhigh";
@@ -46,7 +46,7 @@ public static class TextProviderModelPresets
 
     public static IReadOnlyList<string> Names { get; } =
         [
-            SolXHigh,
+            SolHigh,
             SolMedium,
             SolLow,
             TerraXHigh,
@@ -61,9 +61,9 @@ public static class TextProviderModelPresets
     {
         switch (name?.Trim().ToLowerInvariant())
         {
-            case SolXHigh:
+            case SolHigh:
                 model = "gpt-5.6-sol";
-                reasoningEffort = "xhigh";
+                reasoningEffort = "high";
                 return true;
             case SolMedium:
                 model = "gpt-5.6-sol";
@@ -122,7 +122,7 @@ public static class TextProviderModelPresets
     {
         presetSet = preset?.Trim().ToLowerInvariant() switch
         {
-            SolXHigh or SolMedium or SolLow => TextProviderModelPresetSets.SolOnly,
+            SolHigh or SolMedium or SolLow => TextProviderModelPresetSets.SolOnly,
             TerraXHigh or TerraHigh or TerraMedium => TextProviderModelPresetSets.TerraOnly,
             LunaXHigh or LunaHigh or LunaMedium => TextProviderModelPresetSets.LunaOnly,
             _ => string.Empty,
@@ -156,7 +156,7 @@ public static class TextProviderModelPresets
         {
             SolFamily => qualityTier switch
             {
-                OpenAiExecutionQualityTier.Deep => SolXHigh,
+                OpenAiExecutionQualityTier.Deep => SolHigh,
                 OpenAiExecutionQualityTier.Balanced => SolMedium,
                 OpenAiExecutionQualityTier.Fast => SolLow,
                 _ => string.Empty,
@@ -210,7 +210,7 @@ public static class TextProviderModelPresets
     {
         qualityTier = preset?.Trim().ToLowerInvariant() switch
         {
-            SolXHigh or TerraXHigh or LunaXHigh => OpenAiExecutionQualityTier.Deep,
+            SolHigh or TerraXHigh or LunaXHigh => OpenAiExecutionQualityTier.Deep,
             SolMedium or TerraHigh or LunaHigh => OpenAiExecutionQualityTier.Balanced,
             SolLow or TerraMedium or LunaMedium => OpenAiExecutionQualityTier.Fast,
             _ => default,
@@ -233,7 +233,7 @@ public static class TextProviderModelPresets
         var normalizedEffort = reasoningEffort?.Trim().ToLowerInvariant();
         qualityTier = family switch
         {
-            SolFamily when normalizedEffort is "xhigh" => OpenAiExecutionQualityTier.Deep,
+            SolFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Deep,
             SolFamily when normalizedEffort is "medium" => OpenAiExecutionQualityTier.Balanced,
             SolFamily when normalizedEffort is "low" => OpenAiExecutionQualityTier.Fast,
             TerraFamily or LunaFamily when normalizedEffort is "xhigh" => OpenAiExecutionQualityTier.Deep,
@@ -244,7 +244,7 @@ public static class TextProviderModelPresets
 
         return family switch
         {
-            SolFamily => normalizedEffort is "xhigh" or "medium" or "low",
+            SolFamily => normalizedEffort is "high" or "medium" or "low",
             TerraFamily or LunaFamily => normalizedEffort is "xhigh" or "high" or "medium",
             _ => false,
         };
