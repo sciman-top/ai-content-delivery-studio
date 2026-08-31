@@ -9,12 +9,12 @@ public sealed class OpenAiModelFailoverTests
     [InlineData("sol", OpenAiExecutionQualityTier.Deep, "gpt-5.6-sol", "high", "sol-high")]
     [InlineData("sol", OpenAiExecutionQualityTier.Balanced, "gpt-5.6-sol", "medium", "sol-medium")]
     [InlineData("sol", OpenAiExecutionQualityTier.Fast, "gpt-5.6-sol", "low", "sol-low")]
-    [InlineData("terra", OpenAiExecutionQualityTier.Deep, "gpt-5.6-terra", "xhigh", "terra-xhigh")]
-    [InlineData("terra", OpenAiExecutionQualityTier.Balanced, "gpt-5.6-terra", "high", "terra-high")]
-    [InlineData("terra", OpenAiExecutionQualityTier.Fast, "gpt-5.6-terra", "medium", "terra-medium")]
-    [InlineData("luna", OpenAiExecutionQualityTier.Deep, "gpt-5.6-luna", "xhigh", "luna-xhigh")]
-    [InlineData("luna", OpenAiExecutionQualityTier.Balanced, "gpt-5.6-luna", "high", "luna-high")]
-    [InlineData("luna", OpenAiExecutionQualityTier.Fast, "gpt-5.6-luna", "medium", "luna-medium")]
+    [InlineData("terra", OpenAiExecutionQualityTier.Deep, "gpt-5.6-terra", "max", "terra-max")]
+    [InlineData("terra", OpenAiExecutionQualityTier.Balanced, "gpt-5.6-terra", "xhigh", "terra-xhigh")]
+    [InlineData("terra", OpenAiExecutionQualityTier.Fast, "gpt-5.6-terra", "high", "terra-high")]
+    [InlineData("luna", OpenAiExecutionQualityTier.Deep, "gpt-5.6-luna", "max", "luna-max")]
+    [InlineData("luna", OpenAiExecutionQualityTier.Balanced, "gpt-5.6-luna", "xhigh", "luna-xhigh")]
+    [InlineData("luna", OpenAiExecutionQualityTier.Fast, "gpt-5.6-luna", "high", "luna-high")]
     public void FallbackRoutes_SwitchModelFamilyInConfiguredPriorityOrder(
         string family,
         OpenAiExecutionQualityTier qualityTier,
@@ -103,7 +103,7 @@ public sealed class OpenAiModelFailoverTests
             new[] { "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-terra", "gpt-5.6-sol" },
             dispatchedRoutes.Select(item => item.Model));
         Assert.Equal(
-            new[] { "medium", "high", "high", "medium" },
+            new[] { "medium", "xhigh", "xhigh", "medium" },
             dispatchedRoutes.Select(item => item.ReasoningEffort));
         Assert.Equal(new[] { "gpt-5.6-terra", "gpt-5.6-sol" }, probe.ProbedModels);
         Assert.Equal(TextProviderModelPresetSets.SolOnly, state.GetActivePresetSet(options));
@@ -192,12 +192,12 @@ public sealed class OpenAiModelFailoverTests
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-sol", "high")]
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Balanced, "gpt-5.6-sol", "medium")]
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Fast, "gpt-5.6-sol", "low")]
-    [InlineData(TextProviderModelPresetSets.TerraOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-terra", "xhigh")]
-    [InlineData(TextProviderModelPresetSets.TerraOnly, OpenAiExecutionQualityTier.Balanced, "gpt-5.6-terra", "high")]
-    [InlineData(TextProviderModelPresetSets.TerraOnly, OpenAiExecutionQualityTier.Fast, "gpt-5.6-terra", "medium")]
-    [InlineData(TextProviderModelPresetSets.LunaOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-luna", "xhigh")]
-    [InlineData(TextProviderModelPresetSets.LunaOnly, OpenAiExecutionQualityTier.Balanced, "gpt-5.6-luna", "high")]
-    [InlineData(TextProviderModelPresetSets.LunaOnly, OpenAiExecutionQualityTier.Fast, "gpt-5.6-luna", "medium")]
+    [InlineData(TextProviderModelPresetSets.TerraOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-terra", "max")]
+    [InlineData(TextProviderModelPresetSets.TerraOnly, OpenAiExecutionQualityTier.Balanced, "gpt-5.6-terra", "xhigh")]
+    [InlineData(TextProviderModelPresetSets.TerraOnly, OpenAiExecutionQualityTier.Fast, "gpt-5.6-terra", "high")]
+    [InlineData(TextProviderModelPresetSets.LunaOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-luna", "max")]
+    [InlineData(TextProviderModelPresetSets.LunaOnly, OpenAiExecutionQualityTier.Balanced, "gpt-5.6-luna", "xhigh")]
+    [InlineData(TextProviderModelPresetSets.LunaOnly, OpenAiExecutionQualityTier.Fast, "gpt-5.6-luna", "high")]
     public void PresetSet_MapsEveryTierToOneAndOnlyOneModelFamily(
         string presetSet,
         OpenAiExecutionQualityTier qualityTier,
@@ -258,7 +258,7 @@ public sealed class OpenAiModelFailoverTests
         Assert.Equal(
             ["gpt-5.6-terra", "gpt-5.6-terra", "gpt-5.6-terra"],
             dispatchedRoutes.Select(route => route.Model));
-        Assert.Equal(["xhigh", "high", "medium"], dispatchedRoutes.Select(route => route.ReasoningEffort));
+        Assert.Equal(["max", "xhigh", "high"], dispatchedRoutes.Select(route => route.ReasoningEffort));
         Assert.All(dispatchedRoutes, route => Assert.Equal(TextProviderModelPresetSets.TerraOnly, route.PresetSet));
     }
 

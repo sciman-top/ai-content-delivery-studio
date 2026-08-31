@@ -31,12 +31,12 @@ public static class TextProviderModelPresets
     public const string SolHigh = "sol-high";
     public const string SolMedium = "sol-medium";
     public const string SolLow = "sol-low";
+    public const string TerraMax = "terra-max";
     public const string TerraXHigh = "terra-xhigh";
     public const string TerraHigh = "terra-high";
-    public const string TerraMedium = "terra-medium";
+    public const string LunaMax = "luna-max";
     public const string LunaXHigh = "luna-xhigh";
     public const string LunaHigh = "luna-high";
-    public const string LunaMedium = "luna-medium";
 
     public static IReadOnlyList<string> SetNames { get; } =
         [TextProviderModelPresetSets.SolOnly, TextProviderModelPresetSets.TerraOnly, TextProviderModelPresetSets.LunaOnly];
@@ -49,12 +49,12 @@ public static class TextProviderModelPresets
             SolHigh,
             SolMedium,
             SolLow,
+            TerraMax,
             TerraXHigh,
             TerraHigh,
-            TerraMedium,
+            LunaMax,
             LunaXHigh,
             LunaHigh,
-            LunaMedium,
         ];
 
     public static bool TryResolve(string? name, out string model, out string reasoningEffort)
@@ -73,6 +73,10 @@ public static class TextProviderModelPresets
                 model = "gpt-5.6-sol";
                 reasoningEffort = "low";
                 return true;
+            case TerraMax:
+                model = "gpt-5.6-terra";
+                reasoningEffort = "max";
+                return true;
             case TerraXHigh:
                 model = "gpt-5.6-terra";
                 reasoningEffort = "xhigh";
@@ -81,9 +85,9 @@ public static class TextProviderModelPresets
                 model = "gpt-5.6-terra";
                 reasoningEffort = "high";
                 return true;
-            case TerraMedium:
-                model = "gpt-5.6-terra";
-                reasoningEffort = "medium";
+            case LunaMax:
+                model = "gpt-5.6-luna";
+                reasoningEffort = "max";
                 return true;
             case LunaXHigh:
                 model = "gpt-5.6-luna";
@@ -92,10 +96,6 @@ public static class TextProviderModelPresets
             case LunaHigh:
                 model = "gpt-5.6-luna";
                 reasoningEffort = "high";
-                return true;
-            case LunaMedium:
-                model = "gpt-5.6-luna";
-                reasoningEffort = "medium";
                 return true;
             default:
                 model = string.Empty;
@@ -123,8 +123,8 @@ public static class TextProviderModelPresets
         presetSet = preset?.Trim().ToLowerInvariant() switch
         {
             SolHigh or SolMedium or SolLow => TextProviderModelPresetSets.SolOnly,
-            TerraXHigh or TerraHigh or TerraMedium => TextProviderModelPresetSets.TerraOnly,
-            LunaXHigh or LunaHigh or LunaMedium => TextProviderModelPresetSets.LunaOnly,
+            TerraMax or TerraXHigh or TerraHigh => TextProviderModelPresetSets.TerraOnly,
+            LunaMax or LunaXHigh or LunaHigh => TextProviderModelPresetSets.LunaOnly,
             _ => string.Empty,
         };
 
@@ -163,16 +163,16 @@ public static class TextProviderModelPresets
             },
             TerraFamily => qualityTier switch
             {
-                OpenAiExecutionQualityTier.Deep => TerraXHigh,
-                OpenAiExecutionQualityTier.Balanced => TerraHigh,
-                OpenAiExecutionQualityTier.Fast => TerraMedium,
+                OpenAiExecutionQualityTier.Deep => TerraMax,
+                OpenAiExecutionQualityTier.Balanced => TerraXHigh,
+                OpenAiExecutionQualityTier.Fast => TerraHigh,
                 _ => string.Empty,
             },
             LunaFamily => qualityTier switch
             {
-                OpenAiExecutionQualityTier.Deep => LunaXHigh,
-                OpenAiExecutionQualityTier.Balanced => LunaHigh,
-                OpenAiExecutionQualityTier.Fast => LunaMedium,
+                OpenAiExecutionQualityTier.Deep => LunaMax,
+                OpenAiExecutionQualityTier.Balanced => LunaXHigh,
+                OpenAiExecutionQualityTier.Fast => LunaHigh,
                 _ => string.Empty,
             },
             _ => string.Empty,
@@ -210,9 +210,9 @@ public static class TextProviderModelPresets
     {
         qualityTier = preset?.Trim().ToLowerInvariant() switch
         {
-            SolHigh or TerraXHigh or LunaXHigh => OpenAiExecutionQualityTier.Deep,
-            SolMedium or TerraHigh or LunaHigh => OpenAiExecutionQualityTier.Balanced,
-            SolLow or TerraMedium or LunaMedium => OpenAiExecutionQualityTier.Fast,
+            SolHigh or TerraMax or LunaMax => OpenAiExecutionQualityTier.Deep,
+            SolMedium or TerraXHigh or LunaXHigh => OpenAiExecutionQualityTier.Balanced,
+            SolLow or TerraHigh or LunaHigh => OpenAiExecutionQualityTier.Fast,
             _ => default,
         };
 
@@ -236,16 +236,16 @@ public static class TextProviderModelPresets
             SolFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Deep,
             SolFamily when normalizedEffort is "medium" => OpenAiExecutionQualityTier.Balanced,
             SolFamily when normalizedEffort is "low" => OpenAiExecutionQualityTier.Fast,
-            TerraFamily or LunaFamily when normalizedEffort is "xhigh" => OpenAiExecutionQualityTier.Deep,
-            TerraFamily or LunaFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Balanced,
-            TerraFamily or LunaFamily when normalizedEffort is "medium" => OpenAiExecutionQualityTier.Fast,
+            TerraFamily or LunaFamily when normalizedEffort is "max" => OpenAiExecutionQualityTier.Deep,
+            TerraFamily or LunaFamily when normalizedEffort is "xhigh" => OpenAiExecutionQualityTier.Balanced,
+            TerraFamily or LunaFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Fast,
             _ => default,
         };
 
         return family switch
         {
             SolFamily => normalizedEffort is "high" or "medium" or "low",
-            TerraFamily or LunaFamily => normalizedEffort is "xhigh" or "high" or "medium",
+            TerraFamily or LunaFamily => normalizedEffort is "max" or "xhigh" or "high",
             _ => false,
         };
     }

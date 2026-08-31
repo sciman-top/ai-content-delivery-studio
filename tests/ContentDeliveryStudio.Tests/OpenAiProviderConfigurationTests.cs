@@ -93,12 +93,12 @@ public sealed class OpenAiProviderConfigurationTests
     [InlineData(TextProviderModelPresets.SolHigh, "gpt-5.6-sol", "high")]
     [InlineData(TextProviderModelPresets.SolMedium, "gpt-5.6-sol", "medium")]
     [InlineData(TextProviderModelPresets.SolLow, "gpt-5.6-sol", "low")]
+    [InlineData(TextProviderModelPresets.TerraMax, "gpt-5.6-terra", "max")]
     [InlineData(TextProviderModelPresets.TerraXHigh, "gpt-5.6-terra", "xhigh")]
     [InlineData(TextProviderModelPresets.TerraHigh, "gpt-5.6-terra", "high")]
-    [InlineData(TextProviderModelPresets.TerraMedium, "gpt-5.6-terra", "medium")]
+    [InlineData(TextProviderModelPresets.LunaMax, "gpt-5.6-luna", "max")]
     [InlineData(TextProviderModelPresets.LunaXHigh, "gpt-5.6-luna", "xhigh")]
     [InlineData(TextProviderModelPresets.LunaHigh, "gpt-5.6-luna", "high")]
-    [InlineData(TextProviderModelPresets.LunaMedium, "gpt-5.6-luna", "medium")]
     public void ProviderEnvironmentConfiguration_ResolvesSupportedTextProviderPreset(
         string preset,
         string expectedModel,
@@ -140,7 +140,7 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Contains(
                 configuration.Validate(),
             error => error.Contains("unknown-tier", StringComparison.Ordinal)
-                && error.Contains(TextProviderModelPresets.LunaMedium, StringComparison.Ordinal));
+                && error.Contains(TextProviderModelPresets.LunaHigh, StringComparison.Ordinal));
     }
 
     [Fact]
@@ -222,12 +222,12 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Empty(configuration.Validate());
         Assert.Equal(TextProviderModelPresetSets.TerraOnly, configuration.Text.ModelPresetSet);
         Assert.Equal("balanced", configuration.Text.QualityTier);
-        Assert.Equal(TextProviderModelPresets.TerraHigh, configuration.Text.ModelPreset);
+        Assert.Equal(TextProviderModelPresets.TerraXHigh, configuration.Text.ModelPreset);
         Assert.Equal(
             TextProviderModelPresetSets.TerraOnly,
             OpenAiProviderOptions.FromTextProviderEnvironment(configuration).InitialPresetSet);
         Assert.Equal("gpt-5.6-terra", configuration.Text.Model);
-        Assert.Equal("high", configuration.Text.ReasoningEffort);
+        Assert.Equal("xhigh", configuration.Text.ReasoningEffort);
     }
 
     [Fact]

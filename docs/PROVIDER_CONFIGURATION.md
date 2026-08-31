@@ -8,11 +8,11 @@ The text and vision path has exactly three mutually exclusive preset sets: `sol-
 
 | Quality tier | Sol | Terra | Luna | Shared slots |
 | --- | --- | --- | --- | --- |
-| `deep` | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `xhigh` | `gpt-5.6-luna` / `xhigh` | 1 |
-| `balanced` | `gpt-5.6-sol` / `medium` | `gpt-5.6-terra` / `high` | `gpt-5.6-luna` / `high` | 2 |
-| `fast` | `gpt-5.6-sol` / `low` | `gpt-5.6-terra` / `medium` | `gpt-5.6-luna` / `medium` | 2 |
+| `deep` | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `max` | `gpt-5.6-luna` / `max` | 1 |
+| `balanced` | `gpt-5.6-sol` / `medium` | `gpt-5.6-terra` / `xhigh` | `gpt-5.6-luna` / `xhigh` | 2 |
+| `fast` | `gpt-5.6-sol` / `low` | `gpt-5.6-terra` / `high` | `gpt-5.6-luna` / `high` | 2 |
 
-The five shared text/vision execution slots are allocated as `deep=1`, `balanced=2`, and `fast=2`. Thus Sol-only uses one `sol/high`, two `sol/medium`, and two `sol/low` slots; Terra-only uses one `terra/xhigh`, two `terra/high`, and two `terra/medium` slots; Luna-only uses one `luna/xhigh`, two `luna/high`, and two `luna/medium` slots. Repetition within a tier is intentional. The image-generation queue is separate and remains at one concurrent request.
+The five shared text/vision execution slots are allocated as `deep=1`, `balanced=2`, and `fast=2`. Thus Sol-only uses one `sol/high`, two `sol/medium`, and two `sol/low` slots; Terra-only uses one `terra/max`, two `terra/xhigh`, and two `terra/high` slots; Luna-only uses one `luna/max`, two `luna/xhigh`, and two `luna/high` slots. Repetition within a tier is intentional. The image-generation queue is separate and remains at one concurrent request.
 
 ## Role-Scoped `.env` Format
 
@@ -46,12 +46,12 @@ IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 | `sol-only` | `deep` | `gpt-5.6-sol` | `high` |
 | `sol-only` | `balanced` | `gpt-5.6-sol` | `medium` |
 | `sol-only` | `fast` | `gpt-5.6-sol` | `low` |
-| `terra-only` | `deep` | `gpt-5.6-terra` | `xhigh` |
-| `terra-only` | `balanced` | `gpt-5.6-terra` | `high` |
-| `terra-only` | `fast` | `gpt-5.6-terra` | `medium` |
-| `luna-only` | `deep` | `gpt-5.6-luna` | `xhigh` |
-| `luna-only` | `balanced` | `gpt-5.6-luna` | `high` |
-| `luna-only` | `fast` | `gpt-5.6-luna` | `medium` |
+| `terra-only` | `deep` | `gpt-5.6-terra` | `max` |
+| `terra-only` | `balanced` | `gpt-5.6-terra` | `xhigh` |
+| `terra-only` | `fast` | `gpt-5.6-terra` | `high` |
+| `luna-only` | `deep` | `gpt-5.6-luna` | `max` |
+| `luna-only` | `balanced` | `gpt-5.6-luna` | `xhigh` |
+| `luna-only` | `fast` | `gpt-5.6-luna` | `high` |
 
 The runtime selects one active preset set per gateway and credential scope. A numbered endpoint fallback may select its own `TEXT_PROVIDER_FALLBACK_N_PRESET_SET` and `TEXT_PROVIDER_FALLBACK_N_QUALITY_TIER`, but a single endpoint configuration cannot combine Sol, Terra, and Luna in one set. Existing configurations without a set continue to use explicit model and reasoning fields.
 
