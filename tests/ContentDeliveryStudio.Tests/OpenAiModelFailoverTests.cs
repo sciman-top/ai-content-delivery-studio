@@ -15,6 +15,12 @@ public sealed class OpenAiModelFailoverTests
     [InlineData("luna", OpenAiExecutionQualityTier.Deep, "gpt-5.6-luna", "max", "luna-max")]
     [InlineData("luna", OpenAiExecutionQualityTier.Balanced, "gpt-5.6-luna", "xhigh", "luna-xhigh")]
     [InlineData("luna", OpenAiExecutionQualityTier.Fast, "gpt-5.6-luna", "high", "luna-high")]
+    [InlineData("glm-5.3-flash", OpenAiExecutionQualityTier.Deep, "glm-5.3-flash", "max", "glm-5.3-flash-max")]
+    [InlineData("glm-5.3-flash", OpenAiExecutionQualityTier.Balanced, "glm-5.3-flash", "high", "glm-5.3-flash-high")]
+    [InlineData("glm-5.3-flash", OpenAiExecutionQualityTier.Fast, "glm-5.3-flash", "low", "glm-5.3-flash-low")]
+    [InlineData("deepseek-v4", OpenAiExecutionQualityTier.Deep, "deepseek-v4-pro", "max", "deepseek-v4-pro-max")]
+    [InlineData("deepseek-v4", OpenAiExecutionQualityTier.Balanced, "deepseek-v4-flash", "max", "deepseek-v4-flash-max")]
+    [InlineData("deepseek-v4", OpenAiExecutionQualityTier.Fast, "deepseek-v4-flash", "high", "deepseek-v4-flash-high")]
     public void FallbackRoutes_SwitchModelFamilyInConfiguredPriorityOrder(
         string family,
         OpenAiExecutionQualityTier qualityTier,
@@ -198,6 +204,12 @@ public sealed class OpenAiModelFailoverTests
     [InlineData(TextProviderModelPresetSets.LunaOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-luna", "max")]
     [InlineData(TextProviderModelPresetSets.LunaOnly, OpenAiExecutionQualityTier.Balanced, "gpt-5.6-luna", "xhigh")]
     [InlineData(TextProviderModelPresetSets.LunaOnly, OpenAiExecutionQualityTier.Fast, "gpt-5.6-luna", "high")]
+    [InlineData(TextProviderModelPresetSets.GlmOnly, OpenAiExecutionQualityTier.Deep, "glm-5.3-flash", "max")]
+    [InlineData(TextProviderModelPresetSets.GlmOnly, OpenAiExecutionQualityTier.Balanced, "glm-5.3-flash", "high")]
+    [InlineData(TextProviderModelPresetSets.GlmOnly, OpenAiExecutionQualityTier.Fast, "glm-5.3-flash", "low")]
+    [InlineData(TextProviderModelPresetSets.DeepSeekV4Only, OpenAiExecutionQualityTier.Deep, "deepseek-v4-pro", "max")]
+    [InlineData(TextProviderModelPresetSets.DeepSeekV4Only, OpenAiExecutionQualityTier.Balanced, "deepseek-v4-flash", "max")]
+    [InlineData(TextProviderModelPresetSets.DeepSeekV4Only, OpenAiExecutionQualityTier.Fast, "deepseek-v4-flash", "high")]
     public void PresetSet_MapsEveryTierToOneAndOnlyOneModelFamily(
         string presetSet,
         OpenAiExecutionQualityTier qualityTier,

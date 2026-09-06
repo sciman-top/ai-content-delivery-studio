@@ -25,7 +25,14 @@ internal static class OpenAiTaskModelRouter
     internal const int ModerateVisionSignals = 5;
 
     public static IReadOnlyList<string> AutoModels { get; } =
-        ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"];
+        [
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+            "gpt-5.6-luna",
+            "glm-5.3-flash",
+            "deepseek-v4-pro",
+            "deepseek-v4-flash",
+        ];
 
     public static IReadOnlyList<string> ModelsForCapabilities(
         OpenAiProviderOptions options,

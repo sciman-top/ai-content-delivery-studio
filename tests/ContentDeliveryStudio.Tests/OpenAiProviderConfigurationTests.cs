@@ -99,6 +99,12 @@ public sealed class OpenAiProviderConfigurationTests
     [InlineData(TextProviderModelPresets.LunaMax, "gpt-5.6-luna", "max")]
     [InlineData(TextProviderModelPresets.LunaXHigh, "gpt-5.6-luna", "xhigh")]
     [InlineData(TextProviderModelPresets.LunaHigh, "gpt-5.6-luna", "high")]
+    [InlineData(TextProviderModelPresets.GlmFlashMax, "glm-5.3-flash", "max")]
+    [InlineData(TextProviderModelPresets.GlmFlashHigh, "glm-5.3-flash", "high")]
+    [InlineData(TextProviderModelPresets.GlmFlashLow, "glm-5.3-flash", "low")]
+    [InlineData(TextProviderModelPresets.DeepSeekV4ProMax, "deepseek-v4-pro", "max")]
+    [InlineData(TextProviderModelPresets.DeepSeekV4FlashMax, "deepseek-v4-flash", "max")]
+    [InlineData(TextProviderModelPresets.DeepSeekV4FlashHigh, "deepseek-v4-flash", "high")]
     public void ProviderEnvironmentConfiguration_ResolvesSupportedTextProviderPreset(
         string preset,
         string expectedModel,
@@ -248,6 +254,42 @@ public sealed class OpenAiProviderConfigurationTests
         Assert.Contains(
             configuration.Validate(),
             error => error.Contains("mixes preset set", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void ProviderEnvironmentConfiguration_RejectsSameFamilyModelThatDoesNotMatchDeepSeekTier()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_PRESET_SET"] = TextProviderModelPresetSets.DeepSeekV4Only,
+                ["TEXT_PROVIDER_QUALITY_TIER"] = "deep",
+                ["TEXT_PROVIDER_MODEL"] = "deepseek-v4-flash",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Contains(
+            configuration.Validate(),
+            error => error.Contains("requires model 'deepseek-v4-pro'", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void TextProviderModelPresets_DistinguishesDeepSeekProAndFlashMaxTiers()
+    {
+        Assert.True(TextProviderModelPresets.TryGetQualityTierForModel(
+            "deepseek-v4-pro",
+            "max",
+            out var proTier));
+        Assert.True(TextProviderModelPresets.TryGetQualityTierForModel(
+            "deepseek-v4-flash",
+            "max",
+            out var flashTier));
+
+        Assert.Equal(OpenAiExecutionQualityTier.Deep, proTier);
+        Assert.Equal(OpenAiExecutionQualityTier.Balanced, flashTier);
     }
 
     [Fact]

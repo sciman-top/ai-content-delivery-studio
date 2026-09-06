@@ -175,7 +175,7 @@ public sealed class OpenAiExecutionSlotScheduler : IOpenAiExecutionSlotScheduler
 
 /// <summary>
 /// Keeps exactly one active model preset set per gateway and credential scope.
-/// The active value is <c>sol-only</c>, <c>terra-only</c>, or <c>luna-only;
+/// The active value is one of the registered family-only preset sets.
 /// individual slots may select different tiers only inside that one set.
 /// </summary>
 public interface IOpenAiActivePresetSetState

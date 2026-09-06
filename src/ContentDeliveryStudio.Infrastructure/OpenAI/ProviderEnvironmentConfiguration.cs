@@ -27,6 +27,8 @@ public static class TextProviderModelPresets
     public const string SolFamily = "sol";
     public const string TerraFamily = "terra";
     public const string LunaFamily = "luna";
+    public const string GlmFamily = "glm-5.3-flash";
+    public const string DeepSeekV4Family = "deepseek-v4";
 
     public const string SolHigh = "sol-high";
     public const string SolMedium = "sol-medium";
@@ -37,12 +39,24 @@ public static class TextProviderModelPresets
     public const string LunaMax = "luna-max";
     public const string LunaXHigh = "luna-xhigh";
     public const string LunaHigh = "luna-high";
+    public const string GlmFlashMax = "glm-5.3-flash-max";
+    public const string GlmFlashHigh = "glm-5.3-flash-high";
+    public const string GlmFlashLow = "glm-5.3-flash-low";
+    public const string DeepSeekV4ProMax = "deepseek-v4-pro-max";
+    public const string DeepSeekV4FlashMax = "deepseek-v4-flash-max";
+    public const string DeepSeekV4FlashHigh = "deepseek-v4-flash-high";
 
     public static IReadOnlyList<string> SetNames { get; } =
-        [TextProviderModelPresetSets.SolOnly, TextProviderModelPresetSets.TerraOnly, TextProviderModelPresetSets.LunaOnly];
+        [
+            TextProviderModelPresetSets.SolOnly,
+            TextProviderModelPresetSets.TerraOnly,
+            TextProviderModelPresetSets.LunaOnly,
+            TextProviderModelPresetSets.GlmOnly,
+            TextProviderModelPresetSets.DeepSeekV4Only,
+        ];
 
     public static IReadOnlyList<string> PreferredModelFamilies { get; } =
-        [SolFamily, TerraFamily, LunaFamily];
+        [SolFamily, TerraFamily, LunaFamily, GlmFamily, DeepSeekV4Family];
 
     public static IReadOnlyList<string> Names { get; } =
         [
@@ -55,6 +69,12 @@ public static class TextProviderModelPresets
             LunaMax,
             LunaXHigh,
             LunaHigh,
+            GlmFlashMax,
+            GlmFlashHigh,
+            GlmFlashLow,
+            DeepSeekV4ProMax,
+            DeepSeekV4FlashMax,
+            DeepSeekV4FlashHigh,
         ];
 
     public static bool TryResolve(string? name, out string model, out string reasoningEffort)
@@ -97,6 +117,30 @@ public static class TextProviderModelPresets
                 model = "gpt-5.6-luna";
                 reasoningEffort = "high";
                 return true;
+            case GlmFlashMax:
+                model = "glm-5.3-flash";
+                reasoningEffort = "max";
+                return true;
+            case GlmFlashHigh:
+                model = "glm-5.3-flash";
+                reasoningEffort = "high";
+                return true;
+            case GlmFlashLow:
+                model = "glm-5.3-flash";
+                reasoningEffort = "low";
+                return true;
+            case DeepSeekV4ProMax:
+                model = "deepseek-v4-pro";
+                reasoningEffort = "max";
+                return true;
+            case DeepSeekV4FlashMax:
+                model = "deepseek-v4-flash";
+                reasoningEffort = "max";
+                return true;
+            case DeepSeekV4FlashHigh:
+                model = "deepseek-v4-flash";
+                reasoningEffort = "high";
+                return true;
             default:
                 model = string.Empty;
                 reasoningEffort = string.Empty;
@@ -125,6 +169,8 @@ public static class TextProviderModelPresets
             SolHigh or SolMedium or SolLow => TextProviderModelPresetSets.SolOnly,
             TerraMax or TerraXHigh or TerraHigh => TextProviderModelPresetSets.TerraOnly,
             LunaMax or LunaXHigh or LunaHigh => TextProviderModelPresetSets.LunaOnly,
+            GlmFlashMax or GlmFlashHigh or GlmFlashLow => TextProviderModelPresetSets.GlmOnly,
+            DeepSeekV4ProMax or DeepSeekV4FlashMax or DeepSeekV4FlashHigh => TextProviderModelPresetSets.DeepSeekV4Only,
             _ => string.Empty,
         };
 
@@ -138,6 +184,8 @@ public static class TextProviderModelPresets
             "gpt-5.6-sol" => SolFamily,
             "gpt-5.6-terra" => TerraFamily,
             "gpt-5.6-luna" => LunaFamily,
+            "glm-5.3-flash" => GlmFamily,
+            "deepseek-v4-pro" or "deepseek-v4-flash" => DeepSeekV4Family,
             _ => string.Empty,
         };
 
@@ -173,6 +221,20 @@ public static class TextProviderModelPresets
                 OpenAiExecutionQualityTier.Deep => LunaMax,
                 OpenAiExecutionQualityTier.Balanced => LunaXHigh,
                 OpenAiExecutionQualityTier.Fast => LunaHigh,
+                _ => string.Empty,
+            },
+            GlmFamily => qualityTier switch
+            {
+                OpenAiExecutionQualityTier.Deep => GlmFlashMax,
+                OpenAiExecutionQualityTier.Balanced => GlmFlashHigh,
+                OpenAiExecutionQualityTier.Fast => GlmFlashLow,
+                _ => string.Empty,
+            },
+            DeepSeekV4Family => qualityTier switch
+            {
+                OpenAiExecutionQualityTier.Deep => DeepSeekV4ProMax,
+                OpenAiExecutionQualityTier.Balanced => DeepSeekV4FlashMax,
+                OpenAiExecutionQualityTier.Fast => DeepSeekV4FlashHigh,
                 _ => string.Empty,
             },
             _ => string.Empty,
@@ -213,6 +275,9 @@ public static class TextProviderModelPresets
             SolHigh or TerraMax or LunaMax => OpenAiExecutionQualityTier.Deep,
             SolMedium or TerraXHigh or LunaXHigh => OpenAiExecutionQualityTier.Balanced,
             SolLow or TerraHigh or LunaHigh => OpenAiExecutionQualityTier.Fast,
+            GlmFlashMax or DeepSeekV4ProMax => OpenAiExecutionQualityTier.Deep,
+            GlmFlashHigh or DeepSeekV4FlashMax => OpenAiExecutionQualityTier.Balanced,
+            GlmFlashLow or DeepSeekV4FlashHigh => OpenAiExecutionQualityTier.Fast,
             _ => default,
         };
 
@@ -239,6 +304,15 @@ public static class TextProviderModelPresets
             TerraFamily or LunaFamily when normalizedEffort is "max" => OpenAiExecutionQualityTier.Deep,
             TerraFamily or LunaFamily when normalizedEffort is "xhigh" => OpenAiExecutionQualityTier.Balanced,
             TerraFamily or LunaFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Fast,
+            GlmFamily when normalizedEffort is "max" => OpenAiExecutionQualityTier.Deep,
+            GlmFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Balanced,
+            GlmFamily when normalizedEffort is "low" => OpenAiExecutionQualityTier.Fast,
+            DeepSeekV4Family when string.Equals(model, "deepseek-v4-pro", StringComparison.OrdinalIgnoreCase)
+                && normalizedEffort is "max" => OpenAiExecutionQualityTier.Deep,
+            DeepSeekV4Family when string.Equals(model, "deepseek-v4-flash", StringComparison.OrdinalIgnoreCase)
+                && normalizedEffort is "max" => OpenAiExecutionQualityTier.Balanced,
+            DeepSeekV4Family when string.Equals(model, "deepseek-v4-flash", StringComparison.OrdinalIgnoreCase)
+                && normalizedEffort is "high" => OpenAiExecutionQualityTier.Fast,
             _ => default,
         };
 
@@ -246,6 +320,11 @@ public static class TextProviderModelPresets
         {
             SolFamily => normalizedEffort is "high" or "medium" or "low",
             TerraFamily or LunaFamily => normalizedEffort is "max" or "xhigh" or "high",
+            GlmFamily => normalizedEffort is "max" or "high" or "low",
+            DeepSeekV4Family => (string.Equals(model, "deepseek-v4-pro", StringComparison.OrdinalIgnoreCase)
+                && normalizedEffort is "max")
+                || (string.Equals(model, "deepseek-v4-flash", StringComparison.OrdinalIgnoreCase)
+                    && (normalizedEffort is "max" or "high")),
             _ => false,
         };
     }
@@ -256,8 +335,10 @@ public static class TextProviderModelPresetSets
     public const string SolOnly = "sol-only";
     public const string TerraOnly = "terra-only";
     public const string LunaOnly = "luna-only";
+    public const string GlmOnly = "glm-only";
+    public const string DeepSeekV4Only = "deepseek-v4-only";
 
-    public static IReadOnlyList<string> Names { get; } = [SolOnly, TerraOnly, LunaOnly];
+    public static IReadOnlyList<string> Names { get; } = [SolOnly, TerraOnly, LunaOnly, GlmOnly, DeepSeekV4Only];
 
     public static bool TryGetFamily(string? presetSet, out string family)
     {
@@ -266,6 +347,8 @@ public static class TextProviderModelPresetSets
             SolOnly => TextProviderModelPresets.SolFamily,
             TerraOnly => TextProviderModelPresets.TerraFamily,
             LunaOnly => TextProviderModelPresets.LunaFamily,
+            GlmOnly => TextProviderModelPresets.GlmFamily,
+            DeepSeekV4Only => TextProviderModelPresets.DeepSeekV4Family,
             _ => string.Empty,
         };
 
@@ -279,6 +362,8 @@ public static class TextProviderModelPresetSets
             TextProviderModelPresets.SolFamily => SolOnly,
             TextProviderModelPresets.TerraFamily => TerraOnly,
             TextProviderModelPresets.LunaFamily => LunaOnly,
+            TextProviderModelPresets.GlmFamily => GlmOnly,
+            TextProviderModelPresets.DeepSeekV4Family => DeepSeekV4Only,
             _ => string.Empty,
         };
 
@@ -647,6 +732,15 @@ public sealed record ProviderEndpointEnvironmentConfiguration(
                 {
                     errors.Add(
                         $"{displayName} mixes preset set '{ModelPresetSet}' with model '{ConfiguredModel}'. A preset set must be {presetFamily}-only.");
+                }
+
+                if (ConfiguredModel is not null
+                    && TextProviderModelPresets.TryGetFamily(ConfiguredModel, out configuredFamily)
+                    && string.Equals(configuredFamily, presetFamily, StringComparison.Ordinal)
+                    && !string.Equals(ConfiguredModel.Trim(), expectedModel, StringComparison.OrdinalIgnoreCase))
+                {
+                    errors.Add(
+                        $"{displayName} quality tier '{QualityTier}' requires model '{expectedModel}'.");
                 }
 
                 if (ConfiguredReasoningEffort is not null

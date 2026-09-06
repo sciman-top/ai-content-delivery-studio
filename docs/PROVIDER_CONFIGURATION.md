@@ -4,15 +4,15 @@ This file defines credential naming and role boundaries. Request routing, statef
 
 This project treats provider credentials as role-scoped, not just vendor-scoped. A key that is licensed only for image generation must never be used for text planning or vision review. The local development shape uses the Cockpit gateway at `http://127.0.0.1:45335/v1`; real key material is resolved from the Windows DPAPI store when `PROVIDER_SECRET_STORE=dpapi` is selected.
 
-The text and vision path has exactly three mutually exclusive preset sets: `sol-only`, `terra-only`, and `luna-only`. At any moment the five shared execution slots use one active set only. A tier is the unit preserved when the runtime switches the whole active set; a raw reasoning string is not reused across families because Terra and Luna use a different three-level mapping:
+The text and vision path has mutually exclusive family-only preset sets: `sol-only`, `terra-only`, `luna-only`, `glm-only`, and `deepseek-v4-only`. At any moment the five shared execution slots use one active set only. A tier is the unit preserved when the runtime switches the whole active set; a raw reasoning string is not reused across families because each family has its own three-level mapping:
 
-| Quality tier | Sol | Terra | Luna | Shared slots |
-| --- | --- | --- | --- | --- |
-| `deep` | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `max` | `gpt-5.6-luna` / `max` | 1 |
-| `balanced` | `gpt-5.6-sol` / `medium` | `gpt-5.6-terra` / `xhigh` | `gpt-5.6-luna` / `xhigh` | 2 |
-| `fast` | `gpt-5.6-sol` / `low` | `gpt-5.6-terra` / `high` | `gpt-5.6-luna` / `high` | 2 |
+| Quality tier | Sol | Terra | Luna | GLM-5.3-Flash | DeepSeek V4 | Shared slots |
+| --- | --- | --- | --- | --- | --- | --- |
+| `deep` | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `max` | `gpt-5.6-luna` / `max` | `glm-5.3-flash` / `max` | `deepseek-v4-pro` / `max` | 1 |
+| `balanced` | `gpt-5.6-sol` / `medium` | `gpt-5.6-terra` / `xhigh` | `gpt-5.6-luna` / `xhigh` | `glm-5.3-flash` / `high` | `deepseek-v4-flash` / `max` | 2 |
+| `fast` | `gpt-5.6-sol` / `low` | `gpt-5.6-terra` / `high` | `gpt-5.6-luna` / `high` | `glm-5.3-flash` / `low` | `deepseek-v4-flash` / `high` | 2 |
 
-The five shared text/vision execution slots are allocated as `deep=1`, `balanced=2`, and `fast=2`. Thus Sol-only uses one `sol/high`, two `sol/medium`, and two `sol/low` slots; Terra-only uses one `terra/max`, two `terra/xhigh`, and two `terra/high` slots; Luna-only uses one `luna/max`, two `luna/xhigh`, and two `luna/high` slots. Repetition within a tier is intentional. The image-generation queue is separate and remains at one concurrent request.
+The five shared text/vision execution slots are allocated as `deep=1`, `balanced=2`, and `fast=2`. Thus Sol-only uses one `sol/high`, two `sol/medium`, and two `sol/low` slots; Terra-only uses one `terra/max`, two `terra/xhigh`, and two `terra/high` slots; Luna-only uses one `luna/max`, two `luna/xhigh`, and two `luna/high` slots; GLM-only uses one `glm-5.3-flash/max`, two `glm-5.3-flash/high`, and two `glm-5.3-flash/low` slots; DeepSeek V4-only uses one `deepseek-v4-pro/max`, two `deepseek-v4-flash/max`, and two `deepseek-v4-flash/high` slots. Repetition within a tier is intentional. The image-generation queue is separate and remains at one concurrent request.
 
 ## Role-Scoped `.env` Format
 
@@ -39,7 +39,7 @@ IMAGE_PROVIDER_CONCURRENCY_PER_KEY=10
 IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 ```
 
-`TEXT_PROVIDER_ROUTING_MODE` accepts `auto` or `fixed` and fails closed for any other value. The backward-compatible default is `fixed`. `TEXT_PROVIDER_PRESET_SET` selects one complete family-only set and `TEXT_PROVIDER_QUALITY_TIER` selects its configured fallback tier. They must be supplied together. In `auto` mode the configured set is also the process-start active set; when it is omitted, auto routing starts with the preferred `sol-only` set. The only accepted sets are `sol-only`, `terra-only`, and `luna-only`; a set cannot contain a model from another family.
+`TEXT_PROVIDER_ROUTING_MODE` accepts `auto` or `fixed` and fails closed for any other value. The backward-compatible default is `fixed`. `TEXT_PROVIDER_PRESET_SET` selects one complete family-only set and `TEXT_PROVIDER_QUALITY_TIER` selects its configured fallback tier. They must be supplied together. In `auto` mode the configured set is also the process-start active set; when it is omitted, auto routing starts with the preferred `sol-only` set. The accepted sets are `sol-only`, `terra-only`, `luna-only`, `glm-only`, and `deepseek-v4-only`; a set cannot contain a model from another family, and an explicit model must match the selected tier exactly.
 
 | Preset set | Quality tier | Model | Reasoning effort |
 | --- | --- | --- | --- |
@@ -52,12 +52,18 @@ IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 | `luna-only` | `deep` | `gpt-5.6-luna` | `max` |
 | `luna-only` | `balanced` | `gpt-5.6-luna` | `xhigh` |
 | `luna-only` | `fast` | `gpt-5.6-luna` | `high` |
+| `glm-only` | `deep` | `glm-5.3-flash` | `max` |
+| `glm-only` | `balanced` | `glm-5.3-flash` | `high` |
+| `glm-only` | `fast` | `glm-5.3-flash` | `low` |
+| `deepseek-v4-only` | `deep` | `deepseek-v4-pro` | `max` |
+| `deepseek-v4-only` | `balanced` | `deepseek-v4-flash` | `max` |
+| `deepseek-v4-only` | `fast` | `deepseek-v4-flash` | `high` |
 
-The runtime selects one active preset set per gateway and credential scope. A numbered endpoint fallback may select its own `TEXT_PROVIDER_FALLBACK_N_PRESET_SET` and `TEXT_PROVIDER_FALLBACK_N_QUALITY_TIER`, but a single endpoint configuration cannot combine Sol, Terra, and Luna in one set. Existing configurations without a set continue to use explicit model and reasoning fields.
+The runtime selects one active preset set per gateway and credential scope. A numbered endpoint fallback may select its own `TEXT_PROVIDER_FALLBACK_N_PRESET_SET` and `TEXT_PROVIDER_FALLBACK_N_QUALITY_TIER`, but a single endpoint configuration cannot combine model families in one set. Existing configurations without a set continue to use explicit model and reasoning fields.
 
 In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity. It starts from the configured complete set (the recommended default is Sol-only). If a request fails with a retryable reachability or upstream failure, it probes the next preset set through `GET /v1/models` before dispatching the same tier in that set. After a successful fallback, the whole set is active for subsequent requests until another failure causes a health-ordered switch. Concurrent requests use a versioned transition, so an earlier in-flight success cannot overwrite a newer failover result. `fixed` is an operator lock: it sends only the configured family and never performs a cross-family fallback.
 
-`TEXT_PROVIDER_RECOVERY_MODE` accepts `disabled` (the default) or `prefer-sol`. `prefer-sol` requires `TEXT_PROVIDER_ROUTING_MODE=auto`; it never rewrites `.env` and only runs while a live desktop host is running. When the active set is Terra-only or Luna-only, the recovery controller waits ten minutes between checks, first uses the non-generating model catalog probe, then validates all three Sol tiers with bounded `POST /v1/responses` canaries. Two consecutive complete successful rounds promote the process-local active set back to Sol-only. A failed canary resets the success count and backs off `10 -> 20 -> 40 -> 60` minutes; every canary is capped at 45 seconds and shares the corresponding execution slot. Model catalog visibility alone never promotes a set.
+`TEXT_PROVIDER_RECOVERY_MODE` accepts `disabled` (the default) or `prefer-sol`. `prefer-sol` requires `TEXT_PROVIDER_ROUTING_MODE=auto`; it never rewrites `.env` and only runs while a live desktop host is running. When the active set is any non-Sol family, the recovery controller waits ten minutes between checks, first uses the non-generating model catalog probe, then validates all three Sol tiers with bounded `POST /v1/responses` canaries. Two consecutive complete successful rounds promote the process-local active set back to Sol-only. A failed canary resets the success count and backs off `10 -> 20 -> 40 -> 60` minutes; every canary is capped at 45 seconds and shares the corresponding execution slot. Model catalog visibility alone never promotes a set.
 
 | Workload | Selected preset |
 | --- | --- |
