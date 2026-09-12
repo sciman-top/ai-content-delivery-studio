@@ -1,12 +1,12 @@
 # AGENTS.md - ai-content-delivery-studio
 **项目契约**: 2.0
-**全局规则复核**: 9.77
-**最后更新**: 2026-08-20
+**全局规则复核**: 9.81
+**最后更新**: 2026-09-12
 
 ## 1. 当前落点与目标归宿
 - 当前落点：`D:\CODE\ai-content-delivery-studio` 是 AI Content Delivery Studio 的实现仓，图像系列与科学图解是当前生产路径。
 - 目标归宿：交付 Windows-first 桌面应用，覆盖素材理解、系列规划、生成、审查、修复、自动化和交付打包。
-- 下一最小里程碑：直接修复当前代码中的有证据问题；`docs/TASKS.md` 只记录不能由仓库自主完成的四个外部阻断。
+- `docs/TASKS.md` 只记录不能由仓库自主完成的外部阻断，不把仓内可修复事项或历史计数固化到根规则。
 - `D:\CODE\physicist_chinese_poster_batch_tool` 仅是生产案例，不是实现根；仓库重命名以 `docs/adr/0008-product-identity-and-repository-rename.md` 的 gate 为准。
 - 当前外部阻断从 `docs/TASKS.md` fresh read；provider/live 状态和交付批次仅从对应历史验收记录读取，不把旧快照当作当前门禁。
 
@@ -43,8 +43,7 @@
 - full closeout：触及运行/交付风险，或 focused 发现跨面风险时运行一次 `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/verify-repo.ps1 -Mode Full`；它只执行一次 build、非 ReleaseOnly tests、reference contract 与 diff hygiene。
 - 触及 provider、observability、persistence/schema 或 operator/tooling 边界时，reference evidence 失败即阻断。
 - `docs/change-evidence/` 只用于无法由代码和 Git 历史重建的 live、人审、硬件、迁移、waiver 或 release acceptance；普通修复不写证据文件。
-- 回滚只撤销本任务源码/规则/证据切片；生成输出和 workspace 需要时在 Git 外备份，不能用 Git 回滚伪装恢复。
 
 ## D. Git 与回滚
 - Git baseline=`main`; upstream=`origin/main`; closeout=`proportional_focused_or_full`。
-- 回滚只撤销本任务源码、规则或证据切片；生成输出与 workspace 需要时在 Git 外备份。
+- 回滚只撤销本任务源码、规则或证据切片；生成输出与 workspace 需要时在 Git 外备份，不能用 Git 回滚伪装恢复。
