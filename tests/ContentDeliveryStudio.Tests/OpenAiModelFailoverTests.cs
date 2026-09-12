@@ -6,6 +6,9 @@ namespace ContentDeliveryStudio.Tests;
 public sealed class OpenAiModelFailoverTests
 {
     [Theory]
+    [InlineData("astra", OpenAiExecutionQualityTier.Deep, "gpt-6-astra", "high", "astra-high")]
+    [InlineData("astra", OpenAiExecutionQualityTier.Balanced, "gpt-6-astra", "medium", "astra-medium")]
+    [InlineData("astra", OpenAiExecutionQualityTier.Fast, "gpt-6-astra", "low", "astra-low")]
     [InlineData("sol", OpenAiExecutionQualityTier.Deep, "gpt-5.6-sol", "high", "sol-high")]
     [InlineData("sol", OpenAiExecutionQualityTier.Balanced, "gpt-5.6-sol", "medium", "sol-medium")]
     [InlineData("sol", OpenAiExecutionQualityTier.Fast, "gpt-5.6-sol", "low", "sol-low")]
@@ -18,9 +21,9 @@ public sealed class OpenAiModelFailoverTests
     [InlineData("glm-5.3-flash", OpenAiExecutionQualityTier.Deep, "glm-5.3-flash", "max", "glm-5.3-flash-max")]
     [InlineData("glm-5.3-flash", OpenAiExecutionQualityTier.Balanced, "glm-5.3-flash", "high", "glm-5.3-flash-high")]
     [InlineData("glm-5.3-flash", OpenAiExecutionQualityTier.Fast, "glm-5.3-flash", "low", "glm-5.3-flash-low")]
-    [InlineData("deepseek-v4", OpenAiExecutionQualityTier.Deep, "deepseek-v4-pro", "max", "deepseek-v4-pro-max")]
-    [InlineData("deepseek-v4", OpenAiExecutionQualityTier.Balanced, "deepseek-v4-flash", "max", "deepseek-v4-flash-max")]
-    [InlineData("deepseek-v4", OpenAiExecutionQualityTier.Fast, "deepseek-v4-flash", "high", "deepseek-v4-flash-high")]
+    [InlineData("deepseek-v4.1", OpenAiExecutionQualityTier.Deep, "deepseek-v4.1-flash", "max", "deepseek-v4.1-flash-max")]
+    [InlineData("deepseek-v4.1", OpenAiExecutionQualityTier.Balanced, "deepseek-v4.1-flash", "high", "deepseek-v4.1-flash-high")]
+    [InlineData("deepseek-v4.1", OpenAiExecutionQualityTier.Fast, "deepseek-v4.1-flash", "high", "deepseek-v4.1-flash-high")]
     public void FallbackRoutes_SwitchModelFamilyInConfiguredPriorityOrder(
         string family,
         OpenAiExecutionQualityTier qualityTier,
@@ -46,11 +49,17 @@ public sealed class OpenAiModelFailoverTests
         Assert.All(fallbackRoutes, fallback =>
         {
             Assert.Equal(qualityTier, fallback.QualityTier);
-            Assert.Equal(
+            // DeepSeek balanced and fast share one preset, so the reverse
+            // preset-to-tier map is not symmetric; assert the forward mapping
+            // instead: the preserved tier must resolve to exactly this
+            // fallback's preset inside its own family.
+            Assert.True(TextProviderModelPresets.TryResolveForPresetSet(
+                fallback.PresetSet,
                 qualityTier,
-                TextProviderModelPresets.TryGetQualityTier(fallback.Preset, out var resolvedTier)
-                    ? resolvedTier
-                    : throw new Xunit.Sdk.XunitException("Fallback preset did not resolve."));
+                out var tierPreset,
+                out _,
+                out _));
+            Assert.Equal(fallback.Preset, tierPreset);
         });
     }
 
@@ -111,7 +120,9 @@ public sealed class OpenAiModelFailoverTests
         Assert.Equal(
             new[] { "medium", "xhigh", "xhigh", "medium" },
             dispatchedRoutes.Select(item => item.ReasoningEffort));
-        Assert.Equal(new[] { "gpt-5.6-terra", "gpt-5.6-sol" }, probe.ProbedModels);
+        Assert.Equal(
+            new[] { "gpt-6-astra", "gpt-5.6-terra", "gpt-6-astra", "gpt-5.6-sol" },
+            probe.ProbedModels);
         Assert.Equal(TextProviderModelPresetSets.SolOnly, state.GetActivePresetSet(options));
     }
 
@@ -195,6 +206,9 @@ public sealed class OpenAiModelFailoverTests
     }
 
     [Theory]
+    [InlineData(TextProviderModelPresetSets.AstraOnly, OpenAiExecutionQualityTier.Deep, "gpt-6-astra", "high")]
+    [InlineData(TextProviderModelPresetSets.AstraOnly, OpenAiExecutionQualityTier.Balanced, "gpt-6-astra", "medium")]
+    [InlineData(TextProviderModelPresetSets.AstraOnly, OpenAiExecutionQualityTier.Fast, "gpt-6-astra", "low")]
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Deep, "gpt-5.6-sol", "high")]
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Balanced, "gpt-5.6-sol", "medium")]
     [InlineData(TextProviderModelPresetSets.SolOnly, OpenAiExecutionQualityTier.Fast, "gpt-5.6-sol", "low")]
@@ -207,9 +221,9 @@ public sealed class OpenAiModelFailoverTests
     [InlineData(TextProviderModelPresetSets.GlmOnly, OpenAiExecutionQualityTier.Deep, "glm-5.3-flash", "max")]
     [InlineData(TextProviderModelPresetSets.GlmOnly, OpenAiExecutionQualityTier.Balanced, "glm-5.3-flash", "high")]
     [InlineData(TextProviderModelPresetSets.GlmOnly, OpenAiExecutionQualityTier.Fast, "glm-5.3-flash", "low")]
-    [InlineData(TextProviderModelPresetSets.DeepSeekV4Only, OpenAiExecutionQualityTier.Deep, "deepseek-v4-pro", "max")]
-    [InlineData(TextProviderModelPresetSets.DeepSeekV4Only, OpenAiExecutionQualityTier.Balanced, "deepseek-v4-flash", "max")]
-    [InlineData(TextProviderModelPresetSets.DeepSeekV4Only, OpenAiExecutionQualityTier.Fast, "deepseek-v4-flash", "high")]
+    [InlineData(TextProviderModelPresetSets.DeepSeekV41Only, OpenAiExecutionQualityTier.Deep, "deepseek-v4.1-flash", "max")]
+    [InlineData(TextProviderModelPresetSets.DeepSeekV41Only, OpenAiExecutionQualityTier.Balanced, "deepseek-v4.1-flash", "high")]
+    [InlineData(TextProviderModelPresetSets.DeepSeekV41Only, OpenAiExecutionQualityTier.Fast, "deepseek-v4.1-flash", "high")]
     public void PresetSet_MapsEveryTierToOneAndOnlyOneModelFamily(
         string presetSet,
         OpenAiExecutionQualityTier qualityTier,
@@ -410,13 +424,16 @@ public sealed class OpenAiModelFailoverTests
 
         Assert.Equal("gpt-5.6-luna", result);
         Assert.Equal(new[] { "gpt-5.6-sol", "gpt-5.6-luna" }, dispatchedModels);
-        Assert.Equal(new[] { "gpt-5.6-terra", "gpt-5.6-luna" }, probe.ProbedModels);
+        Assert.Equal(
+            new[] { "gpt-6-astra", "gpt-5.6-terra", "gpt-5.6-luna" },
+            probe.ProbedModels);
     }
 
     [Fact]
-    public async Task Execute_WhenCurrentTerraFails_ProbesSolBeforeLuna()
+    public async Task Execute_WhenCurrentTerraFails_ProbesFamiliesInPriorityOrder()
     {
         var probe = new RecordingAvailabilityProbe(
+            ("gpt-6-astra", false),
             ("gpt-5.6-sol", false),
             ("gpt-5.6-luna", true));
         var route = new OpenAiTaskModelRoute(
@@ -441,7 +458,9 @@ public sealed class OpenAiModelFailoverTests
 
         Assert.Equal("gpt-5.6-luna", result);
         Assert.Equal(new[] { "gpt-5.6-terra", "gpt-5.6-luna" }, dispatchedModels);
-        Assert.Equal(new[] { "gpt-5.6-sol", "gpt-5.6-luna" }, probe.ProbedModels);
+        Assert.Equal(
+            new[] { "gpt-6-astra", "gpt-5.6-sol", "gpt-5.6-luna" },
+            probe.ProbedModels);
     }
 
     [Fact]

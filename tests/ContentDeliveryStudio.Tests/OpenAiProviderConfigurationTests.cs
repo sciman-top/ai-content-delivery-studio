@@ -90,6 +90,9 @@ public sealed class OpenAiProviderConfigurationTests
     }
 
     [Theory]
+    [InlineData(TextProviderModelPresets.AstraHigh, "gpt-6-astra", "high")]
+    [InlineData(TextProviderModelPresets.AstraMedium, "gpt-6-astra", "medium")]
+    [InlineData(TextProviderModelPresets.AstraLow, "gpt-6-astra", "low")]
     [InlineData(TextProviderModelPresets.SolHigh, "gpt-5.6-sol", "high")]
     [InlineData(TextProviderModelPresets.SolMedium, "gpt-5.6-sol", "medium")]
     [InlineData(TextProviderModelPresets.SolLow, "gpt-5.6-sol", "low")]
@@ -102,9 +105,8 @@ public sealed class OpenAiProviderConfigurationTests
     [InlineData(TextProviderModelPresets.GlmFlashMax, "glm-5.3-flash", "max")]
     [InlineData(TextProviderModelPresets.GlmFlashHigh, "glm-5.3-flash", "high")]
     [InlineData(TextProviderModelPresets.GlmFlashLow, "glm-5.3-flash", "low")]
-    [InlineData(TextProviderModelPresets.DeepSeekV4ProMax, "deepseek-v4-pro", "max")]
-    [InlineData(TextProviderModelPresets.DeepSeekV4FlashMax, "deepseek-v4-flash", "max")]
-    [InlineData(TextProviderModelPresets.DeepSeekV4FlashHigh, "deepseek-v4-flash", "high")]
+    [InlineData(TextProviderModelPresets.DeepSeekV41FlashMax, "deepseek-v4.1-flash", "max")]
+    [InlineData(TextProviderModelPresets.DeepSeekV41FlashHigh, "deepseek-v4.1-flash", "high")]
     public void ProviderEnvironmentConfiguration_ResolvesSupportedTextProviderPreset(
         string preset,
         string expectedModel,
@@ -237,6 +239,31 @@ public sealed class OpenAiProviderConfigurationTests
     }
 
     [Fact]
+    public void ProviderEnvironmentConfiguration_ResolvesAstraOnlyPresetSetAndQualityTier()
+    {
+        var configuration = ProviderEnvironmentConfiguration.FromValues(
+            new Dictionary<string, string?>
+            {
+                ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["TEXT_PROVIDER_API_KEY"] = "sk-text",
+                ["TEXT_PROVIDER_PRESET_SET"] = TextProviderModelPresetSets.AstraOnly,
+                ["TEXT_PROVIDER_QUALITY_TIER"] = "fast",
+                ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
+                ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
+            });
+
+        Assert.Empty(configuration.Validate());
+        Assert.Equal(TextProviderModelPresetSets.AstraOnly, configuration.Text.ModelPresetSet);
+        Assert.Equal("fast", configuration.Text.QualityTier);
+        Assert.Equal(TextProviderModelPresets.AstraLow, configuration.Text.ModelPreset);
+        Assert.Equal(
+            TextProviderModelPresetSets.AstraOnly,
+            OpenAiProviderOptions.FromTextProviderEnvironment(configuration).InitialPresetSet);
+        Assert.Equal("gpt-6-astra", configuration.Text.Model);
+        Assert.Equal("low", configuration.Text.ReasoningEffort);
+    }
+
+    [Fact]
     public void ProviderEnvironmentConfiguration_RejectsModelThatMixesAOneFamilyOnlyPresetSet()
     {
         var configuration = ProviderEnvironmentConfiguration.FromValues(
@@ -257,39 +284,57 @@ public sealed class OpenAiProviderConfigurationTests
     }
 
     [Fact]
-    public void ProviderEnvironmentConfiguration_RejectsSameFamilyModelThatDoesNotMatchDeepSeekTier()
+    public void ProviderEnvironmentConfiguration_RejectsSameFamilyEffortThatDoesNotMatchDeepSeekTier()
     {
         var configuration = ProviderEnvironmentConfiguration.FromValues(
             new Dictionary<string, string?>
             {
                 ["TEXT_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
                 ["TEXT_PROVIDER_API_KEY"] = "sk-text",
-                ["TEXT_PROVIDER_PRESET_SET"] = TextProviderModelPresetSets.DeepSeekV4Only,
+                ["TEXT_PROVIDER_PRESET_SET"] = TextProviderModelPresetSets.DeepSeekV41Only,
                 ["TEXT_PROVIDER_QUALITY_TIER"] = "deep",
-                ["TEXT_PROVIDER_MODEL"] = "deepseek-v4-flash",
+                ["TEXT_PROVIDER_MODEL"] = "deepseek-v4.1-flash",
+                ["TEXT_PROVIDER_REASONING_EFFORT"] = "high",
                 ["IMAGE_PROVIDER_BASE_URL"] = "https://gateway.example/v1",
                 ["IMAGE_PROVIDER_MODEL"] = "gpt-image-2",
             });
 
         Assert.Contains(
             configuration.Validate(),
-            error => error.Contains("requires model 'deepseek-v4-pro'", StringComparison.OrdinalIgnoreCase));
+            error => error.Contains("requires reasoning effort 'max'", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
-    public void TextProviderModelPresets_DistinguishesDeepSeekProAndFlashMaxTiers()
+    public void TextProviderModelPresets_RepeatsDeepSeekHighEffortAcrossBalancedAndFastTiers()
     {
         Assert.True(TextProviderModelPresets.TryGetQualityTierForModel(
-            "deepseek-v4-pro",
+            "deepseek-v4.1-flash",
             "max",
-            out var proTier));
+            out var maxTier));
         Assert.True(TextProviderModelPresets.TryGetQualityTierForModel(
-            "deepseek-v4-flash",
-            "max",
-            out var flashTier));
+            "deepseek-v4.1-flash",
+            "high",
+            out var highTier));
 
-        Assert.Equal(OpenAiExecutionQualityTier.Deep, proTier);
-        Assert.Equal(OpenAiExecutionQualityTier.Balanced, flashTier);
+        Assert.Equal(OpenAiExecutionQualityTier.Deep, maxTier);
+        Assert.Equal(OpenAiExecutionQualityTier.Fast, highTier);
+
+        foreach (var tier in new[]
+                 {
+                     OpenAiExecutionQualityTier.Balanced,
+                     OpenAiExecutionQualityTier.Fast,
+                 })
+        {
+            Assert.True(TextProviderModelPresets.TryResolveForFamily(
+                TextProviderModelPresets.DeepSeekV41Family,
+                tier,
+                out var preset,
+                out var model,
+                out var reasoningEffort));
+            Assert.Equal(TextProviderModelPresets.DeepSeekV41FlashHigh, preset);
+            Assert.Equal("deepseek-v4.1-flash", model);
+            Assert.Equal("high", reasoningEffort);
+        }
     }
 
     [Fact]

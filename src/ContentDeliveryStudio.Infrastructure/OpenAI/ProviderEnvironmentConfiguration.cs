@@ -24,12 +24,16 @@ public static class TextProviderRecoveryModes
 
 public static class TextProviderModelPresets
 {
+    public const string AstraFamily = "astra";
     public const string SolFamily = "sol";
     public const string TerraFamily = "terra";
     public const string LunaFamily = "luna";
     public const string GlmFamily = "glm-5.3-flash";
-    public const string DeepSeekV4Family = "deepseek-v4";
+    public const string DeepSeekV41Family = "deepseek-v4.1";
 
+    public const string AstraHigh = "astra-high";
+    public const string AstraMedium = "astra-medium";
+    public const string AstraLow = "astra-low";
     public const string SolHigh = "sol-high";
     public const string SolMedium = "sol-medium";
     public const string SolLow = "sol-low";
@@ -42,24 +46,27 @@ public static class TextProviderModelPresets
     public const string GlmFlashMax = "glm-5.3-flash-max";
     public const string GlmFlashHigh = "glm-5.3-flash-high";
     public const string GlmFlashLow = "glm-5.3-flash-low";
-    public const string DeepSeekV4ProMax = "deepseek-v4-pro-max";
-    public const string DeepSeekV4FlashMax = "deepseek-v4-flash-max";
-    public const string DeepSeekV4FlashHigh = "deepseek-v4-flash-high";
+    public const string DeepSeekV41FlashMax = "deepseek-v4.1-flash-max";
+    public const string DeepSeekV41FlashHigh = "deepseek-v4.1-flash-high";
 
     public static IReadOnlyList<string> SetNames { get; } =
         [
+            TextProviderModelPresetSets.AstraOnly,
             TextProviderModelPresetSets.SolOnly,
             TextProviderModelPresetSets.TerraOnly,
             TextProviderModelPresetSets.LunaOnly,
             TextProviderModelPresetSets.GlmOnly,
-            TextProviderModelPresetSets.DeepSeekV4Only,
+            TextProviderModelPresetSets.DeepSeekV41Only,
         ];
 
     public static IReadOnlyList<string> PreferredModelFamilies { get; } =
-        [SolFamily, TerraFamily, LunaFamily, GlmFamily, DeepSeekV4Family];
+        [AstraFamily, SolFamily, TerraFamily, LunaFamily, GlmFamily, DeepSeekV41Family];
 
     public static IReadOnlyList<string> Names { get; } =
         [
+            AstraHigh,
+            AstraMedium,
+            AstraLow,
             SolHigh,
             SolMedium,
             SolLow,
@@ -72,15 +79,26 @@ public static class TextProviderModelPresets
             GlmFlashMax,
             GlmFlashHigh,
             GlmFlashLow,
-            DeepSeekV4ProMax,
-            DeepSeekV4FlashMax,
-            DeepSeekV4FlashHigh,
+            DeepSeekV41FlashMax,
+            DeepSeekV41FlashHigh,
         ];
 
     public static bool TryResolve(string? name, out string model, out string reasoningEffort)
     {
         switch (name?.Trim().ToLowerInvariant())
         {
+            case AstraHigh:
+                model = "gpt-6-astra";
+                reasoningEffort = "high";
+                return true;
+            case AstraMedium:
+                model = "gpt-6-astra";
+                reasoningEffort = "medium";
+                return true;
+            case AstraLow:
+                model = "gpt-6-astra";
+                reasoningEffort = "low";
+                return true;
             case SolHigh:
                 model = "gpt-5.6-sol";
                 reasoningEffort = "high";
@@ -129,16 +147,12 @@ public static class TextProviderModelPresets
                 model = "glm-5.3-flash";
                 reasoningEffort = "low";
                 return true;
-            case DeepSeekV4ProMax:
-                model = "deepseek-v4-pro";
+            case DeepSeekV41FlashMax:
+                model = "deepseek-v4.1-flash";
                 reasoningEffort = "max";
                 return true;
-            case DeepSeekV4FlashMax:
-                model = "deepseek-v4-flash";
-                reasoningEffort = "max";
-                return true;
-            case DeepSeekV4FlashHigh:
-                model = "deepseek-v4-flash";
+            case DeepSeekV41FlashHigh:
+                model = "deepseek-v4.1-flash";
                 reasoningEffort = "high";
                 return true;
             default:
@@ -166,11 +180,12 @@ public static class TextProviderModelPresets
     {
         presetSet = preset?.Trim().ToLowerInvariant() switch
         {
+            AstraHigh or AstraMedium or AstraLow => TextProviderModelPresetSets.AstraOnly,
             SolHigh or SolMedium or SolLow => TextProviderModelPresetSets.SolOnly,
             TerraMax or TerraXHigh or TerraHigh => TextProviderModelPresetSets.TerraOnly,
             LunaMax or LunaXHigh or LunaHigh => TextProviderModelPresetSets.LunaOnly,
             GlmFlashMax or GlmFlashHigh or GlmFlashLow => TextProviderModelPresetSets.GlmOnly,
-            DeepSeekV4ProMax or DeepSeekV4FlashMax or DeepSeekV4FlashHigh => TextProviderModelPresetSets.DeepSeekV4Only,
+            DeepSeekV41FlashMax or DeepSeekV41FlashHigh => TextProviderModelPresetSets.DeepSeekV41Only,
             _ => string.Empty,
         };
 
@@ -181,11 +196,12 @@ public static class TextProviderModelPresets
     {
         family = model?.Trim().ToLowerInvariant() switch
         {
+            "gpt-6-astra" => AstraFamily,
             "gpt-5.6-sol" => SolFamily,
             "gpt-5.6-terra" => TerraFamily,
             "gpt-5.6-luna" => LunaFamily,
             "glm-5.3-flash" => GlmFamily,
-            "deepseek-v4-pro" or "deepseek-v4-flash" => DeepSeekV4Family,
+            "deepseek-v4.1-flash" => DeepSeekV41Family,
             _ => string.Empty,
         };
 
@@ -202,6 +218,13 @@ public static class TextProviderModelPresets
         var normalizedFamily = family?.Trim().ToLowerInvariant();
         preset = normalizedFamily switch
         {
+            AstraFamily => qualityTier switch
+            {
+                OpenAiExecutionQualityTier.Deep => AstraHigh,
+                OpenAiExecutionQualityTier.Balanced => AstraMedium,
+                OpenAiExecutionQualityTier.Fast => AstraLow,
+                _ => string.Empty,
+            },
             SolFamily => qualityTier switch
             {
                 OpenAiExecutionQualityTier.Deep => SolHigh,
@@ -230,11 +253,13 @@ public static class TextProviderModelPresets
                 OpenAiExecutionQualityTier.Fast => GlmFlashLow,
                 _ => string.Empty,
             },
-            DeepSeekV4Family => qualityTier switch
+            // The V4.1 Flash family exposes only max and high efforts, so the
+            // balanced and fast slots intentionally share the high preset.
+            DeepSeekV41Family => qualityTier switch
             {
-                OpenAiExecutionQualityTier.Deep => DeepSeekV4ProMax,
-                OpenAiExecutionQualityTier.Balanced => DeepSeekV4FlashMax,
-                OpenAiExecutionQualityTier.Fast => DeepSeekV4FlashHigh,
+                OpenAiExecutionQualityTier.Deep => DeepSeekV41FlashMax,
+                OpenAiExecutionQualityTier.Balanced => DeepSeekV41FlashHigh,
+                OpenAiExecutionQualityTier.Fast => DeepSeekV41FlashHigh,
                 _ => string.Empty,
             },
             _ => string.Empty,
@@ -272,12 +297,12 @@ public static class TextProviderModelPresets
     {
         qualityTier = preset?.Trim().ToLowerInvariant() switch
         {
-            SolHigh or TerraMax or LunaMax => OpenAiExecutionQualityTier.Deep,
-            SolMedium or TerraXHigh or LunaXHigh => OpenAiExecutionQualityTier.Balanced,
-            SolLow or TerraHigh or LunaHigh => OpenAiExecutionQualityTier.Fast,
-            GlmFlashMax or DeepSeekV4ProMax => OpenAiExecutionQualityTier.Deep,
-            GlmFlashHigh or DeepSeekV4FlashMax => OpenAiExecutionQualityTier.Balanced,
-            GlmFlashLow or DeepSeekV4FlashHigh => OpenAiExecutionQualityTier.Fast,
+            AstraHigh or SolHigh or TerraMax or LunaMax => OpenAiExecutionQualityTier.Deep,
+            AstraMedium or SolMedium or TerraXHigh or LunaXHigh => OpenAiExecutionQualityTier.Balanced,
+            AstraLow or SolLow or TerraHigh or LunaHigh => OpenAiExecutionQualityTier.Fast,
+            GlmFlashMax or DeepSeekV41FlashMax => OpenAiExecutionQualityTier.Deep,
+            GlmFlashHigh => OpenAiExecutionQualityTier.Balanced,
+            GlmFlashLow or DeepSeekV41FlashHigh => OpenAiExecutionQualityTier.Fast,
             _ => default,
         };
 
@@ -298,6 +323,9 @@ public static class TextProviderModelPresets
         var normalizedEffort = reasoningEffort?.Trim().ToLowerInvariant();
         qualityTier = family switch
         {
+            AstraFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Deep,
+            AstraFamily when normalizedEffort is "medium" => OpenAiExecutionQualityTier.Balanced,
+            AstraFamily when normalizedEffort is "low" => OpenAiExecutionQualityTier.Fast,
             SolFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Deep,
             SolFamily when normalizedEffort is "medium" => OpenAiExecutionQualityTier.Balanced,
             SolFamily when normalizedEffort is "low" => OpenAiExecutionQualityTier.Fast,
@@ -307,24 +335,17 @@ public static class TextProviderModelPresets
             GlmFamily when normalizedEffort is "max" => OpenAiExecutionQualityTier.Deep,
             GlmFamily when normalizedEffort is "high" => OpenAiExecutionQualityTier.Balanced,
             GlmFamily when normalizedEffort is "low" => OpenAiExecutionQualityTier.Fast,
-            DeepSeekV4Family when string.Equals(model, "deepseek-v4-pro", StringComparison.OrdinalIgnoreCase)
-                && normalizedEffort is "max" => OpenAiExecutionQualityTier.Deep,
-            DeepSeekV4Family when string.Equals(model, "deepseek-v4-flash", StringComparison.OrdinalIgnoreCase)
-                && normalizedEffort is "max" => OpenAiExecutionQualityTier.Balanced,
-            DeepSeekV4Family when string.Equals(model, "deepseek-v4-flash", StringComparison.OrdinalIgnoreCase)
-                && normalizedEffort is "high" => OpenAiExecutionQualityTier.Fast,
+            DeepSeekV41Family when normalizedEffort is "max" => OpenAiExecutionQualityTier.Deep,
+            DeepSeekV41Family when normalizedEffort is "high" => OpenAiExecutionQualityTier.Fast,
             _ => default,
         };
 
         return family switch
         {
-            SolFamily => normalizedEffort is "high" or "medium" or "low",
+            AstraFamily or SolFamily => normalizedEffort is "high" or "medium" or "low",
             TerraFamily or LunaFamily => normalizedEffort is "max" or "xhigh" or "high",
             GlmFamily => normalizedEffort is "max" or "high" or "low",
-            DeepSeekV4Family => (string.Equals(model, "deepseek-v4-pro", StringComparison.OrdinalIgnoreCase)
-                && normalizedEffort is "max")
-                || (string.Equals(model, "deepseek-v4-flash", StringComparison.OrdinalIgnoreCase)
-                    && (normalizedEffort is "max" or "high")),
+            DeepSeekV41Family => normalizedEffort is "max" or "high",
             _ => false,
         };
     }
@@ -332,23 +353,26 @@ public static class TextProviderModelPresets
 
 public static class TextProviderModelPresetSets
 {
-    public const string SolOnly = "sol-only";
-    public const string TerraOnly = "terra-only";
-    public const string LunaOnly = "luna-only";
+    public const string AstraOnly = "gpt-6-astra-only";
+    public const string SolOnly = "gpt-5.6-sol-only";
+    public const string TerraOnly = "gpt-5.6-terra-only";
+    public const string LunaOnly = "gpt-5.6-luna-only";
     public const string GlmOnly = "glm-only";
-    public const string DeepSeekV4Only = "deepseek-v4-only";
+    public const string DeepSeekV41Only = "deepseek-v4.1-only";
 
-    public static IReadOnlyList<string> Names { get; } = [SolOnly, TerraOnly, LunaOnly, GlmOnly, DeepSeekV4Only];
+    public static IReadOnlyList<string> Names { get; } =
+        [AstraOnly, SolOnly, TerraOnly, LunaOnly, GlmOnly, DeepSeekV41Only];
 
     public static bool TryGetFamily(string? presetSet, out string family)
     {
         family = presetSet?.Trim().ToLowerInvariant() switch
         {
+            AstraOnly => TextProviderModelPresets.AstraFamily,
             SolOnly => TextProviderModelPresets.SolFamily,
             TerraOnly => TextProviderModelPresets.TerraFamily,
             LunaOnly => TextProviderModelPresets.LunaFamily,
             GlmOnly => TextProviderModelPresets.GlmFamily,
-            DeepSeekV4Only => TextProviderModelPresets.DeepSeekV4Family,
+            DeepSeekV41Only => TextProviderModelPresets.DeepSeekV41Family,
             _ => string.Empty,
         };
 
@@ -359,11 +383,12 @@ public static class TextProviderModelPresetSets
     {
         presetSet = family?.Trim().ToLowerInvariant() switch
         {
+            TextProviderModelPresets.AstraFamily => AstraOnly,
             TextProviderModelPresets.SolFamily => SolOnly,
             TextProviderModelPresets.TerraFamily => TerraOnly,
             TextProviderModelPresets.LunaFamily => LunaOnly,
             TextProviderModelPresets.GlmFamily => GlmOnly,
-            TextProviderModelPresets.DeepSeekV4Family => DeepSeekV4Only,
+            TextProviderModelPresets.DeepSeekV41Family => DeepSeekV41Only,
             _ => string.Empty,
         };
 

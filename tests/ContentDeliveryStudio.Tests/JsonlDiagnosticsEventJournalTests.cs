@@ -36,7 +36,7 @@ public sealed class JsonlDiagnosticsEventJournalTests
             ModelPreset: "terra-high",
             ReasoningEffort: "high",
             RouteReason: "routine-series-plan",
-            PresetSet: "terra-only"));
+            PresetSet: "gpt-5.6-terra-only"));
 
         var result = await journal.ReadRecentAsync(500, CancellationToken.None);
 
@@ -49,7 +49,7 @@ public sealed class JsonlDiagnosticsEventJournalTests
         Assert.Equal("terra-high", result.Entries[1].Properties.ModelPreset);
         Assert.Equal("high", result.Entries[1].Properties.ReasoningEffort);
         Assert.Equal("routine-series-plan", result.Entries[1].Properties.RouteReason);
-        Assert.Equal("terra-only", result.Entries[1].Properties.PresetSet);
+        Assert.Equal("gpt-5.6-terra-only", result.Entries[1].Properties.PresetSet);
         Assert.Equal(0, result.DroppedCount);
         Assert.Equal(0, result.InvalidCount);
         Assert.DoesNotContain("sk-not-a-safe-model", await File.ReadAllTextAsync(journal.ActiveFilePath));

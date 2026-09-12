@@ -4,15 +4,15 @@ This file defines credential naming and role boundaries. Request routing, statef
 
 This project treats provider credentials as role-scoped, not just vendor-scoped. A key that is licensed only for image generation must never be used for text planning or vision review. The local development shape uses the Cockpit gateway at `http://127.0.0.1:45335/v1`; real key material is resolved from the Windows DPAPI store when `PROVIDER_SECRET_STORE=dpapi` is selected.
 
-The text and vision path has mutually exclusive family-only preset sets: `sol-only`, `terra-only`, `luna-only`, `glm-only`, and `deepseek-v4-only`. At any moment the five shared execution slots use one active set only. A tier is the unit preserved when the runtime switches the whole active set; a raw reasoning string is not reused across families because each family has its own three-level mapping:
+The text and vision path has mutually exclusive family-only preset sets: `gpt-6-astra-only`, `gpt-5.6-sol-only`, `gpt-5.6-terra-only`, `gpt-5.6-luna-only`, `glm-only`, and `deepseek-v4.1-only`. At any moment the five shared execution slots use one active set only, and no slot of an active set may resolve to a model from another family. Each preset set exposes only its own model family's two or three tiers, and the slots map from those tiers with repetition allowed. A tier is the unit preserved when the runtime switches the whole active set; a raw reasoning string is not reused across families because each family has its own tier ladder. The GLM-5.3-Flash and DeepSeek V4.1 Flash sets mirror the tiers exposed by their host tools (zcodex and Claude Code respectively); DeepSeek V4.1 Flash exposes only `max` and `high`, so its `balanced` and `fast` slots deliberately repeat the `high` preset:
 
-| Quality tier | Sol | Terra | Luna | GLM-5.3-Flash | DeepSeek V4 | Shared slots |
-| --- | --- | --- | --- | --- | --- | --- |
-| `deep` | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `max` | `gpt-5.6-luna` / `max` | `glm-5.3-flash` / `max` | `deepseek-v4-pro` / `max` | 1 |
-| `balanced` | `gpt-5.6-sol` / `medium` | `gpt-5.6-terra` / `xhigh` | `gpt-5.6-luna` / `xhigh` | `glm-5.3-flash` / `high` | `deepseek-v4-flash` / `max` | 2 |
-| `fast` | `gpt-5.6-sol` / `low` | `gpt-5.6-terra` / `high` | `gpt-5.6-luna` / `high` | `glm-5.3-flash` / `low` | `deepseek-v4-flash` / `high` | 2 |
+| Quality tier | Astra | Sol | Terra | Luna | GLM-5.3-Flash | DeepSeek V4.1 Flash | Shared slots |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `deep` | `gpt-6-astra` / `high` | `gpt-5.6-sol` / `high` | `gpt-5.6-terra` / `max` | `gpt-5.6-luna` / `max` | `glm-5.3-flash` / `max` | `deepseek-v4.1-flash` / `max` | 1 |
+| `balanced` | `gpt-6-astra` / `medium` | `gpt-5.6-sol` / `medium` | `gpt-5.6-terra` / `xhigh` | `gpt-5.6-luna` / `xhigh` | `glm-5.3-flash` / `high` | `deepseek-v4.1-flash` / `high` | 2 |
+| `fast` | `gpt-6-astra` / `low` | `gpt-5.6-sol` / `low` | `gpt-5.6-terra` / `high` | `gpt-5.6-luna` / `high` | `glm-5.3-flash` / `low` | `deepseek-v4.1-flash` / `high` | 2 |
 
-The five shared text/vision execution slots are allocated as `deep=1`, `balanced=2`, and `fast=2`. Thus Sol-only uses one `sol/high`, two `sol/medium`, and two `sol/low` slots; Terra-only uses one `terra/max`, two `terra/xhigh`, and two `terra/high` slots; Luna-only uses one `luna/max`, two `luna/xhigh`, and two `luna/high` slots; GLM-only uses one `glm-5.3-flash/max`, two `glm-5.3-flash/high`, and two `glm-5.3-flash/low` slots; DeepSeek V4-only uses one `deepseek-v4-pro/max`, two `deepseek-v4-flash/max`, and two `deepseek-v4-flash/high` slots. Repetition within a tier is intentional. The image-generation queue is separate and remains at one concurrent request.
+The five shared text/vision execution slots are allocated as `deep=1`, `balanced=2`, and `fast=2`. Thus GPT-6-Astra-only uses one `astra/high`, two `astra/medium`, and two `astra/low` slots; GPT-5.6-Sol-only uses one `sol/high`, two `sol/medium`, and two `sol/low` slots; GPT-5.6-Terra-only uses one `terra/max`, two `terra/xhigh`, and two `terra/high` slots; GPT-5.6-Luna-only uses one `luna/max`, two `luna/xhigh`, and two `luna/high` slots; GLM-only uses one `glm-5.3-flash/max`, two `glm-5.3-flash/high`, and two `glm-5.3-flash/low` slots; DeepSeek V4.1-only uses one `deepseek-v4.1-flash/max` and four `deepseek-v4.1-flash/high` slots. Repetition within a set is intentional. The image-generation queue is separate and remains at one concurrent request.
 
 ## Role-Scoped `.env` Format
 
@@ -21,7 +21,7 @@ TEXT_PROVIDER_KIND=openai_compatible
 TEXT_PROVIDER_BASE_URL=http://127.0.0.1:45335/v1
 TEXT_PROVIDER_API_KEY=sk-text-provider-key
 TEXT_PROVIDER_ROUTING_MODE=auto
-TEXT_PROVIDER_PRESET_SET=sol-only
+TEXT_PROVIDER_PRESET_SET=gpt-5.6-sol-only
 TEXT_PROVIDER_QUALITY_TIER=deep
 TEXT_PROVIDER_RECOVERY_MODE=prefer-sol
 
@@ -39,31 +39,34 @@ IMAGE_PROVIDER_CONCURRENCY_PER_KEY=10
 IMAGE_PROVIDER_TOTAL_CONCURRENCY=40
 ```
 
-`TEXT_PROVIDER_ROUTING_MODE` accepts `auto` or `fixed` and fails closed for any other value. The backward-compatible default is `fixed`. `TEXT_PROVIDER_PRESET_SET` selects one complete family-only set and `TEXT_PROVIDER_QUALITY_TIER` selects its configured fallback tier. They must be supplied together. In `auto` mode the configured set is also the process-start active set; when it is omitted, auto routing starts with the preferred `sol-only` set. The accepted sets are `sol-only`, `terra-only`, `luna-only`, `glm-only`, and `deepseek-v4-only`; a set cannot contain a model from another family, and an explicit model must match the selected tier exactly.
+`TEXT_PROVIDER_ROUTING_MODE` accepts `auto` or `fixed` and fails closed for any other value. The backward-compatible default is `fixed`. `TEXT_PROVIDER_PRESET_SET` selects one complete family-only set and `TEXT_PROVIDER_QUALITY_TIER` selects its configured fallback tier. They must be supplied together. In `auto` mode the configured set is also the process-start active set; when it is omitted, auto routing starts with the preferred `gpt-5.6-sol-only` set. The accepted sets are `gpt-6-astra-only`, `gpt-5.6-sol-only`, `gpt-5.6-terra-only`, `gpt-5.6-luna-only`, `glm-only`, and `deepseek-v4.1-only`; a set cannot contain a model from another family, and an explicit model must match the selected tier exactly.
 
 | Preset set | Quality tier | Model | Reasoning effort |
 | --- | --- | --- | --- |
-| `sol-only` | `deep` | `gpt-5.6-sol` | `high` |
-| `sol-only` | `balanced` | `gpt-5.6-sol` | `medium` |
-| `sol-only` | `fast` | `gpt-5.6-sol` | `low` |
-| `terra-only` | `deep` | `gpt-5.6-terra` | `max` |
-| `terra-only` | `balanced` | `gpt-5.6-terra` | `xhigh` |
-| `terra-only` | `fast` | `gpt-5.6-terra` | `high` |
-| `luna-only` | `deep` | `gpt-5.6-luna` | `max` |
-| `luna-only` | `balanced` | `gpt-5.6-luna` | `xhigh` |
-| `luna-only` | `fast` | `gpt-5.6-luna` | `high` |
+| `gpt-6-astra-only` | `deep` | `gpt-6-astra` | `high` |
+| `gpt-6-astra-only` | `balanced` | `gpt-6-astra` | `medium` |
+| `gpt-6-astra-only` | `fast` | `gpt-6-astra` | `low` |
+| `gpt-5.6-sol-only` | `deep` | `gpt-5.6-sol` | `high` |
+| `gpt-5.6-sol-only` | `balanced` | `gpt-5.6-sol` | `medium` |
+| `gpt-5.6-sol-only` | `fast` | `gpt-5.6-sol` | `low` |
+| `gpt-5.6-terra-only` | `deep` | `gpt-5.6-terra` | `max` |
+| `gpt-5.6-terra-only` | `balanced` | `gpt-5.6-terra` | `xhigh` |
+| `gpt-5.6-terra-only` | `fast` | `gpt-5.6-terra` | `high` |
+| `gpt-5.6-luna-only` | `deep` | `gpt-5.6-luna` | `max` |
+| `gpt-5.6-luna-only` | `balanced` | `gpt-5.6-luna` | `xhigh` |
+| `gpt-5.6-luna-only` | `fast` | `gpt-5.6-luna` | `high` |
 | `glm-only` | `deep` | `glm-5.3-flash` | `max` |
 | `glm-only` | `balanced` | `glm-5.3-flash` | `high` |
 | `glm-only` | `fast` | `glm-5.3-flash` | `low` |
-| `deepseek-v4-only` | `deep` | `deepseek-v4-pro` | `max` |
-| `deepseek-v4-only` | `balanced` | `deepseek-v4-flash` | `max` |
-| `deepseek-v4-only` | `fast` | `deepseek-v4-flash` | `high` |
+| `deepseek-v4.1-only` | `deep` | `deepseek-v4.1-flash` | `max` |
+| `deepseek-v4.1-only` | `balanced` | `deepseek-v4.1-flash` | `high` |
+| `deepseek-v4.1-only` | `fast` | `deepseek-v4.1-flash` | `high` |
 
 The runtime selects one active preset set per gateway and credential scope. A numbered endpoint fallback may select its own `TEXT_PROVIDER_FALLBACK_N_PRESET_SET` and `TEXT_PROVIDER_FALLBACK_N_QUALITY_TIER`, but a single endpoint configuration cannot combine model families in one set. Existing configurations without a set continue to use explicit model and reasoning fields.
 
-In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity. It starts from the configured complete set (the recommended default is Sol-only). If a request fails with a retryable reachability or upstream failure, it probes the next preset set through `GET /v1/models` before dispatching the same tier in that set. After a successful fallback, the whole set is active for subsequent requests until another failure causes a health-ordered switch. Concurrent requests use a versioned transition, so an earlier in-flight success cannot overwrite a newer failover result. `fixed` is an operator lock: it sends only the configured family and never performs a cross-family fallback.
+In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structured request data; it does not inspect prompt keywords and does not make a second model call to classify complexity. It starts from the configured complete set (the recommended default is GPT-5.6-Sol-only). If a request fails with a retryable reachability or upstream failure, it probes the next preset set through `GET /v1/models` before dispatching the same tier in that set. After a successful fallback, the whole set is active for subsequent requests until another failure causes a health-ordered switch. Concurrent requests use a versioned transition, so an earlier in-flight success cannot overwrite a newer failover result. `fixed` is an operator lock: it sends only the configured family and never performs a cross-family fallback.
 
-`TEXT_PROVIDER_RECOVERY_MODE` accepts `disabled` (the default) or `prefer-sol`. `prefer-sol` requires `TEXT_PROVIDER_ROUTING_MODE=auto`; it never rewrites `.env` and only runs while a live desktop host is running. When the active set is any non-Sol family, the recovery controller waits ten minutes between checks, first uses the non-generating model catalog probe, then validates all three Sol tiers with bounded `POST /v1/responses` canaries. Two consecutive complete successful rounds promote the process-local active set back to Sol-only. A failed canary resets the success count and backs off `10 -> 20 -> 40 -> 60` minutes; every canary is capped at 45 seconds and shares the corresponding execution slot. Model catalog visibility alone never promotes a set.
+`TEXT_PROVIDER_RECOVERY_MODE` accepts `disabled` (the default) or `prefer-sol`. `prefer-sol` requires `TEXT_PROVIDER_ROUTING_MODE=auto`; it never rewrites `.env` and only runs while a live desktop host is running. When the active set is any non-Sol family, the recovery controller waits ten minutes between checks, first uses the non-generating model catalog probe, then validates all three Sol tiers with bounded `POST /v1/responses` canaries. Two consecutive complete successful rounds promote the process-local active set back to GPT-5.6-Sol-only. A failed canary resets the success count and backs off `10 -> 20 -> 40 -> 60` minutes; every canary is capped at 45 seconds and shares the corresponding execution slot. Model catalog visibility alone never promotes a set.
 
 | Workload | Selected preset |
 | --- | --- |
@@ -77,7 +80,7 @@ In `auto` mode, the runtime chooses `deep`, `balanced`, or `fast` from structure
 | Full-resolution scientific visual review | `sol-high` |
 | General vision review | `sol-low`; 5 signals uses `sol-medium`; 8 signals uses `sol-high` |
 
-The selected set, model, and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. Provider-call telemetry and the local redacted diagnostics journal also record the bounded `presetSet`, `modelPreset`, `reasoningEffort`, and `routeReason` fields so route quality can be evaluated without retaining prompts or secrets. `TEXT_PROVIDER_PRESET_SET=sol-only` with `TEXT_PROVIDER_QUALITY_TIER=deep` remains the operator rollback/default configuration when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
+The selected set, model, and effort travel together through HTTP or SDK payloads, telemetry, and scientific-review checkpoint identity. Provider-call telemetry and the local redacted diagnostics journal also record the bounded `presetSet`, `modelPreset`, `reasoningEffort`, and `routeReason` fields so route quality can be evaluated without retaining prompts or secrets. `TEXT_PROVIDER_PRESET_SET=gpt-5.6-sol-only` with `TEXT_PROVIDER_QUALITY_TIER=deep` remains the operator rollback/default configuration when routing is switched back to `fixed`. Fallback profiles remain `fixed` unless their routing mode is explicitly configured and validated for that gateway.
 
 Quality-first invariant: workload classification selects `deep`, `balanced`, or `fast`; family failover never changes that tier. Complex, scholarly, scientific understanding/review, high-risk, and full-resolution scientific visual work select `deep`; large but non-complex work selects `balanced`; routine work selects `fast`. This does not replace schema validation, deterministic checks, or final approval.
 
@@ -94,12 +97,12 @@ For text planning and vision review:
 ```env
 TEXT_PROVIDER_BASE_URL=https://primary-gateway.example/v1
 TEXT_PROVIDER_API_KEY=sk-primary
-TEXT_PROVIDER_PRESET_SET=sol-only
+TEXT_PROVIDER_PRESET_SET=gpt-5.6-sol-only
 TEXT_PROVIDER_QUALITY_TIER=balanced
 
 TEXT_PROVIDER_FALLBACK_1_BASE_URL=https://backup-gateway.example/v1
 TEXT_PROVIDER_FALLBACK_1_API_KEY=sk-backup
-TEXT_PROVIDER_FALLBACK_1_PRESET_SET=terra-only
+TEXT_PROVIDER_FALLBACK_1_PRESET_SET=gpt-5.6-terra-only
 TEXT_PROVIDER_FALLBACK_1_QUALITY_TIER=balanced
 ```
 
@@ -121,7 +124,7 @@ IMAGE_PROVIDER_FALLBACK_1_API_KEY_1=sk-backup
 
 `IMAGE_PROVIDER_IMAGE_SURFACE=responses` means ordinary image-generation requests default to `POST /responses` with the configured `IMAGE_PROVIDER_RESPONSES_MODEL` and an `image_generation` tool. `IMAGE_PROVIDER_IMAGE_SURFACE=images` means ordinary image-generation requests use `POST /images/generations` with `IMAGE_PROVIDER_MODEL`.
 
-The active local fixed rollback set is Sol-only/deep in the recommended `.env` shape above. Explicit legacy model/effort fields remain supported, but they cannot be used to contradict a configured preset set. Image-only `/images/generations` requests do not receive a reasoning field. Automatic text routing does not alter `gpt-image-2`, `IMAGE_PROVIDER_IMAGE_SURFACE=images`, or `POST /images/generations`. Fake providers remain the desktop default until `PROVIDER_MODE=live` is explicitly selected.
+The active local fixed rollback set is GPT-5.6-Sol-only/deep in the recommended `.env` shape above. Explicit legacy model/effort fields remain supported, but they cannot be used to contradict a configured preset set. Image-only `/images/generations` requests do not receive a reasoning field. Automatic text routing does not alter `gpt-image-2`, `IMAGE_PROVIDER_IMAGE_SURFACE=images`, or `POST /images/generations`. Fake providers remain the desktop default until `PROVIDER_MODE=live` is explicitly selected.
 
 Failover should be used only for transient or reachability failures: network failure, timeout, `408`, `429`, or `5xx`. Scientific-review `429` retries honor a gateway `Retry-After` header before the bounded same-model retry budget is exhausted; the final structured `429` can then trigger family failover. Do not fail over on `400`, `401`, or `403`; those indicate request, credential, or authorization problems that should fail closed.
 

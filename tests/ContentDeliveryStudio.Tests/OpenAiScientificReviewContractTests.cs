@@ -90,11 +90,11 @@ public sealed class OpenAiScientificReviewContractTests
         Assert.NotNull(checkpointStore.LoadIdentity);
         Assert.Equal(checkpointStore.LoadIdentity, checkpointStore.SaveIdentity);
         Assert.Equal("gpt-5.6-sol", checkpointStore.LoadIdentity!.Model);
-        Assert.Equal("xhigh", checkpointStore.LoadIdentity.ReasoningEffort);
+        Assert.Equal("high", checkpointStore.LoadIdentity.ReasoningEffort);
         using var payload = JsonDocument.Parse(handler.Body!);
         Assert.Equal("gpt-5.6-sol", payload.RootElement.GetProperty("model").GetString());
         Assert.Equal(
-            "xhigh",
+            "high",
             payload.RootElement.GetProperty("reasoning").GetProperty("effort").GetString());
     }
 
