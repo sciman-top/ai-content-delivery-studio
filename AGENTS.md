@@ -1,6 +1,6 @@
 # AGENTS.md - ai-content-delivery-studio
 **项目契约**: 2.0
-**全局规则复核**: 9.87
+**全局规则复核**: 9.88
 **最后更新**: 2026-10-17
 
 ## 1. 当前落点与目标归宿
@@ -23,7 +23,7 @@
 - API key、生成资产、本地 SQLite 与用户 workspace 不得提交；secret 使用 Windows Credential Manager 或 DPAPI-backed 本地配置。
 - text planning、image generation、vision review 保持独立 provider contract；provider/自动化结果不能单独批准交付，最终 gate 由真人或具有逐图哈希回执和当前明确授权的 `authorized_agent` 决定。
 - 文本密集输出优先保留 deterministic post-render text composition，不把图像模型文字渲染当作唯一合同。
-- 默认一个执行者完成一个有界切片；仅在用户或适用项目/技能规则明确授权委派，且切片独立、write set 互斥与并行净收益成立时使用子代理；“继续”或要求深入分析不构成委派授权。
+- 默认一个执行者完成一个有界切片；子代理委派已获用户常驻授权（见全局规则 A.2），仅在切片独立、write set 互斥与并行净收益成立时使用。
 - Markdown 规则只指导边界和判断；provider opt-in、secret 隔离、schema/format 与发布阻断由配置、测试和 `scripts/verify-repo.ps1`/preflight 强制。
 
 ## B.1 参考依据与外置源码
