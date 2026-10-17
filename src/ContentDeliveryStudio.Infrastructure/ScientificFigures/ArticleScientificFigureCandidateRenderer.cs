@@ -573,27 +573,54 @@ public sealed partial class ArticleScientificFigureCandidateRenderer
         string anchor)
     {
         using var paint = new SKPaint { IsAntialias = true };
-        using var typeface = ResolveTextTypeface(value);
-        using var font = new SKFont(typeface, fontSize);
-        var advance = font.MeasureText(value, out var glyphBounds, paint);
-        var origin = anchor switch
+        var runs = ResolveTextRuns(value);
+        try
         {
-            "middle" => x - advance / 2,
-            "end" => x - advance,
-            "start" => x,
-            _ => throw new InvalidOperationException($"Unsupported SVG text anchor: '{anchor}'."),
-        };
-        return new SKRect(
-            (float)(origin + glyphBounds.Left),
-            (float)(baseline + glyphBounds.Top),
-            (float)(origin + glyphBounds.Right),
-            (float)(baseline + glyphBounds.Bottom));
+            var advance = 0f;
+            SKRect? glyphBounds = null;
+            foreach (var run in runs)
+            {
+                using var font = new SKFont(run.Typeface, fontSize);
+                var runAdvance = font.MeasureText(run.Text, out var runBounds, paint);
+                var shifted = new SKRect(
+                    advance + runBounds.Left,
+                    runBounds.Top,
+                    advance + runBounds.Right,
+                    runBounds.Bottom);
+                glyphBounds = glyphBounds is null ? shifted : SKRect.Union(glyphBounds.Value, shifted);
+                advance += runAdvance;
+            }
+
+            var bounds = glyphBounds ?? SKRect.Empty;
+            var origin = anchor switch
+            {
+                "middle" => x - advance / 2,
+                "end" => x - advance,
+                "start" => x,
+                _ => throw new InvalidOperationException($"Unsupported SVG text anchor: '{anchor}'."),
+            };
+            return new SKRect(
+                (float)(origin + bounds.Left),
+                (float)(baseline + bounds.Top),
+                (float)(origin + bounds.Right),
+                (float)(baseline + bounds.Bottom));
+        }
+        finally
+        {
+            foreach (var run in runs)
+            {
+                run.Typeface.Dispose();
+            }
+        }
     }
 
-    private static SKTypeface ResolveTextTypeface(string value)
+    private const string TextFamily = "Microsoft YaHei";
+
+    private readonly record struct TextRun(SKTypeface Typeface, string Text);
+
+    private static SKTypeface? TryResolveSingleTypeface(string value)
     {
-        const string family = "Microsoft YaHei";
-        var primary = SKTypeface.FromFamilyName(family);
+        var primary = SKTypeface.FromFamilyName(TextFamily);
         if (primary.ContainsGlyphs(value))
         {
             return primary;
@@ -603,7 +630,7 @@ public sealed partial class ArticleScientificFigureCandidateRenderer
         var manager = SKFontManager.Default;
         foreach (var character in value.Where(character => !char.IsWhiteSpace(character)))
         {
-            var fallback = manager.MatchCharacter(family, character)
+            var fallback = manager.MatchCharacter(TextFamily, character)
                 ?? manager.MatchCharacter(character);
             if (fallback is not null && fallback.ContainsGlyphs(value))
             {
@@ -613,8 +640,62 @@ public sealed partial class ArticleScientificFigureCandidateRenderer
             fallback?.Dispose();
         }
 
-        throw new InvalidOperationException(
-            $"No installed typeface can measure the approved SVG text: '{value}'.");
+        return null;
+    }
+
+    // 没有单一已安装字体覆盖整段时（如中文夹带 → 与下标 ₂），逐字符选能渲染它的字体分段测量。
+    private static IReadOnlyList<TextRun> ResolveTextRuns(string value)
+    {
+        var whole = TryResolveSingleTypeface(value);
+        if (whole is not null)
+        {
+            return [new TextRun(whole, value)];
+        }
+
+        var runs = new List<TextRun>();
+        try
+        {
+            foreach (var rune in value.EnumerateRunes())
+            {
+                var typeface = ResolveRuneTypeface(rune)
+                    ?? throw new InvalidOperationException(
+                        $"No installed typeface can measure the approved SVG text: '{value}'.");
+                runs.Add(new TextRun(typeface, rune.ToString()));
+            }
+        }
+        catch
+        {
+            foreach (var run in runs)
+            {
+                run.Typeface.Dispose();
+            }
+
+            throw;
+        }
+
+        return runs;
+    }
+
+    private static SKTypeface? ResolveRuneTypeface(Rune rune)
+    {
+        var text = rune.ToString();
+        var primary = SKTypeface.FromFamilyName(TextFamily);
+        if (primary.ContainsGlyphs(text))
+        {
+            return primary;
+        }
+
+        primary.Dispose();
+        var manager = SKFontManager.Default;
+        var fallback = manager.MatchCharacter(TextFamily, rune.Value)
+            ?? manager.MatchCharacter(rune.Value);
+        if (fallback is not null && fallback.ContainsGlyphs(text))
+        {
+            return fallback;
+        }
+
+        fallback?.Dispose();
+        return null;
     }
 
     private static string FormatBounds(SKRect bounds) =>
